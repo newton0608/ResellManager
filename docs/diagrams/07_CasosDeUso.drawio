@@ -1,0 +1,102 @@
+<mxfile host="Electron" agent="ChatGPT">
+  <diagram id="07_casosdeuso" name="07_CasosDeUso">
+    <mxGraphModel dx="986" dy="634" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=20;fontStyle=1;align=center;verticalAlign=middle;" value="Diagrama de Casos de Uso - ResellManager V1" vertex="1">
+          <mxGeometry height="30" width="500" x="300" y="10" as="geometry" />
+        </mxCell>
+        <mxCell id="system" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#666666;dashed=0;fontStyle=1;verticalAlign=top;spacingTop=10;" value="ResellManager V1" vertex="1">
+          <mxGeometry height="560" width="800" x="220" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="actor" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontSize=14;" value="Vendedora" vertex="1">
+          <mxGeometry height="140" width="90" x="60" y="255" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_clientes" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#6c8ebf;fontSize=12;" value="Gestionar clientes" vertex="1">
+          <mxGeometry height="65" width="170" x="260" y="78" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_saldo" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#6c8ebf;fontSize=12;" value="Consultar saldo de cliente" vertex="1">
+          <mxGeometry height="65" width="170" x="510" y="98" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_productos" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#6c8ebf;fontSize=12;" value="Gestionar productos" vertex="1">
+          <mxGeometry height="65" width="170" x="760" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_unidades" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#6c8ebf;fontSize=12;" value="Gestionar unidades de inventario" vertex="1">
+          <mxGeometry height="65" width="170" x="300" y="187.5" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_compras" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#6c8ebf;fontSize=12;" value="Gestionar compras" vertex="1">
+          <mxGeometry height="65" width="170" x="600" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_comprobante" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#6c8ebf;fontSize=12;" value="Adjuntar comprobante de compra" vertex="1">
+          <mxGeometry height="65" width="170" x="820" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_pedidos" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#6c8ebf;fontSize=12;" value="&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Gestionar pedidos&lt;/font&gt;" vertex="1">
+          <mxGeometry height="65" width="170" x="290" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_ventas" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#6c8ebf;fontSize=12;fontColor=default;" value="Registrar ventas" vertex="1">
+          <mxGeometry height="65" width="170" x="530" y="350" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_pagos" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#6c8ebf;fontSize=12;" value="Registrar pagos" vertex="1">
+          <mxGeometry height="65" width="170" x="780" y="302.5" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_dashboard" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#6c8ebf;fontSize=12;" value="&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;Consultar dashboard&lt;/font&gt;" vertex="1">
+          <mxGeometry height="65" width="170" x="300" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="e_actor_1" edge="1" parent="1" source="actor" style="endArrow=none;html=1;rounded=0;strokeWidth=1.5;" target="uc_clientes" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_actor_2" edge="1" parent="1" source="actor" style="endArrow=none;html=1;rounded=0;strokeWidth=1.5;" target="uc_saldo" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="330" y="180" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_actor_3" edge="1" parent="1" source="actor" style="endArrow=none;html=1;rounded=0;strokeWidth=1.5;" target="uc_productos" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="480" y="250" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_actor_4" edge="1" parent="1" source="actor" style="endArrow=none;html=1;rounded=0;strokeWidth=1.5;" target="uc_unidades" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_actor_5" edge="1" parent="1" source="actor" style="endArrow=none;html=1;rounded=0;strokeWidth=1.5;" target="uc_compras" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_actor_6" edge="1" parent="1" source="actor" style="endArrow=none;html=1;rounded=0;strokeWidth=1.5;" target="uc_comprobante" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_actor_7" edge="1" parent="1" source="actor" style="endArrow=none;html=1;rounded=0;strokeWidth=1.5;" target="uc_pedidos" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_actor_8" edge="1" parent="1" source="actor" style="endArrow=none;html=1;rounded=0;strokeWidth=1.5;" target="uc_ventas" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_actor_9" edge="1" parent="1" source="actor" style="endArrow=none;html=1;rounded=0;strokeWidth=1.5;" target="uc_pagos" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_actor_10" edge="1" parent="1" source="actor" style="endArrow=none;html=1;rounded=0;strokeWidth=1.5;" target="uc_dashboard" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="inc_compras_comprobante" edge="1" parent="1" source="uc_compras" style="endArrow=open;html=1;rounded=0;dashed=1;strokeColor=#777777;" target="uc_comprobante" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lbl_inc1" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=11;fontColor=#777777;" value="«incluye»" vertex="1">
+          <mxGeometry height="20" width="70" x="780" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="inc_clientes_saldo" edge="1" parent="1" source="uc_clientes" style="endArrow=open;html=1;rounded=0;dashed=1;strokeColor=#777777;" target="uc_saldo" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lbl_inc2" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=11;fontColor=#777777;" value="«incluye»" vertex="1">
+          <mxGeometry height="20" width="70" x="440" y="78" as="geometry" />
+        </mxCell>
+        <mxCell id="note" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;" value="&lt;span&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(0, 0, 0));&quot;&gt;V1 usa un solo actor principal. Cliente web, envíos y roles quedan para versiones futuras.&lt;/font&gt;&lt;/span&gt;" vertex="1">
+          <mxGeometry height="60" width="700" x="270" y="540" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

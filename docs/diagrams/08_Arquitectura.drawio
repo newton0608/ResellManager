@@ -1,0 +1,76 @@
+<mxfile host="Electron" agent="ChatGPT">
+  <diagram id="08_arquitectura" name="08_Arquitectura">
+    <mxGraphModel dx="2465" dy="1585" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=20;fontStyle=1;align=center;verticalAlign=middle;" value="Arquitectura propuesta - ResellManager V1" vertex="1">
+          <mxGeometry height="30" width="560" x="280" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="clients" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#9673a6;fontSize=13;fontStyle=1;" value="Dispositivos PC / Android / iPhone" vertex="1">
+          <mxGeometry height="60" width="260" x="420" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="browser" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#9673a6;fontSize=13;fontStyle=1;" value="Navegador web Safari / Chrome / Edge" vertex="1">
+          <mxGeometry height="60" width="260" x="420" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="blazor" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#6c8ebf;fontSize=13;fontStyle=1;" value="Presentación Blazor Web App" vertex="1">
+          <mxGeometry height="60" width="260" x="420" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="app" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#82b366;fontSize=13;fontStyle=1;" value="Aplicación / Servicios Casos de uso y validaciones" vertex="1">
+          <mxGeometry height="70" width="260" x="420" y="350" as="geometry" />
+        </mxCell>
+        <mxCell id="domain" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#82b366;fontSize=13;fontStyle=1;" value="Dominio Entidades y reglas de negocio" vertex="1">
+          <mxGeometry height="70" width="260" x="420" y="470" as="geometry" />
+        </mxCell>
+        <mxCell id="infra" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#d6b656;fontSize=13;fontStyle=1;" value="Infraestructura EF Core · Repositorios · Archivos" vertex="1">
+          <mxGeometry height="70" width="260" x="420" y="590" as="geometry" />
+        </mxCell>
+        <mxCell id="sqlite" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#b85450;fontSize=13;fontStyle=1;" value="Base de datos SQLite" vertex="1">
+          <mxGeometry height="60" width="200" x="170" y="670" as="geometry" />
+        </mxCell>
+        <mxCell id="files" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#b85450;fontSize=13;fontStyle=1;" value="Almacenamiento de archivos Comprobantes de compra" vertex="1">
+          <mxGeometry height="60" width="240" x="470" y="720" as="geometry" />
+        </mxCell>
+        <mxCell id="identity" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#d6b656;fontSize=13;fontStyle=1;" value="Seguridad ASP.NET Core Identity" vertex="1">
+          <mxGeometry height="70" width="240" x="740" y="350" as="geometry" />
+        </mxCell>
+        <mxCell id="future" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#999999;dashed=1;fontSize=12;" value="Futuro PostgreSQL" vertex="1">
+          <mxGeometry height="50" width="200" x="170" y="755" as="geometry" />
+        </mxCell>
+        <mxCell id="a1" edge="1" parent="1" source="clients" style="endArrow=block;html=1;rounded=0;strokeWidth=1.5;" target="browser" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a2" edge="1" parent="1" source="browser" style="endArrow=block;html=1;rounded=0;strokeWidth=1.5;" target="blazor" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a3" edge="1" parent="1" source="blazor" style="endArrow=block;html=1;rounded=0;strokeWidth=1.5;" target="app" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a4" edge="1" parent="1" source="app" style="endArrow=block;html=1;rounded=0;strokeWidth=1.5;" target="domain" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a5" edge="1" parent="1" source="domain" style="endArrow=block;html=1;rounded=0;strokeWidth=1.5;" target="infra" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a_db" edge="1" parent="1" source="infra" style="endArrow=block;html=1;rounded=0;strokeWidth=1.5;" target="sqlite" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a_files" edge="1" parent="1" source="infra" style="endArrow=block;html=1;rounded=0;strokeWidth=1.5;" target="files" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a_identity" edge="1" parent="1" source="blazor" style="endArrow=block;html=1;rounded=0;strokeWidth=1.5;" target="identity" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a_identity2" edge="1" parent="1" source="identity" style="endArrow=block;html=1;rounded=0;strokeWidth=1.5;" target="app" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a_future" edge="1" parent="1" source="sqlite" style="endArrow=block;html=1;rounded=0;strokeWidth=1.2;dashed=1;strokeColor=#999999;" target="future" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="note" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=none;strokeColor=default;fontSize=12;" value="Principio: la interfaz puede cambiar (WhatsApp, tienda física o tienda virtual), pero el dominio debe mantenerse estable." vertex="1">
+          <mxGeometry height="100" width="250" x="90" y="250" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

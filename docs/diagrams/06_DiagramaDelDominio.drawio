@@ -1,0 +1,152 @@
+<mxfile host="Electron" agent="ChatGPT">
+  <diagram id="dominio-resellmanager" name="Diagrama del Dominio">
+    <mxGraphModel dx="459" dy="295" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1360" pageHeight="1060" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=26;fontStyle=1;fontColor=#1f2937;" value="Diagrama del Dominio - ResellManager (V1)" vertex="1">
+          <mxGeometry height="40" width="760" x="280" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontColor=#6b7280;" value="Modelo conceptual del negocio: abastecimiento, inventario, pedidos, ventas y cobros." vertex="1">
+          <mxGeometry height="24" width="720" x="300" y="62" as="geometry" />
+        </mxCell>
+        <mxCell id="sec1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#b3b3b3;dashed=1;fontStyle=1;fontSize=14;align=left;verticalAlign=top;spacingLeft=12;spacingTop=8;" value="Abastecimiento y compras" vertex="1">
+          <mxGeometry height="255" width="1320" x="20" y="95" as="geometry" />
+        </mxCell>
+        <mxCell id="sec2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#b3b3b3;dashed=1;fontStyle=1;fontSize=14;align=left;verticalAlign=top;spacingLeft=12;spacingTop=8;" value="Catálogo e inventario" vertex="1">
+          <mxGeometry height="255" width="1320" x="20" y="375" as="geometry" />
+        </mxCell>
+        <mxCell id="sec3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#b3b3b3;dashed=1;fontStyle=1;fontSize=14;align=left;verticalAlign=top;spacingLeft=12;spacingTop=8;" value="Clientes, pedidos, ventas y pagos" vertex="1">
+          <mxGeometry height="370" width="1320" x="20" y="655" as="geometry" />
+        </mxCell>
+        <mxCell id="Proveedor" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2563eb;strokeWidth=1.5;fontSize=12;align=left;verticalAlign=top;spacing=10;arcSize=8;fontColor=#000000;" value="&lt;b&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(0, 0, 0));&quot;&gt;Proveedor&lt;/font&gt;&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(0, 0, 0));&quot;&gt;+ Id&lt;br&gt;+ Nombre&lt;br&gt;+ Telefono&lt;br&gt;+ CodigoPais&lt;br&gt;+ Descripcion&lt;/font&gt;" vertex="1">
+          <mxGeometry height="145" width="185" x="57.5" y="145" as="geometry" />
+        </mxCell>
+        <mxCell id="Compra" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2563eb;strokeWidth=1.5;fontSize=12;align=left;verticalAlign=top;spacing=10;arcSize=8;fontColor=#000000;" value="&lt;b&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(0, 0, 0));&quot;&gt;Compra&lt;/font&gt;&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(0, 0, 0));&quot;&gt;+ Id&lt;br&gt;+ CodigoInterno&lt;br&gt;+ FechaCompra&lt;br&gt;+ Origen&lt;br&gt;+ Total&lt;br&gt;+ Observaciones&lt;/font&gt;" vertex="1">
+          <mxGeometry height="165" width="190" x="300" y="135" as="geometry" />
+        </mxCell>
+        <mxCell id="DetalleCompra" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2563eb;strokeWidth=1.5;fontSize=12;align=left;verticalAlign=top;spacing=10;arcSize=8;fontColor=#000000;" value="&lt;b&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(0, 0, 0));&quot;&gt;DetalleCompra&lt;/font&gt;&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(0, 0, 0));&quot;&gt;+ Id&lt;br&gt;+ Cantidad&lt;br&gt;+ CostoUnitario&lt;/font&gt;" vertex="1">
+          <mxGeometry height="125" width="190" x="560" y="135" as="geometry" />
+        </mxCell>
+        <mxCell id="ComprobanteCompra" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2563eb;strokeWidth=1.5;fontSize=12;align=left;verticalAlign=top;spacing=10;arcSize=8;fontColor=#000000;" value="&lt;b&gt;&lt;font style=&quot;color: rgb(0, 0, 0);&quot;&gt;ComprobanteCompra&lt;/font&gt;&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;&lt;font style=&quot;color: rgb(0, 0, 0);&quot;&gt;+ Id&lt;br&gt;+ NumeroDocumento&lt;br&gt;+ Fecha&lt;br&gt;+ RutaDocumento&lt;br&gt;+ Observaciones&lt;/font&gt;" vertex="1">
+          <mxGeometry height="145" width="215" x="825" y="135" as="geometry" />
+        </mxCell>
+        <mxCell id="Categoria" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2563eb;strokeWidth=1.5;fontSize=12;align=left;verticalAlign=top;spacing=10;arcSize=8;" value="&lt;b&gt;&lt;font style=&quot;color: rgb(0, 0, 0);&quot;&gt;Categoria&lt;/font&gt;&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;&lt;font style=&quot;color: rgb(0, 0, 0);&quot;&gt;+ Id&lt;br&gt;+ Nombre&lt;/font&gt;" vertex="1">
+          <mxGeometry height="90" width="185" x="60" y="430" as="geometry" />
+        </mxCell>
+        <mxCell id="Producto" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2563eb;strokeWidth=1.5;fontSize=12;align=left;verticalAlign=top;spacing=10;arcSize=8;" value="&lt;b&gt;&lt;font style=&quot;color: rgb(0, 0, 0);&quot;&gt;Producto&lt;/font&gt;&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;&lt;font style=&quot;color: rgb(0, 0, 0);&quot;&gt;+ Id&lt;br&gt;+ CodigoInterno&lt;br&gt;+ CodigoBarras&lt;br&gt;+ Nombre&lt;br&gt;+ Descripcion&lt;br&gt;+ Marca&lt;br&gt;+ Modelo&lt;br&gt;+ Color&lt;br&gt;+ Talla&lt;/font&gt;" vertex="1">
+          <mxGeometry height="190" width="205" x="300" y="410" as="geometry" />
+        </mxCell>
+        <mxCell id="UnidadInventario" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2563eb;strokeWidth=1.5;fontSize=12;align=left;verticalAlign=top;spacing=10;arcSize=8;" value="&lt;b&gt;&lt;font style=&quot;color: rgb(0, 0, 0);&quot;&gt;UnidadInventario&lt;/font&gt;&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;&lt;font style=&quot;color: rgb(0, 0, 0);&quot;&gt;+ Id&lt;br&gt;+ CodigoInterno&lt;br&gt;+ Estado&lt;br&gt;+ FechaIngreso&lt;br&gt;+ Costo&lt;br&gt;+ PrecioLista&lt;/font&gt;" vertex="1">
+          <mxGeometry height="165" width="220" x="680" y="448" as="geometry" />
+        </mxCell>
+        <mxCell id="Cliente" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2563eb;strokeWidth=1.5;fontSize=12;align=left;verticalAlign=top;spacing=10;arcSize=8;fontColor=#000000;" value="&lt;b&gt;Cliente&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;+ Id&lt;br&gt;+ Nombres&lt;br&gt;+ Apellidos&lt;br&gt;+ Telefono&lt;br&gt;+ Direccion&lt;br&gt;+ Observaciones" vertex="1">
+          <mxGeometry height="145" width="190" x="55" y="705" as="geometry" />
+        </mxCell>
+        <mxCell id="Pedido" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2563eb;strokeWidth=1.5;fontSize=12;align=left;verticalAlign=top;spacing=10;arcSize=8;fontColor=#000000;" value="&lt;b&gt;Pedido&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;+ Id&lt;br&gt;+ Fecha&lt;br&gt;+ TipoPedido&lt;br&gt;+ Estado&lt;br&gt;+ Observaciones" vertex="1">
+          <mxGeometry height="125" width="190" x="307.5" y="715" as="geometry" />
+        </mxCell>
+        <mxCell id="DetallePedido" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2563eb;strokeWidth=1.5;fontSize=12;align=left;verticalAlign=top;spacing=10;arcSize=8;fontColor=#000000;" value="&lt;b&gt;DetallePedido&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;+ Id&lt;br&gt;+ Cantidad&lt;br&gt;+ PrecioUnitario&lt;br&gt;+ Observaciones" vertex="1">
+          <mxGeometry height="125" width="190" x="560" y="715" as="geometry" />
+        </mxCell>
+        <mxCell id="Venta" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2563eb;strokeWidth=1.5;fontSize=12;align=left;verticalAlign=top;spacing=10;arcSize=8;fontColor=#000000;" value="&lt;b&gt;Venta&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;+ Id&lt;br&gt;+ Fecha&lt;br&gt;+ Estado&lt;br&gt;+ Observaciones" vertex="1">
+          <mxGeometry height="125" width="190" x="825" y="715" as="geometry" />
+        </mxCell>
+        <mxCell id="DetalleVenta" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2563eb;strokeWidth=1.5;fontSize=12;align=left;verticalAlign=top;spacing=10;arcSize=8;fontColor=#000000;" value="&lt;b&gt;DetalleVenta&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;+ Id&lt;br&gt;+ PrecioFinal&lt;br&gt;+ Observaciones" vertex="1">
+          <mxGeometry height="105" width="190" x="1085" y="725" as="geometry" />
+        </mxCell>
+        <mxCell id="Pago" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#2563eb;strokeWidth=1.5;fontSize=12;align=left;verticalAlign=top;spacing=10;arcSize=8;fontColor=#000000;" value="&lt;b&gt;Pago&lt;/b&gt;&lt;hr size=&quot;1&quot;&gt;+ Id&lt;br&gt;+ Fecha&lt;br&gt;+ Monto&lt;br&gt;+ MetodoPago&lt;br&gt;+ Referencia&lt;br&gt;+ Observaciones" vertex="1">
+          <mxGeometry height="135" width="205" x="300" y="885" as="geometry" />
+        </mxCell>
+        <mxCell id="note1" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#fff7ed;strokeColor=#f59e0b;fontSize=12;align=left;verticalAlign=top;spacing=10;" value="&lt;font style=&quot;color: rgb(0, 0, 0);&quot;&gt;&lt;b&gt;Nota&lt;/b&gt;&lt;br&gt;El inventario no es una entidad separada: se obtiene consultando las UnidadesInventario con estado Disponible.&lt;/font&gt;" vertex="1">
+          <mxGeometry height="100" width="335" x="960" y="380" as="geometry" />
+        </mxCell>
+        <mxCell id="note2" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#fff7ed;strokeColor=#f59e0b;fontSize=12;align=left;verticalAlign=top;spacing=10;fontColor=#000000;" value="&lt;b&gt;Saldo del cliente&lt;/b&gt;&lt;br&gt;Se calcula con el total de ventas menos los pagos registrados al cliente." vertex="1">
+          <mxGeometry height="90" width="330" x="560" y="900" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="Proveedor" style="endArrow=block;html=1;rounded=1;strokeColor=#374151;strokeWidth=1.4;fontSize=11;fontColor=#111827;edgeStyle=orthogonalEdgeStyle;labelBackgroundColor=#FFFFFF;" target="Compra" value="1 a N">
+          <mxGeometry relative="1" x="-0.001" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="Compra" style="endArrow=block;html=1;rounded=1;strokeColor=#374151;strokeWidth=1.4;fontSize=11;fontColor=#111827;edgeStyle=orthogonalEdgeStyle;labelBackgroundColor=#FFFFFF;" target="DetalleCompra" value="&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(0, 0, 0));&quot;&gt;1 a N&lt;/font&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="Compra" style="endArrow=block;html=1;rounded=1;strokeColor=#374151;strokeWidth=1.4;fontSize=11;fontColor=#000000;edgeStyle=orthogonalEdgeStyle;labelBackgroundColor=#FFFFFF;" target="ComprobanteCompra" value="1 a 0..1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="395" y="120" />
+              <mxPoint x="933" y="120" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="Producto" style="endArrow=block;html=1;rounded=1;strokeColor=#374151;strokeWidth=1.4;fontSize=11;fontColor=light-dark(#000000,#FFFFFF);edgeStyle=orthogonalEdgeStyle;labelBackgroundColor=#FFFFFF;" target="DetalleCompra" value="&lt;font style=&quot;color: rgb(0, 0, 0);&quot;&gt;1 a N&lt;/font&gt;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="570" y="505" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="DetalleCompra" style="endArrow=block;html=1;rounded=1;strokeColor=#374151;strokeWidth=1.4;fontSize=11;fontColor=#000000;edgeStyle=orthogonalEdgeStyle;labelBackgroundColor=#FFFFFF;" target="UnidadInventario" value="1 a N">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="Categoria" style="endArrow=block;html=1;rounded=1;strokeColor=#374151;strokeWidth=1.4;fontSize=11;fontColor=#000000;edgeStyle=orthogonalEdgeStyle;labelBackgroundColor=#FFFFFF;" target="Producto" value="1 a N">
+          <mxGeometry relative="1" x="-0.0018" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e7" edge="1" parent="1" source="Producto" style="endArrow=block;html=1;rounded=1;strokeColor=#374151;strokeWidth=1.4;fontSize=11;fontColor=#000000;edgeStyle=orthogonalEdgeStyle;labelBackgroundColor=#FFFFFF;labelBorderColor=none;" target="UnidadInventario" value="1 a N">
+          <mxGeometry relative="1" x="0.3014" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e8" edge="1" parent="1" source="Cliente" style="endArrow=block;html=1;rounded=1;strokeColor=#374151;strokeWidth=1.4;fontSize=11;fontColor=#000000;edgeStyle=orthogonalEdgeStyle;labelBackgroundColor=#FFFFFF;" target="Pedido" value="1 a N">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e9" edge="1" parent="1" source="Pedido" style="endArrow=block;html=1;rounded=1;strokeColor=#374151;strokeWidth=1.4;fontSize=11;fontColor=#000000;edgeStyle=orthogonalEdgeStyle;labelBackgroundColor=#FFFFFF;" target="DetallePedido" value="1 a N">
+          <mxGeometry relative="1" x="0.0133" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e10" edge="1" parent="1" source="Producto" style="endArrow=block;html=1;rounded=1;strokeColor=#374151;strokeWidth=1.4;fontSize=11;fontColor=#000000;edgeStyle=orthogonalEdgeStyle;entryX=0.45;entryY=-0.006;entryDx=0;entryDy=0;entryPerimeter=0;labelBackgroundColor=#FFFFFF;" target="DetallePedido" value="1 a N">
+          <mxGeometry relative="1" x="-0.0007" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="570" y="505" />
+              <mxPoint x="570" y="680" />
+              <mxPoint x="646" y="680" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e11" edge="1" parent="1" source="Pedido" style="endArrow=block;html=1;rounded=1;strokeColor=#374151;strokeWidth=1.4;fontSize=11;fontColor=#000000;edgeStyle=orthogonalEdgeStyle;labelBackgroundColor=#FFFFFF;" target="Venta" value="1 a 0..1">
+          <mxGeometry relative="1" x="0.0029" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="395" y="860" />
+              <mxPoint x="920" y="860" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e12" edge="1" parent="1" source="Venta" style="endArrow=block;html=1;rounded=1;strokeColor=#374151;strokeWidth=1.4;fontSize=11;fontColor=#000000;edgeStyle=orthogonalEdgeStyle;labelBackgroundColor=#FFFFFF;" target="DetalleVenta" value="1 a N">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e13" edge="1" parent="1" source="UnidadInventario" style="endArrow=block;html=1;rounded=1;strokeColor=#374151;strokeWidth=1.4;fontSize=11;fontColor=#000000;edgeStyle=orthogonalEdgeStyle;labelBackgroundColor=#FFFFFF;" target="DetalleVenta" value="1 a 0..1">
+          <mxGeometry relative="1" x="0.0011" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e14" edge="1" parent="1" source="Cliente" style="endArrow=block;html=1;rounded=1;strokeColor=#374151;strokeWidth=1.4;fontSize=11;fontColor=#000000;edgeStyle=orthogonalEdgeStyle;labelBackgroundColor=#FFFFFF;" target="Pago" value="1 a N">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="120" y="953" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
