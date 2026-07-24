@@ -22,11 +22,12 @@ public static class DependencyInjection
             options.UseSqlite(connectionString));
 
         services.AddIdentityCore<IdentityUser>(options =>
-            {
-                options.User.RequireUniqueEmail = true;
-            })
+        {
+            options.User.RequireUniqueEmail = true;
+        })
             .AddEntityFrameworkStores<ResellManagerDbContext>()
-            .AddSignInManager();
+            .AddSignInManager()
+            .AddDefaultTokenProviders();
 
         return services;
     }
