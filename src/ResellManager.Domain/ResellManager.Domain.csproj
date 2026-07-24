@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Domain model and business rules for ResellManager.</Description>
+  </PropertyGroup>
+</Project>

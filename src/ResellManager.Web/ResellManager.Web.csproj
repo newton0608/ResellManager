@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <Description>Blazor Web App host for ResellManager.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../ResellManager.Application/ResellManager.Application.csproj" />
+    <ProjectReference Include="../ResellManager.Infrastructure/ResellManager.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

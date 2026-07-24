@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Application use cases and abstractions for ResellManager.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../ResellManager.Domain/ResellManager.Domain.csproj" />
+  </ItemGroup>
+</Project>
