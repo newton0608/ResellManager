@@ -211,7 +211,7 @@ public sealed class VentaService(ResellManagerDbContext db) : IVentaService
     {
         var venta = await db
             .Ventas.Include(x => x.Pedido)
-            .ThenInclude(x => x.Detalles)
+                .ThenInclude(x => x.Detalles)
             .FirstOrDefaultAsync(x => x.Id == ventaId, ct);
 
         if (venta is null)
@@ -246,17 +246,20 @@ public sealed class VentaService(ResellManagerDbContext db) : IVentaService
         CancellationToken ct = default
     )
     {
-        var venta = await Query().FirstOrDefaultAsync(x => x.Id == id, ct);
+        var venta = await VentaCompleta().FirstOrDefaultAsync(x => x.Id == id, ct);
         return venta is null
             ? ServiceResult<VentaDto>.Failure("Venta no encontrada.")
-            : ServiceResult<VentaDto>.Ok(venta);
+            : ServiceResult<VentaDto>.Ok(Map(venta));
     }
 
-    public async Task<IReadOnlyList<VentaDto>> ListarAsync(CancellationToken ct = default) =>
-        await Query()
+    public async Task<IReadOnlyList<VentaDto>> ListarAsync(CancellationToken ct = default)
+    {
+        var ventas = await VentaCompleta()
             .OrderByDescending(x => x.Fecha)
             .ThenByDescending(x => x.Id)
             .ToListAsync(ct);
+        return ventas.Select(Map).ToList();
+    }
 
     public async Task<ServiceResult<decimal>> CalcularTotalAsync(
         int ventaId,
@@ -267,31 +270,27 @@ public sealed class VentaService(ResellManagerDbContext db) : IVentaService
             return ServiceResult<decimal>.Failure("Venta no encontrada.");
 
         var total =
-            await db.DetallesVenta
-                .Where(x => x.VentaId == ventaId)
+            await db
+                .DetallesVenta.Where(x => x.VentaId == ventaId)
                 .SumAsync(x => (decimal?)x.PrecioFinal, ct)
             ?? 0m;
 
         return ServiceResult<decimal>.Ok(total);
     }
 
-public async Task<ServiceResult> CancelarAsync(int id, CancellationToken ct = default)
+    public async Task<ServiceResult> CancelarAsync(int id, CancellationToken ct = default)
     {
         var venta = await db
             .Ventas.Include(x => x.Pedido)
             .Include(x => x.Detalles)
-            .ThenInclude(x => x.UnidadInventario)
+                .ThenInclude(x => x.UnidadInventario)
             .FirstOrDefaultAsync(x => x.Id == id, ct);
 
         if (venta is null)
             return ServiceResult.Failure("Venta no encontrada.");
         if (venta.Estado == EstadoVenta.Cancelada)
             return ServiceResult.Ok();
-        if (
-            venta.Detalles.Any(x =>
-                x.UnidadInventario?.Estado == EstadoUnidadInventario.Entregada
-            )
-        )
+        if (venta.Detalles.Any(x => x.UnidadInventario?.Estado == EstadoUnidadInventario.Entregada))
             return ServiceResult.Failure(
                 "La venta incluye unidades entregadas y requiere un proceso de devolución o cambio futuro."
             );
@@ -300,8 +299,8 @@ public async Task<ServiceResult> CancelarAsync(int id, CancellationToken ct = de
 
         venta.Estado = EstadoVenta.Cancelada;
         foreach (
-            var unidad in venta.Detalles
-                .Where(x => x.UnidadInventario?.Estado == EstadoUnidadInventario.Vendida)
+            var unidad in venta
+                .Detalles.Where(x => x.UnidadInventario?.Estado == EstadoUnidadInventario.Vendida)
                 .Select(x => x.UnidadInventario!)
         )
             unidad.Estado = EstadoUnidadInventario.Disponible;
@@ -329,9 +328,7 @@ public async Task<ServiceResult> CancelarAsync(int id, CancellationToken ct = de
                 return "Una venta de catálogo no puede incluir unidades de inventario.";
             if (
                 detalles.Any(x =>
-                    !x.ProductoId.HasValue
-                    || !x.CostoUnitario.HasValue
-                    || x.CostoUnitario.Value < 0
+                    !x.ProductoId.HasValue || !x.CostoUnitario.HasValue || x.CostoUnitario.Value < 0
                 )
             )
                 return "Los detalles de catálogo requieren producto y costo unitario válido.";
@@ -366,10 +363,7 @@ public async Task<ServiceResult> CancelarAsync(int id, CancellationToken ct = de
             unidades.Any(x =>
                 x.Usada
                 || x.Estado
-                    is not (
-                        EstadoUnidadInventario.Disponible
-                        or EstadoUnidadInventario.Apartada
-                    )
+                    is not (EstadoUnidadInventario.Disponible or EstadoUnidadInventario.Apartada)
             )
         )
             return "Solo se pueden vender unidades disponibles o apartadas no vendidas.";
@@ -380,8 +374,7 @@ public async Task<ServiceResult> CancelarAsync(int id, CancellationToken ct = de
         if (
             detalles.Any(x =>
                 x.ProductoId.HasValue
-                && x.ProductoId.Value
-                    != unidadesPorId[x.UnidadInventarioId!.Value].ProductoId
+                && x.ProductoId.Value != unidadesPorId[x.UnidadInventarioId!.Value].ProductoId
             )
         )
             return "El producto indicado no corresponde a la unidad de inventario.";
@@ -421,36 +414,41 @@ public async Task<ServiceResult> CancelarAsync(int id, CancellationToken ct = de
             Observaciones = input.Observaciones?.Trim(),
         };
 
-    private IQueryable<VentaDto> Query() =>
-        db.Ventas.AsNoTracking()
-            .Select(x => new VentaDto(
-                x.Id,
-                x.CodigoInterno,
-                x.Fecha,
-                x.Estado,
-                x.Observaciones,
-                x.PedidoId,
-                x.Pedido.ClienteId,
-                x.Pedido.Cliente.Nombres
-                    + (x.Pedido.Cliente.Apellidos == null
-                        ? ""
-                        : " " + x.Pedido.Cliente.Apellidos),
-                x.Detalles.Sum(d => d.PrecioFinal),
-                x.Detalles
-                    .Select(d => new DetalleVentaDto(
-                        d.Id,
-                        d.UnidadInventarioId,
-                        d.UnidadInventario == null ? null : d.UnidadInventario.CodigoInterno,
-                        d.ProductoId ?? d.UnidadInventario!.ProductoId,
-                        d.Producto == null
-                            ? d.UnidadInventario!.Producto.Nombre
-                            : d.Producto.Nombre,
-                        d.CostoUnitario ?? d.UnidadInventario!.Costo,
-                        d.PrecioFinal,
-                        d.Observaciones
-                    ))
-                    .ToList()
-            ));
+    private IQueryable<Venta> VentaCompleta() =>
+        db
+            .Ventas.AsNoTracking()
+            .Include(x => x.Pedido)
+                .ThenInclude(x => x.Cliente)
+            .Include(x => x.Detalles)
+                .ThenInclude(x => x.Producto)
+            .Include(x => x.Detalles)
+                .ThenInclude(x => x.UnidadInventario)
+                    .ThenInclude(x => x!.Producto);
+
+    private static VentaDto Map(Venta x) =>
+        new(
+            x.Id,
+            x.CodigoInterno,
+            x.Fecha,
+            x.Estado,
+            x.Observaciones,
+            x.PedidoId,
+            x.Pedido.ClienteId,
+            x.Pedido.Cliente.Nombres
+                + (x.Pedido.Cliente.Apellidos == null ? "" : " " + x.Pedido.Cliente.Apellidos),
+            x.Detalles.Sum(d => d.PrecioFinal),
+            x.Detalles.Select(d => new DetalleVentaDto(
+                    d.Id,
+                    d.UnidadInventarioId,
+                    d.UnidadInventario?.CodigoInterno,
+                    d.ProductoId ?? d.UnidadInventario!.ProductoId,
+                    d.Producto?.Nombre ?? d.UnidadInventario!.Producto.Nombre,
+                    d.CostoUnitario ?? d.UnidadInventario!.Costo,
+                    d.PrecioFinal,
+                    d.Observaciones
+                ))
+                .ToList()
+        );
 }
 
 public sealed class PagoService(ResellManagerDbContext db) : IPagoService
@@ -496,7 +494,7 @@ public sealed class PagoService(ResellManagerDbContext db) : IPagoService
         CancellationToken ct = default
     )
     {
-        var x = await Query().FirstOrDefaultAsync(x => x.Id == id, ct);
+        var x = await Query(db.Pagos.Where(x => x.Id == id)).FirstOrDefaultAsync(ct);
         return x is null
             ? ServiceResult<PagoDto>.Failure("Pago no encontrado.")
             : ServiceResult<PagoDto>.Ok(x);
@@ -506,34 +504,34 @@ public sealed class PagoService(ResellManagerDbContext db) : IPagoService
         int clienteId,
         CancellationToken ct = default
     ) =>
-        await Query()
-            .Where(x => x.ClienteId == clienteId)
-            .OrderByDescending(x => x.Fecha)
-            .ThenByDescending(x => x.Id)
+        await Query(
+                db.Pagos.Where(x => x.ClienteId == clienteId)
+                    .OrderByDescending(x => x.Fecha)
+                    .ThenByDescending(x => x.Id)
+            )
             .ToListAsync(ct);
 
     private async Task<decimal> ObtenerSaldoActualAsync(int clienteId, CancellationToken ct)
     {
-        var totalVentas =
-            await db.DetallesVenta
-                .Where(x =>
-                    x.Venta.Estado == EstadoVenta.Registrada
-                    && x.Venta.Pedido.ClienteId == clienteId
-                )
-                .SumAsync(x => (decimal?)x.PrecioFinal, ct)
-            ?? 0m;
-        var totalPagos =
-            await db.Pagos
-                .Where(x => x.ClienteId == clienteId)
-                .SumAsync(x => (decimal?)x.Monto, ct)
-            ?? 0m;
+        var ventas = await db
+            .DetallesVenta.AsNoTracking()
+            .Where(x =>
+                x.Venta.Estado == EstadoVenta.Registrada && x.Venta.Pedido.ClienteId == clienteId
+            )
+            .Select(x => x.PrecioFinal)
+            .ToListAsync(ct);
+        var pagos = await db
+            .Pagos.AsNoTracking()
+            .Where(x => x.ClienteId == clienteId)
+            .Select(x => x.Monto)
+            .ToListAsync(ct);
 
-        return totalVentas - totalPagos;
+        return ventas.Sum() - pagos.Sum();
     }
 
-    private IQueryable<PagoDto> Query() =>
-        db
-            .Pagos.AsNoTracking()
+    private static IQueryable<PagoDto> Query(IQueryable<Pago> source) =>
+        source
+            .AsNoTracking()
             .Select(x => new PagoDto(
                 x.Id,
                 x.ClienteId,
@@ -554,29 +552,45 @@ public sealed class DashboardService(ResellManagerDbContext db) : IDashboardServ
     )
     {
         cantidadRecientes = Math.Clamp(cantidadRecientes, 1, 50);
-        var ventas =
-            await db
-                .DetallesVenta.Where(x => x.Venta.Estado == EstadoVenta.Registrada)
-                .SumAsync(x => (decimal?)x.PrecioFinal, ct)
-            ?? 0m;
-        var pagos = await db.Pagos.SumAsync(x => (decimal?)x.Monto, ct) ?? 0m;
-        var q = db.UnidadesInventario.Where(x => x.Estado == EstadoUnidadInventario.Disponible);
-        var valor = await q.SumAsync(x => (decimal?)x.Costo, ct) ?? 0m;
-        var cantidad = await q.CountAsync(ct);
+        var importesVentas = await db
+            .DetallesVenta.AsNoTracking()
+            .Where(x => x.Venta.Estado == EstadoVenta.Registrada)
+            .Select(x => x.PrecioFinal)
+            .ToListAsync(ct);
+        var importesPagos = await db.Pagos.AsNoTracking().Select(x => x.Monto).ToListAsync(ct);
+        var costosDisponibles = await db
+            .UnidadesInventario.AsNoTracking()
+            .Where(x => x.Estado == EstadoUnidadInventario.Disponible)
+            .Select(x => x.Costo)
+            .ToListAsync(ct);
+        var ventas = importesVentas.Sum();
+        var pagos = importesPagos.Sum();
+        var valor = costosDisponibles.Sum();
+        var cantidad = costosDisponibles.Count;
         var pendientes = await db.Pedidos.CountAsync(
             x => x.Estado == EstadoPedido.Pendiente || x.Estado == EstadoPedido.Confirmado,
             ct
         );
-        var ultimosPagos = await QueryPagos()
+        var ultimosPagos = await QueryPagos(
+                db.Pagos.OrderByDescending(x => x.Fecha)
+                    .ThenByDescending(x => x.Id)
+                    .Take(cantidadRecientes)
+            )
+            .ToListAsync(ct);
+        var ultimasVentasEntities = await db
+            .Ventas.AsNoTracking()
+            .Include(x => x.Pedido)
+                .ThenInclude(x => x.Cliente)
+            .Include(x => x.Detalles)
+                .ThenInclude(x => x.Producto)
+            .Include(x => x.Detalles)
+                .ThenInclude(x => x.UnidadInventario)
+                    .ThenInclude(x => x!.Producto)
             .OrderByDescending(x => x.Fecha)
             .ThenByDescending(x => x.Id)
             .Take(cantidadRecientes)
             .ToListAsync(ct);
-        var ultimasVentas = await QueryVentas()
-            .OrderByDescending(x => x.Fecha)
-            .ThenByDescending(x => x.Id)
-            .Take(cantidadRecientes)
-            .ToListAsync(ct);
+        var ultimasVentas = ultimasVentasEntities.Select(MapVenta).ToList();
         return new DashboardDto(
             ventas - pagos,
             valor,
@@ -587,9 +601,38 @@ public sealed class DashboardService(ResellManagerDbContext db) : IDashboardServ
         );
     }
 
-    private IQueryable<PagoDto> QueryPagos() =>
-        db
-            .Pagos.AsNoTracking()
+    public async Task<ServiceResult<decimal>> ObtenerUtilidadAsync(
+        DateOnly desde,
+        DateOnly hasta,
+        CancellationToken ct = default
+    )
+    {
+        if (desde > hasta)
+            return ServiceResult<decimal>.Failure(
+                "La fecha inicial no puede ser posterior a la fecha final."
+            );
+
+        var detalles = await db
+            .DetallesVenta.AsNoTracking()
+            .Where(x =>
+                x.Venta.Estado == EstadoVenta.Registrada
+                && x.Venta.Fecha >= desde
+                && x.Venta.Fecha <= hasta
+            )
+            .Select(x => new
+            {
+                x.PrecioFinal,
+                Costo = x.CostoUnitario
+                    ?? (x.UnidadInventario == null ? 0m : x.UnidadInventario.Costo),
+            })
+            .ToListAsync(ct);
+
+        return ServiceResult<decimal>.Ok(detalles.Sum(x => x.PrecioFinal - x.Costo));
+    }
+
+    private static IQueryable<PagoDto> QueryPagos(IQueryable<Pago> source) =>
+        source
+            .AsNoTracking()
             .Select(x => new PagoDto(
                 x.Id,
                 x.ClienteId,
@@ -601,32 +644,28 @@ public sealed class DashboardService(ResellManagerDbContext db) : IDashboardServ
                 x.Observaciones
             ));
 
-    private IQueryable<VentaDto> QueryVentas() =>
-        db
-            .Ventas.AsNoTracking()
-            .Select(x => new VentaDto(
-                x.Id,
-                x.CodigoInterno,
-                x.Fecha,
-                x.Estado,
-                x.Observaciones,
-                x.PedidoId,
-                x.Pedido.ClienteId,
-                x.Pedido.Cliente.Nombres
-                    + (x.Pedido.Cliente.Apellidos == null ? "" : " " + x.Pedido.Cliente.Apellidos),
-                x.Detalles.Sum(d => d.PrecioFinal),
-                x.Detalles.Select(d => new DetalleVentaDto(
-                        d.Id,
-                        d.UnidadInventarioId,
-                        d.UnidadInventario == null ? null : d.UnidadInventario.CodigoInterno,
-                        d.ProductoId ?? d.UnidadInventario!.ProductoId,
-                        d.Producto == null
-                            ? d.UnidadInventario!.Producto.Nombre
-                            : d.Producto.Nombre,
-                        d.CostoUnitario ?? d.UnidadInventario!.Costo,
-                        d.PrecioFinal,
-                        d.Observaciones
-                    ))
-                    .ToList()
-            ));
+    private static VentaDto MapVenta(Venta x) =>
+        new(
+            x.Id,
+            x.CodigoInterno,
+            x.Fecha,
+            x.Estado,
+            x.Observaciones,
+            x.PedidoId,
+            x.Pedido.ClienteId,
+            x.Pedido.Cliente.Nombres
+                + (x.Pedido.Cliente.Apellidos == null ? "" : " " + x.Pedido.Cliente.Apellidos),
+            x.Detalles.Sum(d => d.PrecioFinal),
+            x.Detalles.Select(d => new DetalleVentaDto(
+                    d.Id,
+                    d.UnidadInventarioId,
+                    d.UnidadInventario?.CodigoInterno,
+                    d.ProductoId ?? d.UnidadInventario!.ProductoId,
+                    d.Producto?.Nombre ?? d.UnidadInventario!.Producto.Nombre,
+                    d.CostoUnitario ?? d.UnidadInventario!.Costo,
+                    d.PrecioFinal,
+                    d.Observaciones
+                ))
+                .ToList()
+        );
 }

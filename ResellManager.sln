@@ -10,6 +10,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ResellManager.Application",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ResellManager.Infrastructure", "src\ResellManager.Infrastructure\ResellManager.Infrastructure.csproj", "{A9D9445C-81B7-4A78-8D8A-1A357731219A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ResellManager.Tests", "tests\ResellManager.Tests\ResellManager.Tests.csproj", "{8680A1C1-32AE-453F-A2EB-57E9A5BE899F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -32,5 +34,9 @@ Global
 		{A9D9445C-81B7-4A78-8D8A-1A357731219A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A9D9445C-81B7-4A78-8D8A-1A357731219A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A9D9445C-81B7-4A78-8D8A-1A357731219A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8680A1C1-32AE-453F-A2EB-57E9A5BE899F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8680A1C1-32AE-453F-A2EB-57E9A5BE899F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8680A1C1-32AE-453F-A2EB-57E9A5BE899F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8680A1C1-32AE-453F-A2EB-57E9A5BE899F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -93,6 +93,80 @@ public sealed class ClienteService(ResellManagerDbContext db) : IClienteService
             ? ServiceResult<decimal>.Ok(await SaldoAsync(clienteId, ct))
             : ServiceResult<decimal>.Failure("Cliente no encontrado.");
 
+    public async Task<ServiceResult<ClienteHistorialDto>> ObtenerHistorialAsync(
+        int clienteId,
+        CancellationToken ct = default
+    )
+    {
+        var clienteEntity = await db
+            .Clientes.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == clienteId, ct);
+        if (clienteEntity is null)
+            return ServiceResult<ClienteHistorialDto>.Failure("Cliente no encontrado.");
+        var cliente = Map(clienteEntity, await SaldoAsync(clienteId, ct));
+
+        var ventasEntities = await db
+            .Ventas.AsNoTracking()
+            .Include(x => x.Pedido)
+                .ThenInclude(x => x.Cliente)
+            .Include(x => x.Detalles)
+                .ThenInclude(x => x.Producto)
+            .Include(x => x.Detalles)
+                .ThenInclude(x => x.UnidadInventario)
+                    .ThenInclude(x => x!.Producto)
+            .Where(x => x.Pedido.ClienteId == clienteId)
+            .OrderByDescending(x => x.Fecha)
+            .ThenByDescending(x => x.Id)
+            .ToListAsync(ct);
+        var ventas = ventasEntities.Select(MapVenta).ToList();
+
+        var pagos = await db
+            .Pagos.AsNoTracking()
+            .Where(x => x.ClienteId == clienteId)
+            .OrderByDescending(x => x.Fecha)
+            .ThenByDescending(x => x.Id)
+            .Select(x => new PagoDto(
+                x.Id,
+                x.ClienteId,
+                x.Cliente.Nombres + (x.Cliente.Apellidos == null ? "" : " " + x.Cliente.Apellidos),
+                x.Fecha,
+                x.Monto,
+                x.MetodoPago,
+                x.Referencia,
+                x.Observaciones
+            ))
+            .ToListAsync(ct);
+
+        return ServiceResult<ClienteHistorialDto>.Ok(
+            new ClienteHistorialDto(cliente, ventas, pagos)
+        );
+    }
+
+    private static VentaDto MapVenta(Venta x) =>
+        new(
+            x.Id,
+            x.CodigoInterno,
+            x.Fecha,
+            x.Estado,
+            x.Observaciones,
+            x.PedidoId,
+            x.Pedido.ClienteId,
+            x.Pedido.Cliente.Nombres
+                + (x.Pedido.Cliente.Apellidos == null ? "" : " " + x.Pedido.Cliente.Apellidos),
+            x.Detalles.Sum(d => d.PrecioFinal),
+            x.Detalles.Select(d => new DetalleVentaDto(
+                    d.Id,
+                    d.UnidadInventarioId,
+                    d.UnidadInventario?.CodigoInterno,
+                    d.ProductoId ?? d.UnidadInventario!.ProductoId,
+                    d.Producto?.Nombre ?? d.UnidadInventario!.Producto.Nombre,
+                    d.CostoUnitario ?? d.UnidadInventario!.Costo,
+                    d.PrecioFinal,
+                    d.Observaciones
+                ))
+                .ToList()
+        );
+
     private IQueryable<ClienteDto> Query() =>
         db
             .Clientes.AsNoTracking()
@@ -113,8 +187,20 @@ public sealed class ClienteService(ResellManagerDbContext db) : IClienteService
                 ) - (c.Pagos.Sum(p => (decimal?)p.Monto) ?? 0m)
             ));
 
-    private async Task<decimal> SaldoAsync(int id, CancellationToken ct) =>
-        await Query().Where(x => x.Id == id).Select(x => x.Saldo).SingleAsync(ct);
+    private async Task<decimal> SaldoAsync(int id, CancellationToken ct)
+    {
+        var ventas = await db
+            .DetallesVenta.AsNoTracking()
+            .Where(x => x.Venta.Estado == EstadoVenta.Registrada && x.Venta.Pedido.ClienteId == id)
+            .Select(x => x.PrecioFinal)
+            .ToListAsync(ct);
+        var pagos = await db
+            .Pagos.AsNoTracking()
+            .Where(x => x.ClienteId == id)
+            .Select(x => x.Monto)
+            .ToListAsync(ct);
+        return ventas.Sum() - pagos.Sum();
+    }
 
     private static ClienteDto Map(Cliente x, decimal saldo) =>
         new(x.Id, x.Nombres, x.Apellidos, x.Telefono, x.Direccion, x.Observaciones, saldo);

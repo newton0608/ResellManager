@@ -16,6 +16,10 @@ public interface IClienteService
     Task<IReadOnlyList<ClienteDto>> ListarAsync(CancellationToken ct = default);
     Task<IReadOnlyList<ClienteDto>> BuscarAsync(string termino, CancellationToken ct = default);
     Task<ServiceResult<decimal>> ObtenerSaldoAsync(int clienteId, CancellationToken ct = default);
+    Task<ServiceResult<ClienteHistorialDto>> ObtenerHistorialAsync(
+        int clienteId,
+        CancellationToken ct = default
+    );
 }
 
 public interface ICategoriaService
@@ -72,6 +76,10 @@ public interface ICompraService
     );
     Task<ServiceResult<CompraDto>> ObtenerPorIdAsync(int id, CancellationToken ct = default);
     Task<IReadOnlyList<CompraDto>> ListarAsync(CancellationToken ct = default);
+    Task<ServiceResult<ComprobanteCompraDto>> ObtenerComprobanteAsync(
+        int compraId,
+        CancellationToken ct = default
+    );
 }
 
 public interface IInventarioService
@@ -81,6 +89,10 @@ public interface IInventarioService
     Task<IReadOnlyList<UnidadInventarioDto>> BuscarAsync(
         string? termino,
         EstadoUnidadInventario? estado,
+        CancellationToken ct = default
+    );
+    Task<ServiceResult<IReadOnlyList<UnidadInventarioDto>>> RegistrarRecepcionAsync(
+        RecepcionMercanciaInput input,
         CancellationToken ct = default
     );
     Task<ServiceResult<UnidadInventarioDto>> CambiarEstadoAsync(
@@ -133,4 +145,9 @@ public interface IPagoService
 public interface IDashboardService
 {
     Task<DashboardDto> ObtenerAsync(int cantidadRecientes = 5, CancellationToken ct = default);
+    Task<ServiceResult<decimal>> ObtenerUtilidadAsync(
+        DateOnly desde,
+        DateOnly hasta,
+        CancellationToken ct = default
+    );
 }

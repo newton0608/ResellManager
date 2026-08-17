@@ -27,6 +27,7 @@ public sealed class CompraService(ResellManagerDbContext db) : ICompraService
             return ServiceResult<CompraDto>.Failure(
                 "Cantidad, costo y precio de los detalles no son válidos."
             );
+
         var productIds = input.Detalles.Select(x => x.ProductoId).Distinct().ToArray();
         if (await db.Productos.CountAsync(x => productIds.Contains(x.Id), ct) != productIds.Length)
             return ServiceResult<CompraDto>.Failure("Uno o más productos no existen.");
@@ -35,6 +36,17 @@ public sealed class CompraService(ResellManagerDbContext db) : ICompraService
             && string.IsNullOrWhiteSpace(input.Comprobante.RutaDocumento)
         )
             return ServiceResult<CompraDto>.Failure("La ruta del comprobante es obligatoria.");
+        if (
+            input.Origen is OrigenCompra.CompraLocal or OrigenCompra.EnvioHermano
+            && !input.FechaIngreso.HasValue
+        )
+            return ServiceResult<CompraDto>.Failure(
+                "La fecha de ingreso es obligatoria para mercancía recibida."
+            );
+        if (input.Origen == OrigenCompra.Importacion && input.FechaIngreso.HasValue)
+            return ServiceResult<CompraDto>.Failure(
+                "La importación debe registrar su ingreso mediante la recepción de mercancía."
+            );
 
         await using var transaction = await db.Database.BeginTransactionAsync(ct);
         var compra = new Compra
@@ -46,7 +58,14 @@ public sealed class CompraService(ResellManagerDbContext db) : ICompraService
             Observaciones = input.Observaciones?.Trim(),
             Total = input.Detalles.Sum(x => x.Cantidad * x.CostoUnitario),
         };
+
+        var generaInventario = input.Origen != OrigenCompra.Catalogo;
+        var estadoInicial =
+            input.Origen == OrigenCompra.Importacion
+                ? EstadoUnidadInventario.Comprada
+                : EstadoUnidadInventario.Disponible;
         var detailNumber = 0;
+
         foreach (var item in input.Detalles)
         {
             detailNumber++;
@@ -56,23 +75,29 @@ public sealed class CompraService(ResellManagerDbContext db) : ICompraService
                 Cantidad = item.Cantidad,
                 CostoUnitario = item.CostoUnitario,
             };
-            for (var i = 1; i <= item.Cantidad; i++)
-                detalle.UnidadesInventario.Add(
-                    new UnidadInventario
-                    {
-                        CodigoInterno = $"{compra.CodigoInterno}-{detailNumber:D2}-{i:D3}",
-                        Estado =
-                            input.Origen == OrigenCompra.CompraLocal
-                                ? EstadoUnidadInventario.Disponible
-                                : EstadoUnidadInventario.Comprada,
-                        FechaIngreso = input.FechaCompra,
-                        Costo = item.CostoUnitario,
-                        PrecioLista = item.PrecioLista,
-                        ProductoId = item.ProductoId,
-                    }
-                );
+
+            if (generaInventario)
+            {
+                for (var i = 1; i <= item.Cantidad; i++)
+                    detalle.UnidadesInventario.Add(
+                        new UnidadInventario
+                        {
+                            CodigoInterno = $"{compra.CodigoInterno}-{detailNumber:D2}-{i:D3}",
+                            Estado = estadoInicial,
+                            FechaIngreso =
+                                estadoInicial == EstadoUnidadInventario.Disponible
+                                    ? input.FechaIngreso
+                                    : null,
+                            Costo = item.CostoUnitario,
+                            PrecioLista = item.PrecioLista,
+                            ProductoId = item.ProductoId,
+                        }
+                    );
+            }
+
             compra.Detalles.Add(detalle);
         }
+
         if (input.Comprobante is not null)
             compra.Comprobante = new ComprobanteCompra
             {
@@ -81,6 +106,7 @@ public sealed class CompraService(ResellManagerDbContext db) : ICompraService
                 RutaDocumento = input.Comprobante.RutaDocumento.Trim(),
                 Observaciones = input.Comprobante.Observaciones?.Trim(),
             };
+
         db.Compras.Add(compra);
         try
         {
@@ -94,6 +120,7 @@ public sealed class CompraService(ResellManagerDbContext db) : ICompraService
                 "No se pudo registrar la compra; verifique que los códigos generados no estén duplicados."
             );
         }
+
         return await ObtenerPorIdAsync(compra.Id, ct);
     }
 
@@ -102,42 +129,81 @@ public sealed class CompraService(ResellManagerDbContext db) : ICompraService
         CancellationToken ct = default
     )
     {
-        var x = await Query().FirstOrDefaultAsync(x => x.Id == id, ct);
-        return x is null
+        var compra = await CompraCompleta().FirstOrDefaultAsync(x => x.Id == id, ct);
+        return compra is null
             ? ServiceResult<CompraDto>.Failure("Compra no encontrada.")
-            : ServiceResult<CompraDto>.Ok(x);
+            : ServiceResult<CompraDto>.Ok(Map(compra));
     }
 
-    public async Task<IReadOnlyList<CompraDto>> ListarAsync(CancellationToken ct = default) =>
-        await Query()
+    public async Task<IReadOnlyList<CompraDto>> ListarAsync(CancellationToken ct = default)
+    {
+        var compras = await CompraCompleta()
             .OrderByDescending(x => x.FechaCompra)
             .ThenByDescending(x => x.Id)
             .ToListAsync(ct);
+        return compras.Select(Map).ToList();
+    }
 
-    private IQueryable<CompraDto> Query() =>
+    public async Task<ServiceResult<ComprobanteCompraDto>> ObtenerComprobanteAsync(
+        int compraId,
+        CancellationToken ct = default
+    )
+    {
+        if (!await db.Compras.AnyAsync(x => x.Id == compraId, ct))
+            return ServiceResult<ComprobanteCompraDto>.Failure("Compra no encontrada.");
+
+        var comprobante = await db
+            .ComprobantesCompra.AsNoTracking()
+            .Where(x => x.CompraId == compraId)
+            .Select(x => new ComprobanteCompraDto(
+                x.Id,
+                x.CompraId,
+                x.NumeroDocumento,
+                x.Fecha,
+                x.RutaDocumento,
+                x.Observaciones
+            ))
+            .FirstOrDefaultAsync(ct);
+
+        return comprobante is null
+            ? ServiceResult<ComprobanteCompraDto>.Failure(
+                "La compra no tiene un comprobante registrado."
+            )
+            : ServiceResult<ComprobanteCompraDto>.Ok(comprobante);
+    }
+
+    private IQueryable<Compra> CompraCompleta() =>
         db
             .Compras.AsNoTracking()
-            .Select(x => new CompraDto(
-                x.Id,
-                x.CodigoInterno,
-                x.FechaCompra,
-                x.Origen,
-                x.Total,
-                x.Observaciones,
-                x.ProveedorId,
-                x.Proveedor.Nombre,
-                x.Detalles.Select(d => new DetalleCompraDto(
-                        d.Id,
-                        d.ProductoId,
-                        d.Producto.Nombre,
-                        d.Cantidad,
-                        d.CostoUnitario,
-                        d.UnidadesInventario.Select(u => u.PrecioLista).FirstOrDefault(),
-                        d.Cantidad * d.CostoUnitario
-                    ))
-                    .ToList(),
-                x.Comprobante != null ? x.Comprobante.RutaDocumento : null
-            ));
+            .Include(x => x.Proveedor)
+            .Include(x => x.Comprobante)
+            .Include(x => x.Detalles)
+                .ThenInclude(x => x.Producto)
+            .Include(x => x.Detalles)
+                .ThenInclude(x => x.UnidadesInventario);
+
+    private static CompraDto Map(Compra x) =>
+        new(
+            x.Id,
+            x.CodigoInterno,
+            x.FechaCompra,
+            x.Origen,
+            x.Total,
+            x.Observaciones,
+            x.ProveedorId,
+            x.Proveedor.Nombre,
+            x.Detalles.Select(d => new DetalleCompraDto(
+                    d.Id,
+                    d.ProductoId,
+                    d.Producto.Nombre,
+                    d.Cantidad,
+                    d.CostoUnitario,
+                    d.UnidadesInventario.FirstOrDefault()?.PrecioLista ?? 0m,
+                    d.Cantidad * d.CostoUnitario
+                ))
+                .ToList(),
+            x.Comprobante?.RutaDocumento
+        );
 }
 
 public sealed class InventarioService(ResellManagerDbContext db) : IInventarioService
@@ -145,17 +211,19 @@ public sealed class InventarioService(ResellManagerDbContext db) : IInventarioSe
     public async Task<IReadOnlyList<UnidadInventarioDto>> ListarAsync(
         CancellationToken ct = default
     ) =>
-        await Query()
-            .OrderByDescending(x => x.FechaIngreso)
-            .ThenBy(x => x.CodigoInterno)
+        await Query(
+                db.UnidadesInventario.OrderByDescending(x => x.FechaIngreso)
+                    .ThenBy(x => x.CodigoInterno)
+            )
             .ToListAsync(ct);
 
     public async Task<IReadOnlyList<UnidadInventarioDto>> ListarDisponiblesAsync(
         CancellationToken ct = default
     ) =>
-        await Query()
-            .Where(x => x.Estado == EstadoUnidadInventario.Disponible)
-            .OrderBy(x => x.Producto)
+        await Query(
+                db.UnidadesInventario.Where(x => x.Estado == EstadoUnidadInventario.Disponible)
+                    .OrderBy(x => x.Producto.Nombre)
+            )
             .ToListAsync(ct);
 
     public async Task<IReadOnlyList<UnidadInventarioDto>> BuscarAsync(
@@ -164,19 +232,72 @@ public sealed class InventarioService(ResellManagerDbContext db) : IInventarioSe
         CancellationToken ct = default
     )
     {
-        var query = Query();
+        var unidades = db.UnidadesInventario.AsQueryable();
         if (!string.IsNullOrWhiteSpace(termino))
         {
             termino = termino.Trim();
-            query = query.Where(x =>
-                x.Producto.Contains(termino)
-                || x.CodigoProducto.Contains(termino)
+            unidades = unidades.Where(x =>
+                x.Producto.Nombre.Contains(termino)
+                || x.Producto.CodigoInterno.Contains(termino)
                 || x.CodigoInterno.Contains(termino)
             );
         }
+
         if (estado.HasValue)
-            query = query.Where(x => x.Estado == estado.Value);
-        return await query.OrderBy(x => x.Producto).ThenBy(x => x.CodigoInterno).ToListAsync(ct);
+            unidades = unidades.Where(x => x.Estado == estado.Value);
+
+        return await Query(unidades.OrderBy(x => x.Producto.Nombre).ThenBy(x => x.CodigoInterno))
+            .ToListAsync(ct);
+    }
+
+    public async Task<ServiceResult<IReadOnlyList<UnidadInventarioDto>>> RegistrarRecepcionAsync(
+        RecepcionMercanciaInput input,
+        CancellationToken ct = default
+    )
+    {
+        var ids = input.UnidadInventarioIds.Distinct().ToArray();
+        if (ids.Length == 0)
+            return ServiceResult<IReadOnlyList<UnidadInventarioDto>>.Failure(
+                "Debe indicar al menos una unidad para recibir."
+            );
+
+        var unidades = await db
+            .UnidadesInventario.Include(x => x.DetalleCompra)
+                .ThenInclude(x => x.Compra)
+            .Where(x => ids.Contains(x.Id))
+            .ToListAsync(ct);
+
+        if (unidades.Count != ids.Length)
+            return ServiceResult<IReadOnlyList<UnidadInventarioDto>>.Failure(
+                "Una o más unidades de inventario no existen."
+            );
+        if (unidades.Any(x => x.DetalleCompra.Compra.Origen == OrigenCompra.Catalogo))
+            return ServiceResult<IReadOnlyList<UnidadInventarioDto>>.Failure(
+                "Las compras de catálogo no generan unidades para recepción."
+            );
+        if (unidades.Any(x => x.Estado == EstadoUnidadInventario.Vendida))
+            return ServiceResult<IReadOnlyList<UnidadInventarioDto>>.Failure(
+                "Una unidad vendida no puede recibirse."
+            );
+        if (unidades.Any(x => x.Estado == EstadoUnidadInventario.Entregada))
+            return ServiceResult<IReadOnlyList<UnidadInventarioDto>>.Failure(
+                "Una unidad entregada no puede recibirse."
+            );
+        if (unidades.Any(x => x.Estado == EstadoUnidadInventario.Disponible))
+            return ServiceResult<IReadOnlyList<UnidadInventarioDto>>.Failure(
+                "Una o más unidades ya están disponibles."
+            );
+
+        foreach (var unidad in unidades)
+        {
+            unidad.Estado = EstadoUnidadInventario.Disponible;
+            unidad.FechaIngreso = input.FechaRecepcion;
+        }
+
+        await db.SaveChangesAsync(ct);
+        var recibidas = await Query(db.UnidadesInventario.Where(x => ids.Contains(x.Id)))
+            .ToListAsync(ct);
+        return ServiceResult<IReadOnlyList<UnidadInventarioDto>>.Ok(recibidas);
     }
 
     public async Task<ServiceResult<UnidadInventarioDto>> CambiarEstadoAsync(
@@ -185,41 +306,42 @@ public sealed class InventarioService(ResellManagerDbContext db) : IInventarioSe
         CancellationToken ct = default
     )
     {
-        var x = await db.UnidadesInventario.FindAsync([id], ct);
-        if (x is null)
+        var unidad = await db.UnidadesInventario.FindAsync([id], ct);
+        if (unidad is null)
             return ServiceResult<UnidadInventarioDto>.Failure(
                 "Unidad de inventario no encontrada."
             );
         if (
-            (x.Estado is EstadoUnidadInventario.Vendida or EstadoUnidadInventario.Entregada)
-            && estado == EstadoUnidadInventario.Disponible
+            estado == EstadoUnidadInventario.Disponible
+            && unidad.Estado != EstadoUnidadInventario.Disponible
         )
             return ServiceResult<UnidadInventarioDto>.Failure(
-                "Una unidad vendida o entregada no puede volver a disponible."
+                "Use la recepción de mercancía para marcar una unidad como disponible."
             );
         if (
-            x.Estado == EstadoUnidadInventario.Entregada
+            unidad.Estado == EstadoUnidadInventario.Entregada
             && estado != EstadoUnidadInventario.Entregada
         )
             return ServiceResult<UnidadInventarioDto>.Failure(
                 "Una unidad entregada no puede cambiar de estado."
             );
         if (
-            x.Estado == EstadoUnidadInventario.Vendida
+            unidad.Estado == EstadoUnidadInventario.Vendida
             && estado is not (EstadoUnidadInventario.Vendida or EstadoUnidadInventario.Entregada)
         )
             return ServiceResult<UnidadInventarioDto>.Failure(
                 "Una unidad vendida solo puede marcarse como entregada."
             );
-        x.Estado = estado;
+
+        unidad.Estado = estado;
         await db.SaveChangesAsync(ct);
-        var result = await Query().SingleAsync(y => y.Id == id, ct);
+        var result = await Query(db.UnidadesInventario.Where(x => x.Id == id)).SingleAsync(ct);
         return ServiceResult<UnidadInventarioDto>.Ok(result);
     }
 
-    private IQueryable<UnidadInventarioDto> Query() =>
-        db
-            .UnidadesInventario.AsNoTracking()
+    private static IQueryable<UnidadInventarioDto> Query(IQueryable<UnidadInventario> source) =>
+        source
+            .AsNoTracking()
             .Select(x => new UnidadInventarioDto(
                 x.Id,
                 x.CodigoInterno,
