@@ -159,14 +159,14 @@ internal sealed class DetalleVentaConfiguration : IEntityTypeConfiguration<Detal
         b.Property(x => x.PrecioFinal).HasColumnType("decimal(10,2)");
         b.Property(x => x.CostoUnitario).HasColumnType("decimal(10,2)");
         b.Property(x => x.Observaciones).HasMaxLength(500);
-        b.HasIndex(x => x.UnidadInventarioId).IsUnique();
+        b.HasIndex(x => x.UnidadInventarioId);
         b.HasOne(x => x.Venta)
             .WithMany(x => x.Detalles)
             .HasForeignKey(x => x.VentaId)
             .OnDelete(DeleteBehavior.Cascade);
         b.HasOne(x => x.UnidadInventario)
-            .WithOne(x => x.DetalleVenta)
-            .HasForeignKey<DetalleVenta>(x => x.UnidadInventarioId)
+            .WithMany(x => x.DetallesVenta)
+            .HasForeignKey(x => x.UnidadInventarioId)
             .OnDelete(DeleteBehavior.Restrict);
         b.HasOne(x => x.Producto)
             .WithMany()

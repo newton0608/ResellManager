@@ -275,20 +275,40 @@ public sealed class VentaService(ResellManagerDbContext db) : IVentaService
         return ServiceResult<decimal>.Ok(total);
     }
 
-    public async Task<ServiceResult> CancelarAsync(int id, CancellationToken ct = default)
+public async Task<ServiceResult> CancelarAsync(int id, CancellationToken ct = default)
     {
         var venta = await db
             .Ventas.Include(x => x.Pedido)
+            .Include(x => x.Detalles)
+            .ThenInclude(x => x.UnidadInventario)
             .FirstOrDefaultAsync(x => x.Id == id, ct);
 
         if (venta is null)
             return ServiceResult.Failure("Venta no encontrada.");
         if (venta.Estado == EstadoVenta.Cancelada)
             return ServiceResult.Ok();
+        if (
+            venta.Detalles.Any(x =>
+                x.UnidadInventario?.Estado == EstadoUnidadInventario.Entregada
+            )
+        )
+            return ServiceResult.Failure(
+                "La venta incluye unidades entregadas y requiere un proceso de devolución o cambio futuro."
+            );
+
+        await using var transaction = await db.Database.BeginTransactionAsync(ct);
 
         venta.Estado = EstadoVenta.Cancelada;
+        foreach (
+            var unidad in venta.Detalles
+                .Where(x => x.UnidadInventario?.Estado == EstadoUnidadInventario.Vendida)
+                .Select(x => x.UnidadInventario!)
+        )
+            unidad.Estado = EstadoUnidadInventario.Disponible;
+
         venta.Pedido.Estado = EstadoPedido.Pendiente;
         await db.SaveChangesAsync(ct);
+        await transaction.CommitAsync(ct);
         return ServiceResult.Ok();
     }
 
@@ -336,7 +356,7 @@ public sealed class VentaService(ResellManagerDbContext db) : IVentaService
                 x.ProductoId,
                 x.Costo,
                 x.Estado,
-                Usada = x.DetalleVenta != null,
+                Usada = x.DetallesVenta.Any(d => d.Venta.Estado == EstadoVenta.Registrada),
             })
             .ToListAsync(ct);
 

@@ -15,5 +15,5 @@ public class UnidadInventario
 
     public Producto Producto { get; set; } = null!;
     public DetalleCompra DetalleCompra { get; set; } = null!;
-    public DetalleVenta? DetalleVenta { get; set; }
+    public ICollection<DetalleVenta> DetallesVenta { get; set; } = [];
 }
