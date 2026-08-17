@@ -16,6 +16,8 @@ Representa una unidad física de un producto.
 
 Cada unidad posee su propio ciclo de vida y estado dentro del inventario.
 
+Puede estar comprada, en tránsito, disponible, apartada, vendida o entregada.
+
 ---
 
 ## Compra
@@ -24,13 +26,15 @@ Proceso mediante el cual se adquieren productos a un proveedor.
 
 Puede contener uno o varios productos.
 
+No toda compra genera inventario automáticamente; las compras de catálogo pueden no generar unidades si el producto no pasa físicamente por el inventario.
+
 ---
 
 ## DetalleCompra
 
 Representa cada producto incluido dentro de una compra.
 
-Incluye cantidades, costos y referencias necesarias para generar las unidades de inventario.
+Incluye cantidades, costos y referencias necesarias para generar unidades de inventario cuando la compra sí ingresa al inventario.
 
 ---
 
@@ -70,21 +74,29 @@ Puede tener pedidos, ventas, pagos y saldo pendiente.
 
 Solicitud realizada por un cliente antes de concretar la venta.
 
-Puede representar un apartado o un pedido de catálogo.
+Puede representar una venta presencial generada automáticamente, un apartado o un pedido de catálogo.
 
 ---
 
 ## Venta
 
-Transacción mediante la cual uno o varios productos son entregados a un cliente.
+Transacción registrada a partir de un pedido.
 
 Puede ser al contado o a crédito.
+
+Una venta registrada genera saldo para el cliente si no se paga completamente.
+
+Una venta no necesariamente significa que el producto ya fue entregado; la entrega se controla con el estado de la UnidadInventario.
 
 ---
 
 ## DetalleVenta
 
-Representa cada unidad de inventario incluida dentro de una venta.
+Representa cada artículo incluido dentro de una venta.
+
+En ventas de inventario, referencia una UnidadInventario.
+
+En ventas de catálogo, puede registrar Producto, CostoUnitario y PrecioFinal sin UnidadInventario.
 
 ---
 
@@ -93,6 +105,10 @@ Representa cada unidad de inventario incluida dentro de una venta.
 Registro de un abono o pago realizado por un cliente.
 
 Reduce automáticamente el saldo pendiente.
+
+No se asocia a una venta específica, sino al cliente.
+
+No puede superar la deuda actual del cliente.
 
 ---
 
@@ -121,6 +137,8 @@ No constituye una entidad independiente.
 
 Reserva realizada por un cliente antes de la compra o entrega del producto.
 
+Debe estar asociada de forma clara a un cliente o pedido antes de implementarse completamente en la interfaz.
+
 ---
 
 ## Catálogo
@@ -129,13 +147,15 @@ Conjunto de productos ofrecidos por proveedores externos como Ágora o Andrea.
 
 Generalmente se venden bajo pedido.
 
+Puede generar una venta sin UnidadInventario cuando el producto no pasa físicamente por inventario.
+
 ---
 
 ## Compra Local
 
 Compra realizada dentro de Guatemala.
 
-Las unidades ingresan directamente al inventario.
+Las unidades ingresan directamente al inventario disponible.
 
 ---
 
@@ -145,11 +165,15 @@ Compra realizada en Estados Unidos.
 
 Las unidades pueden transportarse en equipaje o enviarse mediante caja.
 
+La fecha de compra puede ser distinta a la fecha de ingreso al inventario.
+
 ---
 
 ## Recepción de Mercancía
 
-Proceso mediante el cual las unidades pasan de "En tránsito" a "Disponibles".
+Proceso mediante el cual las unidades llegan físicamente al negocio o a Guatemala y pasan a estar disponibles.
+
+Puede aplicar a importaciones, envíos del hijo o compras que inicialmente no estaban disponibles.
 
 ---
 
@@ -193,10 +217,16 @@ No representa el identificador interno del sistema.
 
 Monto que un cliente aún debe pagar por sus compras.
 
-Se actualiza automáticamente con cada venta y cada pago.
+Se calcula automáticamente con ventas registradas menos pagos.
+
+No se almacena como campo fijo.
 
 ---
 
 ## Ganancia
 
-Diferencia entre el costo registrado de la unidad y su precio de venta.
+Diferencia entre el costo registrado y el precio de venta.
+
+En inventario se calcula usando el costo de la UnidadInventario.
+
+En catálogo sin inventario se calcula usando el CostoUnitario registrado en el DetalleVenta.
