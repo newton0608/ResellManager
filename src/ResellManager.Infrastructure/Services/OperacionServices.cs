@@ -464,7 +464,18 @@ public sealed class PagoService(ResellManagerDbContext db) : IPagoService
             return ServiceResult<PagoDto>.Failure("El monto debe ser mayor que cero.");
         if (!await db.Clientes.AnyAsync(x => x.Id == input.ClienteId, ct))
             return ServiceResult<PagoDto>.Failure("Cliente no encontrado.");
-        var x = new Pago
+
+        await using var transaction = await db.Database.BeginTransactionAsync(ct);
+        var saldoActual = await ObtenerSaldoActualAsync(input.ClienteId, ct);
+
+        if (saldoActual <= 0)
+            return ServiceResult<PagoDto>.Failure("El cliente no tiene deuda pendiente.");
+        if (input.Monto > saldoActual)
+            return ServiceResult<PagoDto>.Failure(
+                $"El monto del pago supera la deuda actual del cliente de {saldoActual:0.00}."
+            );
+
+        var pago = new Pago
         {
             ClienteId = input.ClienteId,
             Fecha = input.Fecha,
@@ -473,9 +484,11 @@ public sealed class PagoService(ResellManagerDbContext db) : IPagoService
             Referencia = input.Referencia?.Trim(),
             Observaciones = input.Observaciones?.Trim(),
         };
-        db.Pagos.Add(x);
+
+        db.Pagos.Add(pago);
         await db.SaveChangesAsync(ct);
-        return await ObtenerPorIdAsync(x.Id, ct);
+        await transaction.CommitAsync(ct);
+        return await ObtenerPorIdAsync(pago.Id, ct);
     }
 
     public async Task<ServiceResult<PagoDto>> ObtenerPorIdAsync(
@@ -498,6 +511,25 @@ public sealed class PagoService(ResellManagerDbContext db) : IPagoService
             .OrderByDescending(x => x.Fecha)
             .ThenByDescending(x => x.Id)
             .ToListAsync(ct);
+
+    private async Task<decimal> ObtenerSaldoActualAsync(int clienteId, CancellationToken ct)
+    {
+        var totalVentas =
+            await db.DetallesVenta
+                .Where(x =>
+                    x.Venta.Estado == EstadoVenta.Registrada
+                    && x.Venta.Pedido.ClienteId == clienteId
+                )
+                .SumAsync(x => (decimal?)x.PrecioFinal, ct)
+            ?? 0m;
+        var totalPagos =
+            await db.Pagos
+                .Where(x => x.ClienteId == clienteId)
+                .SumAsync(x => (decimal?)x.Monto, ct)
+            ?? 0m;
+
+        return totalVentas - totalPagos;
+    }
 
     private IQueryable<PagoDto> Query() =>
         db
