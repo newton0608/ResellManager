@@ -145,9 +145,12 @@ public sealed class VentaService(ResellManagerDbContext db) : IVentaService
     {
         if (string.IsNullOrWhiteSpace(input.CodigoInterno) || input.Detalles.Count == 0)
             return ServiceResult<VentaDto>.Failure("Código y detalles son obligatorios.");
+
         var pedido = await db
             .Pedidos.Include(x => x.Venta)
+            .Include(x => x.Detalles)
             .FirstOrDefaultAsync(x => x.Id == input.PedidoId, ct);
+
         if (pedido is null)
             return ServiceResult<VentaDto>.Failure("Pedido no encontrado.");
         if (pedido.Estado == EstadoPedido.Cancelado)
@@ -158,9 +161,11 @@ public sealed class VentaService(ResellManagerDbContext db) : IVentaService
             return ServiceResult<VentaDto>.Failure("El pedido ya tiene una venta.");
         if (await db.Ventas.AnyAsync(x => x.CodigoInterno == input.CodigoInterno.Trim(), ct))
             return ServiceResult<VentaDto>.Failure("El código de venta ya está registrado.");
-        var error = await ValidarUnidades(input.Detalles, ct);
+
+        var error = await ValidarDetallesVentaAsync(pedido, input.Detalles, ct);
         if (error is not null)
             return ServiceResult<VentaDto>.Failure(error);
+
         await using var transaction = await db.Database.BeginTransactionAsync(ct);
         var venta = new Venta
         {
@@ -170,22 +175,27 @@ public sealed class VentaService(ResellManagerDbContext db) : IVentaService
             Estado = EstadoVenta.Registrada,
             Observaciones = input.Observaciones?.Trim(),
         };
-        var ids = input.Detalles.Select(x => x.UnidadInventarioId).ToArray();
-        var unidades = await db
-            .UnidadesInventario.Where(x => ids.Contains(x.Id))
-            .ToDictionaryAsync(x => x.Id, ct);
-        foreach (var item in input.Detalles)
+
+        if (pedido.TipoPedido == TipoPedido.Catalogo)
         {
-            unidades[item.UnidadInventarioId].Estado = EstadoUnidadInventario.Vendida;
-            venta.Detalles.Add(
-                new DetalleVenta
-                {
-                    UnidadInventarioId = item.UnidadInventarioId,
-                    PrecioFinal = item.PrecioFinal,
-                    Observaciones = item.Observaciones?.Trim(),
-                }
-            );
+            foreach (var item in input.Detalles)
+                venta.Detalles.Add(CrearDetalleCatalogo(item));
         }
+        else
+        {
+            var ids = input.Detalles.Select(x => x.UnidadInventarioId!.Value).ToArray();
+            var unidades = await db
+                .UnidadesInventario.Where(x => ids.Contains(x.Id))
+                .ToDictionaryAsync(x => x.Id, ct);
+
+            foreach (var item in input.Detalles)
+            {
+                var unidad = unidades[item.UnidadInventarioId!.Value];
+                unidad.Estado = EstadoUnidadInventario.Vendida;
+                venta.Detalles.Add(CrearDetalleInventario(item, unidad));
+            }
+        }
+
         pedido.Estado = EstadoPedido.Completado;
         db.Ventas.Add(venta);
         await db.SaveChangesAsync(ct);
@@ -199,25 +209,34 @@ public sealed class VentaService(ResellManagerDbContext db) : IVentaService
         CancellationToken ct = default
     )
     {
-        var venta = await db.Ventas.FindAsync([ventaId], ct);
+        var venta = await db
+            .Ventas.Include(x => x.Pedido)
+            .ThenInclude(x => x.Detalles)
+            .FirstOrDefaultAsync(x => x.Id == ventaId, ct);
+
         if (venta is null)
             return ServiceResult<VentaDto>.Failure("Venta no encontrada.");
         if (venta.Estado == EstadoVenta.Cancelada)
             return ServiceResult<VentaDto>.Failure("La venta está cancelada.");
-        var error = await ValidarUnidades([input], ct);
+
+        var error = await ValidarDetallesVentaAsync(venta.Pedido, [input], ct);
         if (error is not null)
             return ServiceResult<VentaDto>.Failure(error);
-        var unidad = await db.UnidadesInventario.FindAsync([input.UnidadInventarioId], ct);
-        unidad!.Estado = EstadoUnidadInventario.Vendida;
-        db.DetallesVenta.Add(
-            new DetalleVenta
-            {
-                VentaId = ventaId,
-                UnidadInventarioId = input.UnidadInventarioId,
-                PrecioFinal = input.PrecioFinal,
-                Observaciones = input.Observaciones?.Trim(),
-            }
-        );
+
+        if (venta.Pedido.TipoPedido == TipoPedido.Catalogo)
+        {
+            db.DetallesVenta.Add(CrearDetalleCatalogo(input, ventaId));
+        }
+        else
+        {
+            var unidad = await db.UnidadesInventario.FindAsync(
+                [input.UnidadInventarioId!.Value],
+                ct
+            );
+            unidad!.Estado = EstadoUnidadInventario.Vendida;
+            db.DetallesVenta.Add(CrearDetalleInventario(input, unidad, ventaId));
+        }
+
         await db.SaveChangesAsync(ct);
         return await ObtenerPorIdAsync(ventaId, ct);
     }
@@ -227,14 +246,17 @@ public sealed class VentaService(ResellManagerDbContext db) : IVentaService
         CancellationToken ct = default
     )
     {
-        var x = await Query().FirstOrDefaultAsync(x => x.Id == id, ct);
-        return x is null
+        var venta = await Query().FirstOrDefaultAsync(x => x.Id == id, ct);
+        return venta is null
             ? ServiceResult<VentaDto>.Failure("Venta no encontrada.")
-            : ServiceResult<VentaDto>.Ok(x);
+            : ServiceResult<VentaDto>.Ok(venta);
     }
 
     public async Task<IReadOnlyList<VentaDto>> ListarAsync(CancellationToken ct = default) =>
-        await Query().OrderByDescending(x => x.Fecha).ThenByDescending(x => x.Id).ToListAsync(ct);
+        await Query()
+            .OrderByDescending(x => x.Fecha)
+            .ThenByDescending(x => x.Id)
+            .ToListAsync(ct);
 
     public async Task<ServiceResult<decimal>> CalcularTotalAsync(
         int ventaId,
@@ -245,8 +267,8 @@ public sealed class VentaService(ResellManagerDbContext db) : IVentaService
             return ServiceResult<decimal>.Failure("Venta no encontrada.");
 
         var total =
-            await db
-                .DetallesVenta.Where(x => x.VentaId == ventaId)
+            await db.DetallesVenta
+                .Where(x => x.VentaId == ventaId)
                 .SumAsync(x => (decimal?)x.PrecioFinal, ct)
             ?? 0m;
 
@@ -256,62 +278,131 @@ public sealed class VentaService(ResellManagerDbContext db) : IVentaService
     public async Task<ServiceResult> CancelarAsync(int id, CancellationToken ct = default)
     {
         var venta = await db
-            .Ventas.Include(x => x.Detalles)
-                .ThenInclude(x => x.UnidadInventario)
-            .Include(x => x.Pedido)
+            .Ventas.Include(x => x.Pedido)
             .FirstOrDefaultAsync(x => x.Id == id, ct);
 
         if (venta is null)
             return ServiceResult.Failure("Venta no encontrada.");
-
         if (venta.Estado == EstadoVenta.Cancelada)
             return ServiceResult.Ok();
 
-        if (venta.Detalles.Any(x => x.UnidadInventario.Estado == EstadoUnidadInventario.Entregada))
-            return ServiceResult.Failure("No se puede cancelar una venta con unidades entregadas.");
-
-        await using var transaction = await db.Database.BeginTransactionAsync(ct);
-
         venta.Estado = EstadoVenta.Cancelada;
-        foreach (var detalle in venta.Detalles)
-            detalle.UnidadInventario.Estado = EstadoUnidadInventario.Disponible;
-
         venta.Pedido.Estado = EstadoPedido.Pendiente;
-
         await db.SaveChangesAsync(ct);
-        await transaction.CommitAsync(ct);
         return ServiceResult.Ok();
     }
 
-    private async Task<string?> ValidarUnidades(
+    private async Task<string?> ValidarDetallesVentaAsync(
+        Pedido pedido,
         IEnumerable<DetalleVentaInput> values,
         CancellationToken ct
     )
     {
-        var a = values.ToArray();
-        if (a.Any(x => x.PrecioFinal < 0))
+        var detalles = values.ToArray();
+        if (detalles.Any(x => x.PrecioFinal < 0))
             return "El precio final no puede ser negativo.";
-        var ids = a.Select(x => x.UnidadInventarioId).ToArray();
+
+        var productosPedido = pedido.Detalles.Select(x => x.ProductoId).ToHashSet();
+        if (pedido.TipoPedido == TipoPedido.Catalogo)
+        {
+            if (detalles.Any(x => x.UnidadInventarioId.HasValue))
+                return "Una venta de catálogo no puede incluir unidades de inventario.";
+            if (
+                detalles.Any(x =>
+                    !x.ProductoId.HasValue
+                    || !x.CostoUnitario.HasValue
+                    || x.CostoUnitario.Value < 0
+                )
+            )
+                return "Los detalles de catálogo requieren producto y costo unitario válido.";
+            if (detalles.Any(x => !productosPedido.Contains(x.ProductoId!.Value)))
+                return "El producto vendido debe estar incluido en el pedido.";
+
+            return null;
+        }
+
+        if (detalles.Any(x => !x.UnidadInventarioId.HasValue))
+            return "Las ventas que no son de catálogo requieren una unidad de inventario por detalle.";
+
+        var ids = detalles.Select(x => x.UnidadInventarioId!.Value).ToArray();
         if (ids.Distinct().Count() != ids.Length)
-            return "Una unidad no puede repetirse.";
-        var units = await db
+            return "Una unidad de inventario no puede repetirse en la venta.";
+
+        var unidades = await db
             .UnidadesInventario.Where(x => ids.Contains(x.Id))
-            .Select(x => new { x.Estado, Usada = x.DetalleVenta != null })
+            .Select(x => new
+            {
+                x.Id,
+                x.ProductoId,
+                x.Costo,
+                x.Estado,
+                Usada = x.DetalleVenta != null,
+            })
             .ToListAsync(ct);
-        return
-            units.Count != ids.Length
-            || units.Any(x =>
+
+        if (unidades.Count != ids.Length)
+            return "Una o más unidades de inventario no existen.";
+        if (
+            unidades.Any(x =>
                 x.Usada
                 || x.Estado
-                    is not (EstadoUnidadInventario.Disponible or EstadoUnidadInventario.Apartada)
+                    is not (
+                        EstadoUnidadInventario.Disponible
+                        or EstadoUnidadInventario.Apartada
+                    )
             )
-            ? "Solo se pueden vender unidades disponibles o apartadas no vendidas."
-            : null;
+        )
+            return "Solo se pueden vender unidades disponibles o apartadas no vendidas.";
+        if (unidades.Any(x => !productosPedido.Contains(x.ProductoId)))
+            return "El producto de cada unidad vendida debe estar incluido en el pedido.";
+
+        var unidadesPorId = unidades.ToDictionary(x => x.Id);
+        if (
+            detalles.Any(x =>
+                x.ProductoId.HasValue
+                && x.ProductoId.Value
+                    != unidadesPorId[x.UnidadInventarioId!.Value].ProductoId
+            )
+        )
+            return "El producto indicado no corresponde a la unidad de inventario.";
+        if (
+            detalles.Any(x =>
+                x.CostoUnitario.HasValue
+                && x.CostoUnitario.Value != unidadesPorId[x.UnidadInventarioId!.Value].Costo
+            )
+        )
+            return "El costo indicado no corresponde a la unidad de inventario.";
+
+        return null;
     }
 
+    private static DetalleVenta CrearDetalleCatalogo(DetalleVentaInput input, int ventaId = 0) =>
+        new()
+        {
+            VentaId = ventaId,
+            ProductoId = input.ProductoId!.Value,
+            CostoUnitario = input.CostoUnitario!.Value,
+            PrecioFinal = input.PrecioFinal,
+            Observaciones = input.Observaciones?.Trim(),
+        };
+
+    private static DetalleVenta CrearDetalleInventario(
+        DetalleVentaInput input,
+        UnidadInventario unidad,
+        int ventaId = 0
+    ) =>
+        new()
+        {
+            VentaId = ventaId,
+            UnidadInventarioId = unidad.Id,
+            ProductoId = unidad.ProductoId,
+            CostoUnitario = unidad.Costo,
+            PrecioFinal = input.PrecioFinal,
+            Observaciones = input.Observaciones?.Trim(),
+        };
+
     private IQueryable<VentaDto> Query() =>
-        db
-            .Ventas.AsNoTracking()
+        db.Ventas.AsNoTracking()
             .Select(x => new VentaDto(
                 x.Id,
                 x.CodigoInterno,
@@ -321,13 +412,20 @@ public sealed class VentaService(ResellManagerDbContext db) : IVentaService
                 x.PedidoId,
                 x.Pedido.ClienteId,
                 x.Pedido.Cliente.Nombres
-                    + (x.Pedido.Cliente.Apellidos == null ? "" : " " + x.Pedido.Cliente.Apellidos),
+                    + (x.Pedido.Cliente.Apellidos == null
+                        ? ""
+                        : " " + x.Pedido.Cliente.Apellidos),
                 x.Detalles.Sum(d => d.PrecioFinal),
-                x.Detalles.Select(d => new DetalleVentaDto(
+                x.Detalles
+                    .Select(d => new DetalleVentaDto(
                         d.Id,
                         d.UnidadInventarioId,
-                        d.UnidadInventario.CodigoInterno,
-                        d.UnidadInventario.Producto.Nombre,
+                        d.UnidadInventario == null ? null : d.UnidadInventario.CodigoInterno,
+                        d.ProductoId ?? d.UnidadInventario!.ProductoId,
+                        d.Producto == null
+                            ? d.UnidadInventario!.Producto.Nombre
+                            : d.Producto.Nombre,
+                        d.CostoUnitario ?? d.UnidadInventario!.Costo,
                         d.PrecioFinal,
                         d.Observaciones
                     ))
@@ -468,8 +566,12 @@ public sealed class DashboardService(ResellManagerDbContext db) : IDashboardServ
                 x.Detalles.Select(d => new DetalleVentaDto(
                         d.Id,
                         d.UnidadInventarioId,
-                        d.UnidadInventario.CodigoInterno,
-                        d.UnidadInventario.Producto.Nombre,
+                        d.UnidadInventario == null ? null : d.UnidadInventario.CodigoInterno,
+                        d.ProductoId ?? d.UnidadInventario!.ProductoId,
+                        d.Producto == null
+                            ? d.UnidadInventario!.Producto.Nombre
+                            : d.Producto.Nombre,
+                        d.CostoUnitario ?? d.UnidadInventario!.Costo,
                         d.PrecioFinal,
                         d.Observaciones
                     ))
