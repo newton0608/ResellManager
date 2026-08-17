@@ -23,7 +23,7 @@ Migrar a PostgreSQL si el proyecto crece
 
 - Importación EE.UU.
 - Compra local.
-- Catálogo (Agora / Andrea)
+- Catálogo (Ágora / Andrea)
 - Envíos del hijo
 
 ## 004 No desarrollar una aplicación móvil nativa.
@@ -33,3 +33,38 @@ Una Web App cubre todos los dispositivos.
 
 Resultado:
 Blazor.
+
+## 005 Las ventas por catálogo pueden no generar inventario.
+
+Motivo:
+En el flujo real del negocio, las ventas por catálogo pueden gestionarse como pedido y venta sin que el producto pase físicamente por inventario.
+
+Resultado:
+Una venta de catálogo puede registrar DetalleVenta con Producto, CostoUnitario y PrecioFinal sin UnidadInventario.
+
+Restricción:
+Solo los pedidos de tipo Catálogo pueden generar ventas sin UnidadInventario.
+
+## 006 Una compra de catálogo no genera unidades automáticamente.
+
+Motivo:
+No tiene sentido crear UnidadInventario cuando el producto de catálogo no pasa físicamente por el inventario del negocio.
+
+Resultado:
+Las compras de catálogo no deben generar UnidadInventario automáticamente, salvo que se decida registrar recepción física de mercancía.
+
+## 007 La recepción de mercancía será un caso de uso explícito.
+
+Motivo:
+La fecha de compra y la fecha real de ingreso al inventario pueden ser distintas, especialmente en importaciones.
+
+Resultado:
+Se debe implementar un caso de uso para registrar recepción de mercancía y mover unidades compradas o en tránsito a disponibles.
+
+## 008 Las ventas canceladas conservan historial.
+
+Motivo:
+El sistema debe conservar trazabilidad de lo que ocurrió, pero también permitir revender una unidad si la venta fue cancelada antes de la entrega.
+
+Resultado:
+Si una venta se cancela antes de entregar, sus unidades pueden volver a Disponible y los DetalleVenta quedan como historial. Si ya existen unidades Entregadas, la cancelación simple no debe permitirse y debe manejarse con un flujo futuro de devolución o cambio.
