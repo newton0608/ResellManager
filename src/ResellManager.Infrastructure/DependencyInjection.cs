@@ -2,7 +2,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using ResellManager.Application.Interfaces;
 using ResellManager.Infrastructure.Persistence;
+using ResellManager.Infrastructure.Services;
 
 namespace ResellManager.Infrastructure;
 
@@ -29,6 +31,16 @@ public static class DependencyInjection
             .AddSignInManager()
             .AddDefaultTokenProviders();
 
+        services.AddScoped<IClienteService, ClienteService>();
+        services.AddScoped<ICategoriaService, CategoriaService>();
+        services.AddScoped<IProductoService, ProductoService>();
+        services.AddScoped<IProveedorService, ProveedorService>();
+        services.AddScoped<ICompraService, CompraService>();
+        services.AddScoped<IInventarioService, InventarioService>();
+        services.AddScoped<IPedidoService, PedidoService>();
+        services.AddScoped<IVentaService, VentaService>();
+        services.AddScoped<IPagoService, PagoService>();
+        services.AddScoped<IDashboardService, DashboardService>();
         return services;
     }
 }
