@@ -71,6 +71,25 @@ public sealed class CompraTests
 public sealed class RecepcionTests
 {
     [Fact]
+    public async Task UnidadApartada_AlRecibirse_ConservaEstadoApartada()
+    {
+        await using var test = await TestDatabase.CreateAsync();
+        var unidad = await test.CrearUnidadImportadaAsync("IMP-APARTADA");
+        unidad.Estado = EstadoUnidadInventario.Apartada;
+        await test.Db.SaveChangesAsync();
+        var fecha = new DateOnly(2026, 2, 15);
+
+        var result = await new InventarioService(test.Db).RegistrarRecepcionAsync(
+            new RecepcionMercanciaInput(fecha, [unidad.Id])
+        );
+
+        Assert.True(result.IsSuccess, result.ErrorMessage);
+        await test.Db.Entry(unidad).ReloadAsync();
+        Assert.Equal(EstadoUnidadInventario.Apartada, unidad.Estado);
+        Assert.Equal(fecha, unidad.FechaIngreso);
+    }
+
+    [Fact]
     public async Task UnidadImportada_PuedeRecibirse()
     {
         await using var test = await TestDatabase.CreateAsync();

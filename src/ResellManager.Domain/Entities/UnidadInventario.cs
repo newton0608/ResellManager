@@ -9,7 +9,6 @@ public class UnidadInventario
     public EstadoUnidadInventario Estado { get; set; }
     public DateOnly? FechaIngreso { get; set; }
     public decimal Costo { get; set; }
-    public decimal PrecioLista { get; set; }
     public int ProductoId { get; set; }
     public int DetalleCompraId { get; set; }
 

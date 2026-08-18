@@ -23,9 +23,9 @@ public sealed class CompraService(ResellManagerDbContext db) : ICompraService
             return ServiceResult<CompraDto>.Failure("Proveedor no encontrado.");
         if (await db.Compras.AnyAsync(x => x.CodigoInterno == input.CodigoInterno.Trim(), ct))
             return ServiceResult<CompraDto>.Failure("El código de compra ya está registrado.");
-        if (input.Detalles.Any(x => x.Cantidad <= 0 || x.CostoUnitario < 0 || x.PrecioLista < 0))
+        if (input.Detalles.Any(x => x.Cantidad <= 0 || x.CostoUnitario < 0))
             return ServiceResult<CompraDto>.Failure(
-                "Cantidad, costo y precio de los detalles no son válidos."
+                "La cantidad y el costo de los detalles no son válidos."
             );
 
         var productIds = input.Detalles.Select(x => x.ProductoId).Distinct().ToArray();
@@ -89,7 +89,6 @@ public sealed class CompraService(ResellManagerDbContext db) : ICompraService
                                     ? input.FechaIngreso
                                     : null,
                             Costo = item.CostoUnitario,
-                            PrecioLista = item.PrecioLista,
                             ProductoId = item.ProductoId,
                         }
                     );
@@ -198,7 +197,6 @@ public sealed class CompraService(ResellManagerDbContext db) : ICompraService
                     d.Producto.Nombre,
                     d.Cantidad,
                     d.CostoUnitario,
-                    d.UnidadesInventario.FirstOrDefault()?.PrecioLista ?? 0m,
                     d.Cantidad * d.CostoUnitario
                 ))
                 .ToList(),
@@ -290,8 +288,12 @@ public sealed class InventarioService(ResellManagerDbContext db) : IInventarioSe
 
         foreach (var unidad in unidades)
         {
-            unidad.Estado = EstadoUnidadInventario.Disponible;
             unidad.FechaIngreso = input.FechaRecepcion;
+            if (
+                unidad.Estado
+                is EstadoUnidadInventario.Comprada or EstadoUnidadInventario.EnTransito
+            )
+                unidad.Estado = EstadoUnidadInventario.Disponible;
         }
 
         await db.SaveChangesAsync(ct);
@@ -348,7 +350,6 @@ public sealed class InventarioService(ResellManagerDbContext db) : IInventarioSe
                 x.Estado,
                 x.FechaIngreso,
                 x.Costo,
-                x.PrecioLista,
                 x.ProductoId,
                 x.Producto.Nombre,
                 x.Producto.CodigoInterno,

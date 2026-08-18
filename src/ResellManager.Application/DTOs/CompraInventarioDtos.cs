@@ -5,8 +5,7 @@ namespace ResellManager.Application.DTOs;
 public sealed record DetalleCompraInput(
     int ProductoId,
     int Cantidad,
-    decimal CostoUnitario,
-    decimal PrecioLista
+    decimal CostoUnitario
 );
 
 public sealed record ComprobanteCompraInput(
@@ -33,7 +32,6 @@ public sealed record DetalleCompraDto(
     string Producto,
     int Cantidad,
     decimal CostoUnitario,
-    decimal PrecioLista,
     decimal Subtotal
 );
 
@@ -70,7 +68,6 @@ public sealed record UnidadInventarioDto(
     EstadoUnidadInventario Estado,
     DateOnly? FechaIngreso,
     decimal Costo,
-    decimal PrecioLista,
     int ProductoId,
     string Producto,
     string CodigoProducto,

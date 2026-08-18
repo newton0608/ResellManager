@@ -53,6 +53,7 @@ internal sealed class ProductoConfiguration : IEntityTypeConfiguration<Producto>
         b.Property(x => x.Modelo).HasMaxLength(100);
         b.Property(x => x.Color).HasMaxLength(50);
         b.Property(x => x.Talla).HasMaxLength(30);
+        b.Property(x => x.PrecioSugerido).HasColumnType("decimal(10,2)");
         b.HasOne(x => x.Categoria).WithMany(x => x.Productos).HasForeignKey(x => x.CategoriaId).OnDelete(DeleteBehavior.Restrict);
     }
 }
@@ -104,7 +105,6 @@ internal sealed class UnidadInventarioConfiguration : IEntityTypeConfiguration<U
         b.HasIndex(x => x.CodigoInterno).IsUnique();
         b.Property(x => x.Estado).IsRequired().HasConversion<string>().HasMaxLength(30);
         b.Property(x => x.Costo).HasColumnType("decimal(10,2)");
-        b.Property(x => x.PrecioLista).HasColumnType("decimal(10,2)");
         b.HasOne(x => x.Producto).WithMany(x => x.UnidadesInventario).HasForeignKey(x => x.ProductoId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne(x => x.DetalleCompra).WithMany(x => x.UnidadesInventario).HasForeignKey(x => x.DetalleCompraId).OnDelete(DeleteBehavior.Restrict);
     }

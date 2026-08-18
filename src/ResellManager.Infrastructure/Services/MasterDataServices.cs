@@ -302,7 +302,7 @@ public sealed class ProductoService(ResellManagerDbContext db) : IProductoServic
         CancellationToken ct = default
     )
     {
-        var x = await Query().FirstOrDefaultAsync(x => x.Id == id, ct);
+        var x = await Query(db.Productos.Where(x => x.Id == id)).FirstOrDefaultAsync(ct);
         return x is null
             ? ServiceResult<ProductoDto>.Failure("Producto no encontrado.")
             : ServiceResult<ProductoDto>.Ok(x);
@@ -317,20 +317,20 @@ public sealed class ProductoService(ResellManagerDbContext db) : IProductoServic
     )
     {
         termino = termino.Trim();
-        return await Query()
-            .Where(x =>
-                x.Nombre.Contains(termino)
-                || x.CodigoInterno.Contains(termino)
-                || (x.CodigoBarras != null && x.CodigoBarras.Contains(termino))
-            )
-            .OrderBy(x => x.Nombre)
-            .ToListAsync(ct);
+        var productos = db.Productos.Where(x =>
+            x.Nombre.Contains(termino)
+            || x.CodigoInterno.Contains(termino)
+            || (x.CodigoBarras != null && x.CodigoBarras.Contains(termino))
+        );
+        return await Query(productos).OrderBy(x => x.Nombre).ToListAsync(ct);
     }
 
     private async Task<string?> Validar(ProductoInput x, int? id, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(x.CodigoInterno) || string.IsNullOrWhiteSpace(x.Nombre))
             return "Código interno y nombre son obligatorios.";
+        if (x.PrecioSugerido < 0)
+            return "El precio sugerido no puede ser negativo.";
         if (!await db.Categorias.AnyAsync(c => c.Id == x.CategoriaId, ct))
             return "Categoría no encontrada.";
         if (
@@ -353,12 +353,13 @@ public sealed class ProductoService(ResellManagerDbContext db) : IProductoServic
         x.Modelo = i.Modelo?.Trim();
         x.Color = i.Color?.Trim();
         x.Talla = i.Talla?.Trim();
+        x.PrecioSugerido = i.PrecioSugerido;
         x.CategoriaId = i.CategoriaId;
     }
 
-    private IQueryable<ProductoDto> Query() =>
-        db
-            .Productos.AsNoTracking()
+    private IQueryable<ProductoDto> Query(IQueryable<Producto>? productos = null) =>
+        (productos ?? db.Productos)
+            .AsNoTracking()
             .Select(x => new ProductoDto(
                 x.Id,
                 x.CodigoInterno,
@@ -369,6 +370,7 @@ public sealed class ProductoService(ResellManagerDbContext db) : IProductoServic
                 x.Modelo,
                 x.Color,
                 x.Talla,
+                x.PrecioSugerido,
                 x.CategoriaId,
                 x.Categoria.Nombre
             ));

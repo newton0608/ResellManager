@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ResellManager.Infrastructure.Persistence;
 
@@ -10,9 +11,11 @@ using ResellManager.Infrastructure.Persistence;
 namespace ResellManager.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(ResellManagerDbContext))]
-    partial class ResellManagerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260818045027_MoveSuggestedPriceToProduct")]
+    partial class MoveSuggestedPriceToProduct
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.0");

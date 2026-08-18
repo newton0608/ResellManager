@@ -8,6 +8,28 @@ namespace ResellManager.Tests;
 public sealed class VentaTests
 {
     [Fact]
+    public async Task PrecioFinal_PuedeSerMenorQuePrecioSugerido()
+    {
+        await using var test = await TestDatabase.CreateAsync();
+
+        var venta = await test.CrearVentaCatalogoAsync("PED-MENOR", "VEN-MENOR", 80m, 40m);
+
+        Assert.True(venta.Detalles.Single().PrecioFinal < test.Producto.PrecioSugerido);
+        Assert.Equal(80m, venta.Detalles.Single().PrecioFinal);
+    }
+
+    [Fact]
+    public async Task PrecioFinal_PuedeSerMayorQuePrecioSugerido()
+    {
+        await using var test = await TestDatabase.CreateAsync();
+
+        var venta = await test.CrearVentaCatalogoAsync("PED-MAYOR", "VEN-MAYOR", 180m, 40m);
+
+        Assert.True(venta.Detalles.Single().PrecioFinal > test.Producto.PrecioSugerido);
+        Assert.Equal(180m, venta.Detalles.Single().PrecioFinal);
+    }
+
+    [Fact]
     public async Task VentaCatalogo_SeRegistraSinUnidadInventario()
     {
         await using var test = await TestDatabase.CreateAsync();
@@ -184,7 +206,7 @@ public sealed class PagoTests
 public sealed class ReporteTests
 {
     [Fact]
-    public async Task UtilidadPorPeriodo_IgnoraVentasCanceladasYUsaCostoUnitario()
+    public async Task UtilidadPorPeriodo_UsaPrecioFinalYCostoNoPrecioSugerido()
     {
         await using var test = await TestDatabase.CreateAsync();
         await test.CrearVentaCatalogoAsync("PED-UTI-1", "VEN-UTI-1", 100m, 40m);
@@ -198,6 +220,7 @@ public sealed class ReporteTests
         );
 
         Assert.True(result.IsSuccess, result.ErrorMessage);
+        Assert.Equal(120m, test.Producto.PrecioSugerido);
         Assert.Equal(60m, result.Value);
     }
 }

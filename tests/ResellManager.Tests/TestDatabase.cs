@@ -52,7 +52,7 @@ internal sealed class TestDatabase : IAsyncDisposable
             origen,
             Proveedor.Id,
             null,
-            [new DetalleCompraInput(Producto.Id, cantidad, 40m, 100m)],
+            [new DetalleCompraInput(Producto.Id, cantidad, 40m)],
             null
         );
 
@@ -138,6 +138,7 @@ internal sealed class TestDatabase : IAsyncDisposable
         {
             CodigoInterno = "PROD-1",
             Nombre = "Producto",
+            PrecioSugerido = 120m,
             Categoria = Categoria,
         };
         Db.AddRange(Categoria, Proveedor, Cliente, Producto);
