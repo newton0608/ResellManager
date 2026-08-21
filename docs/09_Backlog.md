@@ -1,8 +1,20 @@
 # Backlog
 
-## Autenticación
+## Backend V1 completado
 
-- [ ] Login
+- [x] Separar reserva comercial del estado físico de inventario.
+- [x] Exigir correspondencia exacta entre cantidades de pedido y venta.
+- [x] Registrar ventas completas sin adición posterior de artículos.
+- [x] Proteger cancelaciones frente a pagos que producirían saldo negativo.
+- [x] Endurecer transiciones físicas y recepción de mercancía.
+
+## Fase 5: autenticación
+
+- [ ] Implementar login y control de acceso completo.
+
+## Flujos futuros
+
+- [ ] Diseñar devoluciones y cambios para unidades entregadas.
 
 ---
 

@@ -71,22 +71,26 @@ public sealed class CompraTests
 public sealed class RecepcionTests
 {
     [Fact]
-    public async Task UnidadApartada_AlRecibirse_ConservaEstadoApartada()
+    public async Task RecepcionDeUnidadReservada_ConservaReserva()
     {
         await using var test = await TestDatabase.CreateAsync();
-        var unidad = await test.CrearUnidadImportadaAsync("IMP-APARTADA");
-        unidad.Estado = EstadoUnidadInventario.Apartada;
-        await test.Db.SaveChangesAsync();
+        var unidad = await test.CrearUnidadImportadaAsync("IMP-RESERVADA");
+        var pedido = await test.CrearPedidoAsync(TipoPedido.Apartado, "PED-RESERVA-REC");
+        var detallePedido = pedido.Detalles.Single();
+        var inventario = new InventarioService(test.Db);
+        var reserva = await inventario.ReservarAsync(unidad.Id, detallePedido.Id);
         var fecha = new DateOnly(2026, 2, 15);
 
-        var result = await new InventarioService(test.Db).RegistrarRecepcionAsync(
+        var result = await inventario.RegistrarRecepcionAsync(
             new RecepcionMercanciaInput(fecha, [unidad.Id])
         );
 
+        Assert.True(reserva.IsSuccess, reserva.ErrorMessage);
         Assert.True(result.IsSuccess, result.ErrorMessage);
         await test.Db.Entry(unidad).ReloadAsync();
-        Assert.Equal(EstadoUnidadInventario.Apartada, unidad.Estado);
+        Assert.Equal(EstadoUnidadInventario.Disponible, unidad.Estado);
         Assert.Equal(fecha, unidad.FechaIngreso);
+        Assert.Equal(detallePedido.Id, unidad.DetallePedidoReservaId);
     }
 
     [Fact]

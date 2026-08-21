@@ -68,3 +68,40 @@ El sistema debe conservar trazabilidad de lo que ocurrió, pero también permiti
 
 Resultado:
 Si una venta se cancela antes de entregar, sus unidades pueden volver a Disponible y los DetalleVenta quedan como historial. Si ya existen unidades Entregadas, la cancelación simple no debe permitirse y debe manejarse con un flujo futuro de devolución o cambio.
+
+## 009 La reserva comercial no es un estado físico
+
+Motivo:
+Una unidad puede estar `EnTransito` o `Disponible` y, al mismo tiempo, reservada para un cliente. Un único enum no puede representar ambos conceptos sin perder información.
+
+Resultado:
+`EstadoUnidadInventario` conserva solo el ciclo físico y `UnidadInventario.DetallePedidoReservaId` identifica opcionalmente la reserva activa. No se crea una entidad `Reserva` independiente en V1.
+
+## 010 Una venta se registra completa e inmutable en sus artículos
+
+Motivo:
+Agregar artículos después del registro rompe la correspondencia con el pedido y dificulta proteger inventario, saldo e historial.
+
+Resultado:
+Las cantidades vendidas deben coincidir exactamente por `ProductoId` con el pedido. Solo entonces el pedido pasa a `Completado`. Una venta registrada no permite agregar detalles; una compra posterior genera otro pedido y otra venta.
+
+## 011 Cancelar una venta no puede producir saldo negativo
+
+Motivo:
+Los pagos pertenecen globalmente al cliente. Excluir una venta ya pagada puede dejar más pagos que deuda registrada.
+
+Resultado:
+Antes de cancelar se calcula el saldo sin esa venta. Si resulta negativo, se rechaza la operación hasta ajustar o devolver pagos. Las unidades entregadas continúan requiriendo devolución/cambio futuro.
+
+## 012 Precio sugerido y precio real permanecen separados
+
+Motivo:
+El negocio necesita una referencia de captura sin restringir negociaciones ni distorsionar utilidad.
+
+Resultado:
+`Producto.PrecioSugerido` es referencia/default y debe ser no negativo. `DetalleVenta.PrecioFinal` es el precio real y puede diferir. La utilidad usa el costo transaccional y `PrecioFinal`.
+
+## 013 Autenticación y devoluciones quedan fuera de esta fase
+
+Resultado:
+La autenticación completa se mantiene para la Fase 5. Devoluciones y cambios se diseñarán como casos de uso futuros; no se habilitan mediante cambios arbitrarios de estado ni mediante UI en esta rama.

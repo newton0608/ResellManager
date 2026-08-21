@@ -34,14 +34,15 @@
 - Compra local.
 - Recepción desde hijo.
 
-## Estados de UnidadInventario
+## Estados físicos de UnidadInventario
 
-- Apartado
-- Comprado
+- Comprada
 - En tránsito
 - Disponible
-- Vendido
-- Entregado
+- Vendida
+- Entregada
+
+El apartado es una asociación comercial con DetallePedido y no un estado físico.
 
 
 ## Actores

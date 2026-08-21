@@ -11,8 +11,10 @@ public class UnidadInventario
     public decimal Costo { get; set; }
     public int ProductoId { get; set; }
     public int DetalleCompraId { get; set; }
+    public int? DetallePedidoReservaId { get; set; }
 
     public Producto Producto { get; set; } = null!;
     public DetalleCompra DetalleCompra { get; set; } = null!;
+    public DetallePedido? DetallePedidoReserva { get; set; }
     public ICollection<DetalleVenta> DetallesVenta { get; set; } = [];
 }

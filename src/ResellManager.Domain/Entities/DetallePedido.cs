@@ -11,6 +11,7 @@ public class DetallePedido
 
     public Pedido Pedido { get; set; } = null!;
     public Producto Producto { get; set; } = null!;
+    public ICollection<UnidadInventario> UnidadesReservadas { get; set; } = [];
 
     public decimal CalcularSubtotal()
     {

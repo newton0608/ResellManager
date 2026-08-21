@@ -72,5 +72,8 @@ public sealed record UnidadInventarioDto(
     string Producto,
     string CodigoProducto,
     int DetalleCompraId,
-    OrigenCompra OrigenCompra
+    OrigenCompra OrigenCompra,
+    int? DetallePedidoReservaId,
+    int? PedidoReservaId,
+    int? ClienteReservaId
 );

@@ -107,6 +107,11 @@ internal sealed class UnidadInventarioConfiguration : IEntityTypeConfiguration<U
         b.Property(x => x.Costo).HasColumnType("decimal(10,2)");
         b.HasOne(x => x.Producto).WithMany(x => x.UnidadesInventario).HasForeignKey(x => x.ProductoId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne(x => x.DetalleCompra).WithMany(x => x.UnidadesInventario).HasForeignKey(x => x.DetalleCompraId).OnDelete(DeleteBehavior.Restrict);
+        b.HasIndex(x => x.DetallePedidoReservaId);
+        b.HasOne(x => x.DetallePedidoReserva)
+            .WithMany(x => x.UnidadesReservadas)
+            .HasForeignKey(x => x.DetallePedidoReservaId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }
 

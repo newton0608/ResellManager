@@ -64,7 +64,7 @@
         <mxCell id="Producto" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" value="Producto" vertex="1">
           <mxGeometry height="270" width="280" x="50" y="630" as="geometry" />
         </mxCell>
-        <mxCell id="Producto_attrs" parent="Producto" style="text;strokeColor=#000000;fillColor=none;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;whiteSpace=wrap;html=0;fontSize=11;fontFamily=Consolas;" value="+ Id: int&#xa;+ CodigoInterno: string&#xa;+ Barcode: string?&#xa;+ Nombre: string&#xa;+ Descripcion: string?&#xa;+ Marca: string?&#xa;+ Modelo: string?&#xa;+ Color: string?&#xa;+ Talla: string?&#xa;+ CategoriaId: int" vertex="1">
+        <mxCell id="Producto_attrs" parent="Producto" style="text;strokeColor=#000000;fillColor=none;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;whiteSpace=wrap;html=0;fontSize=11;fontFamily=Consolas;" value="+ Id: int&#xa;+ CodigoInterno: string&#xa;+ Barcode: string?&#xa;+ Nombre: string&#xa;+ Descripcion: string?&#xa;+ Marca: string?&#xa;+ Modelo: string?&#xa;+ Color: string?&#xa;+ Talla: string?&#xa;+ PrecioSugerido: decimal&#xa;+ CategoriaId: int" vertex="1">
           <mxGeometry height="194" width="280" y="26" as="geometry" />
         </mxCell>
         <mxCell id="Producto_methods" parent="Producto" style="text;strokeColor=#000000;fillColor=none;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;whiteSpace=wrap;html=0;fontSize=11;fontFamily=Consolas;" value="+ ActualizarDatos()&#xa;+ CambiarCategoria()" vertex="1">
@@ -73,10 +73,10 @@
         <mxCell id="UnidadInventario" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" value="UnidadInventario" vertex="1">
           <mxGeometry height="252" width="300" x="700" y="430" as="geometry" />
         </mxCell>
-        <mxCell id="UnidadInventario_attrs" parent="UnidadInventario" style="text;strokeColor=#000000;fillColor=none;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;whiteSpace=wrap;html=0;fontSize=11;fontFamily=Consolas;" value="+ Id: int&#xa;+ CodigoInterno: string&#xa;+ Estado: EstadoUnidadInventario&#xa;+ FechaIngreso: DateOnly&#xa;+ Costo: decimal&#xa;+ PrecioLista: decimal&#xa;+ ProductoId: int&#xa;+ DetalleCompraId: int" vertex="1">
+        <mxCell id="UnidadInventario_attrs" parent="UnidadInventario" style="text;strokeColor=#000000;fillColor=none;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;whiteSpace=wrap;html=0;fontSize=11;fontFamily=Consolas;" value="+ Id: int&#xa;+ CodigoInterno: string&#xa;+ Estado: EstadoUnidadInventario&#xa;+ FechaIngreso: DateOnly?&#xa;+ Costo: decimal&#xa;+ ProductoId: int&#xa;+ DetalleCompraId: int&#xa;+ DetallePedidoReservaId: int?" vertex="1">
           <mxGeometry height="158" width="300" y="26" as="geometry" />
         </mxCell>
-        <mxCell id="UnidadInventario_methods" parent="UnidadInventario" style="text;strokeColor=#000000;fillColor=none;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;whiteSpace=wrap;html=0;fontSize=11;fontFamily=Consolas;" value="+ CambiarEstado()&#xa;+ MarcarApartada()&#xa;+ MarcarVendida()" vertex="1">
+        <mxCell id="UnidadInventario_methods" parent="UnidadInventario" style="text;strokeColor=#000000;fillColor=none;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;whiteSpace=wrap;html=0;fontSize=11;fontFamily=Consolas;" value="+ CambiarEstado()&#xa;+ ReservarParaDetallePedido()&#xa;+ CancelarReserva()" vertex="1">
           <mxGeometry height="68" width="300" y="184" as="geometry" />
         </mxCell>
         <mxCell id="Cliente" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" value="Cliente" vertex="1">
@@ -145,7 +145,7 @@
         <mxCell id="enum_unidad" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" value="enum EstadoUnidadInventario" vertex="1">
           <mxGeometry height="192" width="280" x="350" y="1060" as="geometry" />
         </mxCell>
-        <mxCell id="enum_unidad_attrs" parent="enum_unidad" style="text;strokeColor=#000000;fillColor=none;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;whiteSpace=wrap;html=0;fontSize=11;fontFamily=Consolas;" value="Disponible&#xa;Apartada&#xa;Vendida&#xa;Entregada&#xa;EnTransito&#xa;Comprada" vertex="1">
+        <mxCell id="enum_unidad_attrs" parent="enum_unidad" style="text;strokeColor=#000000;fillColor=none;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;whiteSpace=wrap;html=0;fontSize=11;fontFamily=Consolas;" value="Comprada&#xa;EnTransito&#xa;Disponible&#xa;Vendida&#xa;Entregada" vertex="1">
           <mxGeometry height="122" width="280" y="26" as="geometry" />
         </mxCell>
         <mxCell id="enum_unidad_methods" parent="enum_unidad" style="text;strokeColor=#000000;fillColor=none;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;whiteSpace=wrap;html=0;fontSize=11;fontFamily=Consolas;" value=" " vertex="1">

@@ -2,231 +2,120 @@
 
 ## Producto
 
-Representa el tipo de artículo que comercializa el negocio.
+Tipo de artículo que comercializa el negocio. Contiene datos generales como nombre, marca, categoría, códigos y `PrecioSugerido`. No representa una unidad física ni almacena costo.
 
-Contiene información general como nombre, marca, categoría y código de barras.
+## Precio sugerido
 
-No representa una unidad física.
-
----
+Valor de referencia/default definido en `Producto`. Debe ser no negativo y no obliga al precio real de una venta.
 
 ## UnidadInventario
 
-Representa una unidad física de un producto.
-
-Cada unidad posee su propio ciclo de vida y estado dentro del inventario.
-
-Puede estar comprada, en tránsito, disponible, apartada, vendida o entregada.
-
----
-
-## Compra
-
-Proceso mediante el cual se adquieren productos a un proveedor.
-
-Puede contener uno o varios productos.
-
-No toda compra genera inventario automáticamente; las compras de catálogo pueden no generar unidades si el producto no pasa físicamente por el inventario.
-
----
-
-## DetalleCompra
-
-Representa cada producto incluido dentro de una compra.
-
-Incluye cantidades, costos y referencias necesarias para generar unidades de inventario cuando la compra sí ingresa al inventario.
-
----
-
-## ComprobanteCompra
-
-Documento que respalda una compra.
-
-Puede almacenarse mediante una fotografía.
-
-Un comprobante de compra puede respaldar una compra con varios productos.
-
----
-
-## Proveedor
-
-Persona o empresa que suministra productos.
-
-Ejemplos:
-
-- Ross
-- Burlington
-- Ágora
-- Andrea
-- Compras locales
-
----
-
-## Cliente
-
-Persona que compra productos al negocio.
-
-Puede tener pedidos, ventas, pagos y saldo pendiente.
-
----
-
-## Pedido
-
-Solicitud realizada por un cliente antes de concretar la venta.
-
-Puede representar una venta presencial generada automáticamente, un apartado o un pedido de catálogo.
-
----
-
-## Venta
-
-Transacción registrada a partir de un pedido.
-
-Puede ser al contado o a crédito.
-
-Una venta registrada genera saldo para el cliente si no se paga completamente.
-
-Una venta no necesariamente significa que el producto ya fue entregado; la entrega se controla con el estado de la UnidadInventario.
-
----
-
-## DetalleVenta
-
-Representa cada artículo incluido dentro de una venta.
-
-En ventas de inventario, referencia una UnidadInventario.
-
-En ventas de catálogo, puede registrar Producto, CostoUnitario y PrecioFinal sin UnidadInventario.
-
----
-
-## Pago
-
-Registro de un abono o pago realizado por un cliente.
-
-Reduce automáticamente el saldo pendiente.
-
-No se asocia a una venta específica, sino al cliente.
-
-No puede superar la deuda actual del cliente.
-
----
-
-## Categoría
-
-Clasificación utilizada para organizar los productos.
-
-Ejemplos:
-
-Splash
-Zapatos
-Carteras
-Ropa
-
----
-
-## Inventario
-
-Conjunto de todas las unidades de inventario disponibles para la venta.
-
-No constituye una entidad independiente.
-
----
-
-## Apartado
-
-Reserva realizada por un cliente antes de la compra o entrega del producto.
-
-Debe estar asociada de forma clara a un cliente o pedido antes de implementarse completamente en la interfaz.
-
----
-
-## Catálogo
-
-Conjunto de productos ofrecidos por proveedores externos como Ágora o Andrea.
-
-Generalmente se venden bajo pedido.
-
-Puede generar una venta sin UnidadInventario cuando el producto no pasa físicamente por inventario.
-
----
-
-## Compra Local
-
-Compra realizada dentro de Guatemala.
-
-Las unidades ingresan directamente al inventario disponible.
-
----
-
-## Importación
-
-Compra realizada en Estados Unidos.
-
-Las unidades pueden transportarse en equipaje o enviarse mediante caja.
-
-La fecha de compra puede ser distinta a la fecha de ingreso al inventario.
-
----
-
-## Recepción de Mercancía
-
-Proceso mediante el cual las unidades llegan físicamente al negocio o a Guatemala y pasan a estar disponibles.
-
-Puede aplicar a importaciones, envíos del hijo o compras que inicialmente no estaban disponibles.
-
----
-
-## Dashboard
-
-Pantalla principal del sistema.
-
-Muestra información resumida como:
-
-- Total por cobrar.
-- Inventario disponible.
-- Productos apartados.
-- Indicadores del negocio.
-
----
+Unidad física individual de un producto. Conserva código interno, costo de compra, fecha de ingreso, estado físico y una asociación de reserva opcional.
 
 ## Estado de UnidadInventario
 
-Estado actual de una unidad física.
+Estado exclusivamente físico/logístico de una unidad. Valores V1:
 
-Valores:
+- `Comprada`
+- `EnTransito`
+- `Disponible`
+- `Vendida`
+- `Entregada`
 
-- Apartado
-- Comprado
-- En tránsito
-- Disponible
-- Vendido
-- Entregado
+`Apartada` no es un valor de este enum.
 
----
+## Reserva o apartado
 
-## Código de Barras
+Asociación comercial opcional desde una `UnidadInventario` hacia un `DetallePedido`. Permite identificar el pedido y cliente de la reserva sin alterar el estado físico. Si todavía no existe una unidad, la intención del apartado permanece en el pedido/detalle hasta que una unidad pueda asociarse.
 
-Código asignado por el fabricante para identificar un producto.
+## Compra
 
-No representa el identificador interno del sistema.
+Adquisición de productos a un proveedor. Puede contener varios detalles y un comprobante. Una compra de catálogo puede no generar unidades si la mercancía no pasa por inventario físico.
 
----
+## DetalleCompra
 
-## Saldo Pendiente
+Producto, cantidad y costo unitario incluidos en una compra. Genera unidades físicas solo para los orígenes que ingresan o ingresarán al inventario.
 
-Monto que un cliente aún debe pagar por sus compras.
+## ComprobanteCompra
 
-Se calcula automáticamente con ventas registradas menos pagos.
+Documento opcional que respalda una compra y puede representar varios artículos.
 
-No se almacena como campo fijo.
+## Proveedor
 
----
+Persona o empresa que suministra productos, como Ross, Burlington, Ágora, Andrea o proveedores locales.
 
-## Ganancia
+## Cliente
 
-Diferencia entre el costo registrado y el precio de venta.
+Persona que realiza pedidos y puede tener ventas, pagos, reservas y saldo pendiente.
 
-En inventario se calcula usando el costo de la UnidadInventario.
+## Pedido
 
-En catálogo sin inventario se calcula usando el CostoUnitario registrado en el DetalleVenta.
+Solicitud del cliente previa a la venta. Sus detalles definen productos y cantidades requeridas. Puede representar venta directa, apartado, importación o catálogo.
+
+## DetallePedido
+
+Producto y cantidad solicitada dentro de un pedido. Es el destino de la asociación de unidades reservadas.
+
+## Venta
+
+Transacción completa registrada a partir de un único pedido. Debe coincidir exactamente por producto y cantidad con el pedido. Una vez registrada no admite agregar artículos. No implica necesariamente entrega física.
+
+## DetalleVenta
+
+Una unidad vendida; no contiene cantidad. En inventario referencia una `UnidadInventario` y guarda snapshots de producto/costo. En catálogo puede usar `ProductoId`, `CostoUnitario` y `PrecioFinal` sin unidad física.
+
+## PrecioFinal
+
+Precio real de un `DetalleVenta`. Puede ser menor, igual o mayor que `Producto.PrecioSugerido` y es el valor usado para saldo e ingresos.
+
+## Pago
+
+Abono global de un cliente. No se asocia a una venta y no puede superar la deuda actual.
+
+## Saldo pendiente
+
+Suma de `PrecioFinal` de ventas `Registrada` menos pagos del cliente. No se almacena como campo fijo. Cancelar una venta se rechaza si excluirla dejaría este resultado negativo.
+
+## Inventario
+
+Conjunto de unidades físicas administradas por el sistema. No constituye una entidad independiente.
+
+## Catálogo
+
+Productos ofrecidos por proveedores externos. Un pedido de catálogo puede generar venta sin `UnidadInventario` cuando la mercancía no pasa por inventario físico.
+
+## Compra local
+
+Compra dentro de Guatemala cuyas unidades ingresan directamente como disponibles con fecha de ingreso.
+
+## Importación
+
+Compra cuyo traslado puede separar `FechaCompra` de `FechaIngreso`. Sus unidades nacen compradas y pueden pasar por tránsito antes de recepción.
+
+## Recepción de mercancía
+
+Caso de uso que registra la llegada física, asigna `FechaIngreso` y cambia unidades `Comprada`/`EnTransito` a `Disponible`, conservando cualquier reserva.
+
+## Entrega
+
+Transición de una unidad `Vendida` a `Entregada`. Una venta con unidades entregadas no admite cancelación simple.
+
+## Devolución o cambio
+
+Flujo futuro para revertir o sustituir productos ya entregados. Está fuera del backend V1 actual.
+
+## Ganancia o utilidad
+
+Diferencia `PrecioFinal - CostoUnitario` para detalles de ventas registradas. Usa el costo de la unidad o el costo de catálogo, nunca `PrecioSugerido`.
+
+## Dashboard
+
+Resumen de deuda, inventario disponible, pedidos pendientes, pagos y ventas recientes.
+
+## Autenticación
+
+Control de acceso completo pendiente para la Fase 5; no forma parte de esta rama de invariantes.
+
+## Código de barras
+
+Código del fabricante que identifica un producto, no una unidad física ni el identificador interno del sistema.

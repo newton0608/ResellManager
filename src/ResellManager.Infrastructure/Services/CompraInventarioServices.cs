@@ -302,6 +302,84 @@ public sealed class InventarioService(ResellManagerDbContext db) : IInventarioSe
         return ServiceResult<IReadOnlyList<UnidadInventarioDto>>.Ok(recibidas);
     }
 
+    public async Task<ServiceResult<UnidadInventarioDto>> ReservarAsync(
+        int unidadInventarioId,
+        int detallePedidoId,
+        CancellationToken ct = default
+    )
+    {
+        var unidad = await db
+            .UnidadesInventario.Include(x => x.DetallePedidoReserva)
+            .FirstOrDefaultAsync(x => x.Id == unidadInventarioId, ct);
+        if (unidad is null)
+            return ServiceResult<UnidadInventarioDto>.Failure(
+                "Unidad de inventario no encontrada."
+            );
+
+        var detalle = await db
+            .DetallesPedido.Include(x => x.Pedido)
+            .Include(x => x.UnidadesReservadas)
+            .FirstOrDefaultAsync(x => x.Id == detallePedidoId, ct);
+        if (detalle is null)
+            return ServiceResult<UnidadInventarioDto>.Failure("Detalle de pedido no encontrado.");
+        if (detalle.Pedido.Estado is EstadoPedido.Cancelado or EstadoPedido.Completado)
+            return ServiceResult<UnidadInventarioDto>.Failure(
+                "No se puede reservar para un pedido cancelado o completado."
+            );
+        if (unidad.ProductoId != detalle.ProductoId)
+            return ServiceResult<UnidadInventarioDto>.Failure(
+                "La unidad y el detalle de pedido deben corresponder al mismo producto."
+            );
+        if (unidad.Estado is EstadoUnidadInventario.Vendida or EstadoUnidadInventario.Entregada)
+            return ServiceResult<UnidadInventarioDto>.Failure(
+                "Una unidad vendida o entregada no puede reservarse."
+            );
+        if (
+            unidad.DetallePedidoReservaId.HasValue
+            && unidad.DetallePedidoReservaId.Value != detallePedidoId
+        )
+            return ServiceResult<UnidadInventarioDto>.Failure(
+                "La unidad ya tiene una reserva activa para otro detalle de pedido."
+            );
+        if (unidad.DetallePedidoReservaId == detallePedidoId)
+            return ServiceResult<UnidadInventarioDto>.Ok(
+                await Query(db.UnidadesInventario.Where(x => x.Id == unidadInventarioId))
+                    .SingleAsync(ct)
+            );
+        if (detalle.UnidadesReservadas.Count >= detalle.Cantidad)
+            return ServiceResult<UnidadInventarioDto>.Failure(
+                "El detalle de pedido ya tiene reservadas todas sus unidades."
+            );
+
+        unidad.DetallePedidoReservaId = detallePedidoId;
+        await db.SaveChangesAsync(ct);
+        var result = await Query(
+                db.UnidadesInventario.Where(x => x.Id == unidadInventarioId)
+            )
+            .SingleAsync(ct);
+        return ServiceResult<UnidadInventarioDto>.Ok(result);
+    }
+
+    public async Task<ServiceResult<UnidadInventarioDto>> CancelarReservaAsync(
+        int unidadInventarioId,
+        CancellationToken ct = default
+    )
+    {
+        var unidad = await db.UnidadesInventario.FindAsync([unidadInventarioId], ct);
+        if (unidad is null)
+            return ServiceResult<UnidadInventarioDto>.Failure(
+                "Unidad de inventario no encontrada."
+            );
+
+        unidad.DetallePedidoReservaId = null;
+        await db.SaveChangesAsync(ct);
+        var result = await Query(
+                db.UnidadesInventario.Where(x => x.Id == unidadInventarioId)
+            )
+            .SingleAsync(ct);
+        return ServiceResult<UnidadInventarioDto>.Ok(result);
+    }
+
     public async Task<ServiceResult<UnidadInventarioDto>> CambiarEstadoAsync(
         int id,
         EstadoUnidadInventario estado,
@@ -313,27 +391,29 @@ public sealed class InventarioService(ResellManagerDbContext db) : IInventarioSe
             return ServiceResult<UnidadInventarioDto>.Failure(
                 "Unidad de inventario no encontrada."
             );
-        if (
-            estado == EstadoUnidadInventario.Disponible
-            && unidad.Estado != EstadoUnidadInventario.Disponible
-        )
-            return ServiceResult<UnidadInventarioDto>.Failure(
-                "Use la recepción de mercancía para marcar una unidad como disponible."
+
+        if (unidad.Estado == estado)
+            return ServiceResult<UnidadInventarioDto>.Ok(
+                await Query(db.UnidadesInventario.Where(x => x.Id == id)).SingleAsync(ct)
             );
-        if (
-            unidad.Estado == EstadoUnidadInventario.Entregada
-            && estado != EstadoUnidadInventario.Entregada
-        )
+
+        var transicionManualValida =
+            (unidad.Estado == EstadoUnidadInventario.Comprada
+                && estado == EstadoUnidadInventario.EnTransito)
+            || (unidad.Estado == EstadoUnidadInventario.Vendida
+                && estado == EstadoUnidadInventario.Entregada);
+
+        if (!transicionManualValida)
+        {
+            if (estado == EstadoUnidadInventario.Disponible)
+                return ServiceResult<UnidadInventarioDto>.Failure(
+                    "Use la recepción de mercancía para marcar una unidad como disponible."
+                );
+
             return ServiceResult<UnidadInventarioDto>.Failure(
-                "Una unidad entregada no puede cambiar de estado."
+                $"La transición manual de {unidad.Estado} a {estado} no está permitida."
             );
-        if (
-            unidad.Estado == EstadoUnidadInventario.Vendida
-            && estado is not (EstadoUnidadInventario.Vendida or EstadoUnidadInventario.Entregada)
-        )
-            return ServiceResult<UnidadInventarioDto>.Failure(
-                "Una unidad vendida solo puede marcarse como entregada."
-            );
+        }
 
         unidad.Estado = estado;
         await db.SaveChangesAsync(ct);
@@ -354,6 +434,9 @@ public sealed class InventarioService(ResellManagerDbContext db) : IInventarioSe
                 x.Producto.Nombre,
                 x.Producto.CodigoInterno,
                 x.DetalleCompraId,
-                x.DetalleCompra.Compra.Origen
+                x.DetalleCompra.Compra.Origen,
+                x.DetallePedidoReservaId,
+                x.DetallePedidoReserva == null ? null : x.DetallePedidoReserva.PedidoId,
+                x.DetallePedidoReserva == null ? null : x.DetallePedidoReserva.Pedido.ClienteId
             ));
 }

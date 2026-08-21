@@ -43,7 +43,8 @@ internal sealed class TestDatabase : IAsyncDisposable
         OrigenCompra origen,
         string codigo,
         DateOnly? fechaIngreso = null,
-        int cantidad = 1
+        int cantidad = 1,
+        Producto? producto = null
     ) =>
         new(
             codigo,
@@ -52,11 +53,16 @@ internal sealed class TestDatabase : IAsyncDisposable
             origen,
             Proveedor.Id,
             null,
-            [new DetalleCompraInput(Producto.Id, cantidad, 40m)],
+            [new DetalleCompraInput((producto ?? Producto).Id, cantidad, 40m)],
             null
         );
 
-    public async Task<Pedido> CrearPedidoAsync(TipoPedido tipo, string codigo)
+    public async Task<Pedido> CrearPedidoAsync(
+        TipoPedido tipo,
+        string codigo,
+        int cantidad = 1,
+        Producto? producto = null
+    )
     {
         var pedido = new Pedido
         {
@@ -69,8 +75,8 @@ internal sealed class TestDatabase : IAsyncDisposable
             [
                 new DetallePedido
                 {
-                    ProductoId = Producto.Id,
-                    Cantidad = 1,
+                    ProductoId = (producto ?? Producto).Id,
+                    Cantidad = cantidad,
                     PrecioUnitario = 100m,
                 },
             ],
@@ -80,10 +86,18 @@ internal sealed class TestDatabase : IAsyncDisposable
         return pedido;
     }
 
-    public async Task<UnidadInventario> CrearUnidadDisponibleAsync(string codigo)
+    public async Task<UnidadInventario> CrearUnidadDisponibleAsync(
+        string codigo,
+        Producto? producto = null
+    )
     {
         var result = await new CompraService(Db).RegistrarAsync(
-            Compra(OrigenCompra.CompraLocal, codigo, new DateOnly(2026, 1, 11))
+            Compra(
+                OrigenCompra.CompraLocal,
+                codigo,
+                new DateOnly(2026, 1, 11),
+                producto: producto
+            )
         );
         Assert.True(result.IsSuccess, result.ErrorMessage);
         return await Db.UnidadesInventario.SingleAsync(x =>
@@ -91,10 +105,13 @@ internal sealed class TestDatabase : IAsyncDisposable
         );
     }
 
-    public async Task<UnidadInventario> CrearUnidadImportadaAsync(string codigo)
+    public async Task<UnidadInventario> CrearUnidadImportadaAsync(
+        string codigo,
+        Producto? producto = null
+    )
     {
         var result = await new CompraService(Db).RegistrarAsync(
-            Compra(OrigenCompra.Importacion, codigo)
+            Compra(OrigenCompra.Importacion, codigo, producto: producto)
         );
         Assert.True(result.IsSuccess, result.ErrorMessage);
         return await Db.UnidadesInventario.SingleAsync(x =>
@@ -121,6 +138,20 @@ internal sealed class TestDatabase : IAsyncDisposable
         );
         Assert.True(result.IsSuccess, result.ErrorMessage);
         return await Db.Ventas.Include(x => x.Detalles).SingleAsync(x => x.Id == result.Value!.Id);
+    }
+
+    public async Task<Producto> CrearProductoAsync(string codigo, decimal precioSugerido = 100m)
+    {
+        var producto = new Producto
+        {
+            CodigoInterno = codigo,
+            Nombre = $"Producto {codigo}",
+            PrecioSugerido = precioSugerido,
+            CategoriaId = Categoria.Id,
+        };
+        Db.Productos.Add(producto);
+        await Db.SaveChangesAsync();
+        return producto;
     }
 
     public async ValueTask DisposeAsync()

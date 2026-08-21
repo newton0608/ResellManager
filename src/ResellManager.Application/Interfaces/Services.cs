@@ -95,6 +95,15 @@ public interface IInventarioService
         RecepcionMercanciaInput input,
         CancellationToken ct = default
     );
+    Task<ServiceResult<UnidadInventarioDto>> ReservarAsync(
+        int unidadInventarioId,
+        int detallePedidoId,
+        CancellationToken ct = default
+    );
+    Task<ServiceResult<UnidadInventarioDto>> CancelarReservaAsync(
+        int unidadInventarioId,
+        CancellationToken ct = default
+    );
     Task<ServiceResult<UnidadInventarioDto>> CambiarEstadoAsync(
         int id,
         EstadoUnidadInventario estado,
@@ -119,11 +128,6 @@ public interface IVentaService
 {
     Task<ServiceResult<VentaDto>> RegistrarDesdePedidoAsync(
         VentaInput input,
-        CancellationToken ct = default
-    );
-    Task<ServiceResult<VentaDto>> AgregarDetalleAsync(
-        int ventaId,
-        DetalleVentaInput input,
         CancellationToken ct = default
     );
     Task<ServiceResult<VentaDto>> ObtenerPorIdAsync(int id, CancellationToken ct = default);

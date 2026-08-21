@@ -106,11 +106,13 @@ EstadoUnidadInventario
 
 Valores:
 
-Disponible
-Apartado
+Comprada
 EnTransito
-Vendido
-Entregado
+Disponible
+Vendida
+Entregada
+
+Las reservas se nombran mediante DetallePedidoReservaId; Apartada no pertenece a EstadoUnidadInventario.
 
 ---
 

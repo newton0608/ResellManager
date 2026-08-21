@@ -92,7 +92,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="producto" parent="1" style="shape=table;startSize=30;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;resizeLast=1;html=1;fillColor=#f5f5f5;fontFamily=Arial;fontSize=13;strokeColor=#4D4D4D;fontColor=#333333;labelBackgroundColor=none;labelBorderColor=none;textShadow=0;" value="Producto" vertex="1">
-          <mxGeometry height="316" width="240" x="50" y="300" as="geometry" />
+          <mxGeometry height="342" width="240" x="50" y="300" as="geometry" />
         </mxCell>
         <mxCell id="producto_r0" parent="producto" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;collapsible=0;dropTarget=0;points=[];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;fillColor=#f5f5f5;fontStyle=1;strokeColor=#4D4D4D;fontColor=#333333;" value="" vertex="1">
           <mxGeometry height="26" width="240" y="30" as="geometry" />
@@ -274,8 +274,20 @@
             <mxRectangle height="26" width="59.999999999999886" as="alternateBounds" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="producto_r10" parent="producto" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;collapsible=0;dropTarget=0;points=[];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;fillColor=#f5f5f5;fontStyle=0;strokeColor=#4D4D4D;fontColor=#333333;" value="" vertex="1">
+        <mxCell id="producto_precio" parent="producto" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;collapsible=0;dropTarget=0;points=[];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;fillColor=#f5f5f5;fontStyle=0;strokeColor=#4D4D4D;fontColor=#333333;" value="" vertex="1">
           <mxGeometry height="26" width="240" y="290" as="geometry" />
+        </mxCell>
+        <mxCell id="producto_precio_c0" parent="producto_precio" style="partialRectangle=1;connectable=0;fillColor=#f5f5f5;top=0;left=0;bottom=0;right=1;fontStyle=0;overflow=hidden;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;fontSize=10;fontFamily=Arial;spacingLeft=6;strokeColor=#4D4D4D;fontColor=#333333;" value="PrecioSugerido" vertex="1">
+          <mxGeometry height="26" width="90" as="geometry" />
+        </mxCell>
+        <mxCell id="producto_precio_c1" parent="producto_precio" style="partialRectangle=1;connectable=0;fillColor=#f5f5f5;top=0;left=0;bottom=0;right=1;fontStyle=0;overflow=hidden;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=10;fontFamily=Arial;strokeColor=#4D4D4D;fontColor=#333333;" value="DECIMAL(10,2)" vertex="1">
+          <mxGeometry height="26" width="90" x="90" as="geometry" />
+        </mxCell>
+        <mxCell id="producto_precio_c2" parent="producto_precio" style="partialRectangle=1;connectable=0;fillColor=#f5f5f5;top=0;left=0;bottom=0;right=0;fontStyle=0;overflow=hidden;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=10;fontFamily=Arial;strokeColor=#4D4D4D;fontColor=#333333;" value="" vertex="1">
+          <mxGeometry height="26" width="60" x="180" as="geometry" />
+        </mxCell>
+        <mxCell id="producto_r10" parent="producto" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;collapsible=0;dropTarget=0;points=[];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;fillColor=#f5f5f5;fontStyle=0;strokeColor=#4D4D4D;fontColor=#333333;" value="" vertex="1">
+          <mxGeometry height="26" width="240" y="316" as="geometry" />
         </mxCell>
         <mxCell id="producto_r10_c0" parent="producto_r10" style="partialRectangle=1;connectable=0;fillColor=#f5f5f5;top=0;left=0;bottom=0;right=1;fontStyle=0;overflow=hidden;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;fontSize=10;fontFamily=Arial;spacingLeft=6;strokeColor=#4D4D4D;fontColor=#333333;" value="CategoriaId" vertex="1">
           <mxGeometry height="26" width="90" as="geometry">
@@ -904,17 +916,17 @@
         <mxCell id="unidad_r6" parent="unidad" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;collapsible=0;dropTarget=0;points=[];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;fillColor=#f5f5f5;fontStyle=0;strokeColor=#4D4D4D;fontColor=#333333;" value="" vertex="1">
           <mxGeometry height="26" width="230" y="186" as="geometry" />
         </mxCell>
-        <mxCell id="unidad_r6_c0" parent="unidad_r6" style="partialRectangle=1;connectable=0;fillColor=#f5f5f5;top=0;left=0;bottom=0;right=1;fontStyle=0;overflow=hidden;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;fontSize=10;fontFamily=Arial;spacingLeft=6;strokeColor=#4D4D4D;fontColor=#333333;" value="PrecioLista" vertex="1">
+        <mxCell id="unidad_r6_c0" parent="unidad_r6" style="partialRectangle=1;connectable=0;fillColor=#f5f5f5;top=0;left=0;bottom=0;right=1;fontStyle=0;overflow=hidden;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;fontSize=10;fontFamily=Arial;spacingLeft=6;strokeColor=#4D4D4D;fontColor=#333333;" value="DetallePedidoReservaId" vertex="1">
           <mxGeometry height="26" width="80" as="geometry">
             <mxRectangle height="26" width="80" as="alternateBounds" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="unidad_r6_c1" parent="unidad_r6" style="partialRectangle=1;connectable=0;fillColor=#f5f5f5;top=0;left=0;bottom=0;right=1;fontStyle=0;overflow=hidden;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=10;fontFamily=Arial;strokeColor=#4D4D4D;fontColor=#333333;" value="DECIMAL(10,2)" vertex="1">
+        <mxCell id="unidad_r6_c1" parent="unidad_r6" style="partialRectangle=1;connectable=0;fillColor=#f5f5f5;top=0;left=0;bottom=0;right=1;fontStyle=0;overflow=hidden;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=10;fontFamily=Arial;strokeColor=#4D4D4D;fontColor=#333333;" value="INTEGER" vertex="1">
           <mxGeometry height="26" width="100" x="80" as="geometry">
             <mxRectangle height="26" width="100" as="alternateBounds" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="unidad_r6_c2" parent="unidad_r6" style="partialRectangle=1;connectable=0;fillColor=#f5f5f5;top=0;left=0;bottom=0;right=0;fontStyle=0;overflow=hidden;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=10;fontFamily=Arial;strokeColor=#4D4D4D;fontColor=#333333;" value="" vertex="1">
+        <mxCell id="unidad_r6_c2" parent="unidad_r6" style="partialRectangle=1;connectable=0;fillColor=#f5f5f5;top=0;left=0;bottom=0;right=0;fontStyle=0;overflow=hidden;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=10;fontFamily=Arial;strokeColor=#4D4D4D;fontColor=#333333;" value="NULL, FK" vertex="1">
           <mxGeometry height="26" width="50" x="180" as="geometry">
             <mxRectangle height="26" width="50" as="alternateBounds" />
           </mxGeometry>

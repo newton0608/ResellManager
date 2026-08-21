@@ -61,28 +61,33 @@ public sealed class ClienteService(ResellManagerDbContext db) : IClienteService
             : ServiceResult<ClienteDto>.Ok(Map(entity, await SaldoAsync(id, ct)));
     }
 
-    public Task<IReadOnlyList<ClienteDto>> ListarAsync(CancellationToken ct = default) =>
-        Query()
+    public async Task<IReadOnlyList<ClienteDto>> ListarAsync(CancellationToken ct = default)
+    {
+        var clientes = await db
+            .Clientes.AsNoTracking()
             .OrderBy(x => x.Nombres)
             .ThenBy(x => x.Apellidos)
-            .ToListAsync(ct)
-            .ContinueWith<IReadOnlyList<ClienteDto>>(x => x.Result, ct);
+            .ToListAsync(ct);
+        return await MapConSaldosAsync(clientes, ct);
+    }
 
-    public Task<IReadOnlyList<ClienteDto>> BuscarAsync(
+    public async Task<IReadOnlyList<ClienteDto>> BuscarAsync(
         string termino,
         CancellationToken ct = default
     )
     {
         termino = termino.Trim();
-        return Query()
+        var clientes = await db
+            .Clientes.AsNoTracking()
             .Where(x =>
                 x.Nombres.Contains(termino)
                 || (x.Apellidos != null && x.Apellidos.Contains(termino))
                 || x.Telefono.Contains(termino)
             )
             .OrderBy(x => x.Nombres)
-            .ToListAsync(ct)
-            .ContinueWith<IReadOnlyList<ClienteDto>>(x => x.Result, ct);
+            .ThenBy(x => x.Apellidos)
+            .ToListAsync(ct);
+        return await MapConSaldosAsync(clientes, ct);
     }
 
     public async Task<ServiceResult<decimal>> ObtenerSaldoAsync(
@@ -167,25 +172,45 @@ public sealed class ClienteService(ResellManagerDbContext db) : IClienteService
                 .ToList()
         );
 
-    private IQueryable<ClienteDto> Query() =>
-        db
-            .Clientes.AsNoTracking()
-            .Select(c => new ClienteDto(
-                c.Id,
-                c.Nombres,
-                c.Apellidos,
-                c.Telefono,
-                c.Direccion,
-                c.Observaciones,
-                (
-                    c.Pedidos.Where(p =>
-                            p.Venta != null && p.Venta.Estado == EstadoVenta.Registrada
-                        )
-                        .SelectMany(p => p.Venta!.Detalles)
-                        .Sum(d => (decimal?)d.PrecioFinal)
-                    ?? 0m
-                ) - (c.Pagos.Sum(p => (decimal?)p.Monto) ?? 0m)
-            ));
+    private async Task<IReadOnlyList<ClienteDto>> MapConSaldosAsync(
+        IReadOnlyCollection<Cliente> clientes,
+        CancellationToken ct
+    )
+    {
+        if (clientes.Count == 0)
+            return [];
+
+        var ids = clientes.Select(x => x.Id).ToArray();
+        var ventas = await db
+            .DetallesVenta.AsNoTracking()
+            .Where(x =>
+                x.Venta.Estado == EstadoVenta.Registrada
+                && ids.Contains(x.Venta.Pedido.ClienteId)
+            )
+            .Select(x => new { x.Venta.Pedido.ClienteId, Monto = x.PrecioFinal })
+            .ToListAsync(ct);
+        var pagos = await db
+            .Pagos.AsNoTracking()
+            .Where(x => ids.Contains(x.ClienteId))
+            .Select(x => new { x.ClienteId, x.Monto })
+            .ToListAsync(ct);
+        var ventasPorCliente = ventas
+            .GroupBy(x => x.ClienteId)
+            .ToDictionary(x => x.Key, x => x.Sum(y => y.Monto));
+        var pagosPorCliente = pagos
+            .GroupBy(x => x.ClienteId)
+            .ToDictionary(x => x.Key, x => x.Sum(y => y.Monto));
+
+        return clientes
+            .Select(x =>
+                Map(
+                    x,
+                    ventasPorCliente.GetValueOrDefault(x.Id)
+                        - pagosPorCliente.GetValueOrDefault(x.Id)
+                )
+            )
+            .ToList();
+    }
 
     private async Task<decimal> SaldoAsync(int id, CancellationToken ct)
     {
