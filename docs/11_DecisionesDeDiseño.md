@@ -115,3 +115,20 @@ Resultado:
 No se codifican porcentajes fijos mientras no exista información confirmada. La automatización futura debe permitir configurar reglas de comisión por proveedor y categoría. Cuando se implemente, cada venta de catálogo deberá conservar como snapshot el porcentaje y/o monto aplicado en ese momento, para que cambios posteriores de configuración no alteren la utilidad histórica.
 
 Mientras las reglas no estén confirmadas, las ventas de catálogo seguirán registrando explícitamente `CostoUnitario` y `PrecioFinal`, que permiten llevar deuda y utilidad sin depender de porcentajes asumidos.
+
+## 015 El saldo requiere endurecimiento de concurrencia después de completar la UI
+
+Motivo:
+El saldo de un cliente se calcula a partir de ventas registradas y pagos globales. Operaciones como registrar una venta, registrar un pago/abono o cancelar una venta pueden competir sobre el mismo estado lógico si se ejecutan al mismo tiempo. La validación secuencial actual es suficiente para la etapa de desarrollo y uso inicial, pero no debe asumirse que las tareas asíncronas se ejecutarán en un orden o velocidad determinados.
+
+Resultado:
+Una vez completada la UI y validados los flujos reales, se realizará una fase específica de endurecimiento de concurrencia. La sección crítica no se define como la lectura del número de saldo en sí, sino como el conjunto de operaciones que leen y modifican datos que determinan el saldo de un mismo cliente.
+
+La solución deberá cumplir:
+- exclusión mutua para operaciones incompatibles sobre el mismo cliente;
+- independencia respecto a la velocidad relativa, orden o temporización de procesos/tareas asíncronas;
+- progreso: procesos ajenos a la sección crítica no deben impedir innecesariamente que otro proceso avance;
+- espera acotada: una operación no puede ser postergada indefinidamente para entrar a su sección crítica;
+- granularidad por cliente siempre que sea posible, evitando bloquear globalmente operaciones de clientes distintos.
+
+Se aplicará doble protección: una capa de coordinación a nivel de aplicación y una segunda garantía a nivel de persistencia/transacción o mecanismo de concurrencia apropiado para la base de datos utilizada. La implementación concreta se decidirá cuando estén terminados los flujos de UI y antes de considerar el sistema listo para escenarios con concurrencia real.
