@@ -1,36 +1,67 @@
 # Alcance V1
-Incluye:
 
-✅ Clientes
+## Incluye
 
-✅ Productos
+✅ Clientes.
 
-✅ Compras
+✅ Productos y categorías.
 
-✅ Comprobantes de compras
+✅ Proveedores.
 
-✅ Unidades de inventario
+✅ Compras y comprobantes de compra.
 
-✅ Pedidos
+✅ Importaciones, compras locales, catálogo y envíos del hijo según su flujo.
 
-✅ Pagos
+✅ Unidades de inventario físicas.
 
-✅ Dashboard
+✅ Recepción de mercancía.
 
-✅ Ventas
+✅ Estados físicos controlados de inventario.
 
-✅ Puede almacenar un código de barras opcional en Producto.
+✅ Reservas/apartados separadas del estado físico.
 
-----------------
+✅ Pedidos.
 
-No incluye:
+✅ Ventas completas asociadas a pedidos.
 
-❌ IA
+✅ Ventas de catálogo sin `UnidadInventario` cuando la mercancía no pasa por inventario físico.
 
-❌ OCR
+✅ Pagos y abonos globales por cliente.
 
-❌ WhatsApp
+✅ Cálculo automático de saldo.
 
-❌ Multiusuario
+✅ Cancelación protegida de ventas antes de entrega.
 
-❌ Offline
+✅ Dashboard y consulta de utilidad.
+
+✅ `Producto.PrecioSugerido` como referencia editable al vender.
+
+✅ Código de barras opcional en `Producto`.
+
+## Pendiente para Fase 5
+
+🟡 Autenticación completa, login y protección de rutas.
+
+🟡 Interfaz Blazor para los casos de uso del backend.
+
+🟡 Adjuntar/gestionar fotografías reales de comprobantes desde la UI.
+
+## Pendiente de información del negocio
+
+🟡 Confirmar porcentajes de comisión de catálogo por proveedor/categoría.
+
+🟡 Confirmar la base/fórmula utilizada por cada proveedor para calcular la comisión.
+
+## Fuera del alcance V1 actual
+
+❌ IA.
+
+❌ OCR.
+
+❌ Integración con WhatsApp.
+
+❌ Multiusuario avanzado.
+
+❌ Funcionamiento offline.
+
+❌ Devoluciones y cambios de unidades ya entregadas; requieren un flujo específico futuro.
