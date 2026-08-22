@@ -60,6 +60,15 @@
 - Una venta de catálogo puede registrar `DetalleVenta` con `ProductoId`, `CostoUnitario` y `PrecioFinal` sin `UnidadInventario`.
 - Solo un pedido `Catalogo` permite vender sin unidad física.
 - Una compra de catálogo no genera unidades automáticamente si la mercancía no pasa por inventario físico.
+- En el flujo real, los productos de catálogo se gestionan bajo pedido y normalmente se entregan al cliente al recibirse, por lo que no forman inventario disponible para venta general.
+- El catálogo muestra directamente el precio final al cliente.
+- Dentro de ese precio final ya está incluida la ganancia o comisión de la vendedora.
+- El porcentaje de comisión no es único: varía según el tipo o categoría del producto y puede depender también del proveedor de catálogo.
+- Se conocen al menos grupos diferenciados de comisión para ropa y calzado, electrodomésticos y productos de limpieza como jabón o desinfectante.
+- Los porcentajes exactos y la base exacta utilizada por cada proveedor para calcular la comisión están pendientes de confirmación; el sistema no debe inventar ni asumir esos valores.
+- La futura automatización de comisiones debe permitir configurar reglas por proveedor y categoría.
+- Si una regla de comisión cambia con el tiempo, las ventas históricas deben conservar el porcentaje y/o monto aplicado en el momento de la venta para no alterar su utilidad histórica.
+- Hasta confirmar las reglas de comisión, `CostoUnitario` y `PrecioFinal` siguen registrándose explícitamente para poder calcular deuda y utilidad sin depender de porcentajes no verificados.
 
 ## Compras y recepción
 
@@ -78,9 +87,11 @@
 - `DetalleVenta.PrecioFinal` es el precio real y puede ser menor, igual o mayor que `PrecioSugerido`.
 - El costo no pertenece al producto: en inventario es un snapshot de `UnidadInventario.Costo`; en catálogo es `DetalleVenta.CostoUnitario`.
 - La utilidad usa `PrecioFinal - CostoUnitario`; nunca usa `PrecioSugerido`.
+- Para catálogo, una futura regla de comisión podrá ayudar a derivar o verificar la ganancia, pero no debe sustituir el historial transaccional ni recalcular ventas antiguas con porcentajes nuevos.
 
 ## Fuera del flujo V1 actual
 
 - La autenticación completa se implementará en la Fase 5.
 - Devoluciones y cambios requieren un caso de uso futuro y no se resuelven con transiciones manuales arbitrarias.
+- La automatización de comisiones de catálogo queda pendiente hasta confirmar porcentajes y fórmula real por proveedor/categoría.
 - Esta fase no introduce pantallas ni lógica visual.
