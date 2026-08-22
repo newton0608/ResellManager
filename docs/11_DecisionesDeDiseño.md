@@ -75,7 +75,7 @@ Motivo:
 Una unidad puede estar `EnTransito` o `Disponible` y, al mismo tiempo, reservada para un cliente. Un único enum no puede representar ambos conceptos sin perder información.
 
 Resultado:
-`EstadoUnidadInventario` conserva solo el ciclo físico y `UnidadInventario.DetallePedidoReservaId` identifica opcionalmente la reserva activa. No se crea una entidad `Reserva` independiente en V1.
+`EstadoUnidadInventario` conserva solo el ciclo físico y `UnidadInventario.DetallePedidoReservaId` identifica opcionalmente la reserva activa. No se crea una entidad `Reserva` independiente en V1. Los pedidos `Catalogo` no reservan inventario físico; cualquier otro tipo de pedido puede reservarlo cuando el flujo lo requiera.
 
 ## 010 Una venta se registra completa e inmutable en sus artículos
 

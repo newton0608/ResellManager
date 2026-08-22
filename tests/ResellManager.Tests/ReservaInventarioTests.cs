@@ -121,4 +121,61 @@ public sealed class ReservaInventarioTests
         Assert.Equal(EstadoUnidadInventario.Vendida, unidad.Estado);
         Assert.Null(unidad.DetallePedidoReservaId);
     }
+
+    [Fact]
+    public async Task ReservarEnPedidoCatalogo_SeRechaza()
+    {
+        await using var test = await TestDatabase.CreateAsync();
+        var unidad = await test.CrearUnidadDisponibleAsync("LOC-RES-CATALOGO");
+        var pedido = await test.CrearPedidoAsync(TipoPedido.Catalogo, "PED-RES-CATALOGO");
+
+        var result = await new InventarioService(test.Db).ReservarAsync(
+            unidad.Id,
+            pedido.Detalles.Single().Id
+        );
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains("catálogo", result.ErrorMessage!, StringComparison.OrdinalIgnoreCase);
+        await test.Db.Entry(unidad).ReloadAsync();
+        Assert.Null(unidad.DetallePedidoReservaId);
+    }
+
+    [Fact]
+    public async Task ReservarEnPedidoApartado_SeAcepta()
+    {
+        await using var test = await TestDatabase.CreateAsync();
+        var unidad = await test.CrearUnidadDisponibleAsync("LOC-RES-APARTADO");
+        var pedido = await test.CrearPedidoAsync(TipoPedido.Apartado, "PED-RES-APARTADO");
+
+        var result = await new InventarioService(test.Db).ReservarAsync(
+            unidad.Id,
+            pedido.Detalles.Single().Id
+        );
+
+        Assert.True(result.IsSuccess, result.ErrorMessage);
+        Assert.Equal(pedido.Detalles.Single().Id, result.Value!.DetallePedidoReservaId);
+    }
+
+    [Fact]
+    public async Task ReservarUnidadEnTransitoParaPedidoNoCatalogo_SeAcepta()
+    {
+        await using var test = await TestDatabase.CreateAsync();
+        var unidad = await test.CrearUnidadImportadaAsync("IMP-RES-NO-CATALOGO");
+        var pedido = await test.CrearPedidoAsync(
+            TipoPedido.VentaDirecta,
+            "PED-RES-NO-CATALOGO"
+        );
+        var service = new InventarioService(test.Db);
+        var transito = await service.CambiarEstadoAsync(
+            unidad.Id,
+            EstadoUnidadInventario.EnTransito
+        );
+
+        var reserva = await service.ReservarAsync(unidad.Id, pedido.Detalles.Single().Id);
+
+        Assert.True(transito.IsSuccess, transito.ErrorMessage);
+        Assert.True(reserva.IsSuccess, reserva.ErrorMessage);
+        Assert.Equal(EstadoUnidadInventario.EnTransito, reserva.Value!.Estado);
+        Assert.Equal(pedido.Detalles.Single().Id, reserva.Value.DetallePedidoReservaId);
+    }
 }

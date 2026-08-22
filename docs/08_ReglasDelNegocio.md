@@ -21,6 +21,8 @@
 - La asociación permite conocer el `DetallePedido`, `Pedido` y `Cliente` de la reserva.
 - Una unidad puede no tener reserva y solo puede tener una reserva activa a la vez.
 - Pueden reservarse unidades físicas `Comprada`, `EnTransito` o `Disponible`.
+- Un pedido `Catalogo` nunca puede reservar una unidad física; los demás tipos de pedido pueden hacerlo cuando el flujo lo requiera.
+- La reserva no está restringida exclusivamente a pedidos `Apartado`.
 - Una unidad `Vendida` o `Entregada` no puede reservarse.
 - La unidad y el detalle reservado deben corresponder al mismo producto.
 - Una unidad reservada no puede venderse para un pedido distinto.

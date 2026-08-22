@@ -326,6 +326,10 @@ public sealed class InventarioService(ResellManagerDbContext db) : IInventarioSe
             return ServiceResult<UnidadInventarioDto>.Failure(
                 "No se puede reservar para un pedido cancelado o completado."
             );
+        if (detalle.Pedido.TipoPedido == TipoPedido.Catalogo)
+            return ServiceResult<UnidadInventarioDto>.Failure(
+                "Un pedido de catálogo no puede reservar unidades de inventario."
+            );
         if (unidad.ProductoId != detalle.ProductoId)
             return ServiceResult<UnidadInventarioDto>.Failure(
                 "La unidad y el detalle de pedido deben corresponder al mismo producto."
