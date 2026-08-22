@@ -12,6 +12,13 @@
 
 - [ ] Implementar login y control de acceso completo.
 
+## Catálogo: información pendiente del negocio
+
+- [ ] Confirmar porcentajes de comisión por categoría para cada proveedor de catálogo.
+- [ ] Confirmar la base exacta o fórmula que utiliza cada proveedor para calcular la comisión.
+- [ ] Diseñar configuración de comisiones por proveedor y categoría.
+- [ ] Al automatizar comisiones, guardar snapshot del porcentaje y/o monto aplicado en cada venta para preservar historial.
+
 ## Flujos futuros
 
 - [ ] Diseñar devoluciones y cambios para unidades entregadas.
