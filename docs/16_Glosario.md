@@ -26,7 +26,7 @@ Estado exclusivamente físico/logístico de una unidad. Valores V1:
 
 ## Reserva o apartado
 
-Asociación comercial opcional desde una `UnidadInventario` hacia un `DetallePedido`. Permite identificar el pedido y cliente de la reserva sin alterar el estado físico. Si todavía no existe una unidad, la intención del apartado permanece en el pedido/detalle hasta que una unidad pueda asociarse.
+Asociación comercial opcional desde una `UnidadInventario` hacia un `DetallePedido`. Permite identificar el pedido y cliente de la reserva sin alterar el estado físico. Si todavía no existe una unidad, la intención del apartado permanece en el pedido/detalle hasta que una unidad pueda asociarse. Los pedidos `Catalogo` no reservan inventario físico.
 
 ## Compra
 
@@ -54,7 +54,7 @@ Solicitud del cliente previa a la venta. Sus detalles definen productos y cantid
 
 ## DetallePedido
 
-Producto y cantidad solicitada dentro de un pedido. Es el destino de la asociación de unidades reservadas.
+Producto y cantidad solicitada dentro de un pedido. Es el destino de la asociación de unidades reservadas en flujos no catálogo.
 
 ## Venta
 
@@ -66,7 +66,7 @@ Una unidad vendida; no contiene cantidad. En inventario referencia una `UnidadIn
 
 ## PrecioFinal
 
-Precio real de un `DetalleVenta`. Puede ser menor, igual o mayor que `Producto.PrecioSugerido` y es el valor usado para saldo e ingresos.
+Precio real de un `DetalleVenta`. Puede ser menor, igual o mayor que `Producto.PrecioSugerido` y es el valor usado para saldo e ingresos. En catálogo corresponde al precio final mostrado al cliente por el proveedor.
 
 ## Pago
 
@@ -82,7 +82,15 @@ Conjunto de unidades físicas administradas por el sistema. No constituye una en
 
 ## Catálogo
 
-Productos ofrecidos por proveedores externos. Un pedido de catálogo puede generar venta sin `UnidadInventario` cuando la mercancía no pasa por inventario físico.
+Productos ofrecidos por proveedores externos bajo pedido. Cuando la mercancía se entrega al cliente al recibirse y no pasa por inventario general, el pedido/venta de catálogo no genera ni reserva `UnidadInventario`.
+
+## Comisión de catálogo
+
+Parte del precio final mostrado por un proveedor de catálogo que corresponde a la ganancia de la vendedora. El porcentaje varía según el tipo o categoría del producto y puede depender también del proveedor. Se recuerdan grupos diferenciados como ropa/calzado, electrodomésticos y productos de limpieza, pero los porcentajes exactos aún deben confirmarse.
+
+## Regla de comisión de catálogo
+
+Configuración futura que asociará un proveedor y una categoría con su porcentaje de comisión. No debe inventarse ni automatizarse hasta confirmar los valores y la base de cálculo real. Cuando se implemente, la venta deberá conservar históricamente el porcentaje/importe utilizado para que cambios posteriores no alteren utilidades pasadas.
 
 ## Compra local
 
@@ -106,7 +114,7 @@ Flujo futuro para revertir o sustituir productos ya entregados. Está fuera del 
 
 ## Ganancia o utilidad
 
-Diferencia `PrecioFinal - CostoUnitario` para detalles de ventas registradas. Usa el costo de la unidad o el costo de catálogo, nunca `PrecioSugerido`.
+En ventas de inventario, diferencia `PrecioFinal - CostoUnitario` para detalles registrados. En catálogo, el precio final ya incluye la ganancia de la vendedora; la automatización específica por comisión queda pendiente de confirmar porcentajes y fórmula. Mientras tanto se conserva `CostoUnitario` para calcular utilidad transaccional sin inventar reglas.
 
 ## Dashboard
 
