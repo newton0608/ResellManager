@@ -1,6 +1,18 @@
 @inherits LayoutComponentBase
 
 <div class="page">
+    <AuthorizeView>
+        <Authorized Context="estadoAutenticacion">
+            <header class="barra-sesion">
+                <span>@estadoAutenticacion.User.Identity?.Name</span>
+                <form method="post" action="/account/logout" data-enhance="false">
+                    <AntiforgeryToken />
+                    <input type="hidden" name="confirmacion" value="true" />
+                    <button type="submit">Cerrar sesión</button>
+                </form>
+            </header>
+        </Authorized>
+    </AuthorizeView>
     <main>
         @Body
     </main>

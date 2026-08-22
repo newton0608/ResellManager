@@ -11,6 +11,7 @@
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
     <PackageReference Include="xunit" Version="2.5.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
@@ -22,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\ResellManager.Domain\ResellManager.Domain.csproj" />
+    <ProjectReference Include="..\..\src\ResellManager.Web\ResellManager.Web.csproj" />
     <ProjectReference Include="..\..\src\ResellManager.Application\ResellManager.Application.csproj" />
     <ProjectReference Include="..\..\src\ResellManager.Infrastructure\ResellManager.Infrastructure.csproj" />
   </ItemGroup>

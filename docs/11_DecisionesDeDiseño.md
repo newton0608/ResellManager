@@ -101,10 +101,10 @@ El negocio necesita una referencia de captura sin restringir negociaciones ni di
 Resultado:
 `Producto.PrecioSugerido` es referencia/default y debe ser no negativo. `DetalleVenta.PrecioFinal` es el precio real y puede diferir. La utilidad usa el costo transaccional y `PrecioFinal`.
 
-## 013 Autenticación y devoluciones quedan fuera de esta fase
+## 013 Devoluciones y cambios quedan fuera de esta fase
 
 Resultado:
-La autenticación completa se mantiene para la Fase 5. Devoluciones y cambios se diseñarán como casos de uso futuros; no se habilitan mediante cambios arbitrarios de estado ni mediante UI en esta rama.
+Devoluciones y cambios se diseñarán como casos de uso futuros; no se habilitan mediante cambios arbitrarios de estado ni mediante UI.
 
 ## 014 Las comisiones de catálogo deben ser configurables y conservar historial
 
@@ -132,3 +132,30 @@ La solución deberá cumplir:
 - granularidad por cliente siempre que sea posible, evitando bloquear globalmente operaciones de clientes distintos.
 
 Se aplicará doble protección: una capa de coordinación a nivel de aplicación y una segunda garantía a nivel de persistencia/transacción o mecanismo de concurrencia apropiado para la base de datos utilizada. La implementación concreta se decidirá cuando estén terminados los flujos de UI y antes de considerar el sistema listo para escenarios con concurrencia real.
+## 016 La aplicación es privada y usa ASP.NET Core Identity
+
+Motivo:
+ResellManager administra información familiar y no necesita adquisición pública de usuarios.
+
+Resultado:
+La Fase 5.1 implementa login, logout, cookies seguras y protección de rutas con ASP.NET Core Identity. La autorización actual exige únicamente un usuario autenticado. No se exponen `MapIdentityApi` ni endpoints o páginas de registro anónimo. Las tablas de roles de Identity se conservan para una posible evolución, pero no se agrega un modelo de roles o permisos hasta que exista una necesidad real.
+
+### Usuario inicial
+
+El seed es opcional e idempotente: crea una cuenta solo cuando no existe y están configurados tanto el correo como la contraseña. Nunca reemplaza la contraseña de una cuenta existente. Si falta cualquier credencial, la aplicación inicia normalmente sin crear usuarios.
+
+En desarrollo se configura con User Secrets desde la raíz del repositorio:
+
+```powershell
+dotnet user-secrets set "UsuarioInicial:Correo" "administrador@ejemplo.com" --project src/ResellManager.Web
+dotnet user-secrets set "UsuarioInicial:Contrasena" "<contraseña-segura>" --project src/ResellManager.Web
+```
+
+En despliegue se pueden usar variables de entorno:
+
+```text
+UsuarioInicial__Correo=administrador@ejemplo.com
+UsuarioInicial__Contrasena=<contraseña-segura>
+```
+
+La contraseña debe tener al menos 12 caracteres e incluir mayúscula, minúscula, número y carácter no alfanumérico. Identity almacena únicamente su hash. Una vez creada la primera cuenta, las credenciales de seed deben retirarse de la configuración del entorno.

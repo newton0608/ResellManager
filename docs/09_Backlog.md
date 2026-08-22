@@ -8,9 +8,14 @@
 - [x] Proteger cancelaciones frente a pagos que producirían saldo negativo.
 - [x] Endurecer transiciones físicas y recepción de mercancía.
 
-## Fase 5: autenticación
+## Fase 5.1: autenticación
 
-- [ ] Implementar login y control de acceso completo.
+- [x] Implementar login y logout con ASP.NET Core Identity.
+- [x] Proteger globalmente las páginas de negocio.
+- [x] Mantener el login público y eliminar el flujo de autorregistro.
+- [x] Crear el usuario inicial mediante configuración segura opcional.
+- [x] Cubrir autenticación y sesión con pruebas de integración.
+- [ ] Incorporar roles o permisos solo si una necesidad futura los justifica.
 
 ## Endurecimiento de concurrencia después de completar la UI
 

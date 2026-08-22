@@ -38,9 +38,11 @@
 
 ✅ Código de barras opcional en `Producto`.
 
-## Pendiente para Fase 5
+✅ Autenticación completa y protección de rutas implementadas en Fase 5.1.
 
-🟡 Autenticación completa, login y protección de rutas.
+✅ Aplicación privada, sin autorregistro público y con autorización basada en usuario autenticado.
+
+## Pendiente para fases posteriores
 
 🟡 Interfaz Blazor para los casos de uso del backend.
 

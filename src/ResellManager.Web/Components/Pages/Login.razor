@@ -1,0 +1,43 @@
+@page "/login"
+@attribute [AllowAnonymous]
+
+<PageTitle>Iniciar sesión | ResellManager</PageTitle>
+
+<section class="auth-panel" aria-labelledby="titulo-login">
+    <h1 id="titulo-login">Iniciar sesión</h1>
+    <p>Ingresa con la cuenta configurada para ResellManager.</p>
+
+    @if (Error == "credenciales")
+    {
+        <div class="mensaje-error" role="alert">El correo o la contraseña son incorrectos.</div>
+    }
+    else if (SesionCerrada)
+    {
+        <div class="mensaje-exito" role="status">La sesión se cerró correctamente.</div>
+    }
+
+    <form method="post" action="/account/login" data-enhance="false">
+        <AntiforgeryToken />
+
+        <label for="correo">Correo electrónico</label>
+        <input id="correo" name="correo" type="email" autocomplete="username" required autofocus />
+
+        <label for="contrasena">Contraseña</label>
+        <input id="contrasena" name="contrasena" type="password" autocomplete="current-password" required />
+
+        <label class="opcion-recordar">
+            <input name="recordar" type="checkbox" value="true" />
+            Mantener la sesión iniciada
+        </label>
+
+        <button type="submit">Entrar</button>
+    </form>
+</section>
+
+@code {
+    [SupplyParameterFromQuery(Name = "error")]
+    public string? Error { get; set; }
+
+    [SupplyParameterFromQuery(Name = "sesionCerrada")]
+    public bool SesionCerrada { get; set; }
+}

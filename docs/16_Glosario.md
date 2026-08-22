@@ -122,7 +122,19 @@ Resumen de deuda, inventario disponible, pedidos pendientes, pagos y ventas reci
 
 ## Autenticación
 
-Control de acceso completo pendiente para la Fase 5; no forma parte de esta rama de invariantes.
+Validación de la identidad de una persona. Desde la Fase 5.1 se realiza con ASP.NET Core Identity y una cookie de sesión; incluye login y logout. La aplicación es privada y no ofrece autorregistro público.
+
+## Autorización
+
+Decisión sobre qué puede consultar o ejecutar una identidad autenticada. En V1 todas las páginas de negocio exigen únicamente tener una sesión válida. Los roles y permisos avanzados quedan para el futuro si llegan a ser necesarios.
+
+## Usuario inicial
+
+Primera cuenta creada opcionalmente durante el arranque a partir de `UsuarioInicial:Correo` y `UsuarioInicial:Contrasena`, provistos mediante User Secrets o variables de entorno. Si falta la configuración, la aplicación inicia sin crearla. La contraseña nunca se guarda en texto plano en el código ni en la base de datos.
+
+## Autorregistro
+
+Flujo mediante el cual una persona anónima crea su propia cuenta. ResellManager no lo expone porque es una aplicación privada/familiar.
 
 ## Código de barras
 
