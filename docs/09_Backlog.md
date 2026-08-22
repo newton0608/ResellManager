@@ -12,6 +12,18 @@
 
 - [ ] Implementar login y control de acceso completo.
 
+## Endurecimiento de concurrencia después de completar la UI
+
+- [ ] Revisar todas las operaciones que afectan el saldo global de un cliente como sección crítica lógica: registrar venta, registrar pago/abono y cancelar venta.
+- [ ] Implementar exclusión mutua para impedir que dos operaciones incompatibles sobre el saldo del mismo cliente se ejecuten simultáneamente.
+- [ ] Añadir una segunda capa de seguridad a nivel de persistencia/transacción o control de concurrencia, además de la coordinación a nivel de aplicación.
+- [ ] La solución no debe depender de suposiciones sobre la velocidad relativa, orden de ejecución o temporización de tareas/procesos asíncronos.
+- [ ] Garantizar progreso: procesos u operaciones que no participan en la sección crítica de un cliente no deben bloquear indefinidamente a los que sí desean entrar.
+- [ ] Garantizar espera acotada: ninguna operación que solicite acceso a la sección crítica debe poder ser postergada indefinidamente.
+- [ ] Definir el alcance del bloqueo por cliente, evitando un bloqueo global del sistema cuando dos clientes distintos puedan procesarse de manera independiente.
+- [ ] Agregar pruebas de concurrencia para pagos, ventas y cancelaciones simultáneas sobre el mismo cliente.
+- [ ] Revisar si existen otras secciones críticas además del saldo una vez que la UI y los flujos reales estén completos.
+
 ## Catálogo: información pendiente del negocio
 
 - [ ] Confirmar porcentajes de comisión por categoría para cada proveedor de catálogo.
