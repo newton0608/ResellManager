@@ -105,3 +105,13 @@ Resultado:
 
 Resultado:
 La autenticación completa se mantiene para la Fase 5. Devoluciones y cambios se diseñarán como casos de uso futuros; no se habilitan mediante cambios arbitrarios de estado ni mediante UI en esta rama.
+
+## 014 Las comisiones de catálogo deben ser configurables y conservar historial
+
+Motivo:
+Los proveedores de catálogo muestran directamente el precio final al cliente y dentro de ese importe ya se encuentra incluida la ganancia de la vendedora. El porcentaje de comisión cambia según el tipo o categoría del producto; se recuerdan al menos grupos diferenciados para ropa y calzado, electrodomésticos y productos de limpieza. Los porcentajes exactos y la fórmula/base usada por cada proveedor todavía no están confirmados.
+
+Resultado:
+No se codifican porcentajes fijos mientras no exista información confirmada. La automatización futura debe permitir configurar reglas de comisión por proveedor y categoría. Cuando se implemente, cada venta de catálogo deberá conservar como snapshot el porcentaje y/o monto aplicado en ese momento, para que cambios posteriores de configuración no alteren la utilidad histórica.
+
+Mientras las reglas no estén confirmadas, las ventas de catálogo seguirán registrando explícitamente `CostoUnitario` y `PrecioFinal`, que permiten llevar deuda y utilidad sin depender de porcentajes asumidos.
