@@ -132,13 +132,40 @@ La solución deberá cumplir:
 - granularidad por cliente siempre que sea posible, evitando bloquear globalmente operaciones de clientes distintos.
 
 Se aplicará doble protección: una capa de coordinación a nivel de aplicación y una segunda garantía a nivel de persistencia/transacción o mecanismo de concurrencia apropiado para la base de datos utilizada. La implementación concreta se decidirá cuando estén terminados los flujos de UI y antes de considerar el sistema listo para escenarios con concurrencia real.
+
 ## 016 La aplicación es privada y usa ASP.NET Core Identity
 
 Motivo:
 ResellManager administra información familiar y no necesita adquisición pública de usuarios.
 
 Resultado:
-La Fase 5.1 implementa login, logout, cookies seguras y protección de rutas con ASP.NET Core Identity. La autorización actual exige únicamente un usuario autenticado. No se exponen `MapIdentityApi` ni endpoints o páginas de registro anónimo. Las tablas de roles de Identity se conservan para una posible evolución, pero no se agrega un modelo de roles o permisos hasta que exista una necesidad real.
+La Fase 5.1 implementa login, logout, cookies seguras y protección de rutas con ASP.NET Core Identity. La autorización actual exige únicamente un usuario autenticado. No se exponen `MapIdentityApi` ni endpoints o páginas de registro anónimo.
+
+### Roles y permisos futuros
+
+Mientras ResellManager sea utilizado únicamente por la propietaria del negocio o por personas de confianza con el mismo nivel de acceso, no se necesita separar permisos por rol.
+
+Si en el futuro el negocio evoluciona a una tienda física con trabajadores, sí se deberá incorporar autorización por roles o permisos. Ejemplos posibles:
+
+- `Administrador` o `Propietaria`: acceso completo, configuración, reportes, usuarios y operaciones sensibles.
+- `Vendedor`: registrar ventas, consultar clientes e inventario y registrar cobros según las reglas permitidas.
+- `Bodega` o `Inventario`: registrar recepción, consultar inventario y actualizar operaciones físicas autorizadas, sin acceso necesariamente a información financiera completa.
+
+Los nombres y permisos exactos no se consideran definidos todavía; deberán diseñarse a partir de las responsabilidades reales de los trabajadores. Las tablas de roles de ASP.NET Core Identity se conservan para permitir esa evolución sin reemplazar el sistema de autenticación.
+
+### Administración de usuarios futura
+
+"Administración de usuarios" significa disponer de una pantalla o módulo privado para que una cuenta autorizada pueda gestionar las cuentas que entran a ResellManager. Sería útil cuando existan varios trabajadores y ya no sea práctico crear cuentas manualmente mediante configuración.
+
+Ese módulo podría permitir:
+
+- crear una cuenta para un trabajador;
+- deshabilitar o bloquear una cuenta cuando una persona deje de trabajar en el negocio;
+- restablecer o cambiar credenciales de acceso;
+- asignar o retirar roles;
+- consultar qué cuentas existen y si están activas.
+
+No significa administrar `Cliente`; se refiere exclusivamente a las cuentas de acceso al sistema. En V1 no es necesario porque existe un usuario inicial configurable y no hay autorregistro público.
 
 ### Usuario inicial
 
