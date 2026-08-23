@@ -18,6 +18,16 @@
 - [ ] Incorporar roles y permisos si el negocio evoluciona a una tienda física con trabajadores.
 - [ ] Incorporar administración de usuarios desde la aplicación cuando existan varias cuentas que deban crearse, deshabilitarse, restablecerse o asignarse a roles.
 
+## Fase 5.2: shell visual y navegación
+
+- [x] Implementar el layout principal con sidebar, topbar y área de contenido.
+- [x] Implementar navegación base y estado activo para los módulos previstos.
+- [x] Adaptar el shell para escritorio, tablet y teléfono con drawer móvil.
+- [x] Integrar usuario autenticado y logout POST protegido en la topbar.
+- [x] Crear inicio sin métricas ficticias y placeholders explícitos para módulos pendientes.
+- [x] Ajustar visualmente login y error sin modificar su arquitectura de autenticación.
+- [ ] Implementar las pantallas y operaciones completas de cada módulo en sus fases correspondientes.
+
 ## Endurecimiento de concurrencia después de completar la UI
 
 - [ ] Revisar todas las operaciones que afectan el saldo global de un cliente como sección crítica lógica: registrar venta, registrar pago/abono y cancelar venta.

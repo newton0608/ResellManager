@@ -1,11 +1,23 @@
 @page "/login"
 @attribute [AllowAnonymous]
+@layout AuthLayout
 
 <PageTitle>Iniciar sesión | ResellManager</PageTitle>
 
-<section class="auth-panel" aria-labelledby="titulo-login">
-    <h1 id="titulo-login">Iniciar sesión</h1>
-    <p>Ingresa con la cuenta configurada para ResellManager.</p>
+<section class="auth-card" aria-labelledby="titulo-login">
+    <div class="auth-brand">
+        <span class="brand-mark auth-brand-mark" aria-hidden="true">R</span>
+        <span>
+            <strong>ResellManager</strong>
+            <small>Administración familiar</small>
+        </span>
+    </div>
+
+    <div class="auth-heading">
+        <p class="eyebrow">Acceso privado</p>
+        <h1 id="titulo-login">Iniciar sesión</h1>
+        <p>Ingresa con la cuenta configurada para continuar.</p>
+    </div>
 
     @if (Error == "credenciales")
     {
@@ -16,22 +28,25 @@
         <div class="mensaje-exito" role="status">La sesión se cerró correctamente.</div>
     }
 
-    <form method="post" action="/account/login" data-enhance="false">
+    <form class="auth-form" method="post" action="/account/login" data-enhance="false">
         <AntiforgeryToken />
 
         <label for="correo">Correo electrónico</label>
-        <input id="correo" name="correo" type="email" autocomplete="username" required autofocus />
+        <input id="correo" name="correo" type="email" autocomplete="username"
+               placeholder="nombre@correo.com" required autofocus />
 
         <label for="contrasena">Contraseña</label>
         <input id="contrasena" name="contrasena" type="password" autocomplete="current-password" required />
 
         <label class="opcion-recordar">
             <input name="recordar" type="checkbox" value="true" />
-            Mantener la sesión iniciada
+            <span>Mantener la sesión iniciada</span>
         </label>
 
-        <button type="submit">Entrar</button>
+        <button class="primary-button" type="submit">Entrar</button>
     </form>
+
+    <p class="auth-help">Esta aplicación es de uso privado. Si necesitas acceso, consulta al administrador.</p>
 </section>
 
 @code {

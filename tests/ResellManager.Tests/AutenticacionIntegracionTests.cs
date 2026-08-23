@@ -92,6 +92,42 @@ public sealed class AutenticacionIntegracionTests(AplicacionAutenticacionFactory
         Assert.DoesNotContain("/account/register", rutas);
     }
 
+    [Fact]
+    public async Task NavegacionBase_ProtegeYRenderizaLosModulosPrevistos()
+    {
+        var modulos = new Dictionary<string, string>
+        {
+            ["/clientes"] = "Clientes",
+            ["/productos"] = "Productos",
+            ["/inventario"] = "Inventario",
+            ["/pedidos"] = "Pedidos",
+            ["/ventas"] = "Ventas",
+            ["/pagos"] = "Pagos",
+            ["/compras"] = "Compras",
+            ["/proveedores"] = "Proveedores",
+            ["/categorias"] = "Categorías"
+        };
+
+        using var clienteAnonimo = CrearCliente();
+        foreach (var ruta in modulos.Keys)
+        {
+            AssertRedirigeAlLogin(await clienteAnonimo.GetAsync(ruta));
+        }
+
+        using var clienteAutenticado = CrearCliente();
+        await IniciarSesionAsync(clienteAutenticado, AplicacionAutenticacionFactory.ContrasenaValida);
+
+        foreach (var (ruta, nombre) in modulos)
+        {
+            var respuesta = await clienteAutenticado.GetAsync(ruta);
+            var contenido = WebUtility.HtmlDecode(await respuesta.Content.ReadAsStringAsync());
+
+            Assert.Equal(HttpStatusCode.OK, respuesta.StatusCode);
+            Assert.Contains(nombre, contenido);
+            Assert.Contains("se implementarán en una fase posterior", contenido);
+        }
+    }
+
     private static void AssertRedirigeAlLogin(HttpResponseMessage respuesta)
     {
         Assert.Equal(HttpStatusCode.Redirect, respuesta.StatusCode);

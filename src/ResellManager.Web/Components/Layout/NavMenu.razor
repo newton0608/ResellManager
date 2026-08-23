@@ -1,0 +1,45 @@
+<div class="brand" aria-label="ResellManager">
+    <span class="brand-mark" aria-hidden="true">R</span>
+    <span class="brand-copy">
+        <strong>ResellManager</strong>
+        <small>Administración</small>
+    </span>
+</div>
+
+<nav class="primary-nav" aria-label="Navegación principal">
+    <p class="nav-section-label">Menú principal</p>
+    <ul>
+        @foreach (var item in Items)
+        {
+            <li>
+                <NavLink href="@item.Href" Match="@(item.Exact ? NavLinkMatch.All : NavLinkMatch.Prefix)">
+                    <NavIcon Name="@item.Icon" />
+                    <span>@item.Label</span>
+                </NavLink>
+            </li>
+        }
+    </ul>
+</nav>
+
+<div class="sidebar-note">
+    <span class="status-dot" aria-hidden="true"></span>
+    <span>Acceso privado</span>
+</div>
+
+@code {
+    private static readonly NavigationItem[] Items =
+    [
+        new("/", "Inicio", "home", true),
+        new("/clientes", "Clientes", "users"),
+        new("/productos", "Productos", "tag"),
+        new("/inventario", "Inventario", "boxes"),
+        new("/pedidos", "Pedidos", "clipboard"),
+        new("/ventas", "Ventas", "cart"),
+        new("/pagos", "Pagos", "wallet"),
+        new("/compras", "Compras", "bag"),
+        new("/proveedores", "Proveedores", "truck"),
+        new("/categorias", "Categorías", "grid")
+    ];
+
+    private sealed record NavigationItem(string Href, string Label, string Icon, bool Exact = false);
+}

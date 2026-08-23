@@ -1,0 +1,55 @@
+<svg class="nav-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+     stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    @switch (Name)
+    {
+        case "home":
+            <path d="m3 11 9-8 9 8" />
+            <path d="M5 10v10h14V10M9 20v-6h6v6" />
+            break;
+        case "users":
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+            break;
+        case "tag":
+            <path d="M20.6 13.6 11 4H4v7l9.6 9.6a2 2 0 0 0 2.8 0l4.2-4.2a2 2 0 0 0 0-2.8Z" />
+            <circle cx="8.5" cy="8.5" r="1" />
+            break;
+        case "boxes":
+            <path d="m7.5 4.3 4.5 2.6 4.5-2.6M12 6.9V12M3 9.5l4.5 2.6L12 9.5M7.5 12.1v5.2M12 14.7l4.5 2.6 4.5-2.6M16.5 17.3v5.2" />
+            <path d="m3 9.5 4.5-2.6L12 9.5v5.2l-4.5 2.6L3 14.7ZM12 14.7l4.5-2.6 4.5 2.6v5.2l-4.5 2.6-4.5-2.6Z" />
+            break;
+        case "clipboard":
+            <rect x="5" y="4" width="14" height="17" rx="2" />
+            <path d="M9 4.5V3h6v1.5M9 11h6M9 15h6" />
+            break;
+        case "cart":
+            <circle cx="9" cy="20" r="1" />
+            <circle cx="18" cy="20" r="1" />
+            <path d="M3 3h2l2.4 11.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 2-1.6L21 7H6" />
+            break;
+        case "wallet":
+            <path d="M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v13H5a2 2 0 0 1-2-2Z" />
+            <path d="M16 11h5v5h-5a2.5 2.5 0 0 1 0-5Z" />
+            break;
+        case "bag":
+            <path d="M6 8V6a6 6 0 0 1 12 0v2M4 8h16l-1 13H5Z" />
+            break;
+        case "truck":
+            <path d="M3 6h11v11H3ZM14 10h4l3 3v4h-7Z" />
+            <circle cx="7" cy="19" r="2" />
+            <circle cx="18" cy="19" r="2" />
+            break;
+        default:
+            <rect x="4" y="4" width="6" height="6" rx="1" />
+            <rect x="14" y="4" width="6" height="6" rx="1" />
+            <rect x="4" y="14" width="6" height="6" rx="1" />
+            <rect x="14" y="14" width="6" height="6" rx="1" />
+            break;
+    }
+</svg>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Name { get; set; } = string.Empty;
+}

@@ -1,7 +1,19 @@
 @page "/Error"
 @attribute [AllowAnonymous]
+@layout AuthLayout
 
-<PageTitle>Error</PageTitle>
+<PageTitle>Error | ResellManager</PageTitle>
 
-<h1>Ocurrió un error</h1>
-<p>No fue posible completar la solicitud.</p>
+<section class="auth-card error-card" aria-labelledby="titulo-error">
+    <div class="auth-brand">
+        <span class="brand-mark auth-brand-mark" aria-hidden="true">R</span>
+        <span>
+            <strong>ResellManager</strong>
+            <small>Administración familiar</small>
+        </span>
+    </div>
+    <p class="eyebrow">Error</p>
+    <h1 id="titulo-error">Ocurrió un error</h1>
+    <p>No fue posible completar la solicitud.</p>
+    <a class="primary-button" href="/">Volver al inicio</a>
+</section>

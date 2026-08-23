@@ -1,6 +1,65 @@
 @page "/"
 
-<PageTitle>ResellManager</PageTitle>
+<PageTitle>Inicio | ResellManager</PageTitle>
 
-<h1>ResellManager</h1>
-<p>La base técnica de la aplicación está lista para las siguientes fases.</p>
+<section class="page-heading" aria-labelledby="titulo-inicio">
+    <div>
+        <p class="eyebrow">Inicio</p>
+        <h1 id="titulo-inicio">Bienvenido a ResellManager</h1>
+        <p class="page-lead">Tu espacio central para administrar el negocio familiar.</p>
+    </div>
+</section>
+
+<section class="welcome-card" aria-labelledby="titulo-dashboard">
+    <div class="welcome-icon" aria-hidden="true">
+        <NavIcon Name="home" />
+    </div>
+    <div>
+        <h2 id="titulo-dashboard">Panel en preparación</h2>
+        <p>El dashboard completo y sus indicadores se incorporarán en una fase posterior. Por ahora puedes usar estos accesos para recorrer la estructura de la aplicación.</p>
+    </div>
+</section>
+
+<section class="quick-access" aria-labelledby="titulo-accesos">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">Navegación</p>
+            <h2 id="titulo-accesos">Accesos rápidos</h2>
+        </div>
+        <span class="section-caption">Módulos previstos</span>
+    </div>
+
+    <div class="module-grid">
+        @foreach (var item in Modules)
+        {
+            <a class="module-card" href="@item.Href">
+                <span class="module-card-icon"><NavIcon Name="@item.Icon" /></span>
+                <span class="module-card-copy">
+                    <strong>@item.Label</strong>
+                    <small>Próximamente</small>
+                </span>
+                <svg class="module-arrow" aria-hidden="true" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2">
+                    <path d="m9 18 6-6-6-6" />
+                </svg>
+            </a>
+        }
+    </div>
+</section>
+
+@code {
+    private static readonly ModuleLink[] Modules =
+    [
+        new("/clientes", "Clientes", "users"),
+        new("/productos", "Productos", "tag"),
+        new("/inventario", "Inventario", "boxes"),
+        new("/pedidos", "Pedidos", "clipboard"),
+        new("/ventas", "Ventas", "cart"),
+        new("/pagos", "Pagos", "wallet"),
+        new("/compras", "Compras", "bag"),
+        new("/proveedores", "Proveedores", "truck"),
+        new("/categorias", "Categorías", "grid")
+    ];
+
+    private sealed record ModuleLink(string Href, string Label, string Icon);
+}

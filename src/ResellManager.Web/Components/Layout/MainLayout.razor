@@ -1,19 +1,27 @@
 @inherits LayoutComponentBase
 
-<div class="page">
-    <AuthorizeView>
-        <Authorized Context="estadoAutenticacion">
-            <header class="barra-sesion">
-                <span>@estadoAutenticacion.User.Identity?.Name</span>
-                <form method="post" action="/account/logout" data-enhance="false">
-                    <AntiforgeryToken />
-                    <input type="hidden" name="confirmacion" value="true" />
-                    <button type="submit">Cerrar sesión</button>
-                </form>
-            </header>
-        </Authorized>
-    </AuthorizeView>
-    <main>
-        @Body
-    </main>
+<a class="skip-link" href="#contenido-principal">Ir al contenido principal</a>
+
+<div class="app-shell">
+    <aside class="app-sidebar" aria-label="Barra lateral">
+        <NavMenu />
+    </aside>
+
+    <div class="app-workspace">
+        <TopBar />
+
+        <main id="contenido-principal" class="app-main" tabindex="-1">
+            @Body
+        </main>
+    </div>
 </div>
+
+<aside id="navegacion-movil" class="mobile-drawer" popover="auto" aria-label="Menú de navegación">
+    <button class="icon-button drawer-close" type="button" popovertarget="navegacion-movil"
+            popovertargetaction="hide" aria-label="Cerrar menú">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6 6 18M6 6l12 12" />
+        </svg>
+    </button>
+    <NavMenu />
+</aside>

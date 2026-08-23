@@ -42,9 +42,17 @@
 
 ✅ Aplicación privada, sin autorregistro público y con autorización basada en usuario autenticado.
 
+✅ Shell visual responsive con sidebar, topbar, drawer móvil y área principal de contenido.
+
+✅ Navegación base implementada para los módulos previstos, con páginas placeholder claramente identificadas.
+
+✅ Inicio y presentación del login alineados con la identidad visual de ResellManager.
+
 ## Pendiente para fases posteriores
 
-🟡 Interfaz Blazor para los casos de uso del backend.
+🟡 Pantallas Blazor completas y operaciones de negocio para clientes, productos, inventario, pedidos, ventas, pagos, compras, proveedores y categorías.
+
+🟡 Dashboard de negocio con información real.
 
 🟡 Adjuntar/gestionar fotografías reales de comprobantes desde la UI.
 
