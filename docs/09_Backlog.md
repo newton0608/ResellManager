@@ -15,7 +15,8 @@
 - [x] Mantener el login público y eliminar el flujo de autorregistro.
 - [x] Crear el usuario inicial mediante configuración segura opcional.
 - [x] Cubrir autenticación y sesión con pruebas de integración.
-- [ ] Incorporar roles o permisos solo si una necesidad futura los justifica.
+- [ ] Incorporar roles y permisos si el negocio evoluciona a una tienda física con trabajadores.
+- [ ] Incorporar administración de usuarios desde la aplicación cuando existan varias cuentas que deban crearse, deshabilitarse, restablecerse o asignarse a roles.
 
 ## Endurecimiento de concurrencia después de completar la UI
 
