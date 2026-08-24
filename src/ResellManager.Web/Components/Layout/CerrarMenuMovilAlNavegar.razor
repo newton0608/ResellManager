@@ -1,0 +1,51 @@
+@using Microsoft.JSInterop
+@rendermode InteractiveServer
+@implements IDisposable
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+@inject ILogger<CerrarMenuMovilAlNavegar> Logger
+
+@code {
+    private bool disposed;
+
+    protected override void OnInitialized()
+    {
+        Navigation.LocationChanged += AlCambiarUbicacion;
+    }
+
+    private void AlCambiarUbicacion(object? sender, LocationChangedEventArgs args)
+    {
+        _ = CerrarMenuMovilSeguroAsync();
+    }
+
+    private async Task CerrarMenuMovilSeguroAsync()
+    {
+        try
+        {
+            await InvokeAsync(async () =>
+            {
+                if (!disposed)
+                {
+                    await JS.InvokeVoidAsync("resellManager.cerrarMenuMovil");
+                }
+            });
+        }
+        catch (Exception ex) when (
+            ex is JSDisconnectedException
+                or TaskCanceledException
+                or InvalidOperationException)
+        {
+            Logger.LogDebug(ex, "No fue necesario cerrar el menú móvil porque el circuito terminó.");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible cerrar el menú móvil después de navegar.");
+        }
+    }
+
+    public void Dispose()
+    {
+        disposed = true;
+        Navigation.LocationChanged -= AlCambiarUbicacion;
+    }
+}

@@ -1,4 +1,3 @@
-@page "/clientes"
 @page "/productos"
 @page "/inventario"
 @page "/pedidos"
@@ -40,7 +39,6 @@
     private static readonly IReadOnlyDictionary<string, ModuleDefinition> Modules =
         new Dictionary<string, ModuleDefinition>(StringComparer.OrdinalIgnoreCase)
         {
-            ["clientes"] = new("Clientes", "Consulta y administración de clientes.", "users"),
             ["productos"] = new("Productos", "Catálogo de productos disponibles para reventa.", "tag"),
             ["inventario"] = new("Inventario", "Control de unidades físicas y sus estados.", "boxes"),
             ["pedidos"] = new("Pedidos", "Seguimiento de pedidos y apartados.", "clipboard"),
@@ -56,7 +54,7 @@
         get
         {
             var path = Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0].Trim('/');
-            return Modules.TryGetValue(path, out var module) ? module : Modules["clientes"];
+            return Modules.TryGetValue(path, out var module) ? module : Modules["productos"];
         }
     }
 

@@ -1,0 +1,259 @@
+@page "/clientes/{Id:int}"
+@rendermode InteractiveServer
+@using ResellManager.Domain.Enums
+@inject IClienteService ClienteService
+@inject ILogger<ClienteDetalle> Logger
+
+<PageTitle>Detalle de cliente | ResellManager</PageTitle>
+
+@if (Cargando)
+{
+    <div class="loading-state" role="status" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
+        Cargando detalle del cliente...
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(ErrorCarga) || Cliente is null || SaldoActual is null)
+{
+    <section class="error-state" role="alert">
+        <p class="eyebrow">Clientes</p>
+        <h1>No fue posible abrir el cliente</h1>
+        <p>@(ErrorCarga ?? "Cliente no encontrado.")</p>
+        <div class="form-actions">
+            <button class="primary-button" type="button" @onclick="CargarAsync">Reintentar</button>
+            <a class="secondary-button" href="/clientes">Volver a clientes</a>
+        </div>
+    </section>
+}
+else
+{
+    <section class="page-heading detail-heading" aria-labelledby="titulo-detalle-cliente">
+        <div>
+            <p class="eyebrow">Clientes</p>
+            <h1 id="titulo-detalle-cliente">@ClientePresentacion.NombreCompleto(Cliente)</h1>
+            <p class="page-lead">Información, saldo actual e historial del cliente.</p>
+        </div>
+        <div class="heading-actions">
+            <a class="secondary-button" href="/clientes">Volver</a>
+            <a class="primary-button" href="/clientes/@Id/editar">Editar cliente</a>
+        </div>
+    </section>
+
+    <section class="customer-summary" aria-label="Resumen del cliente">
+        <article class="info-card balance-card">
+            <p class="info-label">Saldo actual</p>
+            <p class="balance-hero">@ClientePresentacion.Moneda(SaldoActual.Value)</p>
+            <p class="info-help">Calculado por el servicio de clientes.</p>
+        </article>
+
+        <article class="info-card">
+            <h2>Datos de contacto</h2>
+            <dl class="details-list">
+                <div>
+                    <dt>Teléfono</dt>
+                    <dd><a class="contact-link" href="tel:@Cliente.Telefono">@Cliente.Telefono</a></dd>
+                </div>
+                <div>
+                    <dt>Dirección</dt>
+                    <dd>@TextoOpcional(Cliente.Direccion)</dd>
+                </div>
+                <div>
+                    <dt>Observaciones</dt>
+                    <dd class="preserve-lines">@TextoOpcional(Cliente.Observaciones)</dd>
+                </div>
+            </dl>
+        </article>
+    </section>
+
+    <section class="history-section" aria-labelledby="titulo-historial">
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">Actividad</p>
+                <h2 id="titulo-historial">Historial del cliente</h2>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(ErrorHistorial))
+        {
+            <div class="mensaje-error alert-with-action" role="alert">
+                <span>@ErrorHistorial</span>
+                <button class="inline-button" type="button" @onclick="CargarHistorialAsync">Reintentar</button>
+            </div>
+        }
+        else if (Historial is not null)
+        {
+            <div class="history-grid">
+                <section class="history-panel" aria-labelledby="titulo-ventas">
+                    <div class="history-panel-heading">
+                        <h3 id="titulo-ventas">Ventas</h3>
+                        <span class="count-badge">@Historial.Ventas.Count</span>
+                    </div>
+
+                    @if (Historial.Ventas.Count == 0)
+                    {
+                        <p class="compact-empty">No hay ventas registradas para este cliente.</p>
+                    }
+                    else
+                    {
+                        <div class="timeline-list">
+                            @foreach (var venta in Historial.Ventas)
+                            {
+                                <article class="timeline-item">
+                                    <div class="timeline-heading">
+                                        <div>
+                                            <strong>@venta.CodigoInterno</strong>
+                                            <time datetime="@venta.Fecha.ToString("yyyy-MM-dd")">@venta.Fecha.ToString("dd/MM/yyyy")</time>
+                                        </div>
+                                        <span class="status-badge @(venta.Estado == EstadoVenta.Registrada ? "status-badge-success" : "status-badge-neutral")">
+                                            @venta.Estado
+                                        </span>
+                                    </div>
+                                    <p class="transaction-amount">@ClientePresentacion.Moneda(venta.Total)</p>
+                                    @if (!string.IsNullOrWhiteSpace(venta.Observaciones))
+                                    {
+                                        <p class="transaction-note">@venta.Observaciones</p>
+                                    }
+                                    <ul class="transaction-details">
+                                        @foreach (var detalle in venta.Detalles)
+                                        {
+                                            <li>
+                                                <span>@detalle.Producto@(string.IsNullOrWhiteSpace(detalle.CodigoUnidad) ? string.Empty : $" · {detalle.CodigoUnidad}")</span>
+                                                <strong>@ClientePresentacion.Moneda(detalle.PrecioFinal)</strong>
+                                            </li>
+                                        }
+                                    </ul>
+                                </article>
+                            }
+                        </div>
+                    }
+                </section>
+
+                <section class="history-panel" aria-labelledby="titulo-pagos">
+                    <div class="history-panel-heading">
+                        <h3 id="titulo-pagos">Pagos y abonos</h3>
+                        <span class="count-badge">@Historial.Pagos.Count</span>
+                    </div>
+
+                    @if (Historial.Pagos.Count == 0)
+                    {
+                        <p class="compact-empty">No hay pagos o abonos registrados para este cliente.</p>
+                    }
+                    else
+                    {
+                        <div class="timeline-list">
+                            @foreach (var pago in Historial.Pagos)
+                            {
+                                <article class="timeline-item payment-item">
+                                    <div class="timeline-heading">
+                                        <div>
+                                            <strong>Pago #@pago.Id</strong>
+                                            <time datetime="@pago.Fecha.ToString("yyyy-MM-dd")">@pago.Fecha.ToString("dd/MM/yyyy")</time>
+                                        </div>
+                                        <span class="status-badge status-badge-payment">@pago.MetodoPago</span>
+                                    </div>
+                                    <p class="transaction-amount payment-amount">@ClientePresentacion.Moneda(pago.Monto)</p>
+                                    @if (!string.IsNullOrWhiteSpace(pago.Referencia))
+                                    {
+                                        <p class="transaction-meta"><span>Referencia:</span> @pago.Referencia</p>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(pago.Observaciones))
+                                    {
+                                        <p class="transaction-note">@pago.Observaciones</p>
+                                    }
+                                </article>
+                            }
+                        </div>
+                    }
+                </section>
+            </div>
+        }
+    </section>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private ClienteDto? Cliente { get; set; }
+    private decimal? SaldoActual { get; set; }
+    private ClienteHistorialDto? Historial { get; set; }
+    private bool Cargando { get; set; } = true;
+    private string? ErrorCarga { get; set; }
+    private string? ErrorHistorial { get; set; }
+    private int? IdCargado { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IdCargado != Id)
+        {
+            await CargarAsync();
+        }
+    }
+
+    private async Task CargarAsync()
+    {
+        Cargando = true;
+        ErrorCarga = null;
+        ErrorHistorial = null;
+        Cliente = null;
+        SaldoActual = null;
+        Historial = null;
+
+        try
+        {
+            var clienteResult = await ClienteService.ObtenerPorIdAsync(Id);
+            if (!clienteResult.IsSuccess || clienteResult.Value is null)
+            {
+                ErrorCarga = clienteResult.ErrorMessage ?? "Cliente no encontrado.";
+                return;
+            }
+
+            Cliente = clienteResult.Value;
+
+            var saldoResult = await ClienteService.ObtenerSaldoAsync(Id);
+            if (!saldoResult.IsSuccess)
+            {
+                ErrorCarga = saldoResult.ErrorMessage ?? "No fue posible consultar el saldo.";
+                return;
+            }
+
+            SaldoActual = saldoResult.Value;
+            IdCargado = Id;
+            await CargarHistorialAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible cargar el detalle del cliente {ClienteId}.", Id);
+            ErrorCarga = "Ocurrió un problema inesperado al cargar el cliente. Intenta nuevamente.";
+        }
+        finally
+        {
+            Cargando = false;
+        }
+    }
+
+    private async Task CargarHistorialAsync()
+    {
+        ErrorHistorial = null;
+
+        try
+        {
+            var historialResult = await ClienteService.ObtenerHistorialAsync(Id);
+            if (!historialResult.IsSuccess || historialResult.Value is null)
+            {
+                ErrorHistorial = historialResult.ErrorMessage ?? "No fue posible consultar el historial.";
+                return;
+            }
+
+            Historial = historialResult.Value;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible cargar el historial del cliente {ClienteId}.", Id);
+            ErrorHistorial = "Ocurrió un problema inesperado al cargar el historial. Intenta nuevamente.";
+        }
+    }
+
+    private static string TextoOpcional(string? valor) =>
+        string.IsNullOrWhiteSpace(valor) ? "Sin información" : valor;
+}

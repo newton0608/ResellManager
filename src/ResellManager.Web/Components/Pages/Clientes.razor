@@ -1,0 +1,192 @@
+@page "/clientes"
+@rendermode InteractiveServer
+@inject IClienteService ClienteService
+@inject ILogger<Clientes> Logger
+
+<PageTitle>Clientes | ResellManager</PageTitle>
+
+<section class="page-heading" aria-labelledby="titulo-clientes">
+    <div>
+        <p class="eyebrow">Administración</p>
+        <h1 id="titulo-clientes">Clientes</h1>
+        <p class="page-lead">Consulta los clientes, su información de contacto y el saldo provisto por el sistema.</p>
+    </div>
+    <a class="primary-button" href="/clientes/nuevo">Nuevo cliente</a>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(MensajeExito))
+{
+    <div class="mensaje-exito" role="status">@MensajeExito</div>
+}
+
+<form class="search-panel" @onsubmit="BuscarAsync" @onsubmit:preventDefault>
+    <div class="search-field">
+        <label for="buscar-cliente">Buscar cliente</label>
+        <input id="buscar-cliente" type="search" placeholder="Nombre, apellido o teléfono"
+               @bind="Termino" @bind:event="oninput" />
+    </div>
+    <div class="search-actions">
+        <button class="primary-button" type="submit" disabled="@Cargando">Buscar</button>
+        @if (!string.IsNullOrWhiteSpace(Termino) || BusquedaActiva)
+        {
+            <button class="secondary-button" type="button" disabled="@Cargando" @onclick="LimpiarBusquedaAsync">Limpiar</button>
+        }
+    </div>
+</form>
+
+@if (!string.IsNullOrWhiteSpace(ErrorMessage))
+{
+    <div class="mensaje-error alert-with-action" role="alert">
+        <span>@ErrorMessage</span>
+        <button class="inline-button" type="button" @onclick="CargarClientesAsync">Reintentar</button>
+    </div>
+}
+
+@if (Cargando)
+{
+    <div class="loading-state" role="status" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
+        Cargando clientes...
+    </div>
+}
+else if (string.IsNullOrWhiteSpace(ErrorMessage) && ClientesEncontrados.Count == 0)
+{
+    <section class="empty-state" aria-labelledby="titulo-sin-clientes">
+        <span class="empty-state-icon" aria-hidden="true"><NavIcon Name="users" /></span>
+        <h2 id="titulo-sin-clientes">@(BusquedaActiva ? "No se encontraron clientes" : "Aún no hay clientes")</h2>
+        <p>@(BusquedaActiva ? "Prueba con otro nombre, apellido o teléfono." : "Registra el primer cliente para comenzar.")</p>
+        @if (!BusquedaActiva)
+        {
+            <a class="primary-button" href="/clientes/nuevo">Registrar cliente</a>
+        }
+    </section>
+}
+else if (string.IsNullOrWhiteSpace(ErrorMessage))
+{
+    <section class="data-panel" aria-labelledby="titulo-listado-clientes">
+        <div class="data-panel-heading">
+            <h2 id="titulo-listado-clientes">Listado de clientes</h2>
+            <span>@ClientesEncontrados.Count @(ClientesEncontrados.Count == 1 ? "cliente" : "clientes")</span>
+        </div>
+
+        <div class="desktop-table">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Cliente</th>
+                        <th scope="col">Teléfono</th>
+                        <th scope="col" class="numeric-cell">Saldo</th>
+                        <th scope="col" class="actions-cell">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var cliente in ClientesEncontrados)
+                    {
+                        <tr>
+                            <td><strong>@ClientePresentacion.NombreCompleto(cliente)</strong></td>
+                            <td>@cliente.Telefono</td>
+                            <td class="numeric-cell"><span class="balance-value">@ClientePresentacion.Moneda(cliente.Saldo)</span></td>
+                            <td class="actions-cell">
+                                <a class="table-action" href="/clientes/@cliente.Id">Ver detalle</a>
+                                <a class="table-action" href="/clientes/@cliente.Id/editar">Editar</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mobile-card-list">
+            @foreach (var cliente in ClientesEncontrados)
+            {
+                <article class="entity-card">
+                    <div class="entity-card-heading">
+                        <div>
+                            <h3>@ClientePresentacion.NombreCompleto(cliente)</h3>
+                            <a class="contact-link" href="tel:@cliente.Telefono">@cliente.Telefono</a>
+                        </div>
+                        <span class="balance-value">@ClientePresentacion.Moneda(cliente.Saldo)</span>
+                    </div>
+                    <div class="entity-card-actions">
+                        <a class="secondary-button" href="/clientes/@cliente.Id">Ver detalle</a>
+                        <a class="secondary-button" href="/clientes/@cliente.Id/editar">Editar</a>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+}
+
+@code {
+    private IReadOnlyList<ClienteDto> ClientesEncontrados { get; set; } = [];
+    private string Termino { get; set; } = string.Empty;
+    private bool BusquedaActiva { get; set; }
+    private bool Cargando { get; set; } = true;
+    private string? ErrorMessage { get; set; }
+
+    [SupplyParameterFromQuery(Name = "mensaje")]
+    public string? Mensaje { get; set; }
+
+    private string? MensajeExito => Mensaje switch
+    {
+        "cliente-creado" => "Cliente registrado correctamente.",
+        "cliente-editado" => "Cliente actualizado correctamente.",
+        _ => null,
+    };
+
+    protected override Task OnInitializedAsync() => CargarClientesAsync();
+
+    private async Task CargarClientesAsync()
+    {
+        Cargando = true;
+        ErrorMessage = null;
+        BusquedaActiva = false;
+
+        try
+        {
+            ClientesEncontrados = await ClienteService.ListarAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible cargar el listado de clientes.");
+            ErrorMessage = "No pudimos cargar los clientes. Intenta nuevamente.";
+        }
+        finally
+        {
+            Cargando = false;
+        }
+    }
+
+    private async Task BuscarAsync()
+    {
+        if (string.IsNullOrWhiteSpace(Termino))
+        {
+            await CargarClientesAsync();
+            return;
+        }
+
+        Cargando = true;
+        ErrorMessage = null;
+        BusquedaActiva = true;
+
+        try
+        {
+            ClientesEncontrados = await ClienteService.BuscarAsync(Termino);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible buscar clientes.");
+            ErrorMessage = "No pudimos realizar la búsqueda. Intenta nuevamente.";
+        }
+        finally
+        {
+            Cargando = false;
+        }
+    }
+
+    private async Task LimpiarBusquedaAsync()
+    {
+        Termino = string.Empty;
+        await CargarClientesAsync();
+    }
+}

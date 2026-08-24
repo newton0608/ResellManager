@@ -39,6 +39,7 @@
 - [ ] Definir el alcance del bloqueo por cliente, evitando un bloqueo global del sistema cuando dos clientes distintos puedan procesarse de manera independiente.
 - [ ] Agregar pruebas de concurrencia para pagos, ventas y cancelaciones simultáneas sobre el mismo cliente.
 - [ ] Revisar si existen otras secciones críticas además del saldo una vez que la UI y los flujos reales estén completos.
+- [ ] Considerar esta protección obligatoria antes de un escenario V2 multiusuario con operaciones simultáneas.
 
 ## Catálogo: información pendiente del negocio
 
@@ -53,19 +54,21 @@
 
 ---
 
-## Clientes
+## Fase 5.3: clientes
 
-- [ ] Registrar cliente
+- [x] Listar clientes.
+- [x] Registrar cliente.
 
-- [ ] Editar cliente
+- [x] Editar cliente.
 
-- [ ] Eliminar cliente
+- [ ] V2: definir eliminación/desactivación segura de clientes, preservando relaciones con ventas, pagos, pedidos e historial. Evaluar borrado lógico como alternativa preferente al borrado físico.
 
-- [ ] Buscar cliente
+- [x] Buscar cliente por los criterios soportados por `IClienteService`.
+- [x] Consultar detalle de cliente.
 
-- [ ] Ver historial
+- [x] Ver historial de ventas y pagos/abonos.
 
-- [ ] Consultar saldo
+- [x] Consultar saldo calculado por el backend.
 
 ---
 

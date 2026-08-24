@@ -46,11 +46,18 @@
 
 ✅ Navegación base implementada para los módulos previstos, con páginas placeholder claramente identificadas.
 
+✅ Módulo Blazor de clientes implementado en Fase 5.3: listado, búsqueda, registro, edición,
+detalle, consulta del saldo calculado por el backend e historial de ventas y pagos/abonos,
+con presentación responsive.
+
 ✅ Inicio y presentación del login alineados con la identidad visual de ResellManager.
 
 ## Pendiente para fases posteriores
 
-🟡 Pantallas Blazor completas y operaciones de negocio para clientes, productos, inventario, pedidos, ventas, pagos, compras, proveedores y categorías.
+🟡 Pantallas Blazor completas y operaciones de negocio para productos, inventario, pedidos,
+ventas, pagos, compras, proveedores y categorías.
+
+🟡 Eliminación de clientes, pendiente de reglas seguras para preservar relaciones e historial.
 
 🟡 Dashboard de negocio con información real.
 

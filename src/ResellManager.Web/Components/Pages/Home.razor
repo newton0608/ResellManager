@@ -36,7 +36,7 @@
                 <span class="module-card-icon"><NavIcon Name="@item.Icon" /></span>
                 <span class="module-card-copy">
                     <strong>@item.Label</strong>
-                    <small>Próximamente</small>
+                    <small>@item.Status</small>
                 </span>
                 <svg class="module-arrow" aria-hidden="true" viewBox="0 0 24 24" fill="none"
                      stroke="currentColor" stroke-width="2">
@@ -50,7 +50,7 @@
 @code {
     private static readonly ModuleLink[] Modules =
     [
-        new("/clientes", "Clientes", "users"),
+        new("/clientes", "Clientes", "users", "Disponible"),
         new("/productos", "Productos", "tag"),
         new("/inventario", "Inventario", "boxes"),
         new("/pedidos", "Pedidos", "clipboard"),
@@ -61,5 +61,5 @@
         new("/categorias", "Categorías", "grid")
     ];
 
-    private sealed record ModuleLink(string Href, string Label, string Icon);
+    private sealed record ModuleLink(string Href, string Label, string Icon, string Status = "Próximamente");
 }
