@@ -1,0 +1,149 @@
+@page "/clientes/nuevo"
+@page "/clientes/{Id:int}/editar"
+@rendermode InteractiveServer
+@inject IClienteService ClienteService
+@inject NavigationManager Navigation
+@inject ILogger<ClienteEdicion> Logger
+
+<PageTitle>@(EsEdicion ? "Editar cliente" : "Nuevo cliente") | ResellManager</PageTitle>
+
+<section class="page-heading" aria-labelledby="titulo-formulario-cliente">
+    <div>
+        <p class="eyebrow">Clientes</p>
+        <h1 id="titulo-formulario-cliente">@(EsEdicion ? "Editar cliente" : "Nuevo cliente")</h1>
+        <p class="page-lead">@(EsEdicion ? "Actualiza la información de contacto del cliente." : "Registra la información básica del cliente.")</p>
+    </div>
+</section>
+
+@if (Cargando)
+{
+    <div class="loading-state" role="status" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
+        Cargando cliente...
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(ErrorCarga))
+{
+    <section class="error-state" role="alert">
+        <h2>No fue posible abrir el cliente</h2>
+        <p>@ErrorCarga</p>
+        <div class="form-actions">
+            <button class="primary-button" type="button" @onclick="CargarClienteAsync">Reintentar</button>
+            <a class="secondary-button" href="/clientes">Volver a clientes</a>
+        </div>
+    </section>
+}
+else
+{
+    <section class="form-panel" aria-label="Formulario de cliente">
+        <ClienteForm Modelo="Modelo"
+                     Guardando="Guardando"
+                     ErrorMessage="ErrorGuardado"
+                     OnGuardar="GuardarAsync"
+                     CancelarHref="@CancelarHref" />
+    </section>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private ClienteFormModel Modelo { get; set; } = new();
+    private bool Guardando { get; set; }
+    private bool Cargando { get; set; }
+    private string? ErrorCarga { get; set; }
+    private string? ErrorGuardado { get; set; }
+    private int? IdCargado { get; set; }
+
+    private bool EsEdicion => Id > 0;
+    private string CancelarHref => EsEdicion ? $"/clientes/{Id}" : "/clientes";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!EsEdicion)
+        {
+            if (IdCargado != 0)
+            {
+                Modelo = new ClienteFormModel();
+                IdCargado = 0;
+            }
+
+            return;
+        }
+
+        if (IdCargado != Id)
+        {
+            await CargarClienteAsync();
+        }
+    }
+
+    private async Task CargarClienteAsync()
+    {
+        Cargando = true;
+        ErrorCarga = null;
+
+        try
+        {
+            var resultado = await ClienteService.ObtenerPorIdAsync(Id);
+            if (!resultado.IsSuccess || resultado.Value is null)
+            {
+                ErrorCarga = resultado.ErrorMessage ?? "Cliente no encontrado.";
+                return;
+            }
+
+            Modelo = ClienteFormModel.FromDto(resultado.Value);
+            IdCargado = Id;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible cargar el cliente {ClienteId} para edición.", Id);
+            ErrorCarga = "Ocurrió un problema inesperado al cargar el cliente. Intenta nuevamente.";
+        }
+        finally
+        {
+            Cargando = false;
+        }
+    }
+
+    private async Task GuardarAsync(ClienteFormModel modelo)
+    {
+        if (Guardando)
+        {
+            return;
+        }
+
+        Guardando = true;
+        ErrorGuardado = null;
+
+        try
+        {
+            var resultado = EsEdicion
+                ? await ClienteService.EditarAsync(Id, modelo.ToInput())
+                : await ClienteService.CrearAsync(modelo.ToInput());
+
+            if (!resultado.IsSuccess)
+            {
+                ErrorGuardado = resultado.ErrorMessage ?? "No fue posible guardar el cliente.";
+                return;
+            }
+
+            Navigation.NavigateTo(
+                EsEdicion
+                    ? "/clientes?mensaje=cliente-editado"
+                    : "/clientes?mensaje=cliente-creado");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(
+                ex,
+                "No fue posible {Operacion} el cliente {ClienteId}.",
+                EsEdicion ? "editar" : "crear",
+                EsEdicion ? Id : null);
+            ErrorGuardado = "Ocurrió un problema inesperado al guardar. Intenta nuevamente.";
+        }
+        finally
+        {
+            Guardando = false;
+        }
+    }
+}

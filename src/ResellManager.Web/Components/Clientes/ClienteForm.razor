@@ -1,0 +1,70 @@
+<EditForm Model="Modelo" OnValidSubmit="GuardarAsync" class="entity-form">
+    <DataAnnotationsValidator />
+
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="mensaje-error" role="alert">@ErrorMessage</div>
+    }
+
+    <ValidationSummary class="validation-summary" />
+
+    <div class="form-grid">
+        <div class="form-field">
+            <label for="cliente-nombres">Nombres <span aria-hidden="true">*</span></label>
+            <InputText id="cliente-nombres" @bind-Value="Modelo.Nombres" autocomplete="given-name" />
+            <ValidationMessage For="() => Modelo.Nombres" />
+        </div>
+
+        <div class="form-field">
+            <label for="cliente-apellidos">Apellidos</label>
+            <InputText id="cliente-apellidos" @bind-Value="Modelo.Apellidos" autocomplete="family-name" />
+            <ValidationMessage For="() => Modelo.Apellidos" />
+        </div>
+
+        <div class="form-field">
+            <label for="cliente-telefono">Teléfono <span aria-hidden="true">*</span></label>
+            <InputText id="cliente-telefono" @bind-Value="Modelo.Telefono" inputmode="tel" autocomplete="tel" />
+            <ValidationMessage For="() => Modelo.Telefono" />
+        </div>
+
+        <div class="form-field form-field-wide">
+            <label for="cliente-direccion">Dirección</label>
+            <InputTextArea id="cliente-direccion" @bind-Value="Modelo.Direccion" rows="3" autocomplete="street-address" />
+            <ValidationMessage For="() => Modelo.Direccion" />
+        </div>
+
+        <div class="form-field form-field-wide">
+            <label for="cliente-observaciones">Observaciones</label>
+            <InputTextArea id="cliente-observaciones" @bind-Value="Modelo.Observaciones" rows="4" />
+            <ValidationMessage For="() => Modelo.Observaciones" />
+        </div>
+    </div>
+
+    <p class="required-note"><span aria-hidden="true">*</span> Campos obligatorios</p>
+
+    <div class="form-actions">
+        <button class="primary-button" type="submit" disabled="@Guardando">
+            @(Guardando ? "Guardando..." : "Guardar cliente")
+        </button>
+        <a class="secondary-button" href="@CancelarHref">Cancelar</a>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter, EditorRequired]
+    public ClienteFormModel Modelo { get; set; } = null!;
+
+    [Parameter]
+    public bool Guardando { get; set; }
+
+    [Parameter]
+    public string? ErrorMessage { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback<ClienteFormModel> OnGuardar { get; set; }
+
+    [Parameter]
+    public string CancelarHref { get; set; } = "/clientes";
+
+    private Task GuardarAsync() => OnGuardar.InvokeAsync(Modelo);
+}

@@ -53,19 +53,23 @@
 
 ---
 
-## Clientes
+## Fase 5.3: clientes
 
-- [ ] Registrar cliente
+- [x] Listar clientes.
+- [x] Registrar cliente.
 
-- [ ] Editar cliente
+- [x] Editar cliente.
 
-- [ ] Eliminar cliente
+- [ ] Eliminar cliente. Pendiente de definir un caso de uso seguro y sus reglas de negocio
+  debido a las relaciones con ventas, pagos e historial; `IClienteService` no expone
+  actualmente `EliminarAsync`.
 
-- [ ] Buscar cliente
+- [x] Buscar cliente por los criterios soportados por `IClienteService`.
+- [x] Consultar detalle de cliente.
 
-- [ ] Ver historial
+- [x] Ver historial de ventas y pagos/abonos.
 
-- [ ] Consultar saldo
+- [x] Consultar saldo calculado por el backend.
 
 ---
 
