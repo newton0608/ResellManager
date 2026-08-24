@@ -45,6 +45,22 @@ Objetivos de concurrencia:
 - Aplicar doble seguridad: coordinación a nivel de aplicación más una garantía de persistencia/transacción o control de concurrencia en base de datos.
 - Agregar pruebas específicas de concurrencia y revisar si la UI revela otras secciones críticas además del saldo.
 
+Esta mejora queda planificada para una fase posterior a la UI completa y antes de considerar el sistema listo para escenarios de concurrencia real.
+
+## Eliminación de clientes en V2
+
+La eliminación de clientes se deja fuera de la V1 porque un cliente puede estar relacionado con ventas, pagos, pedidos e historial. Eliminar físicamente el registro podría romper trazabilidad o referencias históricas.
+
+Para V2 se deberá diseñar primero una regla segura. Opciones a evaluar:
+
+- desactivación lógica del cliente en lugar de borrado físico;
+- impedir eliminación cuando existan ventas, pagos o pedidos relacionados;
+- conservar siempre el historial comercial aunque el cliente deje de estar activo;
+- definir qué ocurre con clientes sin movimientos ni deuda;
+- agregar un caso de uso explícito en `IClienteService` solamente cuando la regla de negocio esté definida.
+
+La UI no debe eliminar clientes directamente mediante `DbContext` ni introducir borrado físico sin esa decisión previa.
+
 ## Asistente IA local mediante Ollama.
 
 Detectar automáticamente:
@@ -110,3 +126,5 @@ Cambio
 - Registro de número de guía.
 - Estado del envío.
 - Facturación al cliente (si el negocio lo requiere).
+- Eliminación/desactivación segura de clientes con preservación de historial.
+- Endurecimiento de concurrencia del saldo para escenarios multiusuario o con operaciones simultáneas.
