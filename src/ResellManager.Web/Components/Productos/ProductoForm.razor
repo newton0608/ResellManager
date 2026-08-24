@@ -1,0 +1,123 @@
+<EditForm Model="Modelo" OnValidSubmit="GuardarAsync" class="entity-form">
+    <DataAnnotationsValidator />
+
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="mensaje-error" role="alert">@ErrorMessage</div>
+    }
+
+    @if (Categorias.Count == 0)
+    {
+        <div class="catalog-warning" role="status">
+            <div>
+                <strong>No hay categorías disponibles.</strong>
+                <p>Crea una categoría antes de registrar un producto.</p>
+            </div>
+            <a class="secondary-button" href="/categorias">Ir a categorías</a>
+        </div>
+    }
+
+    <ValidationSummary class="validation-summary" />
+
+    <div class="form-grid">
+        <div class="form-field">
+            <label for="producto-codigo-interno">Código interno <span aria-hidden="true">*</span></label>
+            <InputText id="producto-codigo-interno" @bind-Value="Modelo.CodigoInterno" autocomplete="off" />
+            <ValidationMessage For="() => Modelo.CodigoInterno" />
+        </div>
+
+        <div class="form-field">
+            <label for="producto-codigo-barras">Código de barras</label>
+            <InputText id="producto-codigo-barras" @bind-Value="Modelo.CodigoBarras" inputmode="numeric" autocomplete="off" />
+            <ValidationMessage For="() => Modelo.CodigoBarras" />
+        </div>
+
+        <div class="form-field form-field-wide">
+            <label for="producto-nombre">Nombre <span aria-hidden="true">*</span></label>
+            <InputText id="producto-nombre" @bind-Value="Modelo.Nombre" autocomplete="off" />
+            <ValidationMessage For="() => Modelo.Nombre" />
+        </div>
+
+        <div class="form-field form-field-wide">
+            <label for="producto-descripcion">Descripción</label>
+            <InputTextArea id="producto-descripcion" @bind-Value="Modelo.Descripcion" rows="3" />
+            <ValidationMessage For="() => Modelo.Descripcion" />
+        </div>
+
+        <div class="form-field">
+            <label for="producto-marca">Marca</label>
+            <InputText id="producto-marca" @bind-Value="Modelo.Marca" autocomplete="off" />
+            <ValidationMessage For="() => Modelo.Marca" />
+        </div>
+
+        <div class="form-field">
+            <label for="producto-modelo">Modelo</label>
+            <InputText id="producto-modelo" @bind-Value="Modelo.Modelo" autocomplete="off" />
+            <ValidationMessage For="() => Modelo.Modelo" />
+        </div>
+
+        <div class="form-field">
+            <label for="producto-color">Color</label>
+            <InputText id="producto-color" @bind-Value="Modelo.Color" autocomplete="off" />
+            <ValidationMessage For="() => Modelo.Color" />
+        </div>
+
+        <div class="form-field">
+            <label for="producto-talla">Talla</label>
+            <InputText id="producto-talla" @bind-Value="Modelo.Talla" autocomplete="off" />
+            <ValidationMessage For="() => Modelo.Talla" />
+        </div>
+
+        <div class="form-field">
+            <label for="producto-precio-sugerido">Precio sugerido <span aria-hidden="true">*</span></label>
+            <InputNumber id="producto-precio-sugerido" @bind-Value="Modelo.PrecioSugerido" min="0" step="0.01" />
+            <ValidationMessage For="() => Modelo.PrecioSugerido" />
+            <p class="field-help">Valor de referencia; el precio final se define al vender.</p>
+        </div>
+
+        <div class="form-field">
+            <label for="producto-categoria">Categoría <span aria-hidden="true">*</span></label>
+            <InputSelect id="producto-categoria" @bind-Value="Modelo.CategoriaId" disabled="@(Categorias.Count == 0)">
+                <option value="0">Selecciona una categoría</option>
+                @foreach (var categoria in Categorias)
+                {
+                    <option value="@categoria.Id">@categoria.Nombre</option>
+                }
+            </InputSelect>
+            <ValidationMessage For="() => Modelo.CategoriaId" />
+        </div>
+    </div>
+
+    <p class="required-note"><span aria-hidden="true">*</span> Campos obligatorios</p>
+
+    <div class="form-actions">
+        <button class="primary-button" type="submit" disabled="@(!PuedeGuardar)">
+            @(Guardando ? "Guardando..." : "Guardar producto")
+        </button>
+        <a class="secondary-button" href="@CancelarHref">Cancelar</a>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter, EditorRequired]
+    public ProductoFormModel Modelo { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<CategoriaDto> Categorias { get; set; } = [];
+
+    [Parameter]
+    public bool Guardando { get; set; }
+
+    [Parameter]
+    public string? ErrorMessage { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback<ProductoFormModel> OnGuardar { get; set; }
+
+    [Parameter]
+    public string CancelarHref { get; set; } = "/productos";
+
+    private bool PuedeGuardar => !Guardando && Categorias.Count > 0;
+
+    private Task GuardarAsync() => OnGuardar.InvokeAsync(Modelo);
+}

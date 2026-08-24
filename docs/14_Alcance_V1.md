@@ -50,14 +50,19 @@
 detalle, consulta del saldo calculado por el backend e historial de ventas y pagos/abonos,
 con presentación responsive.
 
+✅ Módulos Blazor de productos y categorías implementados en Fase 5.4: listado de ambos,
+búsqueda de productos, registro, edición y detalle de producto, selección de categorías reales,
+precio sugerido claramente identificado y presentación responsive.
+
 ✅ Inicio y presentación del login alineados con la identidad visual de ResellManager.
 
 ## Pendiente para fases posteriores
 
-🟡 Pantallas Blazor completas y operaciones de negocio para productos, inventario, pedidos,
-ventas, pagos, compras, proveedores y categorías.
+🟡 Pantallas Blazor completas y operaciones de negocio para inventario, pedidos, ventas, pagos,
+compras y proveedores.
 
-🟡 Eliminación de clientes, pendiente de reglas seguras para preservar relaciones e historial.
+🟡 Eliminación o desactivación segura de clientes, productos y categorías, pendiente de reglas
+que preserven relaciones e historial.
 
 🟡 Dashboard de negocio con información real.
 

@@ -72,9 +72,14 @@
 
 ---
 
-## Producto
+## Fase 5.4: productos y categorías
 
-- [ ] CRUD Producto
+- [x] Listar productos.
+- [x] Buscar productos mediante `IProductoService.BuscarAsync`.
+- [x] Registrar producto.
+- [x] Editar producto.
+- [x] Consultar detalle de producto.
+- [ ] V2: definir eliminación/desactivación segura de productos, preservando ventas, pedidos, compras e historial. Evaluar borrado lógico como alternativa preferente al borrado físico.
 
 ---
 
@@ -133,8 +138,8 @@
 - [ ] Ver historial de compras
 
 ## Categorías
-- [ ] Crear categoría
 
-- [ ] Editar categoría
-
-- [ ] Listar categorías
+- [x] Crear categoría.
+- [x] Editar categoría.
+- [x] Listar categorías.
+- [ ] V2: definir eliminación/desactivación segura de categorías, preservando productos relacionados e historial.

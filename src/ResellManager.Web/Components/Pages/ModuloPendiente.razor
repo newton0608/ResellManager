@@ -1,11 +1,9 @@
-@page "/productos"
 @page "/inventario"
 @page "/pedidos"
 @page "/ventas"
 @page "/pagos"
 @page "/compras"
 @page "/proveedores"
-@page "/categorias"
 @inject NavigationManager Navigation
 
 <PageTitle>@CurrentModule.Name | ResellManager</PageTitle>
@@ -39,14 +37,12 @@
     private static readonly IReadOnlyDictionary<string, ModuleDefinition> Modules =
         new Dictionary<string, ModuleDefinition>(StringComparer.OrdinalIgnoreCase)
         {
-            ["productos"] = new("Productos", "Catálogo de productos disponibles para reventa.", "tag"),
             ["inventario"] = new("Inventario", "Control de unidades físicas y sus estados.", "boxes"),
             ["pedidos"] = new("Pedidos", "Seguimiento de pedidos y apartados.", "clipboard"),
             ["ventas"] = new("Ventas", "Registro y consulta de ventas.", "cart"),
             ["pagos"] = new("Pagos", "Registro de pagos y abonos de clientes.", "wallet"),
             ["compras"] = new("Compras", "Control de compras y comprobantes.", "bag"),
-            ["proveedores"] = new("Proveedores", "Directorio y seguimiento de proveedores.", "truck"),
-            ["categorias"] = new("Categorías", "Organización del catálogo por categorías.", "grid")
+            ["proveedores"] = new("Proveedores", "Directorio y seguimiento de proveedores.", "truck")
         };
 
     private ModuleDefinition CurrentModule
@@ -54,7 +50,7 @@
         get
         {
             var path = Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0].Trim('/');
-            return Modules.TryGetValue(path, out var module) ? module : Modules["productos"];
+            return Modules.TryGetValue(path, out var module) ? module : Modules["inventario"];
         }
     }
 

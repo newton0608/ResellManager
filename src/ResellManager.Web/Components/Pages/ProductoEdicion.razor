@@ -1,0 +1,162 @@
+@page "/productos/nuevo"
+@page "/productos/{Id:int}/editar"
+@rendermode InteractiveServer
+@inject IProductoService ProductoService
+@inject ICategoriaService CategoriaService
+@inject NavigationManager Navigation
+@inject ILogger<ProductoEdicion> Logger
+
+<PageTitle>@(EsEdicion ? "Editar producto" : "Nuevo producto") | ResellManager</PageTitle>
+
+<section class="page-heading" aria-labelledby="titulo-formulario-producto">
+    <div>
+        <p class="eyebrow">Productos</p>
+        <h1 id="titulo-formulario-producto">@(EsEdicion ? "Editar producto" : "Nuevo producto")</h1>
+        <p class="page-lead">@(EsEdicion ? "Actualiza la definición y el precio sugerido del producto." : "Registra una definición de producto; las unidades físicas se administran por separado.")</p>
+    </div>
+</section>
+
+@if (Cargando)
+{
+    <div class="loading-state" role="status" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
+        Cargando producto y categorías...
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(ErrorCarga))
+{
+    <section class="error-state" role="alert">
+        <h2>No fue posible abrir el formulario</h2>
+        <p>@ErrorCarga</p>
+        <div class="form-actions">
+            <button class="primary-button" type="button" @onclick="CargarAsync">Reintentar</button>
+            <a class="secondary-button" href="/productos">Volver a productos</a>
+        </div>
+    </section>
+}
+else
+{
+    <section class="form-panel" aria-label="Formulario de producto">
+        <ProductoForm Modelo="Modelo"
+                      Categorias="CategoriasDisponibles"
+                      Guardando="Guardando"
+                      ErrorMessage="ErrorGuardado"
+                      OnGuardar="GuardarAsync"
+                      CancelarHref="@CancelarHref" />
+    </section>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private ProductoFormModel Modelo { get; set; } = new();
+    private IReadOnlyList<CategoriaDto> CategoriasDisponibles { get; set; } = [];
+    private bool Guardando { get; set; }
+    private bool Cargando { get; set; } = true;
+    private string? ErrorCarga { get; set; }
+    private string? ErrorGuardado { get; set; }
+    private int? IdCargado { get; set; }
+
+    private bool EsEdicion => Id > 0;
+    private string CancelarHref => EsEdicion ? $"/productos/{Id}" : "/productos";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var idEsperado = EsEdicion ? Id : 0;
+        if (IdCargado != idEsperado)
+        {
+            await CargarAsync();
+        }
+    }
+
+    private async Task CargarAsync()
+    {
+        Cargando = true;
+        ErrorCarga = null;
+        ErrorGuardado = null;
+
+        try
+        {
+            CategoriasDisponibles = await CategoriaService.ListarAsync();
+
+            if (EsEdicion)
+            {
+                var resultado = await ProductoService.ObtenerPorIdAsync(Id);
+                if (!resultado.IsSuccess || resultado.Value is null)
+                {
+                    ErrorCarga = resultado.ErrorMessage ?? "Producto no encontrado.";
+                    return;
+                }
+
+                Modelo = ProductoFormModel.FromDto(resultado.Value);
+            }
+            else
+            {
+                Modelo = new ProductoFormModel();
+            }
+
+            IdCargado = EsEdicion ? Id : 0;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(
+                ex,
+                "No fue posible cargar el formulario del producto {ProductoId}.",
+                EsEdicion ? Id : null);
+            ErrorCarga = "Ocurrió un problema inesperado al cargar el formulario. Intenta nuevamente.";
+        }
+        finally
+        {
+            Cargando = false;
+        }
+    }
+
+    private async Task GuardarAsync(ProductoFormModel modelo)
+    {
+        if (Guardando)
+        {
+            return;
+        }
+
+        if (!CategoriasDisponibles.Any(categoria => categoria.Id == modelo.CategoriaId))
+        {
+            ErrorGuardado = "Selecciona una categoría válida antes de guardar.";
+            return;
+        }
+
+        Guardando = true;
+        ErrorGuardado = null;
+
+        try
+        {
+            var resultado = EsEdicion
+                ? await ProductoService.EditarAsync(Id, modelo.ToInput())
+                : await ProductoService.CrearAsync(modelo.ToInput());
+
+            if (!resultado.IsSuccess)
+            {
+                ErrorGuardado = resultado.ErrorMessage ?? "No fue posible guardar el producto.";
+                return;
+            }
+
+            Navigation.NavigateTo(
+                EsEdicion
+                    ? "/productos?mensaje=producto-editado"
+                    : "/productos?mensaje=producto-creado");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(
+                ex,
+                "No fue posible {Operacion} el producto {ProductoId}.",
+                EsEdicion ? "editar" : "crear",
+                EsEdicion ? Id : null);
+            ErrorGuardado = "Ocurrió un problema inesperado al guardar. Intenta nuevamente.";
+        }
+        finally
+        {
+            Guardando = false;
+        }
+    }
+}

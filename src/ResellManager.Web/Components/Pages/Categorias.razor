@@ -1,0 +1,136 @@
+@page "/categorias"
+@rendermode InteractiveServer
+@inject ICategoriaService CategoriaService
+@inject ILogger<Categorias> Logger
+
+<PageTitle>Categorías | ResellManager</PageTitle>
+
+<section class="page-heading" aria-labelledby="titulo-categorias">
+    <div>
+        <p class="eyebrow">Catálogo</p>
+        <h1 id="titulo-categorias">Categorías</h1>
+        <p class="page-lead">Organiza las definiciones de productos con categorías reales del catálogo.</p>
+    </div>
+    <a class="primary-button" href="/categorias/nueva">Nueva categoría</a>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(MensajeExito))
+{
+    <div class="mensaje-exito" role="status">@MensajeExito</div>
+}
+
+@if (!string.IsNullOrWhiteSpace(ErrorMessage))
+{
+    <div class="mensaje-error alert-with-action" role="alert">
+        <span>@ErrorMessage</span>
+        <button class="inline-button" type="button" @onclick="CargarCategoriasAsync">Reintentar</button>
+    </div>
+}
+
+@if (Cargando)
+{
+    <div class="loading-state" role="status" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
+        Cargando categorías...
+    </div>
+}
+else if (string.IsNullOrWhiteSpace(ErrorMessage) && CategoriasEncontradas.Count == 0)
+{
+    <section class="empty-state" aria-labelledby="titulo-sin-categorias">
+        <span class="empty-state-icon" aria-hidden="true"><NavIcon Name="grid" /></span>
+        <h2 id="titulo-sin-categorias">Aún no hay categorías</h2>
+        <p>Crea la primera categoría para poder clasificar productos.</p>
+        <a class="primary-button" href="/categorias/nueva">Crear categoría</a>
+    </section>
+}
+else if (string.IsNullOrWhiteSpace(ErrorMessage))
+{
+    <section class="data-panel" aria-labelledby="titulo-listado-categorias">
+        <div class="data-panel-heading">
+            <h2 id="titulo-listado-categorias">Listado de categorías</h2>
+            <span>@CategoriasEncontradas.Count @(CategoriasEncontradas.Count == 1 ? "categoría" : "categorías")</span>
+        </div>
+
+        <div class="desktop-table">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Nombre</th>
+                        <th scope="col">Observaciones</th>
+                        <th scope="col" class="actions-cell">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var categoria in CategoriasEncontradas)
+                    {
+                        <tr>
+                            <td><strong>@categoria.Nombre</strong></td>
+                            <td>@TextoOpcional(categoria.Observaciones)</td>
+                            <td class="actions-cell">
+                                <a class="table-action" href="/categorias/@categoria.Id/editar">Editar</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mobile-card-list">
+            @foreach (var categoria in CategoriasEncontradas)
+            {
+                <article class="entity-card">
+                    <div class="entity-card-heading">
+                        <div>
+                            <h3>@categoria.Nombre</h3>
+                            <p class="entity-card-subtitle preserve-lines">@TextoOpcional(categoria.Observaciones)</p>
+                        </div>
+                    </div>
+                    <div class="entity-card-actions">
+                        <a class="secondary-button" href="/categorias/@categoria.Id/editar">Editar</a>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+}
+
+@code {
+    private IReadOnlyList<CategoriaDto> CategoriasEncontradas { get; set; } = [];
+    private bool Cargando { get; set; } = true;
+    private string? ErrorMessage { get; set; }
+
+    [SupplyParameterFromQuery(Name = "mensaje")]
+    public string? Mensaje { get; set; }
+
+    private string? MensajeExito => Mensaje switch
+    {
+        "categoria-creada" => "Categoría creada correctamente.",
+        "categoria-editada" => "Categoría actualizada correctamente.",
+        _ => null,
+    };
+
+    protected override Task OnInitializedAsync() => CargarCategoriasAsync();
+
+    private async Task CargarCategoriasAsync()
+    {
+        Cargando = true;
+        ErrorMessage = null;
+
+        try
+        {
+            CategoriasEncontradas = await CategoriaService.ListarAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible cargar el listado de categorías.");
+            ErrorMessage = "No pudimos cargar las categorías. Intenta nuevamente.";
+        }
+        finally
+        {
+            Cargando = false;
+        }
+    }
+
+    private static string TextoOpcional(string? valor) =>
+        string.IsNullOrWhiteSpace(valor) ? "Sin información" : valor;
+}
