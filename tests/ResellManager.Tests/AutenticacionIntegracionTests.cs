@@ -4,6 +4,13 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
+using Microsoft.EntityFrameworkCore;
+using ResellManager.Application.DTOs;
+using ResellManager.Application.Interfaces;
+using ResellManager.Domain.Entities;
+using ResellManager.Domain.Enums;
+using ResellManager.Infrastructure.Persistence;
+using ResellManager.Infrastructure.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ResellManager.Tests;
@@ -128,11 +135,96 @@ public sealed class AutenticacionIntegracionTests(AplicacionAutenticacionFactory
             {
                 "/clientes" => "Nuevo cliente",
                 "/productos" => "Nuevo producto",
+                "/inventario" => "Buscar unidad",
                 "/categorias" => "Nueva categoría",
                 _ => "se implementarán en una fase posterior"
             };
             Assert.Contains(contenidoEsperado, contenido);
         }
+    }
+
+    [Fact]
+    public async Task InventarioAutenticado_RenderizaUnidadYSeparaEstadoDeReserva()
+    {
+        var sufijo = Guid.NewGuid().ToString("N")[..8];
+        var codigoProducto = $"PROD-INV-{sufijo}";
+        var codigoCompra = $"IMP-INV-{sufijo}";
+        int unidadId;
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ResellManagerDbContext>();
+            var categoria = new Categoria { Nombre = "Categoría inventario web" };
+            var proveedor = new Proveedor { Nombre = "Proveedor inventario web" };
+            var cliente = new Cliente { Nombres = "Cliente inventario web", Telefono = "555-5500" };
+            var producto = new Producto
+            {
+                CodigoInterno = codigoProducto,
+                Nombre = "Producto inventario web",
+                PrecioSugerido = 125m,
+                Categoria = categoria,
+            };
+            db.AddRange(categoria, proveedor, cliente, producto);
+            await db.SaveChangesAsync();
+
+            var compra = await new CompraService(db).RegistrarAsync(
+                new CompraInput(
+                    codigoCompra,
+                    new DateOnly(2026, 8, 20),
+                    null,
+                    OrigenCompra.Importacion,
+                    proveedor.Id,
+                    null,
+                    [new DetalleCompraInput(producto.Id, 1, 50m)],
+                    null));
+            Assert.True(compra.IsSuccess, compra.ErrorMessage);
+
+            var pedido = new Pedido
+            {
+                CodigoInterno = $"PED-INV-{sufijo}",
+                Fecha = new DateOnly(2026, 8, 21),
+                TipoPedido = TipoPedido.Apartado,
+                Estado = EstadoPedido.Pendiente,
+                ClienteId = cliente.Id,
+                Detalles =
+                [
+                    new DetallePedido
+                    {
+                        ProductoId = producto.Id,
+                        Cantidad = 1,
+                        PrecioUnitario = 125m,
+                    },
+                ],
+            };
+            db.Pedidos.Add(pedido);
+            await db.SaveChangesAsync();
+
+            var unidad = await db.UnidadesInventario.SingleAsync(x =>
+                x.DetalleCompra.Compra.CodigoInterno == codigoCompra);
+            unidadId = unidad.Id;
+            var inventario = scope.ServiceProvider.GetRequiredService<IInventarioService>();
+            var transito = await inventario.CambiarEstadoAsync(
+                unidad.Id,
+                EstadoUnidadInventario.EnTransito);
+            var reserva = await inventario.ReservarAsync(unidad.Id, pedido.Detalles.Single().Id);
+            Assert.True(transito.IsSuccess, transito.ErrorMessage);
+            Assert.True(reserva.IsSuccess, reserva.ErrorMessage);
+        }
+
+        using var clienteHttp = CrearCliente();
+        await IniciarSesionAsync(clienteHttp, AplicacionAutenticacionFactory.ContrasenaValida);
+
+        var respuesta = await clienteHttp.GetAsync("/inventario");
+        var contenido = WebUtility.HtmlDecode(await respuesta.Content.ReadAsStringAsync());
+
+        Assert.Equal(HttpStatusCode.OK, respuesta.StatusCode);
+        Assert.Contains($"Unidad #{unidadId}", contenido);
+        Assert.Contains("Producto inventario web", contenido);
+        Assert.Contains("Estado físico", contenido);
+        Assert.Contains("En tránsito", contenido);
+        Assert.Contains("Reserva", contenido);
+        Assert.Contains("Reservada", contenido);
+        Assert.Contains("Recepción de mercancía", contenido);
+        Assert.DoesNotContain("Estado: Apartada", contenido, StringComparison.OrdinalIgnoreCase);
     }
 
     private static void AssertRedirigeAlLogin(HttpResponseMessage respuesta)

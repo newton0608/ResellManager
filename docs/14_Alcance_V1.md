@@ -54,12 +54,17 @@ con presentación responsive.
 búsqueda de productos, registro, edición y detalle de producto, selección de categorías reales,
 precio sugerido claramente identificado y presentación responsive.
 
+✅ Módulo Blazor de inventario implementado en Fase 5.5: listado, búsqueda, filtro por estado,
+recepción de mercancía y transiciones físicas manuales autorizadas, con estado y reserva
+presentados por separado y diseño responsive. Las reservas existentes solo se visualizan;
+su creación y cancelación permanecen en el futuro flujo de pedidos.
+
 ✅ Inicio y presentación del login alineados con la identidad visual de ResellManager.
 
 ## Pendiente para fases posteriores
 
-🟡 Pantallas Blazor completas y operaciones de negocio para inventario, pedidos, ventas, pagos,
-compras y proveedores.
+🟡 Pantallas Blazor completas y operaciones de negocio para pedidos, ventas, pagos, compras y
+proveedores.
 
 🟡 Eliminación o desactivación segura de clientes, productos y categorías, pendiente de reglas
 que preserven relaciones e historial.

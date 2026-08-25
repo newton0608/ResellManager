@@ -1,0 +1,390 @@
+@page "/inventario"
+@rendermode InteractiveServer
+@using ResellManager.Domain.Enums
+@inject IInventarioService InventarioService
+@inject ILogger<Inventario> Logger
+
+<PageTitle>Inventario | ResellManager</PageTitle>
+
+<section class="page-heading" aria-labelledby="titulo-inventario">
+    <div>
+        <p class="eyebrow">Unidades físicas</p>
+        <h1 id="titulo-inventario">Inventario</h1>
+        <p class="page-lead">Consulta cada ejemplar físico, su estado y su reserva comercial por separado.</p>
+    </div>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(MensajeExito))
+{
+    <div class="mensaje-exito" role="status">@MensajeExito</div>
+}
+
+<form class="search-panel inventory-filters" @onsubmit="BuscarAsync" @onsubmit:preventDefault>
+    <div class="search-field">
+        <label for="buscar-unidad">Buscar unidad</label>
+        <input id="buscar-unidad" type="search" placeholder="Producto, código de producto o código de unidad"
+               @bind="Termino" @bind:event="oninput" />
+    </div>
+    <div class="form-field inventory-state-filter">
+        <label for="estado-unidad">Estado físico</label>
+        <select id="estado-unidad" @bind="EstadoFiltro">
+            <option value="">Todos los estados</option>
+            @foreach (var estado in Enum.GetValues<EstadoUnidadInventario>())
+            {
+                <option value="@estado">@InventarioPresentacion.Estado(estado)</option>
+            }
+        </select>
+    </div>
+    <div class="search-actions">
+        <button class="primary-button" type="submit" disabled="@Ocupado">Buscar</button>
+        @if (FiltrosActivos || BusquedaActiva)
+        {
+            <button class="secondary-button" type="button" disabled="@Ocupado" @onclick="LimpiarFiltrosAsync">Limpiar</button>
+        }
+    </div>
+</form>
+
+@if (!string.IsNullOrWhiteSpace(ErrorMessage))
+{
+    <div class="mensaje-error alert-with-action" role="alert">
+        <span>@ErrorMessage</span>
+        <button class="inline-button" type="button" disabled="@Ocupado" @onclick="RecargarAsync">Reintentar</button>
+    </div>
+}
+
+@if (Cargando)
+{
+    <div class="loading-state" role="status" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
+        Cargando inventario...
+    </div>
+}
+else if (string.IsNullOrWhiteSpace(ErrorMessage) && Unidades.Count == 0)
+{
+    <section class="empty-state" aria-labelledby="titulo-sin-inventario">
+        <span class="empty-state-icon" aria-hidden="true"><NavIcon Name="boxes" /></span>
+        <h2 id="titulo-sin-inventario">@(BusquedaActiva ? "No se encontraron unidades" : "Aún no hay unidades de inventario")</h2>
+        <p>@(BusquedaActiva ? "Prueba con otros criterios o limpia los filtros." : "Las unidades físicas aparecerán cuando sean generadas por un flujo de compra que use inventario.")</p>
+    </section>
+}
+else if (string.IsNullOrWhiteSpace(ErrorMessage))
+{
+    @if (Unidades.Any(InventarioPresentacion.PuedeRecibirse))
+    {
+        <section class="inventory-reception" aria-labelledby="titulo-recepcion">
+            <div>
+                <p class="eyebrow">Ingreso físico</p>
+                <h2 id="titulo-recepcion">Recepción de mercancía</h2>
+                <p>Selecciona unidades compradas o en tránsito. La recepción las marcará como disponibles sin alterar su reserva.</p>
+            </div>
+            <div class="reception-controls">
+                <div class="form-field">
+                    <label for="fecha-recepcion">Fecha de recepción</label>
+                    <input id="fecha-recepcion" type="date" @bind="FechaRecepcion" />
+                </div>
+                <button class="primary-button" type="button" disabled="@(Ocupado || UnidadesSeleccionadas.Count == 0)"
+                        @onclick="RegistrarRecepcionAsync">
+                    @(ProcesandoRecepcion ? "Procesando..." : $"Recibir ({UnidadesSeleccionadas.Count})")
+                </button>
+            </div>
+        </section>
+    }
+
+    <section class="data-panel" aria-labelledby="titulo-listado-inventario">
+        <div class="data-panel-heading">
+            <h2 id="titulo-listado-inventario">Unidades de inventario</h2>
+            <span>@Unidades.Count @(Unidades.Count == 1 ? "unidad" : "unidades")</span>
+        </div>
+
+        <div class="desktop-table">
+            <table class="data-table inventory-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Unidad</th>
+                        <th scope="col">Producto</th>
+                        <th scope="col">Estado físico</th>
+                        <th scope="col">Reserva</th>
+                        <th scope="col">Ingreso</th>
+                        <th scope="col">Compra / origen</th>
+                        <th scope="col" class="actions-cell">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var unidad in Unidades)
+                    {
+                        var siguienteEstado = InventarioPresentacion.SiguienteEstadoManual(unidad);
+                        <tr>
+                            <td>
+                                <strong>#@unidad.Id</strong>
+                                <span class="table-secondary code-value">@unidad.CodigoInterno</span>
+                            </td>
+                            <td>
+                                <strong>@unidad.Producto</strong>
+                                <span class="table-secondary code-value">@unidad.CodigoProducto</span>
+                            </td>
+                            <td>
+                                <span class="inventory-badge @InventarioPresentacion.ClaseEstado(unidad.Estado)">@InventarioPresentacion.Estado(unidad.Estado)</span>
+                            </td>
+                            <td>
+                                @if (InventarioPresentacion.EstaReservada(unidad))
+                                {
+                                    <span class="inventory-badge reservation-badge">Reservada</span>
+                                    <span class="table-secondary">Pedido #@unidad.PedidoReservaId · Detalle #@unidad.DetallePedidoReservaId</span>
+                                }
+                                else
+                                {
+                                    <span class="inventory-badge no-reservation-badge">Sin reserva</span>
+                                }
+                            </td>
+                            <td>@(unidad.FechaIngreso?.ToString("dd/MM/yyyy") ?? "Pendiente")</td>
+                            <td>
+                                <span>@InventarioPresentacion.Origen(unidad.OrigenCompra)</span>
+                                <span class="table-secondary">Detalle #@unidad.DetalleCompraId · Costo Q @unidad.Costo.ToString("N2")</span>
+                            </td>
+                            <td class="actions-cell inventory-actions-cell">
+                                @if (InventarioPresentacion.PuedeRecibirse(unidad))
+                                {
+                                    <label class="reception-check">
+                                        <input type="checkbox" checked="@UnidadesSeleccionadas.Contains(unidad.Id)"
+                                               disabled="@Ocupado" @onchange="e => SeleccionarUnidad(unidad.Id, e.Value)" />
+                                        Recibir
+                                    </label>
+                                }
+                                @if (siguienteEstado.HasValue)
+                                {
+                                    <button class="table-action button-link" type="button" disabled="@Ocupado"
+                                            @onclick="() => CambiarEstadoAsync(unidad, siguienteEstado.Value)">
+                                        @(UnidadProcesandoId == unidad.Id ? "Procesando..." : InventarioPresentacion.AccionEstado(siguienteEstado.Value))
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mobile-card-list">
+            @foreach (var unidad in Unidades)
+            {
+                var siguienteEstado = InventarioPresentacion.SiguienteEstadoManual(unidad);
+                <article class="entity-card inventory-card">
+                    <div class="entity-card-heading">
+                        <div>
+                            <span class="code-value">Unidad #@unidad.Id · @unidad.CodigoInterno</span>
+                            <h3>@unidad.Producto</h3>
+                            <p class="entity-card-subtitle">Producto @unidad.CodigoProducto</p>
+                        </div>
+                        <div class="inventory-badge-group" aria-label="Estado y reserva">
+                            <span class="inventory-badge @InventarioPresentacion.ClaseEstado(unidad.Estado)">@InventarioPresentacion.Estado(unidad.Estado)</span>
+                            @if (InventarioPresentacion.EstaReservada(unidad))
+                            {
+                                <span class="inventory-badge reservation-badge">Reservada</span>
+                            }
+                        </div>
+                    </div>
+                    <dl class="inventory-card-details">
+                        <div><dt>Reserva</dt><dd>@(InventarioPresentacion.EstaReservada(unidad) ? $"Pedido #{unidad.PedidoReservaId} · Detalle #{unidad.DetallePedidoReservaId}" : "Sin reserva")</dd></div>
+                        <div><dt>Ingreso</dt><dd>@(unidad.FechaIngreso?.ToString("dd/MM/yyyy") ?? "Pendiente")</dd></div>
+                        <div><dt>Origen</dt><dd>@InventarioPresentacion.Origen(unidad.OrigenCompra) · Detalle #@unidad.DetalleCompraId</dd></div>
+                        <div><dt>Costo de unidad</dt><dd>Q @unidad.Costo.ToString("N2")</dd></div>
+                    </dl>
+                    @if (InventarioPresentacion.PuedeRecibirse(unidad) || siguienteEstado.HasValue)
+                    {
+                        <div class="entity-card-actions inventory-card-actions">
+                            @if (InventarioPresentacion.PuedeRecibirse(unidad))
+                            {
+                                <label class="reception-check mobile-reception-check">
+                                    <input type="checkbox" checked="@UnidadesSeleccionadas.Contains(unidad.Id)"
+                                           disabled="@Ocupado" @onchange="e => SeleccionarUnidad(unidad.Id, e.Value)" />
+                                    Seleccionar para recepción
+                                </label>
+                            }
+                            @if (siguienteEstado.HasValue)
+                            {
+                                <button class="secondary-button" type="button" disabled="@Ocupado"
+                                        @onclick="() => CambiarEstadoAsync(unidad, siguienteEstado.Value)">
+                                    @(UnidadProcesandoId == unidad.Id ? "Procesando..." : InventarioPresentacion.AccionEstado(siguienteEstado.Value))
+                                </button>
+                            }
+                        </div>
+                    }
+                </article>
+            }
+        </div>
+    </section>
+}
+
+@code {
+    private IReadOnlyList<UnidadInventarioDto> Unidades { get; set; } = [];
+    private HashSet<int> UnidadesSeleccionadas { get; } = [];
+    private string Termino { get; set; } = string.Empty;
+    private EstadoUnidadInventario? EstadoFiltro { get; set; }
+    private DateOnly FechaRecepcion { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+    private bool BusquedaActiva { get; set; }
+    private bool Cargando { get; set; } = true;
+    private bool ProcesandoRecepcion { get; set; }
+    private int? UnidadProcesandoId { get; set; }
+    private string? ErrorMessage { get; set; }
+    private string? MensajeExito { get; set; }
+
+    private bool FiltrosActivos => !string.IsNullOrWhiteSpace(Termino) || EstadoFiltro.HasValue;
+    private bool Ocupado => Cargando || ProcesandoRecepcion || UnidadProcesandoId.HasValue;
+
+    protected override Task OnInitializedAsync() => CargarInventarioAsync();
+
+    private async Task CargarInventarioAsync()
+    {
+        Cargando = true;
+        ErrorMessage = null;
+        BusquedaActiva = false;
+
+        try
+        {
+            Unidades = await InventarioService.ListarAsync();
+            SincronizarSeleccion();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible cargar el listado de inventario.");
+            ErrorMessage = "No pudimos cargar el inventario. Intenta nuevamente.";
+        }
+        finally
+        {
+            Cargando = false;
+        }
+    }
+
+    private async Task BuscarAsync()
+    {
+        if (!FiltrosActivos)
+        {
+            await CargarInventarioAsync();
+            return;
+        }
+
+        Cargando = true;
+        ErrorMessage = null;
+        MensajeExito = null;
+        BusquedaActiva = true;
+
+        try
+        {
+            Unidades = await InventarioService.BuscarAsync(Termino, EstadoFiltro);
+            SincronizarSeleccion();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible buscar unidades de inventario.");
+            ErrorMessage = "No pudimos realizar la búsqueda. Intenta nuevamente.";
+        }
+        finally
+        {
+            Cargando = false;
+        }
+    }
+
+    private async Task LimpiarFiltrosAsync()
+    {
+        Termino = string.Empty;
+        EstadoFiltro = null;
+        MensajeExito = null;
+        await CargarInventarioAsync();
+    }
+
+    private Task RecargarAsync() => BusquedaActiva ? BuscarAsync() : CargarInventarioAsync();
+
+    private void SeleccionarUnidad(int id, object? valor)
+    {
+        if (valor is true)
+            UnidadesSeleccionadas.Add(id);
+        else
+            UnidadesSeleccionadas.Remove(id);
+    }
+
+    private async Task RegistrarRecepcionAsync()
+    {
+        if (ProcesandoRecepcion || UnidadesSeleccionadas.Count == 0)
+            return;
+
+        ProcesandoRecepcion = true;
+        ErrorMessage = null;
+        MensajeExito = null;
+
+        try
+        {
+            var cantidad = UnidadesSeleccionadas.Count;
+            var resultado = await InventarioService.RegistrarRecepcionAsync(
+                new RecepcionMercanciaInput(FechaRecepcion, UnidadesSeleccionadas.ToArray()));
+
+            if (!resultado.IsSuccess)
+            {
+                ErrorMessage = resultado.ErrorMessage ?? "No fue posible registrar la recepción.";
+                return;
+            }
+
+            UnidadesSeleccionadas.Clear();
+            MensajeExito = cantidad == 1
+                ? "La unidad fue recibida y ahora está disponible."
+                : $"Las {cantidad} unidades fueron recibidas y ahora están disponibles.";
+            await RecargarDespuesDeOperacionAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible registrar la recepción de mercancía.");
+            ErrorMessage = "No pudimos registrar la recepción. Intenta nuevamente.";
+        }
+        finally
+        {
+            ProcesandoRecepcion = false;
+        }
+    }
+
+    private async Task CambiarEstadoAsync(UnidadInventarioDto unidad, EstadoUnidadInventario estado)
+    {
+        if (Ocupado || InventarioPresentacion.SiguienteEstadoManual(unidad) != estado)
+            return;
+
+        UnidadProcesandoId = unidad.Id;
+        ErrorMessage = null;
+        MensajeExito = null;
+
+        try
+        {
+            var resultado = await InventarioService.CambiarEstadoAsync(unidad.Id, estado);
+            if (!resultado.IsSuccess)
+            {
+                ErrorMessage = resultado.ErrorMessage ?? "No fue posible actualizar la unidad.";
+                return;
+            }
+
+            MensajeExito = $"La unidad {unidad.CodigoInterno} ahora está {InventarioPresentacion.Estado(estado).ToLowerInvariant()}.";
+            await RecargarDespuesDeOperacionAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible cambiar el estado de la unidad {UnidadInventarioId}.", unidad.Id);
+            ErrorMessage = "No pudimos actualizar la unidad. Intenta nuevamente.";
+        }
+        finally
+        {
+            UnidadProcesandoId = null;
+        }
+    }
+
+    private async Task RecargarDespuesDeOperacionAsync()
+    {
+        var mensaje = MensajeExito;
+        if (BusquedaActiva)
+            await BuscarAsync();
+        else
+            await CargarInventarioAsync();
+        MensajeExito = mensaje;
+    }
+
+    private void SincronizarSeleccion()
+    {
+        var seleccionables = Unidades.Where(InventarioPresentacion.PuedeRecibirse).Select(x => x.Id).ToHashSet();
+        UnidadesSeleccionadas.RemoveWhere(id => !seleccionables.Contains(id));
+    }
+}
