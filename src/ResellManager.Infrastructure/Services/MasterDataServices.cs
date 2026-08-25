@@ -334,7 +334,7 @@ public sealed class ProductoService(ResellManagerDbContext db) : IProductoServic
     }
 
     public async Task<IReadOnlyList<ProductoDto>> ListarAsync(CancellationToken ct = default) =>
-        await Query().OrderBy(x => x.Nombre).ToListAsync(ct);
+        await Query(db.Productos.OrderBy(x => x.Nombre)).ToListAsync(ct);
 
     public async Task<IReadOnlyList<ProductoDto>> BuscarAsync(
         string termino,
@@ -347,7 +347,7 @@ public sealed class ProductoService(ResellManagerDbContext db) : IProductoServic
             || x.CodigoInterno.Contains(termino)
             || (x.CodigoBarras != null && x.CodigoBarras.Contains(termino))
         );
-        return await Query(productos).OrderBy(x => x.Nombre).ToListAsync(ct);
+        return await Query(productos.OrderBy(x => x.Nombre)).ToListAsync(ct);
     }
 
     private async Task<string?> Validar(ProductoInput x, int? id, CancellationToken ct)

@@ -124,14 +124,14 @@ public sealed class AutenticacionIntegracionTests(AplicacionAutenticacionFactory
 
             Assert.Equal(HttpStatusCode.OK, respuesta.StatusCode);
             Assert.Contains(nombre, contenido);
-            if (ruta == "/clientes")
+            var contenidoEsperado = ruta switch
             {
-                Assert.Contains("Nuevo cliente", contenido);
-            }
-            else
-            {
-                Assert.Contains("se implementarán en una fase posterior", contenido);
-            }
+                "/clientes" => "Nuevo cliente",
+                "/productos" => "Nuevo producto",
+                "/categorias" => "Nueva categoría",
+                _ => "se implementarán en una fase posterior"
+            };
+            Assert.Contains(contenidoEsperado, contenido);
         }
     }
 

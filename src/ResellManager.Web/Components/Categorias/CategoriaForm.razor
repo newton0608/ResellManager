@@ -1,0 +1,49 @@
+<EditForm Model="Modelo" OnValidSubmit="GuardarAsync" class="entity-form">
+    <DataAnnotationsValidator />
+
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="mensaje-error" role="alert">@ErrorMessage</div>
+    }
+
+    <ValidationSummary class="validation-summary" />
+
+    <div class="form-grid">
+        <div class="form-field form-field-wide">
+            <label for="categoria-nombre">Nombre <span aria-hidden="true">*</span></label>
+            <InputText id="categoria-nombre" @bind-Value="Modelo.Nombre" autocomplete="off" />
+            <ValidationMessage For="() => Modelo.Nombre" />
+        </div>
+
+        <div class="form-field form-field-wide">
+            <label for="categoria-observaciones">Observaciones</label>
+            <InputTextArea id="categoria-observaciones" @bind-Value="Modelo.Observaciones" rows="4" />
+            <ValidationMessage For="() => Modelo.Observaciones" />
+        </div>
+    </div>
+
+    <p class="required-note"><span aria-hidden="true">*</span> Campos obligatorios</p>
+
+    <div class="form-actions">
+        <button class="primary-button" type="submit" disabled="@Guardando">
+            @(Guardando ? "Guardando..." : "Guardar categoría")
+        </button>
+        <a class="secondary-button" href="/categorias">Cancelar</a>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter, EditorRequired]
+    public CategoriaFormModel Modelo { get; set; } = null!;
+
+    [Parameter]
+    public bool Guardando { get; set; }
+
+    [Parameter]
+    public string? ErrorMessage { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback<CategoriaFormModel> OnGuardar { get; set; }
+
+    private Task GuardarAsync() => OnGuardar.InvokeAsync(Modelo);
+}

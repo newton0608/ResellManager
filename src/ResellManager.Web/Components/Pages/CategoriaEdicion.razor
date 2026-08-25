@@ -1,0 +1,147 @@
+@page "/categorias/nueva"
+@page "/categorias/{Id:int}/editar"
+@rendermode InteractiveServer
+@inject ICategoriaService CategoriaService
+@inject NavigationManager Navigation
+@inject ILogger<CategoriaEdicion> Logger
+
+<PageTitle>@(EsEdicion ? "Editar categoría" : "Nueva categoría") | ResellManager</PageTitle>
+
+<section class="page-heading" aria-labelledby="titulo-formulario-categoria">
+    <div>
+        <p class="eyebrow">Categorías</p>
+        <h1 id="titulo-formulario-categoria">@(EsEdicion ? "Editar categoría" : "Nueva categoría")</h1>
+        <p class="page-lead">@(EsEdicion ? "Actualiza la definición de la categoría." : "Crea una categoría para organizar las definiciones de productos.")</p>
+    </div>
+</section>
+
+@if (Cargando)
+{
+    <div class="loading-state" role="status" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
+        Cargando categoría...
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(ErrorCarga))
+{
+    <section class="error-state" role="alert">
+        <h2>No fue posible abrir la categoría</h2>
+        <p>@ErrorCarga</p>
+        <div class="form-actions">
+            <button class="primary-button" type="button" @onclick="CargarCategoriaAsync">Reintentar</button>
+            <a class="secondary-button" href="/categorias">Volver a categorías</a>
+        </div>
+    </section>
+}
+else
+{
+    <section class="form-panel" aria-label="Formulario de categoría">
+        <CategoriaForm Modelo="Modelo"
+                       Guardando="Guardando"
+                       ErrorMessage="ErrorGuardado"
+                       OnGuardar="GuardarAsync" />
+    </section>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private CategoriaFormModel Modelo { get; set; } = new();
+    private bool Guardando { get; set; }
+    private bool Cargando { get; set; }
+    private string? ErrorCarga { get; set; }
+    private string? ErrorGuardado { get; set; }
+    private int? IdCargado { get; set; }
+
+    private bool EsEdicion => Id > 0;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!EsEdicion)
+        {
+            if (IdCargado != 0)
+            {
+                Modelo = new CategoriaFormModel();
+                IdCargado = 0;
+            }
+
+            return;
+        }
+
+        if (IdCargado != Id)
+        {
+            await CargarCategoriaAsync();
+        }
+    }
+
+    private async Task CargarCategoriaAsync()
+    {
+        Cargando = true;
+        ErrorCarga = null;
+
+        try
+        {
+            var resultado = await CategoriaService.ObtenerPorIdAsync(Id);
+            if (!resultado.IsSuccess || resultado.Value is null)
+            {
+                ErrorCarga = resultado.ErrorMessage ?? "Categoría no encontrada.";
+                return;
+            }
+
+            Modelo = CategoriaFormModel.FromDto(resultado.Value);
+            IdCargado = Id;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible cargar la categoría {CategoriaId} para edición.", Id);
+            ErrorCarga = "Ocurrió un problema inesperado al cargar la categoría. Intenta nuevamente.";
+        }
+        finally
+        {
+            Cargando = false;
+        }
+    }
+
+    private async Task GuardarAsync(CategoriaFormModel modelo)
+    {
+        if (Guardando)
+        {
+            return;
+        }
+
+        Guardando = true;
+        ErrorGuardado = null;
+
+        try
+        {
+            var resultado = EsEdicion
+                ? await CategoriaService.EditarAsync(Id, modelo.ToInput())
+                : await CategoriaService.CrearAsync(modelo.ToInput());
+
+            if (!resultado.IsSuccess)
+            {
+                ErrorGuardado = resultado.ErrorMessage ?? "No fue posible guardar la categoría.";
+                return;
+            }
+
+            Navigation.NavigateTo(
+                EsEdicion
+                    ? "/categorias?mensaje=categoria-editada"
+                    : "/categorias?mensaje=categoria-creada");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(
+                ex,
+                "No fue posible {Operacion} la categoría {CategoriaId}.",
+                EsEdicion ? "editar" : "crear",
+                EsEdicion ? Id : null);
+            ErrorGuardado = "Ocurrió un problema inesperado al guardar. Intenta nuevamente.";
+        }
+        finally
+        {
+            Guardando = false;
+        }
+    }
+}

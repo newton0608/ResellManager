@@ -1,0 +1,139 @@
+@page "/productos/{Id:int}"
+@rendermode InteractiveServer
+@inject IProductoService ProductoService
+@inject ILogger<ProductoDetalle> Logger
+
+<PageTitle>Detalle de producto | ResellManager</PageTitle>
+
+@if (Cargando)
+{
+    <div class="loading-state" role="status" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
+        Cargando detalle del producto...
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(ErrorCarga) || Producto is null)
+{
+    <section class="error-state" role="alert">
+        <p class="eyebrow">Productos</p>
+        <h1>No fue posible abrir el producto</h1>
+        <p>@(ErrorCarga ?? "Producto no encontrado.")</p>
+        <div class="form-actions">
+            <button class="primary-button" type="button" @onclick="CargarAsync">Reintentar</button>
+            <a class="secondary-button" href="/productos">Volver a productos</a>
+        </div>
+    </section>
+}
+else
+{
+    <section class="page-heading detail-heading" aria-labelledby="titulo-detalle-producto">
+        <div>
+            <p class="eyebrow">Productos</p>
+            <h1 id="titulo-detalle-producto">@Producto.Nombre</h1>
+            <p class="page-lead">Definición del artículo y datos de referencia del catálogo.</p>
+        </div>
+        <div class="heading-actions">
+            <a class="secondary-button" href="/productos">Volver</a>
+            <a class="primary-button" href="/productos/@Id/editar">Editar producto</a>
+        </div>
+    </section>
+
+    <section class="product-summary" aria-label="Detalle del producto">
+        <article class="info-card reference-card">
+            <p class="info-label">Precio sugerido</p>
+            <p class="reference-price-hero">@ProductoPresentacion.PrecioSugerido(Producto.PrecioSugerido)</p>
+            <p class="info-help">Valor de referencia; el precio final pertenece a cada venta.</p>
+        </article>
+
+        <article class="info-card">
+            <h2>Identificación</h2>
+            <dl class="details-list">
+                <div>
+                    <dt>Código interno</dt>
+                    <dd><span class="code-value">@Producto.CodigoInterno</span></dd>
+                </div>
+                <div>
+                    <dt>Código de barras</dt>
+                    <dd>@ProductoPresentacion.TextoOpcional(Producto.CodigoBarras)</dd>
+                </div>
+                <div>
+                    <dt>Categoría</dt>
+                    <dd>@Producto.Categoria</dd>
+                </div>
+                <div>
+                    <dt>Descripción</dt>
+                    <dd class="preserve-lines">@ProductoPresentacion.TextoOpcional(Producto.Descripcion)</dd>
+                </div>
+            </dl>
+        </article>
+
+        <article class="info-card product-attributes-card">
+            <h2>Características</h2>
+            <dl class="details-list">
+                <div>
+                    <dt>Marca</dt>
+                    <dd>@ProductoPresentacion.TextoOpcional(Producto.Marca)</dd>
+                </div>
+                <div>
+                    <dt>Modelo</dt>
+                    <dd>@ProductoPresentacion.TextoOpcional(Producto.Modelo)</dd>
+                </div>
+                <div>
+                    <dt>Color</dt>
+                    <dd>@ProductoPresentacion.TextoOpcional(Producto.Color)</dd>
+                </div>
+                <div>
+                    <dt>Talla</dt>
+                    <dd>@ProductoPresentacion.TextoOpcional(Producto.Talla)</dd>
+                </div>
+            </dl>
+        </article>
+    </section>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private ProductoDto? Producto { get; set; }
+    private bool Cargando { get; set; } = true;
+    private string? ErrorCarga { get; set; }
+    private int? IdCargado { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IdCargado != Id)
+        {
+            await CargarAsync();
+        }
+    }
+
+    private async Task CargarAsync()
+    {
+        Cargando = true;
+        ErrorCarga = null;
+        Producto = null;
+
+        try
+        {
+            var resultado = await ProductoService.ObtenerPorIdAsync(Id);
+            if (!resultado.IsSuccess || resultado.Value is null)
+            {
+                ErrorCarga = resultado.ErrorMessage ?? "Producto no encontrado.";
+                return;
+            }
+
+            Producto = resultado.Value;
+            IdCargado = Id;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible cargar el detalle del producto {ProductoId}.", Id);
+            ErrorCarga = "Ocurrió un problema inesperado al cargar el producto. Intenta nuevamente.";
+        }
+        finally
+        {
+            Cargando = false;
+        }
+    }
+}

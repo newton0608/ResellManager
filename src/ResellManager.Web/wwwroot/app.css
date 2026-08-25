@@ -837,7 +837,8 @@ h2 {
 
 .search-field input,
 .form-field input,
-.form-field textarea {
+.form-field textarea,
+.form-field select {
   background: #fff;
   border: 1px solid #b8c3d1;
   border-radius: .55rem;
@@ -854,13 +855,15 @@ h2 {
 
 .search-field input:hover,
 .form-field input:hover,
-.form-field textarea:hover {
+.form-field textarea:hover,
+.form-field select:hover {
   border-color: #8291a5;
 }
 
 .search-field input:focus,
 .form-field input:focus,
-.form-field textarea:focus {
+.form-field textarea:focus,
+.form-field select:focus {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgb(37 99 235 / 14%);
   outline: 0;
@@ -915,6 +918,36 @@ h2 {
   color: var(--color-muted);
   font-size: .76rem;
   margin: 0;
+}
+
+.field-help,
+.entity-card-subtitle,
+.price-caption,
+.table-secondary {
+  color: var(--color-muted);
+  font-size: .76rem;
+}
+
+.field-help,
+.entity-card-subtitle,
+.price-caption {
+  margin: .3rem 0 0;
+}
+
+.catalog-warning {
+  align-items: center;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: .65rem;
+  color: #92400e;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: .85rem;
+}
+
+.catalog-warning p {
+  margin: .2rem 0 0;
 }
 
 .alert-with-action {
@@ -1061,6 +1094,30 @@ h2 {
   text-decoration: underline;
 }
 
+.table-secondary {
+  display: block;
+  margin-top: .2rem;
+}
+
+.code-value {
+  color: #334155;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: .82rem;
+  font-weight: 700;
+}
+
+.reference-price,
+.reference-price-hero {
+  color: var(--color-primary-dark);
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.price-caption {
+  text-align: right;
+}
+
 .balance-value,
 .balance-hero,
 .transaction-amount {
@@ -1129,6 +1186,35 @@ h2 {
 
 .info-card {
   padding: 1.25rem;
+}
+
+.product-summary {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(15rem, .7fr) minmax(0, 1.3fr);
+  margin-bottom: 1.75rem;
+}
+
+.product-attributes-card {
+  grid-column: 1 / -1;
+}
+
+.reference-card {
+  background: linear-gradient(130deg, #eff6ff, #fff);
+  border-color: #bfdbfe;
+}
+
+.reference-card .info-label {
+  color: var(--color-primary-dark);
+}
+
+.reference-price-hero {
+  font-size: clamp(1.7rem, 4vw, 2.35rem);
+  margin: .35rem 0;
+}
+
+.entity-card h3 {
+  margin-top: .3rem;
 }
 
 .balance-card {
@@ -1433,7 +1519,8 @@ h2 {
 
   .form-grid,
   .customer-summary,
-  .history-grid {
+  .history-grid,
+  .product-summary {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -1447,6 +1534,15 @@ h2 {
 
   .details-list div {
     grid-template-columns: minmax(5.5rem, .4fr) minmax(0, 1fr);
+  }
+
+  .product-attributes-card {
+    grid-column: auto;
+  }
+
+  .catalog-warning {
+    align-items: stretch;
+    display: grid;
   }
 
   .alert-with-action {
