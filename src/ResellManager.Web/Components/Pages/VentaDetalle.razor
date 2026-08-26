@@ -1,0 +1,230 @@
+@page "/ventas/{Id:int}"
+@rendermode InteractiveServer
+@using ResellManager.Domain.Enums
+@inject IVentaService VentaService
+@inject IJSRuntime JS
+@inject ILogger<VentaDetalle> Logger
+
+<PageTitle>@(Venta is null ? "Venta" : Venta.CodigoInterno) | ResellManager</PageTitle>
+
+@if (Cargando)
+{
+    <div class="loading-state" role="status" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
+        Cargando venta...
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(ErrorCarga))
+{
+    <section class="error-state" role="alert">
+        <h1>No fue posible cargar la venta</h1>
+        <p>@ErrorCarga</p>
+        <div class="form-actions">
+            <button class="primary-button" type="button" @onclick="CargarAsync">Reintentar</button>
+            <a class="secondary-button" href="/ventas">Volver a ventas</a>
+        </div>
+    </section>
+}
+else if (Venta is not null)
+{
+    <section class="page-heading detail-heading" aria-labelledby="titulo-venta">
+        <div>
+            <p class="eyebrow">Detalle de venta</p>
+            <h1 id="titulo-venta">@Venta.CodigoInterno</h1>
+            <p class="page-lead">Venta originada en el pedido #@Venta.PedidoId.</p>
+        </div>
+        <div class="heading-actions">
+            <a class="secondary-button" href="/pagos?cliente=@Venta.ClienteId">Pagos del cliente</a>
+            @if (Venta.Estado == EstadoVenta.Registrada)
+            {
+                <button class="danger-button" type="button" disabled="@Cancelando" @onclick="CancelarAsync">
+                    @(Cancelando ? "Cancelando..." : "Cancelar venta")
+                </button>
+            }
+        </div>
+    </section>
+
+    @if (!string.IsNullOrWhiteSpace(MensajeExito))
+    {
+        <div class="mensaje-exito" role="status">@MensajeExito</div>
+    }
+    @if (!string.IsNullOrWhiteSpace(ErrorOperacion))
+    {
+        <div class="mensaje-error" role="alert">@ErrorOperacion</div>
+    }
+
+    <section class="sale-summary" aria-label="Resumen de venta">
+        <article class="info-card">
+            <span class="info-label">Cliente</span>
+            <strong>@Venta.Cliente</strong>
+            <a class="contact-link" href="/clientes/@Venta.ClienteId">Ver cliente</a>
+        </article>
+        <article class="info-card">
+            <span class="info-label">Pedido</span>
+            <strong>#@Venta.PedidoId</strong>
+            <a class="contact-link" href="/pedidos/@Venta.PedidoId">Ver pedido</a>
+        </article>
+        <article class="info-card">
+            <span class="info-label">Fecha</span>
+            <strong>@Venta.Fecha.ToString("dd/MM/yyyy")</strong>
+            <span class="status-badge @VentaPresentacion.ClaseEstado(Venta.Estado)">@VentaPresentacion.Estado(Venta.Estado)</span>
+        </article>
+        <article class="info-card balance-card">
+            <span class="info-label">Total</span>
+            <strong class="balance-hero">@VentaPresentacion.Moneda(Venta.Total)</strong>
+            <span class="field-help">Utilidad: @VentaPresentacion.Moneda(VentaPresentacion.UtilidadTotal(Venta))</span>
+        </article>
+    </section>
+
+    @if (!string.IsNullOrWhiteSpace(Venta.Observaciones))
+    {
+        <section class="info-card sale-notes" aria-labelledby="titulo-observaciones-venta">
+            <span class="info-label" id="titulo-observaciones-venta">Observaciones</span>
+            <p>@Venta.Observaciones</p>
+        </section>
+    }
+
+    <section class="data-panel sale-detail-panel" aria-labelledby="titulo-detalles-venta">
+        <div class="data-panel-heading">
+            <h2 id="titulo-detalles-venta">Detalles</h2>
+            <span>@Venta.Detalles.Count @(Venta.Detalles.Count == 1 ? "artículo" : "artículos")</span>
+        </div>
+        <div class="desktop-table sale-desktop-table">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Producto</th>
+                        <th scope="col">Unidad</th>
+                        <th scope="col" class="numeric-cell">Costo unitario</th>
+                        <th scope="col" class="numeric-cell">Precio final</th>
+                        <th scope="col" class="numeric-cell">Utilidad</th>
+                        <th scope="col">Observaciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var detalle in Venta.Detalles)
+                    {
+                        <tr>
+                            <td><strong>@detalle.Producto</strong></td>
+                            <td>@(detalle.CodigoUnidad ?? "Catálogo")</td>
+                            <td class="numeric-cell">@VentaPresentacion.Moneda(detalle.CostoUnitario)</td>
+                            <td class="numeric-cell">@VentaPresentacion.Moneda(detalle.PrecioFinal)</td>
+                            <td class="numeric-cell"><strong>@VentaPresentacion.Moneda(VentaPresentacion.Utilidad(detalle))</strong></td>
+                            <td>@(detalle.Observaciones ?? "—")</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="3" scope="row">Totales</th>
+                        <td class="numeric-cell">@VentaPresentacion.Moneda(Venta.Total)</td>
+                        <td class="numeric-cell">@VentaPresentacion.Moneda(VentaPresentacion.UtilidadTotal(Venta))</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div class="mobile-card-list sale-mobile-cards">
+            @foreach (var detalle in Venta.Detalles)
+            {
+                <article class="entity-card sale-detail-card">
+                    <div class="entity-card-heading">
+                        <div>
+                            <h3>@detalle.Producto</h3>
+                            <p class="entity-card-subtitle">Unidad: @(detalle.CodigoUnidad ?? "No aplica · catálogo")</p>
+                        </div>
+                        <strong class="transaction-amount">@VentaPresentacion.Moneda(detalle.PrecioFinal)</strong>
+                    </div>
+                    <dl class="sale-detail-values">
+                        <div><dt>Costo unitario</dt><dd>@VentaPresentacion.Moneda(detalle.CostoUnitario)</dd></div>
+                        <div><dt>Utilidad</dt><dd>@VentaPresentacion.Moneda(VentaPresentacion.Utilidad(detalle))</dd></div>
+                        @if (!string.IsNullOrWhiteSpace(detalle.Observaciones))
+                        {
+                            <div><dt>Observaciones</dt><dd>@detalle.Observaciones</dd></div>
+                        }
+                    </dl>
+                </article>
+            }
+            <div class="sale-mobile-total">
+                <span>Total: <strong>@VentaPresentacion.Moneda(Venta.Total)</strong></span>
+                <span>Utilidad: <strong>@VentaPresentacion.Moneda(VentaPresentacion.UtilidadTotal(Venta))</strong></span>
+            </div>
+        </div>
+    </section>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private VentaDto? Venta { get; set; }
+    private bool Cargando { get; set; } = true;
+    private bool Cancelando { get; set; }
+    private string? ErrorCarga { get; set; }
+    private string? ErrorOperacion { get; set; }
+    private string? MensajeExito { get; set; }
+
+    protected override Task OnParametersSetAsync() => CargarAsync();
+
+    private async Task CargarAsync()
+    {
+        Cargando = true;
+        ErrorCarga = null;
+        try
+        {
+            var resultado = await VentaService.ObtenerPorIdAsync(Id);
+            if (!resultado.IsSuccess || resultado.Value is null)
+            {
+                ErrorCarga = resultado.ErrorMessage ?? "Venta no encontrada.";
+                return;
+            }
+            Venta = resultado.Value;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible cargar la venta {VentaId}.", Id);
+            ErrorCarga = "Ocurrió un problema inesperado al cargar la venta. Intenta nuevamente.";
+        }
+        finally
+        {
+            Cargando = false;
+        }
+    }
+
+    private async Task CancelarAsync()
+    {
+        if (Cancelando || Venta?.Estado != EstadoVenta.Registrada)
+            return;
+
+        var confirmado = await JS.InvokeAsync<bool>(
+            "confirm",
+            "Cancelar esta venta puede liberar sus unidades y devolver el pedido a pendiente. Los pagos existentes pueden impedir la operación. ¿Deseas continuar?");
+        if (!confirmado)
+            return;
+
+        Cancelando = true;
+        ErrorOperacion = null;
+        MensajeExito = null;
+        try
+        {
+            var resultado = await VentaService.CancelarAsync(Id);
+            if (!resultado.IsSuccess)
+            {
+                ErrorOperacion = resultado.ErrorMessage ?? "No fue posible cancelar la venta.";
+                return;
+            }
+
+            await CargarAsync();
+            MensajeExito = "Venta cancelada correctamente. El pedido volvió a pendiente; las reservas no se restauraron.";
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible cancelar la venta {VentaId}.", Id);
+            ErrorOperacion = "No pudimos cancelar la venta. Intenta nuevamente.";
+        }
+        finally
+        {
+            Cancelando = false;
+        }
+    }
+}

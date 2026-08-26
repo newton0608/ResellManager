@@ -132,9 +132,20 @@
 ---
 
 
-## Ventas
+## Fase 5.7: ventas
 
-- [ ] Registrar venta
+- [x] Listar ventas registradas y canceladas con tabla de escritorio y cards móviles.
+- [x] Consultar detalle, total y utilidad histórica desde `VentaDto`.
+- [x] Registrar toda venta desde un pedido elegible mediante `IVentaService.RegistrarDesdePedidoAsync`.
+- [x] Construir exactamente un detalle de venta por cada unidad solicitada en el pedido, sin venta parcial.
+- [x] Para venta física, seleccionar únicamente unidades `Disponible`, compatibles y sin reserva ajena, priorizando reservas del mismo pedido.
+- [x] Mantener la transición `Disponible → Vendida`, liberación de reserva y finalización del pedido exclusivamente en `VentaService`.
+- [x] Para catálogo, capturar manualmente `CostoUnitario` y `PrecioFinal` sin usar `UnidadInventario`.
+- [x] Cancelar ventas registradas mediante `IVentaService.CancelarAsync`, sin duplicar reglas de unidades, pedido o saldo en Blazor.
+- [x] Proteger registro y cancelación contra doble submit en UI.
+- [x] Mantener las ventas canceladas en modo de consulta.
+- [ ] V2: endurecer concurrencia de saldo por cliente e inventario físico sin bloqueo global.
+- [x] Excluir ventas libres: toda venta nace obligatoriamente de un pedido.
 
 - [ ] Registrar apartado
 
@@ -142,13 +153,18 @@
 
 ---
 
-## Pagos
+## Fase 5.7: pagos y abonos
 
-- [ ] Registrar abono
+- [x] Seleccionar un cliente real y consultar su saldo mediante `IClienteService.ObtenerSaldoAsync`.
+- [x] Registrar pagos y abonos globales por cliente mediante `IPagoService.RegistrarAsync`.
+- [x] Validar preventivamente monto positivo y no mayor al saldo, manteniendo al backend como autoridad.
+- [x] Usar los valores reales del enum `MetodoPago`.
+- [x] Consultar el historial ordenado mediante `IPagoService.ListarPorClienteAsync`.
+- [x] Proteger el registro contra doble submit y recalcular saldo e historial después del pago.
 
-- [ ] Registrar pago contado
+- [x] Permitir cobro total usando la misma entidad `Pago`, sin asociación a una venta específica.
 
-- [ ] Historial de pagos
+- [ ] V2: endurecer concurrencia de saldo por cliente para venta, pago y cancelación.
 
 ---
 

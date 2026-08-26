@@ -1,0 +1,324 @@
+@page "/pagos"
+@rendermode InteractiveServer
+@using ResellManager.Domain.Enums
+@inject IPagoService PagoService
+@inject IClienteService ClienteService
+@inject ILogger<Pagos> Logger
+
+<PageTitle>Pagos y abonos | ResellManager</PageTitle>
+
+<section class="page-heading" aria-labelledby="titulo-pagos">
+    <div>
+        <p class="eyebrow">Cobros</p>
+        <h1 id="titulo-pagos">Pagos y abonos</h1>
+        <p class="page-lead">Registra pagos globales del cliente y consulta su saldo actual e historial.</p>
+    </div>
+</section>
+
+@if (CargandoClientes)
+{
+    <div class="loading-state" role="status" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
+        Cargando clientes...
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(ErrorCarga))
+{
+    <section class="error-state" role="alert">
+        <h2>No fue posible cargar pagos</h2>
+        <p>@ErrorCarga</p>
+        <button class="primary-button" type="button" @onclick="CargarClientesAsync">Reintentar</button>
+    </section>
+}
+else
+{
+    <section class="form-panel payment-customer-picker" aria-labelledby="titulo-cliente-pago">
+        <div class="form-field">
+            <label for="pago-cliente" id="titulo-cliente-pago">Cliente <span aria-hidden="true">*</span></label>
+            <select id="pago-cliente" value="@Modelo.ClienteId" @onchange="CambiarClienteAsync" disabled="@(CargandoCliente || Registrando)">
+                <option value="0">Selecciona un cliente</option>
+                @foreach (var cliente in Clientes)
+                {
+                    <option value="@cliente.Id">@ClientePresentacion.NombreCompleto(cliente)</option>
+                }
+            </select>
+        </div>
+    </section>
+
+    @if (Clientes.Count == 0)
+    {
+        <section class="empty-state" aria-labelledby="titulo-sin-clientes-pago">
+            <span class="empty-state-icon" aria-hidden="true"><NavIcon Name="users" /></span>
+            <h2 id="titulo-sin-clientes-pago">No hay clientes registrados</h2>
+            <p>Registra un cliente antes de capturar pagos.</p>
+            <a class="primary-button" href="/clientes/nuevo">Nuevo cliente</a>
+        </section>
+    }
+    else if (CargandoCliente)
+    {
+        <div class="loading-state" role="status" aria-live="polite">
+            <span class="spinner" aria-hidden="true"></span>
+            Consultando saldo e historial...
+        </div>
+    }
+    else if (ClienteSeleccionado is not null && SaldoActual.HasValue)
+    {
+        @if (!string.IsNullOrWhiteSpace(MensajeExito))
+        {
+            <div class="mensaje-exito" role="status">@MensajeExito</div>
+        }
+        @if (!string.IsNullOrWhiteSpace(ErrorOperacion))
+        {
+            <div class="mensaje-error" role="alert">@ErrorOperacion</div>
+        }
+
+        <section class="payment-layout">
+            <div>
+                <article class="info-card balance-card payment-balance-card" aria-labelledby="titulo-saldo-cliente">
+                    <span class="info-label">Saldo actual provisto por el sistema</span>
+                    <h2 id="titulo-saldo-cliente">@ClientePresentacion.NombreCompleto(ClienteSeleccionado)</h2>
+                    <strong class="balance-hero">@ClientePresentacion.Moneda(SaldoActual.Value)</strong>
+                    <p class="field-help">El pago reducirá la deuda global del cliente; no se asigna a una venta específica.</p>
+                </article>
+
+                <section class="form-panel payment-form-panel" aria-labelledby="titulo-registrar-pago">
+                    <h2 id="titulo-registrar-pago">Registrar pago o abono</h2>
+                    <EditForm Model="Modelo" OnValidSubmit="RegistrarPagoAsync" class="entity-form">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="validation-summary" />
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label for="pago-fecha">Fecha <span aria-hidden="true">*</span></label>
+                                <InputDate id="pago-fecha" @bind-Value="Modelo.Fecha" />
+                            </div>
+                            <div class="form-field">
+                                <label for="pago-monto">Monto <span aria-hidden="true">*</span></label>
+                                <InputNumber id="pago-monto" @bind-Value="Modelo.Monto" min="0.01" step="0.01" />
+                                <ValidationMessage For="() => Modelo.Monto" />
+                                <p class="field-help">Máximo disponible: @ClientePresentacion.Moneda(SaldoActual.Value)</p>
+                            </div>
+                            <div class="form-field">
+                                <label for="pago-metodo">Método de pago <span aria-hidden="true">*</span></label>
+                                <InputSelect id="pago-metodo" @bind-Value="Modelo.MetodoPago">
+                                    @foreach (var metodo in Enum.GetValues<MetodoPago>())
+                                    {
+                                        <option value="@metodo">@PagoPresentacion.Metodo(metodo)</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                            <div class="form-field">
+                                <label for="pago-referencia">Referencia</label>
+                                <InputText id="pago-referencia" @bind-Value="Modelo.Referencia" autocomplete="off" />
+                                <ValidationMessage For="() => Modelo.Referencia" />
+                            </div>
+                            <div class="form-field form-field-wide">
+                                <label for="pago-observaciones">Observaciones</label>
+                                <InputTextArea id="pago-observaciones" @bind-Value="Modelo.Observaciones" rows="3" />
+                                <ValidationMessage For="() => Modelo.Observaciones" />
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button class="primary-button" type="submit" disabled="@(Registrando || SaldoActual.Value <= 0)">
+                                @(Registrando ? "Registrando..." : "Registrar pago")
+                            </button>
+                        </div>
+                    </EditForm>
+                    @if (SaldoActual.Value <= 0)
+                    {
+                        <p class="payment-no-debt" role="status">Este cliente no tiene deuda pendiente; el backend no permite registrar pagos adicionales.</p>
+                    }
+                </section>
+            </div>
+
+            <section class="data-panel payment-history" aria-labelledby="titulo-historial-pagos">
+                <div class="data-panel-heading">
+                    <h2 id="titulo-historial-pagos">Historial de pagos</h2>
+                    <span>@Historial.Count @(Historial.Count == 1 ? "pago" : "pagos")</span>
+                </div>
+                @if (Historial.Count == 0)
+                {
+                    <div class="empty-state payment-history-empty">
+                        <h3>Aún no hay pagos</h3>
+                        <p>Los abonos registrados para este cliente aparecerán aquí.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="desktop-table payment-desktop-table">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Fecha</th>
+                                    <th scope="col" class="numeric-cell">Monto</th>
+                                    <th scope="col">Método</th>
+                                    <th scope="col">Referencia</th>
+                                    <th scope="col">Observaciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var pago in Historial)
+                                {
+                                    <tr>
+                                        <td>@pago.Fecha.ToString("dd/MM/yyyy")</td>
+                                        <td class="numeric-cell"><span class="transaction-amount">@ClientePresentacion.Moneda(pago.Monto)</span></td>
+                                        <td>@PagoPresentacion.Metodo(pago.MetodoPago)</td>
+                                        <td>@(pago.Referencia ?? "—")</td>
+                                        <td>@(pago.Observaciones ?? "—")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mobile-card-list payment-mobile-cards">
+                        @foreach (var pago in Historial)
+                        {
+                            <article class="entity-card payment-card">
+                                <div class="entity-card-heading">
+                                    <div>
+                                        <h3>@PagoPresentacion.Metodo(pago.MetodoPago)</h3>
+                                        <p class="entity-card-subtitle">@pago.Fecha.ToString("dd/MM/yyyy")</p>
+                                    </div>
+                                    <strong class="transaction-amount">@ClientePresentacion.Moneda(pago.Monto)</strong>
+                                </div>
+                                <dl class="sale-detail-values">
+                                    <div><dt>Referencia</dt><dd>@(pago.Referencia ?? "—")</dd></div>
+                                    <div><dt>Observaciones</dt><dd>@(pago.Observaciones ?? "—")</dd></div>
+                                </dl>
+                            </article>
+                        }
+                    </div>
+                }
+            </section>
+        </section>
+    }
+}
+
+@code {
+    private PagoFormModel Modelo { get; set; } = new();
+    private IReadOnlyList<ClienteDto> Clientes { get; set; } = [];
+    private IReadOnlyList<PagoDto> Historial { get; set; } = [];
+    private ClienteDto? ClienteSeleccionado { get; set; }
+    private decimal? SaldoActual { get; set; }
+    private bool CargandoClientes { get; set; } = true;
+    private bool CargandoCliente { get; set; }
+    private bool Registrando { get; set; }
+    private string? ErrorCarga { get; set; }
+    private string? ErrorOperacion { get; set; }
+    private string? MensajeExito { get; set; }
+
+    [SupplyParameterFromQuery(Name = "cliente")]
+    public int? ClienteDesdeQuery { get; set; }
+
+    protected override Task OnInitializedAsync() => CargarClientesAsync();
+
+    private async Task CargarClientesAsync()
+    {
+        CargandoClientes = true;
+        ErrorCarga = null;
+        try
+        {
+            Clientes = await ClienteService.ListarAsync();
+            if (ClienteDesdeQuery.HasValue && Clientes.Any(x => x.Id == ClienteDesdeQuery.Value))
+                await SeleccionarClienteAsync(ClienteDesdeQuery.Value);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible cargar los clientes para pagos.");
+            ErrorCarga = "Ocurrió un problema inesperado al cargar los clientes. Intenta nuevamente.";
+        }
+        finally
+        {
+            CargandoClientes = false;
+        }
+    }
+
+    private async Task CambiarClienteAsync(ChangeEventArgs evento)
+    {
+        var clienteId = int.TryParse(evento.Value?.ToString(), out var id) ? id : 0;
+        await SeleccionarClienteAsync(clienteId);
+    }
+
+    private async Task SeleccionarClienteAsync(int clienteId)
+    {
+        if (Registrando)
+            return;
+
+        Modelo = new PagoFormModel { ClienteId = clienteId };
+        ClienteSeleccionado = Clientes.FirstOrDefault(x => x.Id == clienteId);
+        Historial = [];
+        SaldoActual = null;
+        ErrorOperacion = null;
+        MensajeExito = null;
+        if (ClienteSeleccionado is null)
+            return;
+
+        CargandoCliente = true;
+        try
+        {
+            var saldoTask = ClienteService.ObtenerSaldoAsync(clienteId);
+            var historialTask = PagoService.ListarPorClienteAsync(clienteId);
+            await Task.WhenAll(saldoTask, historialTask);
+            var saldo = await saldoTask;
+            if (!saldo.IsSuccess)
+            {
+                ErrorOperacion = saldo.ErrorMessage ?? "No fue posible consultar el saldo.";
+                return;
+            }
+
+            SaldoActual = saldo.Value;
+            Historial = await historialTask;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible consultar pagos y saldo del cliente {ClienteId}.", clienteId);
+            ErrorOperacion = "No pudimos consultar el saldo y el historial. Intenta nuevamente.";
+        }
+        finally
+        {
+            CargandoCliente = false;
+        }
+    }
+
+    private async Task RegistrarPagoAsync()
+    {
+        if (Registrando || ClienteSeleccionado is null || !SaldoActual.HasValue)
+            return;
+        if (Modelo.Monto <= 0)
+        {
+            ErrorOperacion = "El monto debe ser mayor que cero.";
+            return;
+        }
+        if (Modelo.Monto > SaldoActual.Value)
+        {
+            ErrorOperacion = $"El monto no puede superar el saldo actual de {ClientePresentacion.Moneda(SaldoActual.Value)}.";
+            return;
+        }
+
+        Registrando = true;
+        ErrorOperacion = null;
+        MensajeExito = null;
+        try
+        {
+            var resultado = await PagoService.RegistrarAsync(Modelo.ToInput());
+            if (!resultado.IsSuccess)
+            {
+                ErrorOperacion = resultado.ErrorMessage ?? "No fue posible registrar el pago.";
+                return;
+            }
+
+            var clienteId = Modelo.ClienteId;
+            Registrando = false;
+            await SeleccionarClienteAsync(clienteId);
+            MensajeExito = "Pago registrado correctamente. El saldo fue recalculado por el sistema.";
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible registrar el pago del cliente {ClienteId}.", Modelo.ClienteId);
+            ErrorOperacion = "Ocurrió un problema inesperado al registrar el pago. Intenta nuevamente.";
+        }
+        finally
+        {
+            Registrando = false;
+        }
+    }
+}

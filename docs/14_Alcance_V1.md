@@ -32,7 +32,7 @@
 
 ✅ Cancelación protegida de ventas antes de entrega.
 
-✅ Dashboard y consulta de utilidad.
+✅ Consulta backend de utilidad por periodo; la pantalla Dashboard permanece pendiente.
 
 ✅ `Producto.PrecioSugerido` como referencia editable al vender.
 
@@ -63,11 +63,17 @@ detalles, consulta, adición de detalles, reserva y liberación de unidades fís
 de pedidos con liberación atómica de reservas. Los pedidos de catálogo no usan inventario y la
 presentación conserva separados el estado físico y la reserva.
 
+✅ Módulos Blazor de ventas y pagos/abonos implementados en Fase 5.7: listado y detalle de ventas,
+registro completo desde pedido físico o de catálogo, cancelación delegada al backend, selección de
+unidades disponibles compatibles, costo de catálogo capturado manualmente, saldo consultado desde
+`IClienteService`, registro de pagos globales por cliente e historial, con doble submit protegido y
+presentación responsive.
+
 ✅ Inicio y presentación del login alineados con la identidad visual de ResellManager.
 
 ## Pendiente para fases posteriores
 
-🟡 Pantallas Blazor completas y operaciones de negocio para ventas, pagos, compras y proveedores.
+🟡 Pantallas Blazor completas y operaciones de negocio para compras y proveedores.
 
 🟡 Edición/eliminación de detalles, reactivación de pedidos e historial avanzado de reservas.
 

@@ -1,0 +1,129 @@
+@page "/ventas"
+@rendermode InteractiveServer
+@inject IVentaService VentaService
+@inject ILogger<Ventas> Logger
+
+<PageTitle>Ventas | ResellManager</PageTitle>
+
+<section class="page-heading" aria-labelledby="titulo-ventas">
+    <div>
+        <p class="eyebrow">Operación</p>
+        <h1 id="titulo-ventas">Ventas</h1>
+        <p class="page-lead">Consulta ventas registradas y canceladas. Toda venta se origina en un pedido.</p>
+    </div>
+    <a class="primary-button" href="/ventas/nueva">Nueva venta</a>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(ErrorMessage))
+{
+    <div class="mensaje-error alert-with-action" role="alert">
+        <span>@ErrorMessage</span>
+        <button class="inline-button" type="button" @onclick="CargarAsync">Reintentar</button>
+    </div>
+}
+
+@if (Cargando)
+{
+    <div class="loading-state" role="status" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
+        Cargando ventas...
+    </div>
+}
+else if (string.IsNullOrWhiteSpace(ErrorMessage) && VentasRegistradas.Count == 0)
+{
+    <section class="empty-state" aria-labelledby="titulo-sin-ventas">
+        <span class="empty-state-icon" aria-hidden="true"><NavIcon Name="cart" /></span>
+        <h2 id="titulo-sin-ventas">Aún no hay ventas</h2>
+        <p>Elige un pedido pendiente para registrar la primera venta.</p>
+        <a class="primary-button" href="/ventas/nueva">Registrar venta</a>
+    </section>
+}
+else if (string.IsNullOrWhiteSpace(ErrorMessage))
+{
+    <section class="data-panel" aria-labelledby="titulo-listado-ventas">
+        <div class="data-panel-heading">
+            <h2 id="titulo-listado-ventas">Listado de ventas</h2>
+            <span>@VentasRegistradas.Count @(VentasRegistradas.Count == 1 ? "venta" : "ventas")</span>
+        </div>
+
+        <div class="desktop-table sale-desktop-table">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Código</th>
+                        <th scope="col">Fecha</th>
+                        <th scope="col">Cliente</th>
+                        <th scope="col">Estado</th>
+                        <th scope="col">Pedido</th>
+                        <th scope="col" class="numeric-cell">Total</th>
+                        <th scope="col" class="actions-cell">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var venta in VentasRegistradas)
+                    {
+                        <tr>
+                            <td><span class="code-value">@venta.CodigoInterno</span></td>
+                            <td>@venta.Fecha.ToString("dd/MM/yyyy")</td>
+                            <td><strong>@venta.Cliente</strong></td>
+                            <td><span class="status-badge @VentaPresentacion.ClaseEstado(venta.Estado)">@VentaPresentacion.Estado(venta.Estado)</span></td>
+                            <td><a class="table-action sale-order-link" href="/pedidos/@venta.PedidoId">#@venta.PedidoId</a></td>
+                            <td class="numeric-cell"><span class="transaction-amount">@VentaPresentacion.Moneda(venta.Total)</span></td>
+                            <td class="actions-cell"><a class="table-action" href="/ventas/@venta.Id">Ver</a></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mobile-card-list sale-mobile-cards">
+            @foreach (var venta in VentasRegistradas)
+            {
+                <article class="entity-card sale-card">
+                    <div class="entity-card-heading">
+                        <div>
+                            <span class="code-value">@venta.CodigoInterno</span>
+                            <h3>@venta.Cliente</h3>
+                            <p class="entity-card-subtitle">@venta.Fecha.ToString("dd/MM/yyyy") · Pedido #@venta.PedidoId</p>
+                        </div>
+                        <span class="status-badge @VentaPresentacion.ClaseEstado(venta.Estado)">@VentaPresentacion.Estado(venta.Estado)</span>
+                    </div>
+                    <div class="sale-card-total">
+                        <span>Total</span>
+                        <strong>@VentaPresentacion.Moneda(venta.Total)</strong>
+                    </div>
+                    <div class="entity-card-actions">
+                        <a class="secondary-button" href="/ventas/@venta.Id">Ver venta</a>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+}
+
+@code {
+    private IReadOnlyList<VentaDto> VentasRegistradas { get; set; } = [];
+    private bool Cargando { get; set; } = true;
+    private string? ErrorMessage { get; set; }
+
+    protected override Task OnInitializedAsync() => CargarAsync();
+
+    private async Task CargarAsync()
+    {
+        Cargando = true;
+        ErrorMessage = null;
+        try
+        {
+            VentasRegistradas = await VentaService.ListarAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible cargar el listado de ventas.");
+            ErrorMessage = "No pudimos cargar las ventas. Intenta nuevamente.";
+        }
+        finally
+        {
+            Cargando = false;
+        }
+    }
+}
