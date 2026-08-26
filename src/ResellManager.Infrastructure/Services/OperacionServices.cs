@@ -66,14 +66,17 @@ public sealed class PedidoService(ResellManagerDbContext db) : IPedidoService
         CancellationToken ct = default
     )
     {
-        var x = await Query().FirstOrDefaultAsync(x => x.Id == id, ct);
+        var x = await Query(db.Pedidos.Where(x => x.Id == id)).FirstOrDefaultAsync(ct);
         return x is null
             ? ServiceResult<PedidoDto>.Failure("Pedido no encontrado.")
             : ServiceResult<PedidoDto>.Ok(x);
     }
 
     public async Task<IReadOnlyList<PedidoDto>> ListarAsync(CancellationToken ct = default) =>
-        await Query().OrderByDescending(x => x.Fecha).ThenByDescending(x => x.Id).ToListAsync(ct);
+        await Query(
+                db.Pedidos.OrderByDescending(x => x.Fecha).ThenByDescending(x => x.Id)
+            )
+            .ToListAsync(ct);
 
     public async Task<ServiceResult> CancelarAsync(int id, CancellationToken ct = default)
     {
@@ -118,9 +121,8 @@ public sealed class PedidoService(ResellManagerDbContext db) : IPedidoService
             Observaciones = x.Observaciones?.Trim(),
         };
 
-    private IQueryable<PedidoDto> Query() =>
-        db
-            .Pedidos.AsNoTracking()
+    private static IQueryable<PedidoDto> Query(IQueryable<Pedido> source) =>
+        source.AsNoTracking()
             .Select(x => new PedidoDto(
                 x.Id,
                 x.CodigoInterno,

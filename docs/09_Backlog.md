@@ -92,9 +92,30 @@
 - [x] Registrar recepción de unidades compradas o en tránsito sin alterar reservas existentes.
 - [x] Exponer únicamente las transiciones manuales `Comprada → EnTransito` y `Vendida → Entregada`.
 - [ ] Integrar creación de unidades mediante la futura UI de compras; Inventario no crea unidades directamente.
-- [ ] Integrar creación y cancelación de reservas en la futura UI de pedidos; Inventario solo las visualiza.
+- [x] Integrar creación y cancelación de reservas en la UI de pedidos; Inventario continúa como consulta del estado físico y la reserva.
 
 ---
+
+## Fase 5.6: pedidos y reservas
+
+- [x] Listar pedidos con cliente, tipo, estado, detalles y total estimado.
+- [x] Crear pedidos con clientes y productos reales y múltiples detalles.
+- [x] Consultar el detalle completo del pedido.
+- [x] Agregar detalles a pedidos pendientes o confirmados.
+- [x] Visualizar las unidades reservadas por detalle sin confundir reserva con estado físico.
+- [x] Reservar unidades del mismo producto en pedidos físicos, respetando cantidad y estados terminales.
+- [x] Permitir reservas de unidades compradas, en tránsito o disponibles.
+- [x] Cancelar una reserva sin alterar compra, unidad ni estado físico.
+- [x] Cancelar un pedido mediante IPedidoService, liberando todas sus reservas de forma atómica.
+- [x] Mantener pedidos de catálogo completamente fuera del inventario físico.
+- [x] Presentar listado, formulario, detalle y reservas de forma responsive.
+- [ ] V2: definir edición de detalles de pedido.
+- [ ] V2: definir eliminación de detalles de pedido.
+- [ ] V2: definir reactivación de pedidos cancelados.
+- [ ] V2: incorporar historial avanzado de cambios de reservas.
+
+---
+
 
 ## Ventas
 

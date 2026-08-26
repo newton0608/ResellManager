@@ -1,0 +1,517 @@
+@page "/pedidos/{Id:int}"
+@rendermode InteractiveServer
+@using ResellManager.Domain.Enums
+@inject IPedidoService PedidoService
+@inject IInventarioService InventarioService
+@inject IProductoService ProductoService
+@inject IJSRuntime JS
+@inject ILogger<PedidoDetalle> Logger
+
+<PageTitle>@(Pedido is null ? "Pedido" : Pedido.CodigoInterno) | ResellManager</PageTitle>
+
+@if (Cargando)
+{
+    <div class="loading-state" role="status" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
+        Cargando pedido y reservas...
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(ErrorCarga) || Pedido is null)
+{
+    <section class="error-state" role="alert">
+        <h1>No fue posible abrir el pedido</h1>
+        <p>@(ErrorCarga ?? "Pedido no encontrado.")</p>
+        <div class="form-actions">
+            <button class="primary-button" type="button" @onclick="CargarAsync">Reintentar</button>
+            <a class="secondary-button" href="/pedidos">Volver a pedidos</a>
+        </div>
+    </section>
+}
+else
+{
+    <section class="page-heading detail-heading" aria-labelledby="titulo-pedido">
+        <div>
+            <p class="eyebrow">Pedido #@Pedido.Id</p>
+            <h1 id="titulo-pedido" class="code-value">@Pedido.CodigoInterno</h1>
+            <p class="page-lead">@Pedido.Fecha.ToString("dd/MM/yyyy") · @Pedido.Cliente</p>
+        </div>
+        <div class="heading-actions">
+            <span class="order-status @PedidoPresentacion.ClaseEstado(Pedido.Estado)">@PedidoPresentacion.Estado(Pedido.Estado)</span>
+            @if (PuedeCancelarPedido)
+            {
+                <button class="danger-button" type="button" disabled="@Procesando"
+                        @onclick="CancelarPedidoAsync">
+                    @(CancelandoPedido ? "Cancelando..." : "Cancelar pedido")
+                </button>
+            }
+            <a class="secondary-button" href="/pedidos">Volver</a>
+        </div>
+    </section>
+
+    @if (!string.IsNullOrWhiteSpace(MensajeExito))
+    {
+        <div class="mensaje-exito" role="status">@MensajeExito</div>
+    }
+    @if (!string.IsNullOrWhiteSpace(ErrorOperacion))
+    {
+        <div class="mensaje-error" role="alert">@ErrorOperacion</div>
+    }
+
+    <section class="order-summary" aria-label="Resumen del pedido">
+        <article class="info-card">
+            <p class="eyebrow">Información</p>
+            <dl class="details-list">
+                <div><dt>Cliente</dt><dd>@Pedido.Cliente</dd></div>
+                <div><dt>Tipo</dt><dd>@PedidoPresentacion.Tipo(Pedido.TipoPedido)</dd></div>
+                <div><dt>Estado</dt><dd>@PedidoPresentacion.Estado(Pedido.Estado)</dd></div>
+                <div><dt>Fecha</dt><dd>@Pedido.Fecha.ToString("dd/MM/yyyy")</dd></div>
+                <div>
+                    <dt>Venta</dt>
+                    <dd>@(Pedido.VentaId.HasValue ? $"Venta #{Pedido.VentaId.Value}" : "Sin venta registrada")</dd>
+                </div>
+                <div><dt>Observaciones</dt><dd>@(string.IsNullOrWhiteSpace(Pedido.Observaciones) ? "Sin observaciones" : Pedido.Observaciones)</dd></div>
+            </dl>
+        </article>
+        <article class="info-card order-total-card">
+            <p class="eyebrow">Total estimado</p>
+            <strong>@PedidoPresentacion.Moneda(PedidoPresentacion.Total(Pedido))</strong>
+            <span>@Pedido.Detalles.Count @(Pedido.Detalles.Count == 1 ? "detalle" : "detalles") · @Pedido.Detalles.Sum(x => x.Cantidad) unidades solicitadas</span>
+            @if (Pedido.TipoPedido == TipoPedido.Catalogo)
+            {
+                <p>Pedido de catálogo: no utiliza ni reserva unidades físicas de inventario.</p>
+            }
+        </article>
+    </section>
+
+    <section class="data-panel order-detail-panel" aria-labelledby="titulo-detalles-pedido">
+        <div class="data-panel-heading">
+            <div>
+                <h2 id="titulo-detalles-pedido">Detalles y reservas</h2>
+                <p>@(Pedido.TipoPedido == TipoPedido.Catalogo
+                    ? "Los detalles de catálogo se gestionan solo por producto y cantidad."
+                    : "El estado físico de cada unidad se muestra separado de su reserva.")</p>
+            </div>
+        </div>
+
+        <div class="order-detail-list">
+            @foreach (var detalle in Pedido.Detalles)
+            {
+                var reservas = ReservasDe(detalle);
+                var opciones = OpcionesPara(detalle);
+                <article class="order-detail-item">
+                    <header class="order-detail-heading">
+                        <div>
+                            <span class="order-detail-number">Detalle #@detalle.Id</span>
+                            <h3>@detalle.Producto</h3>
+                            @if (!string.IsNullOrWhiteSpace(detalle.Observaciones))
+                            {
+                                <p>@detalle.Observaciones</p>
+                            }
+                        </div>
+                        <strong>@PedidoPresentacion.Moneda(detalle.Subtotal)</strong>
+                    </header>
+
+                    <dl class="order-detail-values">
+                        <div><dt>Cantidad</dt><dd>@detalle.Cantidad</dd></div>
+                        <div><dt>Precio unitario</dt><dd>@PedidoPresentacion.Moneda(detalle.PrecioUnitario)</dd></div>
+                        <div><dt>Subtotal</dt><dd>@PedidoPresentacion.Moneda(detalle.Subtotal)</dd></div>
+                    </dl>
+
+                    @if (Pedido.TipoPedido != TipoPedido.Catalogo)
+                    {
+                        <section class="reservation-section" aria-label="Reservas para @detalle.Producto">
+                            <div class="reservation-heading">
+                                <div>
+                                    <h4>Unidades reservadas</h4>
+                                    <span>@reservas.Count de @detalle.Cantidad</span>
+                                </div>
+                            </div>
+
+                            @if (reservas.Count == 0)
+                            {
+                                <p class="reservation-empty">Este detalle todavía no tiene unidades reservadas.</p>
+                            }
+                            else
+                            {
+                                <div class="reservation-list">
+                                    @foreach (var unidad in reservas)
+                                    {
+                                        <article class="reservation-card">
+                                            <div>
+                                                <strong class="code-value">@unidad.CodigoInterno</strong>
+                                                <span>Unidad #@unidad.Id</span>
+                                            </div>
+                                            <div class="inventory-badge-group">
+                                                <span class="inventory-badge @InventarioPresentacion.ClaseEstado(unidad.Estado)">@InventarioPresentacion.Estado(unidad.Estado)</span>
+                                                <span class="inventory-badge reservation-badge">Reservada</span>
+                                            </div>
+                                            @if (EsModificable)
+                                            {
+                                                <button class="table-action button-link" type="button"
+                                                        disabled="@Procesando"
+                                                        @onclick="() => CancelarReservaAsync(unidad)">
+                                                    @(UnidadProcesandoId == unidad.Id ? "Liberando..." : "Cancelar reserva")
+                                                </button>
+                                            }
+                                        </article>
+                                    }
+                                </div>
+                            }
+
+                            @if (EsModificable && reservas.Count < detalle.Cantidad)
+                            {
+                                @if (opciones.Count > 0)
+                                {
+                                    <div class="reservation-picker">
+                                        <div class="form-field">
+                                            <label for="unidad-detalle-@detalle.Id">Unidad compatible</label>
+                                            <select id="unidad-detalle-@detalle.Id"
+                                                    value="@UnidadSeleccionada(detalle.Id)"
+                                                    @onchange="evento => SeleccionarUnidad(detalle.Id, evento.Value?.ToString())">
+                                                <option value="0">Selecciona una unidad</option>
+                                                @foreach (var unidad in opciones)
+                                                {
+                                                    <option value="@unidad.Id">@unidad.CodigoInterno · @InventarioPresentacion.Estado(unidad.Estado)</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <button class="primary-button" type="button"
+                                                disabled="@(Procesando || UnidadSeleccionada(detalle.Id) == 0)"
+                                                @onclick="() => ReservarAsync(detalle)">
+                                            @(DetalleProcesandoId == detalle.Id ? "Reservando..." : "Reservar unidad")
+                                        </button>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <p class="reservation-empty">No hay unidades compatibles sin reserva. Pueden reservarse unidades compradas, en tránsito o disponibles.</p>
+                                }
+                            }
+                            else if (reservas.Count >= detalle.Cantidad)
+                            {
+                                <p class="reservation-complete">La cantidad solicitada ya está totalmente reservada.</p>
+                            }
+                        </section>
+                    }
+                </article>
+            }
+        </div>
+    </section>
+
+    @if (EsModificable)
+    {
+        <details class="form-panel add-order-line">
+            <summary>Agregar otro producto al pedido</summary>
+            <div class="add-order-line-body">
+                <p>Los detalles existentes no pueden editarse ni eliminarse en esta fase.</p>
+                <div class="order-line-grid">
+                    <div class="form-field order-product-field">
+                        <label for="nuevo-detalle-producto">Producto</label>
+                        <select id="nuevo-detalle-producto" value="@NuevoDetalle.ProductoId"
+                                @onchange="evento => SeleccionarProductoNuevo(evento.Value?.ToString())">
+                            <option value="0">Selecciona un producto</option>
+                            @foreach (var producto in Productos)
+                            {
+                                <option value="@producto.Id">@producto.CodigoInterno · @producto.Nombre</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label for="nuevo-detalle-cantidad">Cantidad</label>
+                        <input id="nuevo-detalle-cantidad" type="number" min="1" step="1" @bind="NuevoDetalle.Cantidad" />
+                    </div>
+                    <div class="form-field">
+                        <label for="nuevo-detalle-precio">Precio unitario</label>
+                        <input id="nuevo-detalle-precio" type="number" min="0" step="0.01" @bind="NuevoDetalle.PrecioUnitario" />
+                    </div>
+                    <div class="form-field order-line-note">
+                        <label for="nuevo-detalle-observaciones">Observaciones</label>
+                        <input id="nuevo-detalle-observaciones" maxlength="500" @bind="NuevoDetalle.Observaciones" />
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button class="primary-button" type="button" disabled="@Procesando" @onclick="AgregarDetalleAsync">
+                        @(AgregandoDetalle ? "Agregando..." : "Agregar detalle")
+                    </button>
+                </div>
+            </div>
+        </details>
+    }
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    [SupplyParameterFromQuery(Name = "mensaje")]
+    public string? Mensaje { get; set; }
+
+    private PedidoDto? Pedido { get; set; }
+    private IReadOnlyList<UnidadInventarioDto> Unidades { get; set; } = [];
+    private IReadOnlyList<ProductoDto> Productos { get; set; } = [];
+    private DetallePedidoFormModel NuevoDetalle { get; set; } = new();
+    private Dictionary<int, int> UnidadesSeleccionadas { get; } = [];
+    private bool Cargando { get; set; } = true;
+    private bool AgregandoDetalle { get; set; }
+    private bool CancelandoPedido { get; set; }
+    private int? DetalleProcesandoId { get; set; }
+    private int? UnidadProcesandoId { get; set; }
+    private int? IdCargado { get; set; }
+    private string? ErrorCarga { get; set; }
+    private string? ErrorOperacion { get; set; }
+    private string? MensajeExito { get; set; }
+
+    private bool EsModificable => Pedido is not null && PedidoPresentacion.EsModificable(Pedido.Estado);
+    private bool PuedeCancelarPedido => EsModificable && !Pedido!.VentaId.HasValue;
+    private bool Procesando => AgregandoDetalle || CancelandoPedido || DetalleProcesandoId.HasValue || UnidadProcesandoId.HasValue;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IdCargado != Id)
+            await CargarAsync();
+    }
+
+    private async Task CargarAsync()
+    {
+        Cargando = true;
+        ErrorCarga = null;
+        ErrorOperacion = null;
+        try
+        {
+            var resultado = await PedidoService.ObtenerPorIdAsync(Id);
+            if (!resultado.IsSuccess || resultado.Value is null)
+            {
+                Pedido = null;
+                ErrorCarga = resultado.ErrorMessage ?? "Pedido no encontrado.";
+                return;
+            }
+
+            Pedido = resultado.Value;
+            var productosTask = ProductoService.ListarAsync();
+            var inventarioTask = Pedido.TipoPedido == TipoPedido.Catalogo
+                ? Task.FromResult<IReadOnlyList<UnidadInventarioDto>>([])
+                : InventarioService.ListarAsync();
+            await Task.WhenAll(productosTask, inventarioTask);
+            Productos = await productosTask;
+            Unidades = await inventarioTask;
+            SincronizarSelectores();
+            IdCargado = Id;
+
+            if (Mensaje == "pedido-creado" && string.IsNullOrWhiteSpace(MensajeExito))
+                MensajeExito = "Pedido creado correctamente.";
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible cargar el pedido {PedidoId}.", Id);
+            ErrorCarga = "Ocurrió un problema inesperado al cargar el pedido. Intenta nuevamente.";
+        }
+        finally
+        {
+            Cargando = false;
+        }
+    }
+
+    private IReadOnlyList<UnidadInventarioDto> ReservasDe(DetallePedidoDto detalle) =>
+        Unidades.Where(x => x.DetallePedidoReservaId == detalle.Id)
+            .OrderBy(x => x.CodigoInterno)
+            .ToList();
+
+    private IReadOnlyList<UnidadInventarioDto> OpcionesPara(DetallePedidoDto detalle) =>
+        Unidades.Where(x =>
+                x.ProductoId == detalle.ProductoId
+                && x.Estado is not EstadoUnidadInventario.Vendida and not EstadoUnidadInventario.Entregada
+                && !x.DetallePedidoReservaId.HasValue)
+            .OrderBy(x => x.Estado)
+            .ThenBy(x => x.CodigoInterno)
+            .ToList();
+
+    private int UnidadSeleccionada(int detalleId) =>
+        UnidadesSeleccionadas.TryGetValue(detalleId, out var unidadId) ? unidadId : 0;
+
+    private void SeleccionarUnidad(int detalleId, string? valor) =>
+        UnidadesSeleccionadas[detalleId] = int.TryParse(valor, out var unidadId) ? unidadId : 0;
+
+    private void SeleccionarProductoNuevo(string? valor)
+    {
+        NuevoDetalle.ProductoId = int.TryParse(valor, out var productoId) ? productoId : 0;
+        var producto = Productos.FirstOrDefault(x => x.Id == NuevoDetalle.ProductoId);
+        if (producto is not null)
+            NuevoDetalle.PrecioUnitario = producto.PrecioSugerido;
+    }
+
+    private async Task AgregarDetalleAsync()
+    {
+        if (Procesando || !EsModificable)
+            return;
+
+        ErrorOperacion = ValidarNuevoDetalle();
+        if (ErrorOperacion is not null)
+            return;
+
+        AgregandoDetalle = true;
+        try
+        {
+            var resultado = await PedidoService.AgregarDetalleAsync(Id, NuevoDetalle.ToInput());
+            if (!resultado.IsSuccess)
+            {
+                ErrorOperacion = resultado.ErrorMessage ?? "No fue posible agregar el detalle.";
+                return;
+            }
+
+            NuevoDetalle = new();
+            MensajeExito = "Detalle agregado correctamente.";
+            await RecargarDespuesDeOperacionAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible agregar un detalle al pedido {PedidoId}.", Id);
+            ErrorOperacion = "No pudimos agregar el detalle. Intenta nuevamente.";
+        }
+        finally
+        {
+            AgregandoDetalle = false;
+        }
+    }
+
+    private async Task ReservarAsync(DetallePedidoDto detalle)
+    {
+        if (Procesando || !EsModificable || Pedido!.TipoPedido == TipoPedido.Catalogo)
+            return;
+
+        var unidadId = UnidadSeleccionada(detalle.Id);
+        if (!OpcionesPara(detalle).Any(x => x.Id == unidadId))
+        {
+            ErrorOperacion = "Selecciona una unidad compatible sin reserva.";
+            return;
+        }
+        if (ReservasDe(detalle).Count >= detalle.Cantidad)
+        {
+            ErrorOperacion = "La cantidad solicitada ya está totalmente reservada.";
+            return;
+        }
+
+        DetalleProcesandoId = detalle.Id;
+        ErrorOperacion = null;
+        try
+        {
+            var resultado = await InventarioService.ReservarAsync(unidadId, detalle.Id);
+            if (!resultado.IsSuccess)
+            {
+                ErrorOperacion = resultado.ErrorMessage ?? "No fue posible reservar la unidad.";
+                return;
+            }
+
+            MensajeExito = "Unidad reservada correctamente. Su estado físico no fue modificado.";
+            await RecargarDespuesDeOperacionAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible reservar la unidad {UnidadId} para el detalle {DetalleId}.", unidadId, detalle.Id);
+            ErrorOperacion = "No pudimos reservar la unidad. Es posible que otro usuario la haya reservado; recarga e intenta nuevamente.";
+        }
+        finally
+        {
+            DetalleProcesandoId = null;
+        }
+    }
+
+    private async Task CancelarReservaAsync(UnidadInventarioDto unidad)
+    {
+        if (Procesando || !EsModificable)
+            return;
+
+        var confirmado = await JS.InvokeAsync<bool>(
+            "confirm",
+            "Cancelar reserva: esta unidad quedará libre para otro pedido. Su estado físico y su compra no cambiarán.");
+        if (!confirmado)
+            return;
+
+        UnidadProcesandoId = unidad.Id;
+        ErrorOperacion = null;
+        try
+        {
+            var resultado = await InventarioService.CancelarReservaAsync(unidad.Id);
+            if (!resultado.IsSuccess)
+            {
+                ErrorOperacion = resultado.ErrorMessage ?? "No fue posible cancelar la reserva.";
+                return;
+            }
+
+            MensajeExito = $"La reserva de {unidad.CodigoInterno} fue cancelada. La unidad conserva su estado físico.";
+            await RecargarDespuesDeOperacionAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible cancelar la reserva de la unidad {UnidadId}.", unidad.Id);
+            ErrorOperacion = "No pudimos cancelar la reserva. Intenta nuevamente.";
+        }
+        finally
+        {
+            UnidadProcesandoId = null;
+        }
+    }
+
+    private async Task CancelarPedidoAsync()
+    {
+        if (Procesando || !PuedeCancelarPedido)
+            return;
+
+        var confirmado = await JS.InvokeAsync<bool>(
+            "confirm",
+            "El pedido será cancelado y todas sus reservas se liberarán. La mercancía ya comprada seguirá existiendo en inventario.");
+        if (!confirmado)
+            return;
+
+        CancelandoPedido = true;
+        ErrorOperacion = null;
+        try
+        {
+            var resultado = await PedidoService.CancelarAsync(Id);
+            if (!resultado.IsSuccess)
+            {
+                ErrorOperacion = resultado.ErrorMessage ?? "No fue posible cancelar el pedido.";
+                return;
+            }
+
+            MensajeExito = "Pedido cancelado. Sus reservas fueron liberadas y el inventario físico se conservó.";
+            await RecargarDespuesDeOperacionAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible cancelar el pedido {PedidoId}.", Id);
+            ErrorOperacion = "No pudimos cancelar el pedido. Intenta nuevamente.";
+        }
+        finally
+        {
+            CancelandoPedido = false;
+        }
+    }
+
+    private async Task RecargarDespuesDeOperacionAsync()
+    {
+        var mensaje = MensajeExito;
+        IdCargado = null;
+        await CargarAsync();
+        MensajeExito = mensaje;
+    }
+
+    private string? ValidarNuevoDetalle()
+    {
+        if (!Productos.Any(x => x.Id == NuevoDetalle.ProductoId))
+            return "Selecciona un producto válido.";
+        if (NuevoDetalle.Cantidad <= 0)
+            return "La cantidad debe ser mayor que cero.";
+        if (NuevoDetalle.PrecioUnitario < 0)
+            return "El precio unitario no puede ser negativo.";
+        return null;
+    }
+
+    private void SincronizarSelectores()
+    {
+        var ids = Pedido?.Detalles.Select(x => x.Id).ToHashSet() ?? [];
+        foreach (var id in UnidadesSeleccionadas.Keys.Where(x => !ids.Contains(x)).ToArray())
+            UnidadesSeleccionadas.Remove(id);
+        foreach (var id in ids)
+            UnidadesSeleccionadas.TryAdd(id, 0);
+    }
+}

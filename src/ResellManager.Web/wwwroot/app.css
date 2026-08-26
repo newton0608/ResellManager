@@ -1781,3 +1781,341 @@ h2 {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+/* Pedidos y reservas */
+.danger-button {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #fca5a5;
+  border-radius: .55rem;
+  color: var(--color-danger);
+  display: inline-flex;
+  font-size: .9rem;
+  font-weight: 700;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: .65rem 1rem;
+}
+
+.danger-button:hover {
+  background: #fef2f2;
+  border-color: #ef4444;
+}
+
+.danger-button:disabled,
+.button-link:disabled {
+  cursor: not-allowed;
+  opacity: .65;
+}
+
+.order-status {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: .72rem;
+  font-weight: 800;
+  line-height: 1.2;
+  padding: .35rem .65rem;
+  white-space: nowrap;
+}
+
+.order-status-pending {
+  background: #fff7ed;
+  border-color: #fed7aa;
+  color: #9a3412;
+}
+
+.order-status-confirmed {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
+.order-status-canceled {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.order-status-completed {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+.order-table .code-value,
+.order-card .code-value {
+  display: block;
+}
+
+.order-form-panel {
+  max-width: none;
+}
+
+.order-lines-editor {
+  border-top: 1px solid var(--color-border);
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+}
+
+.order-lines-editor .data-panel-heading,
+.order-detail-panel .data-panel-heading {
+  padding: 0 0 1rem;
+}
+
+.order-lines-editor .data-panel-heading p,
+.order-detail-panel .data-panel-heading p,
+.add-order-line-body > p {
+  color: var(--color-muted);
+  font-size: .8rem;
+  margin: .35rem 0 0;
+}
+
+.order-lines-list,
+.order-detail-list {
+  display: grid;
+  gap: .85rem;
+  padding-top: 1rem;
+}
+
+.order-line-editor,
+.order-detail-item {
+  background: #fbfdff;
+  border: 1px solid var(--color-border);
+  border-radius: .7rem;
+  padding: 1rem;
+}
+
+.order-line-heading,
+.order-detail-heading,
+.reservation-heading,
+.reservation-card {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.order-line-heading {
+  margin-bottom: .85rem;
+}
+
+.order-line-heading h3,
+.order-detail-heading h3,
+.reservation-heading h4 {
+  margin: 0;
+}
+
+.order-line-heading h3,
+.order-detail-heading h3 {
+  color: #172033;
+  font-size: .95rem;
+}
+
+.order-line-grid {
+  display: grid;
+  gap: .75rem;
+  grid-template-columns: minmax(12rem, 2fr) minmax(6.5rem, .65fr) minmax(8rem, .8fr) minmax(10rem, 1.25fr);
+}
+
+.order-summary {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 2fr) minmax(15rem, .75fr);
+  margin-bottom: 1.25rem;
+}
+
+.order-total-card {
+  align-content: start;
+  display: grid;
+}
+
+.order-total-card > strong {
+  color: #172033;
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+}
+
+.order-total-card > span,
+.order-total-card > p:not(.eyebrow) {
+  color: var(--color-muted);
+  font-size: .78rem;
+  margin: .35rem 0 0;
+}
+
+.order-detail-panel {
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+}
+
+.order-detail-heading {
+  align-items: flex-start;
+  border-bottom: 1px solid #e8edf3;
+  padding-bottom: .8rem;
+}
+
+.order-detail-heading p {
+  color: var(--color-muted);
+  font-size: .78rem;
+  margin: .25rem 0 0;
+}
+
+.order-detail-number {
+  color: var(--color-primary);
+  display: block;
+  font-size: .68rem;
+  font-weight: 800;
+  margin-bottom: .2rem;
+  text-transform: uppercase;
+}
+
+.order-detail-values {
+  display: grid;
+  gap: .75rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: .8rem 0 0;
+}
+
+.order-detail-values div {
+  display: grid;
+  gap: .15rem;
+}
+
+.order-detail-values dt,
+.reservation-card span {
+  color: var(--color-muted);
+  font-size: .72rem;
+}
+
+.order-detail-values dd {
+  font-size: .85rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.reservation-section {
+  border-top: 1px dashed #d8e0e8;
+  margin-top: .9rem;
+  padding-top: .9rem;
+}
+
+.reservation-heading h4 {
+  color: #334155;
+  font-size: .85rem;
+}
+
+.reservation-heading span {
+  color: var(--color-muted);
+  font-size: .75rem;
+}
+
+.reservation-list {
+  display: grid;
+  gap: .55rem;
+  margin-top: .65rem;
+}
+
+.reservation-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: .6rem;
+  padding: .65rem .75rem;
+}
+
+.reservation-card > div:first-child {
+  display: grid;
+}
+
+.reservation-empty,
+.reservation-complete {
+  color: var(--color-muted);
+  font-size: .78rem;
+  margin: .65rem 0 0;
+}
+
+.reservation-complete {
+  color: var(--color-success);
+  font-weight: 700;
+}
+
+.reservation-picker {
+  align-items: end;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: .65rem;
+  display: grid;
+  gap: .65rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-top: .75rem;
+  padding: .75rem;
+}
+
+.add-order-line {
+  padding: 0;
+}
+
+.add-order-line summary {
+  color: #172033;
+  cursor: pointer;
+  font-weight: 750;
+  padding: 1rem;
+}
+
+.add-order-line-body {
+  border-top: 1px solid var(--color-border);
+  padding: 1rem;
+}
+
+@media (max-width: 64rem) {
+  .order-line-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .order-product-field,
+  .order-line-note {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 47.99rem) {
+  .order-summary,
+  .order-line-grid,
+  .order-detail-values {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .order-product-field,
+  .order-line-note {
+    grid-column: auto;
+  }
+
+  .order-detail-heading,
+  .reservation-card {
+    align-items: flex-start;
+  }
+
+  .reservation-card {
+    flex-wrap: wrap;
+  }
+
+  .reservation-card > .button-link {
+    flex: 1 1 100%;
+    min-height: 2.5rem;
+    text-align: left;
+  }
+}
+
+@media (max-width: 30rem) {
+  .heading-actions > .danger-button,
+  .reservation-picker > .primary-button {
+    width: 100%;
+  }
+
+  .reservation-picker {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .order-line-editor,
+  .order-detail-item,
+  .order-detail-panel {
+    padding: .75rem;
+  }
+}

@@ -1,0 +1,146 @@
+@page "/pedidos"
+@rendermode InteractiveServer
+@inject IPedidoService PedidoService
+@inject ILogger<Pedidos> Logger
+
+<PageTitle>Pedidos | ResellManager</PageTitle>
+
+<section class="page-heading" aria-labelledby="titulo-pedidos">
+    <div>
+        <p class="eyebrow">Operación comercial</p>
+        <h1 id="titulo-pedidos">Pedidos</h1>
+        <p class="page-lead">Consulta pedidos, apartados y sus reservas sin registrar ventas.</p>
+    </div>
+    <a class="primary-button" href="/pedidos/nuevo">Nuevo pedido</a>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(MensajeExito))
+{
+    <div class="mensaje-exito" role="status">@MensajeExito</div>
+}
+
+@if (!string.IsNullOrWhiteSpace(ErrorMessage))
+{
+    <div class="mensaje-error alert-with-action" role="alert">
+        <span>@ErrorMessage</span>
+        <button class="inline-button" type="button" disabled="@Cargando" @onclick="CargarAsync">Reintentar</button>
+    </div>
+}
+
+@if (Cargando)
+{
+    <div class="loading-state" role="status" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
+        Cargando pedidos...
+    </div>
+}
+else if (string.IsNullOrWhiteSpace(ErrorMessage) && PedidosEncontrados.Count == 0)
+{
+    <section class="empty-state" aria-labelledby="titulo-sin-pedidos">
+        <span class="empty-state-icon" aria-hidden="true"><NavIcon Name="clipboard" /></span>
+        <h2 id="titulo-sin-pedidos">Aún no hay pedidos</h2>
+        <p>Crea el primer pedido con un cliente y al menos un producto.</p>
+        <a class="primary-button" href="/pedidos/nuevo">Crear pedido</a>
+    </section>
+}
+else if (string.IsNullOrWhiteSpace(ErrorMessage))
+{
+    <section class="data-panel" aria-labelledby="titulo-listado-pedidos">
+        <div class="data-panel-heading">
+            <h2 id="titulo-listado-pedidos">Listado de pedidos</h2>
+            <span>@PedidosEncontrados.Count @(PedidosEncontrados.Count == 1 ? "pedido" : "pedidos")</span>
+        </div>
+
+        <div class="desktop-table">
+            <table class="data-table order-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Código / fecha</th>
+                        <th scope="col">Cliente</th>
+                        <th scope="col">Tipo</th>
+                        <th scope="col">Estado</th>
+                        <th scope="col" class="numeric-cell">Detalles</th>
+                        <th scope="col" class="numeric-cell">Total estimado</th>
+                        <th scope="col" class="actions-cell">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var pedido in PedidosEncontrados)
+                    {
+                        <tr>
+                            <td>
+                                <strong class="code-value">@pedido.CodigoInterno</strong>
+                                <span class="table-secondary">@pedido.Fecha.ToString("dd/MM/yyyy")</span>
+                            </td>
+                            <td>@pedido.Cliente</td>
+                            <td>@PedidoPresentacion.Tipo(pedido.TipoPedido)</td>
+                            <td><span class="order-status @PedidoPresentacion.ClaseEstado(pedido.Estado)">@PedidoPresentacion.Estado(pedido.Estado)</span></td>
+                            <td class="numeric-cell">@pedido.Detalles.Count</td>
+                            <td class="numeric-cell"><strong>@PedidoPresentacion.Moneda(PedidoPresentacion.Total(pedido))</strong></td>
+                            <td class="actions-cell"><a class="table-action" href="/pedidos/@pedido.Id">Ver</a></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mobile-card-list">
+            @foreach (var pedido in PedidosEncontrados)
+            {
+                <article class="entity-card order-card">
+                    <div class="entity-card-heading">
+                        <div>
+                            <h3 class="code-value">@pedido.CodigoInterno</h3>
+                            <span class="table-secondary">@pedido.Fecha.ToString("dd/MM/yyyy") · @pedido.Cliente</span>
+                        </div>
+                        <span class="order-status @PedidoPresentacion.ClaseEstado(pedido.Estado)">@PedidoPresentacion.Estado(pedido.Estado)</span>
+                    </div>
+                    <dl class="inventory-card-details">
+                        <div><dt>Tipo</dt><dd>@PedidoPresentacion.Tipo(pedido.TipoPedido)</dd></div>
+                        <div><dt>Detalles</dt><dd>@pedido.Detalles.Count</dd></div>
+                        <div><dt>Total estimado</dt><dd><strong>@PedidoPresentacion.Moneda(PedidoPresentacion.Total(pedido))</strong></dd></div>
+                    </dl>
+                    <div class="entity-card-actions">
+                        <a class="secondary-button" href="/pedidos/@pedido.Id">Ver pedido</a>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+}
+
+@code {
+    private IReadOnlyList<PedidoDto> PedidosEncontrados { get; set; } = [];
+    private bool Cargando { get; set; } = true;
+    private string? ErrorMessage { get; set; }
+
+    [SupplyParameterFromQuery(Name = "mensaje")]
+    public string? Mensaje { get; set; }
+
+    private string? MensajeExito => Mensaje switch
+    {
+        "pedido-creado" => "Pedido creado correctamente.",
+        _ => null,
+    };
+
+    protected override Task OnInitializedAsync() => CargarAsync();
+
+    private async Task CargarAsync()
+    {
+        Cargando = true;
+        ErrorMessage = null;
+        try
+        {
+            PedidosEncontrados = await PedidoService.ListarAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible cargar el listado de pedidos.");
+            ErrorMessage = "No pudimos cargar los pedidos. Intenta nuevamente.";
+        }
+        finally
+        {
+            Cargando = false;
+        }
+    }
+}

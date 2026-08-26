@@ -1,0 +1,275 @@
+@page "/pedidos/nuevo"
+@rendermode InteractiveServer
+@using ResellManager.Domain.Enums
+@inject IPedidoService PedidoService
+@inject IClienteService ClienteService
+@inject IProductoService ProductoService
+@inject NavigationManager Navigation
+@inject ILogger<PedidoNuevo> Logger
+
+<PageTitle>Nuevo pedido | ResellManager</PageTitle>
+
+<section class="page-heading" aria-labelledby="titulo-nuevo-pedido">
+    <div>
+        <p class="eyebrow">Pedidos</p>
+        <h1 id="titulo-nuevo-pedido">Nuevo pedido</h1>
+        <p class="page-lead">Registra el acuerdo con el cliente. Las reservas físicas se asignan después desde el detalle.</p>
+    </div>
+</section>
+
+@if (Cargando)
+{
+    <div class="loading-state" role="status" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
+        Cargando clientes y productos...
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(ErrorCarga))
+{
+    <section class="error-state" role="alert">
+        <h2>No fue posible abrir el formulario</h2>
+        <p>@ErrorCarga</p>
+        <div class="form-actions">
+            <button class="primary-button" type="button" @onclick="CargarAsync">Reintentar</button>
+            <a class="secondary-button" href="/pedidos">Volver a pedidos</a>
+        </div>
+    </section>
+}
+else
+{
+    @if (Clientes.Count == 0 || Productos.Count == 0)
+    {
+        <div class="mensaje-error catalog-warning" role="alert">
+            <span>Para crear un pedido necesitas al menos un cliente y un producto registrados.</span>
+            <div class="heading-actions">
+                @if (Clientes.Count == 0)
+                {
+                    <a class="inline-button" href="/clientes/nuevo">Registrar cliente</a>
+                }
+                @if (Productos.Count == 0)
+                {
+                    <a class="inline-button" href="/productos/nuevo">Registrar producto</a>
+                }
+            </div>
+        </div>
+    }
+
+    <section class="form-panel order-form-panel" aria-label="Formulario de pedido">
+        <EditForm Model="Modelo" OnValidSubmit="GuardarAsync" class="entity-form">
+            <DataAnnotationsValidator />
+
+            @if (!string.IsNullOrWhiteSpace(ErrorGuardado))
+            {
+                <div class="mensaje-error" role="alert">@ErrorGuardado</div>
+            }
+
+            <ValidationSummary class="validation-summary" />
+
+            <div class="form-grid">
+                <div class="form-field">
+                    <label for="pedido-codigo">Código interno <span aria-hidden="true">*</span></label>
+                    <InputText id="pedido-codigo" @bind-Value="Modelo.CodigoInterno" autocomplete="off" />
+                    <ValidationMessage For="() => Modelo.CodigoInterno" />
+                </div>
+
+                <div class="form-field">
+                    <label for="pedido-fecha">Fecha <span aria-hidden="true">*</span></label>
+                    <InputDate id="pedido-fecha" @bind-Value="Modelo.Fecha" />
+                </div>
+
+                <div class="form-field">
+                    <label for="pedido-tipo">Tipo de pedido <span aria-hidden="true">*</span></label>
+                    <InputSelect id="pedido-tipo" @bind-Value="Modelo.TipoPedido">
+                        @foreach (var tipo in Enum.GetValues<TipoPedido>())
+                        {
+                            <option value="@tipo">@PedidoPresentacion.Tipo(tipo)</option>
+                        }
+                    </InputSelect>
+                </div>
+
+                <div class="form-field">
+                    <label for="pedido-cliente">Cliente <span aria-hidden="true">*</span></label>
+                    <InputSelect id="pedido-cliente" @bind-Value="Modelo.ClienteId">
+                        <option value="0">Selecciona un cliente</option>
+                        @foreach (var cliente in Clientes)
+                        {
+                            <option value="@cliente.Id">@NombreCliente(cliente)</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="() => Modelo.ClienteId" />
+                </div>
+
+                <div class="form-field form-field-wide">
+                    <label for="pedido-observaciones">Observaciones</label>
+                    <InputTextArea id="pedido-observaciones" @bind-Value="Modelo.Observaciones" rows="3" />
+                    <ValidationMessage For="() => Modelo.Observaciones" />
+                </div>
+            </div>
+
+            <section class="order-lines-editor" aria-labelledby="titulo-detalles-nuevo">
+                <div class="data-panel-heading">
+                    <div>
+                        <h2 id="titulo-detalles-nuevo">Productos del pedido</h2>
+                        <p>El precio sugerido se propone al elegir producto, pero el precio acordado permanece editable.</p>
+                    </div>
+                    <button class="secondary-button" type="button" disabled="@Guardando" @onclick="AgregarFila">Agregar producto</button>
+                </div>
+
+                <div class="order-lines-list">
+                    @for (var index = 0; index < Modelo.Detalles.Count; index++)
+                    {
+                        var detalle = Modelo.Detalles[index];
+                        var numero = index + 1;
+                        <article class="order-line-editor">
+                            <div class="order-line-heading">
+                                <h3>Detalle @numero</h3>
+                                <button class="table-action button-link" type="button"
+                                        disabled="@(Guardando || Modelo.Detalles.Count == 1)"
+                                        aria-label="Quitar detalle @numero"
+                                        @onclick="() => QuitarFila(detalle)">Quitar</button>
+                            </div>
+                            <div class="order-line-grid">
+                                <div class="form-field order-product-field">
+                                    <label for="producto-@numero">Producto <span aria-hidden="true">*</span></label>
+                                    <select id="producto-@numero" value="@detalle.ProductoId"
+                                            @onchange="evento => SeleccionarProducto(detalle, evento.Value?.ToString())">
+                                        <option value="0">Selecciona un producto</option>
+                                        @foreach (var producto in Productos)
+                                        {
+                                            <option value="@producto.Id">@producto.CodigoInterno · @producto.Nombre</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="form-field">
+                                    <label for="cantidad-@numero">Cantidad <span aria-hidden="true">*</span></label>
+                                    <input id="cantidad-@numero" type="number" min="1" step="1" @bind="detalle.Cantidad" />
+                                </div>
+                                <div class="form-field">
+                                    <label for="precio-@numero">Precio unitario <span aria-hidden="true">*</span></label>
+                                    <input id="precio-@numero" type="number" min="0" step="0.01" @bind="detalle.PrecioUnitario" />
+                                </div>
+                                <div class="form-field order-line-note">
+                                    <label for="observaciones-@numero">Observaciones</label>
+                                    <input id="observaciones-@numero" type="text" maxlength="500" @bind="detalle.Observaciones" />
+                                </div>
+                            </div>
+                        </article>
+                    }
+                </div>
+            </section>
+
+            <p class="required-note"><span aria-hidden="true">*</span> Campos obligatorios</p>
+
+            <div class="form-actions">
+                <button class="primary-button" type="submit"
+                        disabled="@(Guardando || Clientes.Count == 0 || Productos.Count == 0)">
+                    @(Guardando ? "Guardando..." : "Crear pedido")
+                </button>
+                <a class="secondary-button" href="/pedidos">Cancelar</a>
+            </div>
+        </EditForm>
+    </section>
+}
+
+@code {
+    private PedidoFormModel Modelo { get; } = new();
+    private IReadOnlyList<ClienteDto> Clientes { get; set; } = [];
+    private IReadOnlyList<ProductoDto> Productos { get; set; } = [];
+    private bool Cargando { get; set; } = true;
+    private bool Guardando { get; set; }
+    private string? ErrorCarga { get; set; }
+    private string? ErrorGuardado { get; set; }
+
+    protected override Task OnInitializedAsync() => CargarAsync();
+
+    private async Task CargarAsync()
+    {
+        Cargando = true;
+        ErrorCarga = null;
+        try
+        {
+            var clientesTask = ClienteService.ListarAsync();
+            var productosTask = ProductoService.ListarAsync();
+            await Task.WhenAll(clientesTask, productosTask);
+            Clientes = await clientesTask;
+            Productos = await productosTask;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible cargar clientes y productos para crear el pedido.");
+            ErrorCarga = "Ocurrió un problema inesperado al cargar los datos. Intenta nuevamente.";
+        }
+        finally
+        {
+            Cargando = false;
+        }
+    }
+
+    private void AgregarFila() => Modelo.Detalles.Add(new DetallePedidoFormModel());
+
+    private void QuitarFila(DetallePedidoFormModel detalle)
+    {
+        if (!Guardando && Modelo.Detalles.Count > 1)
+            Modelo.Detalles.Remove(detalle);
+    }
+
+    private void SeleccionarProducto(DetallePedidoFormModel detalle, string? valor)
+    {
+        if (!int.TryParse(valor, out var productoId))
+            productoId = 0;
+
+        detalle.ProductoId = productoId;
+        var producto = Productos.FirstOrDefault(x => x.Id == productoId);
+        if (producto is not null)
+            detalle.PrecioUnitario = producto.PrecioSugerido;
+    }
+
+    private async Task GuardarAsync()
+    {
+        if (Guardando)
+            return;
+
+        ErrorGuardado = ValidarDetalles();
+        if (ErrorGuardado is not null)
+            return;
+
+        Guardando = true;
+        try
+        {
+            var resultado = await PedidoService.CrearAsync(Modelo.ToInput());
+            if (!resultado.IsSuccess || resultado.Value is null)
+            {
+                ErrorGuardado = resultado.ErrorMessage ?? "No fue posible crear el pedido.";
+                return;
+            }
+
+            Navigation.NavigateTo($"/pedidos/{resultado.Value.Id}?mensaje=pedido-creado");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible crear el pedido {CodigoPedido}.", Modelo.CodigoInterno);
+            ErrorGuardado = "Ocurrió un problema inesperado al guardar. Intenta nuevamente.";
+        }
+        finally
+        {
+            Guardando = false;
+        }
+    }
+
+    private string? ValidarDetalles()
+    {
+        if (Modelo.Detalles.Count == 0)
+            return "Agrega al menos un detalle al pedido.";
+        if (Modelo.Detalles.Any(x => !Productos.Any(p => p.Id == x.ProductoId)))
+            return "Selecciona un producto válido en cada detalle.";
+        if (Modelo.Detalles.Any(x => x.Cantidad <= 0))
+            return "La cantidad de cada detalle debe ser mayor que cero.";
+        if (Modelo.Detalles.Any(x => x.PrecioUnitario < 0))
+            return "El precio unitario no puede ser negativo.";
+        return null;
+    }
+
+    private static string NombreCliente(ClienteDto cliente) =>
+        string.Join(" ", new[] { cliente.Nombres, cliente.Apellidos }
+            .Where(x => !string.IsNullOrWhiteSpace(x)));
+}
