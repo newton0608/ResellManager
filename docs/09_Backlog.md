@@ -30,6 +30,8 @@
 
 ## Endurecimiento de concurrencia después de completar la UI
 
+### Saldo global por cliente
+
 - [ ] Revisar todas las operaciones que afectan el saldo global de un cliente como sección crítica lógica: registrar venta, registrar pago/abono y cancelar venta.
 - [ ] Implementar exclusión mutua para impedir que dos operaciones incompatibles sobre el saldo del mismo cliente se ejecuten simultáneamente.
 - [ ] Añadir una segunda capa de seguridad a nivel de persistencia/transacción o control de concurrencia, además de la coordinación a nivel de aplicación.
@@ -38,8 +40,20 @@
 - [ ] Garantizar espera acotada: ninguna operación que solicite acceso a la sección crítica debe poder ser postergada indefinidamente.
 - [ ] Definir el alcance del bloqueo por cliente, evitando un bloqueo global del sistema cuando dos clientes distintos puedan procesarse de manera independiente.
 - [ ] Agregar pruebas de concurrencia para pagos, ventas y cancelaciones simultáneas sobre el mismo cliente.
-- [ ] Revisar si existen otras secciones críticas además del saldo una vez que la UI y los flujos reales estén completos.
-- [ ] Considerar esta protección obligatoria antes de un escenario V2 multiusuario con operaciones simultáneas.
+
+### Reservas de inventario — V2
+
+- [ ] Tratar la asignación y liberación de una reserva como sección crítica por `UnidadInventarioId`, de modo que una misma unidad no pueda ser reservada simultáneamente por dos procesos/circuitos distintos.
+- [ ] Implementar exclusión mutua por unidad, no un bloqueo global: dos reservas sobre unidades físicas diferentes deben poder procesarse de forma independiente.
+- [ ] Mientras una operación de reserva/cancelación sobre una unidad esté en curso, una segunda operación incompatible sobre esa misma unidad debe esperar o ser rechazada de forma controlada antes de modificar la reserva.
+- [ ] Mantener la validación actual del backend (`DetallePedidoReservaId`) como regla de negocio, pero complementarla con coordinación de concurrencia real; deshabilitar botones en Blazor no se considera protección suficiente.
+- [ ] Añadir una segunda capa de seguridad en persistencia/transacción para evitar condiciones de carrera incluso si en el futuro existen varias instancias de la aplicación.
+- [ ] La solución debe ser independiente de temporización, garantizar progreso y evitar espera indefinida/starvation.
+- [ ] Agregar pruebas de concurrencia verdaderamente simultáneas: dos intentos de reservar la misma unidad para detalles distintos, reserva vs. cancelación de la misma unidad y cancelación de pedido vs. reserva concurrente.
+- [ ] Revisar el contrato de `CancelarReservaAsync` para decidir si en V2 debe recibir/validar también el contexto de pedido o detalle y no únicamente `unidadInventarioId`.
+
+- [ ] Revisar si existen otras secciones críticas además del saldo y las reservas una vez que la UI y los flujos reales estén completos.
+- [ ] Considerar estas protecciones obligatorias antes de un escenario V2 multiusuario con operaciones simultáneas.
 
 ## Catálogo: información pendiente del negocio
 
@@ -92,9 +106,31 @@
 - [x] Registrar recepción de unidades compradas o en tránsito sin alterar reservas existentes.
 - [x] Exponer únicamente las transiciones manuales `Comprada → EnTransito` y `Vendida → Entregada`.
 - [ ] Integrar creación de unidades mediante la futura UI de compras; Inventario no crea unidades directamente.
-- [ ] Integrar creación y cancelación de reservas en la futura UI de pedidos; Inventario solo las visualiza.
+- [x] Integrar creación y cancelación de reservas en la UI de pedidos; Inventario continúa como consulta del estado físico y la reserva.
 
 ---
+
+## Fase 5.6: pedidos y reservas
+
+- [x] Listar pedidos con cliente, tipo, estado, detalles y total estimado.
+- [x] Crear pedidos con clientes y productos reales y múltiples detalles.
+- [x] Consultar el detalle completo del pedido.
+- [x] Agregar detalles a pedidos pendientes o confirmados.
+- [x] Visualizar las unidades reservadas por detalle sin confundir reserva con estado físico.
+- [x] Reservar unidades del mismo producto en pedidos físicos, respetando cantidad y estados terminales.
+- [x] Permitir reservas de unidades compradas, en tránsito o disponibles.
+- [x] Cancelar una reserva sin alterar compra, unidad ni estado físico.
+- [x] Cancelar un pedido mediante IPedidoService, liberando todas sus reservas de forma atómica.
+- [x] Mantener pedidos de catálogo completamente fuera del inventario físico.
+- [x] Presentar listado, formulario, detalle y reservas de forma responsive.
+- [ ] V2: endurecer concurrencia de reservas con exclusión mutua por `UnidadInventarioId` y protección de persistencia para impedir doble reserva simultánea.
+- [ ] V2: definir edición de detalles de pedido.
+- [ ] V2: definir eliminación de detalles de pedido.
+- [ ] V2: definir reactivación de pedidos cancelados.
+- [ ] V2: incorporar historial avanzado de cambios de reservas.
+
+---
+
 
 ## Ventas
 

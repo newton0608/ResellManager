@@ -136,6 +136,7 @@ public sealed class AutenticacionIntegracionTests(AplicacionAutenticacionFactory
                 "/clientes" => "Nuevo cliente",
                 "/productos" => "Nuevo producto",
                 "/inventario" => "Buscar unidad",
+                "/pedidos" => "Nuevo pedido",
                 "/categorias" => "Nueva categoría",
                 _ => "se implementarán en una fase posterior"
             };
