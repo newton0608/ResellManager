@@ -83,15 +83,16 @@
 
 ---
 
-## UnidadInventario
+## Fase 5.5: inventario
 
-- [ ] Registrar UnidadInventario
-
-- [ ] Editar UnidadInventario
-
-- [ ] Buscar UnidadInventario
-
-- [ ] Cambiar estado
+- [x] Listar unidades físicas mediante `IInventarioService`.
+- [x] Buscar y filtrar unidades por estado físico mediante el backend.
+- [x] Mostrar producto, identificación de unidad, compra/origen, ingreso y costo real de la unidad.
+- [x] Presentar el estado físico y la reserva comercial como conceptos separados.
+- [x] Registrar recepción de unidades compradas o en tránsito sin alterar reservas existentes.
+- [x] Exponer únicamente las transiciones manuales `Comprada → EnTransito` y `Vendida → Entregada`.
+- [ ] Integrar creación de unidades mediante la futura UI de compras; Inventario no crea unidades directamente.
+- [ ] Integrar creación y cancelación de reservas en la futura UI de pedidos; Inventario solo las visualiza.
 
 ---
 
