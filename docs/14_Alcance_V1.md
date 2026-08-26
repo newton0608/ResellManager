@@ -71,6 +71,10 @@ presentación conserva separados el estado físico y la reserva.
 
 🟡 Edición/eliminación de detalles, reactivación de pedidos e historial avanzado de reservas.
 
+🟡 Endurecimiento V2 de concurrencia en reservas: exclusión mutua por `UnidadInventarioId`, sin bloqueo global, con protección adicional en persistencia/transacción para impedir que dos procesos reserven simultáneamente la misma unidad. Debe incluir pruebas concurrentes reales y garantías de progreso/espera acotada.
+
+🟡 Endurecimiento V2 de concurrencia para saldo global por cliente en ventas, pagos/abonos y cancelaciones.
+
 🟡 Eliminación o desactivación segura de clientes, productos y categorías, pendiente de reglas
 que preserven relaciones e historial.
 
