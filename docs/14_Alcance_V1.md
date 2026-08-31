@@ -24,8 +24,9 @@
 
 ✅ Ventas completas asociadas a pedidos.
 
-✅ Venta presencial directa mediante creación automática de un `Pedido` de tipo `VentaDirecta`;
-toda venta conserva un `PedidoId` y no existe venta sin pedido.
+✅ Venta presencial directa mediante creación automática de un `Pedido` de tipo `VentaDirecta`
+con código `PED-VD-<GUID>` y una `Venta` con código `VEN-VD-<GUID>`. Ambos códigos técnicos se generan
+sin captura de la usuaria; toda venta conserva un `PedidoId` y no existe venta sin pedido.
 
 ✅ Ventas de catálogo sin `UnidadInventario` cuando la mercancía no pasa por inventario físico.
 
@@ -68,8 +69,9 @@ presentación conserva separados el estado físico y la reserva.
 
 ✅ Módulos Blazor de ventas y pagos/abonos implementados en Fase 5.7: listado y detalle de ventas,
 registro completo desde pedido físico o de catálogo y venta presencial directa con pedido automático,
-cancelación delegada al backend, selección de unidades disponibles compatibles, costo de catálogo
-capturado manualmente, saldo consultado desde `IClienteService`, registro de pagos globales por cliente
+códigos técnicos de pedido y venta directa generados automáticamente, cancelación delegada al backend,
+selección de unidades disponibles compatibles, costo de catálogo capturado manualmente, saldo consultado
+desde `IClienteService`, registro de pagos globales por cliente
 e historial, con doble submit protegido y presentación responsive.
 
 ✅ Inicio y presentación del login alineados con la identidad visual de ResellManager.
@@ -83,6 +85,10 @@ e historial, con doble submit protegido y presentación responsive.
 🟡 Endurecimiento V2 de concurrencia en reservas: exclusión mutua por `UnidadInventarioId`, sin bloqueo global, con protección adicional en persistencia/transacción para impedir que dos procesos reserven simultáneamente la misma unidad. Debe incluir pruebas concurrentes reales y garantías de progreso/espera acotada.
 
 🟡 Endurecimiento V2 de concurrencia para saldo global por cliente en ventas, pagos/abonos y cancelaciones.
+
+🟡 Revisión general de códigos internos que todavía se capturan manualmente en otros módulos.
+
+🟡 Diseño e implementación de `CanalVenta`, separado de `TipoPedido`.
 
 🟡 Evaluar en V2 una orquestación transaccional atómica para la creación conjunta de `Pedido` y `Venta`
 si el escenario multiusuario lo requiere; V1 conserva explícitamente las dos operaciones actuales.

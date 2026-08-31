@@ -40,10 +40,6 @@ public sealed class VentaDirectaFormModel
     [Range(1, int.MaxValue, ErrorMessage = "Selecciona un cliente.")]
     public int ClienteId { get; set; }
 
-    [Required(ErrorMessage = "El código interno es obligatorio.")]
-    [StringLength(50, ErrorMessage = "El código no puede exceder 50 caracteres.")]
-    public string CodigoInterno { get; set; } = string.Empty;
-
     public DateOnly Fecha { get; set; } = DateOnly.FromDateTime(DateTime.Today);
 
     [StringLength(500, ErrorMessage = "Las observaciones no pueden exceder 500 caracteres.")]

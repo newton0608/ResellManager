@@ -70,7 +70,7 @@ else
                         <div>
                             <h3>El pedido existe, pero la venta no se registró</h3>
                             <p>@ErrorGuardado</p>
-                            <p>El pedido permanece pendiente. Puedes corregir el código de venta y reintentar aquí, o abrir el pedido para revisarlo o cancelarlo.</p>
+                            <p>El pedido permanece pendiente. Puedes reintentar aquí, o abrir el pedido para revisarlo o cancelarlo.</p>
                         </div>
                         <a class="secondary-button" href="/pedidos/@PedidoAutomaticoCreado.Id">Ver pedido @PedidoAutomaticoCreado.CodigoInterno</a>
                     </section>
@@ -91,15 +91,6 @@ else
                             }
                         </InputSelect>
                         <ValidationMessage For="() => Modelo.ClienteId" />
-                    </div>
-                    <div class="form-field">
-                        <label for="venta-directa-codigo">Código de venta <span aria-hidden="true">*</span></label>
-                        <InputText id="venta-directa-codigo" @bind-Value="Modelo.CodigoInterno" autocomplete="off" disabled="@Registrando" />
-                        <ValidationMessage For="() => Modelo.CodigoInterno" />
-                        @if (PedidoAutomaticoCreado is not null)
-                        {
-                            <p class="field-help">Puedes corregir este código antes de reintentar la venta.</p>
-                        }
                     </div>
                     <div class="form-field">
                         <label for="venta-directa-fecha">Fecha <span aria-hidden="true">*</span></label>
@@ -235,6 +226,7 @@ else
 
 @code {
     private VentaDirectaFormModel Modelo { get; } = new();
+    private string CodigoVentaDirecta { get; } = VentaPresentacion.CrearCodigoVentaDirecta();
     private IReadOnlyList<ClienteDto> Clientes { get; set; } = [];
     private List<UnidadVentaDirectaFormModel> Unidades { get; set; } = [];
     private PedidoDto? PedidoAutomaticoCreado { get; set; }
@@ -325,7 +317,7 @@ else
 
             var ventaInput = new VentaInput(
                 PedidoAutomaticoCreado.Id,
-                Modelo.CodigoInterno,
+                CodigoVentaDirecta,
                 Modelo.Fecha,
                 Modelo.Observaciones,
                 seleccionadas.Select(x => x.ToVentaInput()).ToArray());
@@ -375,8 +367,6 @@ else
     {
         if (!Clientes.Any(x => x.Id == Modelo.ClienteId))
             return "Selecciona un cliente válido.";
-        if (string.IsNullOrWhiteSpace(Modelo.CodigoInterno))
-            return "El código de venta es obligatorio.";
         if (seleccionadas.Count == 0)
             return "Selecciona al menos una unidad física.";
         if (seleccionadas.Any(x => !VentaPresentacion.EsUnidadElegibleVentaDirecta(x.Unidad)))

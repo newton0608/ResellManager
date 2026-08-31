@@ -1,6 +1,7 @@
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using ResellManager.Application.Common;
 using ResellManager.Application.DTOs;
 using ResellManager.Application.Interfaces;
 using ResellManager.Domain.Entities;
@@ -128,6 +129,20 @@ public sealed class VentaDirectaPedidoAutomaticoTests
     }
 
     [Fact]
+    public void CodigoVentaDirecta_UsaPrefijoDistinguibleYGuidCompleto()
+    {
+        var primero = VentaPresentacion.CrearCodigoVentaDirecta();
+        var segundo = VentaPresentacion.CrearCodigoVentaDirecta();
+
+        Assert.StartsWith(VentaPresentacion.PrefijoVentaDirecta, primero);
+        Assert.False(string.IsNullOrWhiteSpace(primero));
+        Assert.Equal(39, primero.Length);
+        Assert.NotEqual(primero, segundo);
+        Assert.True(Guid.TryParseExact(primero[7..], "N", out _));
+        Assert.Null(typeof(VentaDirectaFormModel).GetProperty("CodigoInterno"));
+    }
+
+    [Fact]
     public async Task SiVentaFalla_ElPedidoAutomaticoPermanecePendienteYRecuperable()
     {
         await using var test = await TestDatabase.CreateAsync();
@@ -174,6 +189,60 @@ public sealed class VentaDirectaPedidoAutomaticoTests
     }
 
     [Fact]
+    public async Task ReintentoVentaDirecta_ConservaCodigoVentaYPedidoAutomaticos()
+    {
+        await using var test = await TestDatabase.CreateAsync();
+        var unidad = await test.CrearUnidadDisponibleAsync("COMPRA-VD-REINTENTO");
+        var inventario = new InventarioService(test.Db);
+        var unidadDto = (await inventario.ListarDisponiblesAsync()).Single(x => x.Id == unidad.Id);
+        var cliente = (await new ClienteService(test.Db).ListarAsync()).Single(x => x.Id == test.Cliente.Id);
+        var pedidosAntes = await test.Db.Pedidos.CountAsync();
+        var ventas = new VentaSiempreFallidaService();
+        var componente = new VentaDirectaForm();
+        Establecer(componente, "PedidoService", (IPedidoService)new PedidoService(test.Db));
+        Establecer(componente, "VentaService", (IVentaService)ventas);
+        Establecer(componente, "InventarioService", (IInventarioService)inventario);
+        Establecer(componente, "Logger", NullLogger<VentaDirectaForm>.Instance);
+        Establecer(
+            componente,
+            "Clientes",
+            (IReadOnlyList<ClienteDto>)new List<ClienteDto> { cliente });
+        Establecer(
+            componente,
+            "Unidades",
+            new List<UnidadVentaDirectaFormModel>
+            {
+                new()
+                {
+                    Unidad = unidadDto,
+                    Seleccionada = true,
+                    PrecioFinal = 125m,
+                },
+            });
+        var modelo = Obtener<VentaDirectaFormModel>(componente, "Modelo");
+        modelo.ClienteId = cliente.Id;
+        modelo.Fecha = new DateOnly(2026, 8, 30);
+        var codigoInicial = Obtener<string>(componente, "CodigoVentaDirecta");
+
+        await InvocarAsync(componente, "RegistrarVentaDirectaAsync");
+        var pedidoPrimerIntento = Obtener<PedidoDto>(componente, "PedidoAutomaticoCreado");
+        await InvocarAsync(componente, "RegistrarVentaDirectaAsync");
+        var pedidoReintento = Obtener<PedidoDto>(componente, "PedidoAutomaticoCreado");
+
+        Assert.StartsWith(VentaPresentacion.PrefijoVentaDirecta, codigoInicial);
+        Assert.NotEqual(pedidoPrimerIntento.CodigoInterno, codigoInicial);
+        Assert.Equal(TipoPedido.VentaDirecta, pedidoPrimerIntento.TipoPedido);
+        Assert.Equal(pedidosAntes + 1, await test.Db.Pedidos.CountAsync());
+        Assert.Equal(2, ventas.Intentos.Count);
+        Assert.All(ventas.Intentos, x => Assert.Equal(codigoInicial, x.CodigoInterno));
+        Assert.All(ventas.Intentos, x => Assert.Equal(pedidoPrimerIntento.Id, x.PedidoId));
+        Assert.Same(pedidoPrimerIntento, pedidoReintento);
+        var recuperado = await new PedidoService(test.Db).ObtenerPorIdAsync(pedidoPrimerIntento.Id);
+        Assert.True(recuperado.IsSuccess, recuperado.ErrorMessage);
+        Assert.Equal(EstadoPedido.Pendiente, recuperado.Value!.Estado);
+    }
+
+    [Fact]
     public void TodaVentaMantienePedidoObligatorioYBlazorNoUsaDbContext()
     {
         Assert.Equal(typeof(int), typeof(Venta).GetProperty(nameof(Venta.PedidoId))!.PropertyType);
@@ -190,6 +259,63 @@ public sealed class VentaDirectaPedidoAutomaticoTests
                 File.ReadAllText(archivo),
                 StringComparison.Ordinal
             ));
+    }
+
+    private static void Establecer<T>(object instancia, string propiedad, T valor)
+    {
+        var info = instancia.GetType().GetProperty(
+            propiedad,
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+        ) ?? throw new InvalidOperationException($"No se encontró {propiedad}.");
+        info.SetValue(instancia, valor);
+    }
+
+    private static T Obtener<T>(object instancia, string propiedad)
+    {
+        var info = instancia.GetType().GetProperty(
+            propiedad,
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+        ) ?? throw new InvalidOperationException($"No se encontró {propiedad}.");
+        return (T)info.GetValue(instancia)!;
+    }
+
+    private static async Task InvocarAsync(object instancia, string metodo)
+    {
+        var info = instancia.GetType().GetMethod(
+            metodo,
+            BindingFlags.Instance | BindingFlags.NonPublic
+        ) ?? throw new InvalidOperationException($"No se encontró {metodo}.");
+        await (Task)info.Invoke(instancia, null)!;
+    }
+
+    private sealed class VentaSiempreFallidaService : IVentaService
+    {
+        public List<VentaInput> Intentos { get; } = [];
+
+        public Task<ServiceResult<VentaDto>> RegistrarDesdePedidoAsync(
+            VentaInput input,
+            CancellationToken ct = default)
+        {
+            Intentos.Add(input);
+            return Task.FromResult(
+                ServiceResult<VentaDto>.Failure("Fallo controlado al registrar la venta."));
+        }
+
+        public Task<ServiceResult<VentaDto>> ObtenerPorIdAsync(
+            int id,
+            CancellationToken ct = default) =>
+            throw new NotSupportedException();
+
+        public Task<IReadOnlyList<VentaDto>> ListarAsync(CancellationToken ct = default) =>
+            throw new NotSupportedException();
+
+        public Task<ServiceResult<decimal>> CalcularTotalAsync(
+            int ventaId,
+            CancellationToken ct = default) =>
+            throw new NotSupportedException();
+
+        public Task<ServiceResult> CancelarAsync(int id, CancellationToken ct = default) =>
+            throw new NotSupportedException();
     }
 
     private static UnidadInventarioDto UnidadDto(

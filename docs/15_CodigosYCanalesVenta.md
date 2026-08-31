@@ -45,17 +45,17 @@ Esta estrategia evita coordinación adicional y colisiones prácticas sin introd
 
 En una evolución futura se podrá diseñar un generador centralizado de códigos más cortos y amigables para presentación, siempre que preserve unicidad y seguridad frente a concurrencia.
 
-## 3. Fase 5.7 — código automático de venta directa
+## 3. Fase 5.7 — código automático de venta directa (implementado)
 
-La venta presencial directa ya crea automáticamente un `Pedido` de tipo `VentaDirecta` con código `PED-VD-<GUID>`.
+La venta presencial directa crea automáticamente un `Pedido` de tipo `VentaDirecta` con código `PED-VD-<GUID>`.
 
-Se decide que el código interno de la `Venta` generada por este mismo flujo también debe ser automático.
+El código interno de la `Venta` generada por este mismo flujo también se crea automáticamente como `VEN-VD-<GUID>`.
 
 ### Motivo
 
 Pedir a la usuaria un código técnico de venta no aporta valor al flujo real y agrega una causa evitable de error, especialmente códigos duplicados.
 
-### Resultado esperado
+### Resultado implementado
 
 En el modo `Venta directa` de `/ventas/nueva`:
 
@@ -66,7 +66,9 @@ En el modo `Venta directa` de `/ventas/nueva`:
 - no se modifica el esquema ni se vuelve opcional `Venta.CodigoInterno`;
 - la validación de unicidad del backend permanece activa como segunda defensa.
 
-La generación automática reduce una de las causas plausibles del estado parcial `Pedido creado / Venta no registrada`, aunque ese estado sigue siendo posible por concurrencia o fallos técnicos entre ambas operaciones.
+La generación automática reduce una de las causas plausibles del estado parcial `Pedido creado / Venta no registrada`, aunque ese estado sigue siendo posible por concurrencia o fallos técnicos entre ambas operaciones. El mismo código de venta y el mismo pedido se conservan durante los reintentos del flujo mientras permanece activo el componente.
+
+Este cierre no cambia la política del modo `Desde pedido` ni implementa un generador general para otros módulos.
 
 ## 4. Revisión futura de códigos internos
 
@@ -91,6 +93,8 @@ No deben automatizarse como si fueran códigos internos los datos que realmente 
 La automatización de todos los códigos no se implementará de forma improvisada dentro de Fase 5.7; primero se revisarán contratos, reglas y uso real de cada entidad.
 
 ## 5. Nuevo concepto: CanalVenta
+
+**Estado: pendiente; no implementado en Fase 5.7.**
 
 El negocio ya utiliza más de un canal comercial y debe poder distinguirse de `TipoPedido`.
 
@@ -202,8 +206,8 @@ No se implementará integración con Facebook, WhatsApp ni una tienda web en est
 
 ## 9. Relación con V1 y V2
 
-La generación automática del código de la venta directa pertenece al cierre de Fase 5.7 y debe realizarse antes del merge de esa fase.
+La generación automática de los códigos del pedido y la venta directa quedó implementada como cierre de Fase 5.7.
 
-`CanalVenta` es una ampliación pequeña del modelo motivada por un flujo real del negocio y conviene incorporarla antes de continuar con las siguientes fases, para que Compras, Dashboard y reportes futuros partan del modelo correcto.
+`CanalVenta` continúa pendiente como ampliación del modelo motivada por un flujo real del negocio y deberá planificarse antes de implementarse.
 
 Siguen pendientes para V2 las protecciones de concurrencia ya documentadas y la posible orquestación transaccional atómica `Pedido + Venta`.

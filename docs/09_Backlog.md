@@ -137,7 +137,8 @@
 - [x] Listar ventas registradas y canceladas con tabla de escritorio y cards móviles.
 - [x] Consultar detalle, total y utilidad histórica desde `VentaDto`.
 - [x] Registrar toda venta desde un pedido elegible mediante `IVentaService.RegistrarDesdePedidoAsync`.
-- [x] Registrar ventas presenciales directas creando primero, de forma automática, un `Pedido` de tipo `VentaDirecta`.
+- [x] Registrar ventas presenciales directas creando primero un `Pedido` de tipo `VentaDirecta` con código automático `PED-VD-<GUID>`.
+- [x] Generar automáticamente el código técnico `VEN-VD-<GUID>` de la venta presencial directa, sin captura de la usuaria.
 - [x] Mantener la regla de que toda venta tiene `PedidoId`; no existen ventas libres ni ventas sin pedido.
 - [x] Construir exactamente un detalle de venta por cada unidad solicitada en el pedido, sin venta parcial.
 - [x] Para venta física, seleccionar únicamente unidades `Disponible`, compatibles y sin reserva ajena, priorizando reservas del mismo pedido.
@@ -147,6 +148,8 @@
 - [x] Proteger registro y cancelación contra doble submit en UI.
 - [x] Mantener las ventas canceladas en modo de consulta.
 - [ ] V2: endurecer concurrencia de saldo por cliente e inventario físico sin bloqueo global.
+- [ ] Revisar globalmente los códigos internos todavía capturados manualmente en el resto de módulos.
+- [ ] Diseñar e implementar `CanalVenta` como concepto separado de `TipoPedido`.
 - [x] Excluir ventas libres: toda venta nace obligatoriamente de un pedido.
 - [ ] V2: evaluar una orquestación transaccional atómica para crear `Pedido` y registrar `Venta` si el escenario multiusuario lo requiere.
 

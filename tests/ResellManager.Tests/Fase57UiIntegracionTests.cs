@@ -91,6 +91,8 @@ public sealed class Fase57UiIntegracionTests(AplicacionAutenticacionFactory fact
         Assert.Contains("direct-sale-desktop-table", contenido);
         Assert.Contains("direct-sale-mobile-cards", contenido);
         Assert.DoesNotContain("ProductoId", contenido, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("venta-directa-codigo", contenido, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Código de venta", contenido, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
