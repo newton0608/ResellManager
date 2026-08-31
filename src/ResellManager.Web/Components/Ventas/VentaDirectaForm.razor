@@ -1,0 +1,395 @@
+@using ResellManager.Domain.Enums
+@inject IPedidoService PedidoService
+@inject IVentaService VentaService
+@inject IInventarioService InventarioService
+@inject IClienteService ClienteService
+@inject IProductoService ProductoService
+@inject NavigationManager Navigation
+@inject ILogger<VentaDirectaForm> Logger
+
+@if (Cargando)
+{
+    <div class="loading-state" role="status" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
+        Cargando clientes e inventario elegible...
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(ErrorCarga))
+{
+    <section class="error-state" role="alert">
+        <h2>No fue posible preparar la venta directa</h2>
+        <p>@ErrorCarga</p>
+        <div class="form-actions">
+            <button class="primary-button" type="button" @onclick="CargarAsync">Reintentar</button>
+            <a class="secondary-button" href="/ventas">Volver a ventas</a>
+        </div>
+    </section>
+}
+else
+{
+    <section class="direct-sale-intro" aria-labelledby="titulo-venta-directa">
+        <div>
+            <p class="eyebrow">Venta presencial</p>
+            <h2 id="titulo-venta-directa">Venta directa con pedido automático</h2>
+            <p>Se creará primero un pedido <strong>Venta directa</strong> y después la venta. No existen ventas sin pedido.</p>
+        </div>
+        <span class="status-badge status-badge-neutral">Sin reserva intermedia</span>
+    </section>
+
+    @if (Clientes.Count == 0)
+    {
+        <section class="empty-state">
+            <h2>No hay clientes registrados</h2>
+            <p>Registra un cliente antes de capturar la venta presencial.</p>
+            <a class="primary-button" href="/clientes/nuevo">Nuevo cliente</a>
+        </section>
+    }
+    else if (Unidades.Count == 0)
+    {
+        <section class="empty-state">
+            <h2>No hay unidades elegibles</h2>
+            <p>La venta directa solo admite unidades físicamente disponibles y sin reserva activa.</p>
+            <a class="secondary-button" href="/inventario">Ver inventario</a>
+        </section>
+    }
+    else
+    {
+        <EditForm Model="Modelo" OnValidSubmit="RegistrarVentaDirectaAsync" class="entity-form direct-sale-form">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="validation-summary" />
+
+            @if (!string.IsNullOrWhiteSpace(ErrorGuardado))
+            {
+                @if (PedidoAutomaticoCreado is null)
+                {
+                    <div class="mensaje-error" role="alert">@ErrorGuardado</div>
+                }
+                else
+                {
+                    <section class="direct-sale-partial-warning" role="alert">
+                        <div>
+                            <h3>El pedido existe, pero la venta no se registró</h3>
+                            <p>@ErrorGuardado</p>
+                            <p>El pedido permanece pendiente. Puedes corregir el código de venta y reintentar aquí, o abrir el pedido para revisarlo o cancelarlo.</p>
+                        </div>
+                        <a class="secondary-button" href="/pedidos/@PedidoAutomaticoCreado.Id">Ver pedido @PedidoAutomaticoCreado.CodigoInterno</a>
+                    </section>
+                }
+            }
+
+            <section class="form-panel" aria-label="Datos generales de la venta directa">
+                <div class="form-grid">
+                    <div class="form-field">
+                        <label for="venta-directa-cliente">Cliente <span aria-hidden="true">*</span></label>
+                        <InputSelect id="venta-directa-cliente"
+                                     @bind-Value="Modelo.ClienteId"
+                                     disabled="@(Registrando || PedidoAutomaticoCreado is not null)">
+                            <option value="0">Selecciona un cliente</option>
+                            @foreach (var cliente in Clientes)
+                            {
+                                <option value="@cliente.Id">@ClientePresentacion.NombreCompleto(cliente)</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="() => Modelo.ClienteId" />
+                    </div>
+                    <div class="form-field">
+                        <label for="venta-directa-codigo">Código de venta <span aria-hidden="true">*</span></label>
+                        <InputText id="venta-directa-codigo" @bind-Value="Modelo.CodigoInterno" autocomplete="off" disabled="@Registrando" />
+                        <ValidationMessage For="() => Modelo.CodigoInterno" />
+                        @if (PedidoAutomaticoCreado is not null)
+                        {
+                            <p class="field-help">Puedes corregir este código antes de reintentar la venta.</p>
+                        }
+                    </div>
+                    <div class="form-field">
+                        <label for="venta-directa-fecha">Fecha <span aria-hidden="true">*</span></label>
+                        <InputDate id="venta-directa-fecha" @bind-Value="Modelo.Fecha" disabled="@(Registrando || PedidoAutomaticoCreado is not null)" />
+                    </div>
+                    <div class="form-field form-field-wide">
+                        <label for="venta-directa-observaciones">Observaciones</label>
+                        <InputTextArea id="venta-directa-observaciones"
+                                       @bind-Value="Modelo.Observaciones"
+                                       rows="3"
+                                       disabled="@(Registrando || PedidoAutomaticoCreado is not null)" />
+                        <ValidationMessage For="() => Modelo.Observaciones" />
+                    </div>
+                </div>
+            </section>
+
+            <section class="data-panel direct-sale-units" aria-labelledby="titulo-unidades-directas">
+                <div class="data-panel-heading">
+                    <div>
+                        <h2 id="titulo-unidades-directas">Unidades físicas</h2>
+                        <p>Solo se muestran unidades disponibles y sin reserva. El producto se deriva del inventario.</p>
+                    </div>
+                    <span>@Seleccionadas.Count @(Seleccionadas.Count == 1 ? "seleccionada" : "seleccionadas")</span>
+                </div>
+
+                <div class="desktop-table direct-sale-desktop-table">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Elegir</th>
+                                <th scope="col">Unidad</th>
+                                <th scope="col">Producto</th>
+                                <th scope="col">Estado físico</th>
+                                <th scope="col">Reserva</th>
+                                <th scope="col">Precio final</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var detalle in Unidades)
+                            {
+                                <tr>
+                                    <td>
+                                        <input type="checkbox"
+                                               checked="@detalle.Seleccionada"
+                                               disabled="@(Registrando || PedidoAutomaticoCreado is not null)"
+                                               aria-label="Seleccionar unidad @detalle.Unidad.CodigoInterno"
+                                               @onchange="evento => CambiarSeleccion(detalle, evento.Value)" />
+                                    </td>
+                                    <td><strong class="code-value">@detalle.Unidad.CodigoInterno</strong></td>
+                                    <td>
+                                        <strong>@detalle.Unidad.Producto</strong>
+                                        <span class="table-secondary">@detalle.Unidad.CodigoProducto</span>
+                                    </td>
+                                    <td><span class="inventory-badge inventory-status-available">Disponible</span></td>
+                                    <td><span class="inventory-badge no-reservation-badge">Sin reserva</span></td>
+                                    <td>
+                                        @if (detalle.Seleccionada)
+                                        {
+                                            <div class="form-field direct-sale-price-field">
+                                                <label class="visually-hidden" for="precio-directo-@detalle.Unidad.Id">Precio final de @detalle.Unidad.CodigoInterno</label>
+                                                <input id="precio-directo-@detalle.Unidad.Id"
+                                                       type="number"
+                                                       min="0"
+                                                       step="0.01"
+                                                       required
+                                                       disabled="@(Registrando || PedidoAutomaticoCreado is not null)"
+                                                       @bind="detalle.PrecioFinal" />
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="table-secondary">Selecciona la unidad</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mobile-card-list direct-sale-mobile-cards">
+                    @foreach (var detalle in Unidades)
+                    {
+                        <article class="entity-card direct-sale-unit-card">
+                            <div class="entity-card-heading">
+                                <div>
+                                    <h3>@detalle.Unidad.Producto</h3>
+                                    <span class="table-secondary code-value">@detalle.Unidad.CodigoInterno</span>
+                                </div>
+                                <label class="direct-sale-check">
+                                    <input type="checkbox"
+                                           checked="@detalle.Seleccionada"
+                                           disabled="@(Registrando || PedidoAutomaticoCreado is not null)"
+                                           @onchange="evento => CambiarSeleccion(detalle, evento.Value)" />
+                                    Seleccionar
+                                </label>
+                            </div>
+                            <div class="inventory-badge-group">
+                                <span class="inventory-badge inventory-status-available">Disponible</span>
+                                <span class="inventory-badge no-reservation-badge">Sin reserva</span>
+                            </div>
+                            @if (detalle.Seleccionada)
+                            {
+                                <div class="form-field">
+                                    <label for="precio-directo-movil-@detalle.Unidad.Id">Precio final</label>
+                                    <input id="precio-directo-movil-@detalle.Unidad.Id"
+                                           type="number"
+                                           min="0"
+                                           step="0.01"
+                                           required
+                                           disabled="@(Registrando || PedidoAutomaticoCreado is not null)"
+                                           @bind="detalle.PrecioFinal" />
+                                </div>
+                            }
+                        </article>
+                    }
+                </div>
+            </section>
+
+            <div class="form-actions sale-submit-actions">
+                <button class="primary-button" type="submit" disabled="@(Registrando || Seleccionadas.Count == 0)">
+                    @(Registrando
+                        ? "Registrando..."
+                        : PedidoAutomaticoCreado is null
+                            ? "Crear pedido y registrar venta"
+                            : "Reintentar registro de venta")
+                </button>
+                <a class="secondary-button" href="/ventas">Cancelar</a>
+            </div>
+        </EditForm>
+    }
+}
+
+@code {
+    private VentaDirectaFormModel Modelo { get; } = new();
+    private IReadOnlyList<ClienteDto> Clientes { get; set; } = [];
+    private List<UnidadVentaDirectaFormModel> Unidades { get; set; } = [];
+    private PedidoDto? PedidoAutomaticoCreado { get; set; }
+    private bool Cargando { get; set; } = true;
+    private bool Registrando { get; set; }
+    private string? ErrorCarga { get; set; }
+    private string? ErrorGuardado { get; set; }
+
+    private IReadOnlyList<UnidadVentaDirectaFormModel> Seleccionadas =>
+        Unidades.Where(x => x.Seleccionada).ToList();
+
+    protected override Task OnInitializedAsync() => CargarAsync();
+
+    private async Task CargarAsync()
+    {
+        Cargando = true;
+        ErrorCarga = null;
+        try
+        {
+            var clientesTask = ClienteService.ListarAsync();
+            var inventarioTask = InventarioService.ListarDisponiblesAsync();
+            var productosTask = ProductoService.ListarAsync();
+            await Task.WhenAll(clientesTask, inventarioTask, productosTask);
+
+            Clientes = await clientesTask;
+            var productos = (await productosTask).ToDictionary(x => x.Id);
+            Unidades = (await inventarioTask)
+                .Where(VentaPresentacion.EsUnidadElegibleVentaDirecta)
+                .OrderBy(x => x.Producto)
+                .ThenBy(x => x.CodigoInterno)
+                .Select(x => new UnidadVentaDirectaFormModel
+                {
+                    Unidad = x,
+                    PrecioFinal = productos.TryGetValue(x.ProductoId, out var producto)
+                        ? producto.PrecioSugerido
+                        : 0m,
+                })
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible cargar clientes e inventario para venta directa.");
+            ErrorCarga = "Ocurrió un problema inesperado al cargar clientes e inventario. Intenta nuevamente.";
+        }
+        finally
+        {
+            Cargando = false;
+        }
+    }
+
+    private static void CambiarSeleccion(UnidadVentaDirectaFormModel detalle, object? valor) =>
+        detalle.Seleccionada = valor is bool seleccionado && seleccionado;
+
+    private async Task RegistrarVentaDirectaAsync()
+    {
+        if (Registrando)
+            return;
+
+        var seleccionadas = Seleccionadas;
+        ErrorGuardado = Validar(seleccionadas);
+        if (ErrorGuardado is not null)
+            return;
+
+        Registrando = true;
+        try
+        {
+            if (PedidoAutomaticoCreado is null)
+            {
+                if (!await SiguenElegiblesAsync(seleccionadas))
+                    return;
+
+                var pedidoInput = new PedidoInput(
+                    VentaPresentacion.CrearCodigoPedidoVentaDirecta(),
+                    Modelo.Fecha,
+                    TipoPedido.VentaDirecta,
+                    Modelo.ClienteId,
+                    ConstruirObservacionesPedido(),
+                    seleccionadas.Select(x => x.ToPedidoInput()).ToArray());
+                var pedido = await PedidoService.CrearAsync(pedidoInput);
+                if (!pedido.IsSuccess || pedido.Value is null)
+                {
+                    ErrorGuardado = pedido.ErrorMessage ?? "No fue posible crear el pedido automático.";
+                    return;
+                }
+
+                PedidoAutomaticoCreado = pedido.Value;
+            }
+
+            var ventaInput = new VentaInput(
+                PedidoAutomaticoCreado.Id,
+                Modelo.CodigoInterno,
+                Modelo.Fecha,
+                Modelo.Observaciones,
+                seleccionadas.Select(x => x.ToVentaInput()).ToArray());
+            var venta = await VentaService.RegistrarDesdePedidoAsync(ventaInput);
+            if (!venta.IsSuccess || venta.Value is null)
+            {
+                ErrorGuardado =
+                    $"El pedido automático {PedidoAutomaticoCreado.CodigoInterno} fue creado, "
+                    + $"pero la venta no pudo registrarse: {venta.ErrorMessage ?? "error no especificado"}.";
+                return;
+            }
+
+            Navigation.NavigateTo($"/ventas/{venta.Value.Id}");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(
+                ex,
+                "No fue posible registrar la venta directa. Pedido automático: {PedidoId}.",
+                PedidoAutomaticoCreado?.Id);
+            ErrorGuardado = PedidoAutomaticoCreado is null
+                ? "Ocurrió un problema inesperado antes de crear el pedido automático. Intenta nuevamente."
+                : $"El pedido automático {PedidoAutomaticoCreado.CodigoInterno} fue creado, pero ocurrió un problema inesperado al registrar la venta.";
+        }
+        finally
+        {
+            Registrando = false;
+        }
+    }
+
+    private async Task<bool> SiguenElegiblesAsync(
+        IReadOnlyCollection<UnidadVentaDirectaFormModel> seleccionadas)
+    {
+        var actuales = await InventarioService.ListarDisponiblesAsync();
+        var idsElegibles = actuales
+            .Where(VentaPresentacion.EsUnidadElegibleVentaDirecta)
+            .Select(x => x.Id)
+            .ToHashSet();
+        if (seleccionadas.All(x => idsElegibles.Contains(x.Unidad.Id)))
+            return true;
+
+        ErrorGuardado = "Una o más unidades ya no están disponibles o recibieron una reserva. Actualiza la página antes de continuar.";
+        return false;
+    }
+
+    private string? Validar(IReadOnlyCollection<UnidadVentaDirectaFormModel> seleccionadas)
+    {
+        if (!Clientes.Any(x => x.Id == Modelo.ClienteId))
+            return "Selecciona un cliente válido.";
+        if (string.IsNullOrWhiteSpace(Modelo.CodigoInterno))
+            return "El código de venta es obligatorio.";
+        if (seleccionadas.Count == 0)
+            return "Selecciona al menos una unidad física.";
+        if (seleccionadas.Any(x => !VentaPresentacion.EsUnidadElegibleVentaDirecta(x.Unidad)))
+            return "Solo pueden venderse unidades disponibles y sin reserva activa.";
+        if (VentaPresentacion.TieneUnidadesDuplicadas(seleccionadas.Select(x => x.Unidad.Id)))
+            return "Una unidad de inventario no puede seleccionarse dos veces.";
+        if (seleccionadas.Any(x => x.PrecioFinal < 0))
+            return "El precio final no puede ser negativo.";
+        return null;
+    }
+
+    private string ConstruirObservacionesPedido() =>
+        string.IsNullOrWhiteSpace(Modelo.Observaciones)
+            ? "Pedido generado automáticamente desde una venta directa presencial."
+            : $"Pedido generado automáticamente desde una venta directa presencial. {Modelo.Observaciones.Trim()}";
+}

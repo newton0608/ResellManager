@@ -13,9 +13,32 @@
     <div>
         <p class="eyebrow">Ventas</p>
         <h1 id="titulo-nueva-venta">Nueva venta</h1>
-        <p class="page-lead">Selecciona un pedido elegible. No se permiten ventas libres ni parciales.</p>
+        <p class="page-lead">Toda venta conserva un pedido: selecciónalo o genera uno automáticamente para una venta presencial directa.</p>
     </div>
 </section>
+<section class="sale-mode-selector" aria-labelledby="titulo-modo-venta">
+    <div>
+        <p class="eyebrow">Modo de registro</p>
+        <h2 id="titulo-modo-venta">¿Cómo nace la venta?</h2>
+    </div>
+    <div class="sale-mode-actions" role="group" aria-label="Modo de venta">
+        <button class="secondary-button @(ModoActual == ModoVenta.DesdePedido ? "sale-mode-active" : null)"
+                type="button"
+                aria-pressed="@(ModoActual == ModoVenta.DesdePedido)"
+                @onclick="() => CambiarModo(ModoVenta.DesdePedido)">
+            Desde pedido
+        </button>
+        <button class="secondary-button @(ModoActual == ModoVenta.VentaDirecta ? "sale-mode-active" : null)"
+                type="button"
+                aria-pressed="@(ModoActual == ModoVenta.VentaDirecta)"
+                @onclick="() => CambiarModo(ModoVenta.VentaDirecta)">
+            Venta directa
+        </button>
+    </div>
+</section>
+
+@if (ModoActual == ModoVenta.DesdePedido)
+{
 
 @if (Cargando)
 {
@@ -197,8 +220,21 @@ else
         </EditForm>
     }
 }
+}
+else
+{
+    <VentaDirectaForm />
+}
 
 @code {
+    private ModoVenta ModoActual { get; set; } = ModoVenta.DesdePedido;
+
+    private void CambiarModo(ModoVenta modo)
+    {
+        if (!Registrando)
+            ModoActual = modo;
+    }
+
     private VentaFormModel Modelo { get; set; } = new();
     private IReadOnlyList<PedidoDto> PedidosElegibles { get; set; } = [];
     private IReadOnlyList<UnidadInventarioDto> UnidadesDisponibles { get; set; } = [];
@@ -213,10 +249,19 @@ else
 
     [SupplyParameterFromQuery(Name = "pedido")]
     public int? PedidoDesdeQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "modo")]
+    public string? ModoDesdeQuery { get; set; }
+
 
     private bool EsCatalogo => PedidoSeleccionado?.TipoPedido == TipoPedido.Catalogo;
 
-    protected override Task OnInitializedAsync() => CargarAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.Equals(ModoDesdeQuery, "directa", StringComparison.OrdinalIgnoreCase))
+            ModoActual = ModoVenta.VentaDirecta;
+
+        await CargarAsync();
+    }
 
     private async Task CargarAsync()
     {
@@ -418,5 +463,10 @@ else
         if (Detalles.Any(x => !OpcionesPara(x).Any(u => u.Id == x.UnidadInventarioId)))
             return "Una unidad seleccionada ya no está disponible o no es compatible con el pedido.";
         return null;
+    }
+    private enum ModoVenta
+    {
+        DesdePedido,
+        VentaDirecta,
     }
 }

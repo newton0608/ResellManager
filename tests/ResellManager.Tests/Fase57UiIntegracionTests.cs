@@ -43,6 +43,7 @@ public sealed class Fase57UiIntegracionTests(AplicacionAutenticacionFactory fact
         var contenido = WebUtility.HtmlDecode(await respuesta.Content.ReadAsStringAsync());
 
         Assert.Equal(HttpStatusCode.OK, respuesta.StatusCode);
+        Assert.Contains("Desde pedido", contenido);
         Assert.Contains("Captura manualmente el costo histórico", contenido);
         Assert.Contains("Costo unitario", contenido);
         Assert.Contains("Precio final", contenido);
@@ -67,6 +68,29 @@ public sealed class Fase57UiIntegracionTests(AplicacionAutenticacionFactory fact
         Assert.Contains(escenario.UnidadLibre, contenido);
         Assert.DoesNotContain(escenario.UnidadReservadaAjena, contenido);
         Assert.DoesNotContain("Ingresa el ID", contenido, StringComparison.OrdinalIgnoreCase);
+    }
+    [Fact]
+    public async Task VentaDirecta_RenderizaSoloUnidadDisponibleSinReservaYDerivaProducto()
+    {
+        var escenario = await CrearEscenarioFisicoAsync();
+        using var cliente = CrearCliente();
+        await IniciarSesionAsync(cliente);
+
+        var respuesta = await cliente.GetAsync("/ventas/nueva?modo=directa");
+        var contenido = WebUtility.HtmlDecode(await respuesta.Content.ReadAsStringAsync());
+
+        Assert.Equal(HttpStatusCode.OK, respuesta.StatusCode);
+        Assert.Contains("Venta directa con pedido automático", contenido);
+        Assert.Contains("No existen ventas sin pedido", contenido);
+        Assert.Contains("Selecciona un cliente", contenido);
+        Assert.Contains(escenario.UnidadLibre, contenido);
+        Assert.DoesNotContain(escenario.UnidadReservadaPropia, contenido);
+        Assert.DoesNotContain(escenario.UnidadReservadaAjena, contenido);
+        Assert.Contains("Disponible", contenido);
+        Assert.Contains("Sin reserva", contenido);
+        Assert.Contains("direct-sale-desktop-table", contenido);
+        Assert.Contains("direct-sale-mobile-cards", contenido);
+        Assert.DoesNotContain("ProductoId", contenido, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

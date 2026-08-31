@@ -243,8 +243,8 @@ else
         if (Registrando)
             return;
 
-        Modelo = new PagoFormModel { ClienteId = clienteId };
         ClienteSeleccionado = Clientes.FirstOrDefault(x => x.Id == clienteId);
+        Modelo = new PagoFormModel { ClienteId = ClienteSeleccionado?.Id ?? 0 };
         Historial = [];
         SaldoActual = null;
         ErrorOperacion = null;
@@ -252,9 +252,19 @@ else
         if (ClienteSeleccionado is null)
             return;
 
+        await RecargarClienteAsync();
+    }
+
+    private async Task RecargarClienteAsync()
+    {
+        if (ClienteSeleccionado is null)
+            return;
+
         CargandoCliente = true;
+        ErrorOperacion = null;
         try
         {
+            var clienteId = ClienteSeleccionado.Id;
             var saldoTask = ClienteService.ObtenerSaldoAsync(clienteId);
             var historialTask = PagoService.ListarPorClienteAsync(clienteId);
             await Task.WhenAll(saldoTask, historialTask);
@@ -270,7 +280,7 @@ else
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "No fue posible consultar pagos y saldo del cliente {ClienteId}.", clienteId);
+            Logger.LogError(ex, "No fue posible consultar pagos y saldo del cliente {ClienteId}.", ClienteSeleccionado.Id);
             ErrorOperacion = "No pudimos consultar el saldo y el historial. Intenta nuevamente.";
         }
         finally
@@ -307,8 +317,8 @@ else
             }
 
             var clienteId = Modelo.ClienteId;
-            Registrando = false;
-            await SeleccionarClienteAsync(clienteId);
+            Modelo = new PagoFormModel { ClienteId = clienteId };
+            await RecargarClienteAsync();
             MensajeExito = "Pago registrado correctamente. El saldo fue recalculado por el sistema.";
         }
         catch (Exception ex)

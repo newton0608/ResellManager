@@ -26,4 +26,18 @@ public static class VentaPresentacion
     public static decimal UtilidadTotal(VentaDto venta) => venta.Detalles.Sum(Utilidad);
 
     public static string Moneda(decimal monto) => ClientePresentacion.Moneda(monto);
+    public const string PrefijoPedidoVentaDirecta = "PED-VD-";
+
+    public static string CrearCodigoPedidoVentaDirecta() =>
+        PrefijoPedidoVentaDirecta + Guid.NewGuid().ToString("N").ToUpperInvariant();
+
+    public static bool EsUnidadElegibleVentaDirecta(UnidadInventarioDto unidad) =>
+        unidad.Estado == EstadoUnidadInventario.Disponible
+        && !unidad.DetallePedidoReservaId.HasValue
+        && !unidad.PedidoReservaId.HasValue;
+    public static bool TieneUnidadesDuplicadas(IEnumerable<int> unidadIds)
+    {
+        var ids = unidadIds.ToArray();
+        return ids.Distinct().Count() != ids.Length;
+    }
 }

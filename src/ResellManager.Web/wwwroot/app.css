@@ -2389,3 +2389,156 @@ h2 {
     padding-right: .75rem;
   }
 }
+.sale-mode-selector,
+.direct-sale-intro {
+  align-items: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: .85rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+}
+
+.sale-mode-selector h2,
+.direct-sale-intro h2 {
+  font-size: 1.05rem;
+}
+
+.sale-mode-actions {
+  display: flex;
+  gap: .6rem;
+}
+
+.sale-mode-active {
+  background: var(--color-primary-soft);
+  border-color: #93c5fd;
+  color: var(--color-primary-dark);
+}
+
+.direct-sale-intro {
+  background: linear-gradient(130deg, #eff6ff, #fff);
+  border-color: #bfdbfe;
+}
+
+.direct-sale-intro p:not(.eyebrow) {
+  color: var(--color-muted);
+  font-size: .8rem;
+  margin: .35rem 0 0;
+  max-width: 50rem;
+}
+
+.direct-sale-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.direct-sale-units {
+  padding: 0;
+}
+
+.direct-sale-units .data-panel-heading p {
+  color: var(--color-muted);
+  font-size: .78rem;
+  margin: .3rem 0 0;
+}
+
+.direct-sale-price-field {
+  min-width: 8rem;
+}
+
+.direct-sale-price-field input {
+  min-height: 2.5rem;
+}
+
+.direct-sale-check {
+  align-items: center;
+  color: #334155;
+  display: inline-flex;
+  font-size: .78rem;
+  font-weight: 700;
+  gap: .4rem;
+  min-height: 2.5rem;
+}
+
+.direct-sale-check input,
+.direct-sale-desktop-table input[type="checkbox"] {
+  accent-color: var(--color-primary);
+  height: 1.05rem;
+  width: 1.05rem;
+}
+
+.direct-sale-unit-card {
+  display: grid;
+  gap: .8rem;
+}
+
+.direct-sale-unit-card .inventory-badge-group {
+  align-items: flex-start;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.direct-sale-partial-warning {
+  align-items: center;
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+  border-radius: .75rem;
+  color: #9a3412;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 1rem;
+}
+
+.direct-sale-partial-warning h3 {
+  font-size: .95rem;
+  margin: 0;
+}
+
+.direct-sale-partial-warning p {
+  font-size: .8rem;
+  margin: .3rem 0 0;
+  max-width: 55rem;
+}
+
+.visually-hidden {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+@media (max-width: 47.99rem) {
+  .sale-mode-selector,
+  .direct-sale-intro,
+  .direct-sale-partial-warning {
+    align-items: stretch;
+    display: grid;
+  }
+
+  .sale-mode-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .direct-sale-partial-warning > .secondary-button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 30rem) {
+  .sale-mode-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .direct-sale-intro .status-badge {
+    justify-self: start;
+  }
+}
