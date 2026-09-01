@@ -289,6 +289,7 @@ public sealed class PedidoModuloTests
             codigo,
             new DateOnly(2026, 8, 25),
             TipoPedido.Apartado,
+            CanalVenta.Facebook,
             test.Cliente.Id,
             "Pedido de prueba",
             [new DetallePedidoInput(test.Producto.Id, 2, 120m, null)]
@@ -326,9 +327,34 @@ public sealed class PedidosUiIntegracionTests(AplicacionAutenticacionFactory fac
         Assert.Contains("Selecciona un cliente", contenido);
         Assert.Contains("Selecciona un producto", contenido);
         Assert.Contains("Precio unitario", contenido);
+        Assert.Contains("Canal de venta", contenido);
+        Assert.Contains("Presencial", contenido);
+        Assert.Contains("WhatsApp", contenido);
+        Assert.Contains("Facebook", contenido);
+        Assert.Contains("Web", contenido);
+        Assert.Contains("Otro", contenido);
         Assert.DoesNotContain("ID de cliente", contenido, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("ID de producto", contenido, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("order-line-grid", contenido);
+    }
+
+    [Fact]
+    public async Task ListadoYDetalle_MuestranCanalConEtiquetaAmigable()
+    {
+        var pedidoId = await CrearPedidoAsync(
+            TipoPedido.Catalogo,
+            EstadoPedido.Pendiente,
+            CanalVenta.Facebook
+        );
+        using var cliente = CrearCliente();
+        await IniciarSesionAsync(cliente);
+
+        var listado = WebUtility.HtmlDecode(await cliente.GetStringAsync("/pedidos"));
+        var detalle = WebUtility.HtmlDecode(await cliente.GetStringAsync($"/pedidos/{pedidoId}"));
+
+        Assert.Contains("Canal", listado);
+        Assert.Contains("Facebook", listado);
+        Assert.Contains("<dt>Canal</dt><dd>Facebook</dd>", detalle);
     }
 
     [Fact]
@@ -386,7 +412,11 @@ public sealed class PedidosUiIntegracionTests(AplicacionAutenticacionFactory fac
         Assert.DoesNotContain("Agregar otro producto al pedido", contenido);
     }
 
-    private async Task<int> CrearPedidoAsync(TipoPedido tipo, EstadoPedido estado)
+    private async Task<int> CrearPedidoAsync(
+        TipoPedido tipo,
+        EstadoPedido estado,
+        CanalVenta canalVenta = CanalVenta.Otro
+    )
     {
         var sufijo = Guid.NewGuid().ToString("N")[..8];
         await using var scope = factory.Services.CreateAsyncScope();
@@ -409,6 +439,7 @@ public sealed class PedidosUiIntegracionTests(AplicacionAutenticacionFactory fac
             CodigoInterno = $"PED-UI-{sufijo}",
             Fecha = new DateOnly(2026, 8, 25),
             TipoPedido = tipo,
+            CanalVenta = canalVenta,
             Estado = estado,
             Cliente = cliente,
             Detalles =

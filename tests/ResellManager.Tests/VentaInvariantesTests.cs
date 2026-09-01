@@ -56,6 +56,7 @@ public sealed class CantidadesPedidoVentaTests
             CodigoInterno = "PED-MULTI",
             Fecha = new DateOnly(2026, 2, 1),
             TipoPedido = TipoPedido.Catalogo,
+            CanalVenta = CanalVenta.Facebook,
             Estado = EstadoPedido.Pendiente,
             ClienteId = test.Cliente.Id,
             Detalles =

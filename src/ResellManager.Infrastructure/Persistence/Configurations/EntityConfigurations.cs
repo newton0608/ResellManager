@@ -123,6 +123,7 @@ internal sealed class PedidoConfiguration : IEntityTypeConfiguration<Pedido>
         b.Property(x => x.CodigoInterno).IsRequired().HasMaxLength(50);
         b.HasIndex(x => x.CodigoInterno).IsUnique();
         b.Property(x => x.TipoPedido).IsRequired().HasConversion<string>().HasMaxLength(30);
+        b.Property(x => x.CanalVenta).IsRequired();
         b.Property(x => x.Estado).IsRequired().HasConversion<string>().HasMaxLength(30);
         b.Property(x => x.Observaciones).HasMaxLength(500);
         b.HasOne(x => x.Cliente).WithMany(x => x.Pedidos).HasForeignKey(x => x.ClienteId).OnDelete(DeleteBehavior.Restrict);

@@ -69,6 +69,7 @@ internal sealed class TestDatabase : IAsyncDisposable
             CodigoInterno = codigo,
             Fecha = new DateOnly(2026, 2, 1),
             TipoPedido = tipo,
+            CanalVenta = CanalVenta.Otro,
             Estado = EstadoPedido.Pendiente,
             ClienteId = Cliente.Id,
             Detalles =

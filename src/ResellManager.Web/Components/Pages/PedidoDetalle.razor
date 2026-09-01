@@ -63,6 +63,7 @@ else
             <dl class="details-list">
                 <div><dt>Cliente</dt><dd>@Pedido.Cliente</dd></div>
                 <div><dt>Tipo</dt><dd>@PedidoPresentacion.Tipo(Pedido.TipoPedido)</dd></div>
+                <div><dt>Canal</dt><dd>@PedidoPresentacion.Canal(Pedido.CanalVenta)</dd></div>
                 <div><dt>Estado</dt><dd>@PedidoPresentacion.Estado(Pedido.Estado)</dd></div>
                 <div><dt>Fecha</dt><dd>@Pedido.Fecha.ToString("dd/MM/yyyy")</dd></div>
                 <div>

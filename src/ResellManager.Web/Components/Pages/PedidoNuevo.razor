@@ -88,6 +88,17 @@ else
                 </div>
 
                 <div class="form-field">
+                    <label for="pedido-canal">Canal de venta <span aria-hidden="true">*</span></label>
+                    <InputSelect id="pedido-canal" @bind-Value="Modelo.CanalVenta">
+                        @foreach (var canal in Enum.GetValues<CanalVenta>())
+                        {
+                            <option value="@canal">@PedidoPresentacion.Canal(canal)</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="() => Modelo.CanalVenta" />
+                </div>
+
+                <div class="form-field">
                     <label for="pedido-cliente">Cliente <span aria-hidden="true">*</span></label>
                     <InputSelect id="pedido-cliente" @bind-Value="Modelo.ClienteId">
                         <option value="0">Selecciona un cliente</option>

@@ -44,6 +44,7 @@ public sealed class Fase57VentaFisicaTests
             CodigoInterno = "PED-FIS-EXACTO",
             Fecha = new DateOnly(2026, 8, 1),
             TipoPedido = TipoPedido.VentaDirecta,
+            CanalVenta = CanalVenta.Presencial,
             Estado = EstadoPedido.Pendiente,
             ClienteId = test.Cliente.Id,
             Detalles =

@@ -187,6 +187,7 @@ public sealed class AutenticacionIntegracionTests(AplicacionAutenticacionFactory
                 CodigoInterno = $"PED-INV-{sufijo}",
                 Fecha = new DateOnly(2026, 8, 21),
                 TipoPedido = TipoPedido.Apartado,
+                CanalVenta = CanalVenta.Otro,
                 Estado = EstadoPedido.Pendiente,
                 ClienteId = cliente.Id,
                 Detalles =

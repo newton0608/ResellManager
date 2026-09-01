@@ -58,6 +58,7 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
                         <th scope="col">Código / fecha</th>
                         <th scope="col">Cliente</th>
                         <th scope="col">Tipo</th>
+                        <th scope="col">Canal</th>
                         <th scope="col">Estado</th>
                         <th scope="col" class="numeric-cell">Detalles</th>
                         <th scope="col" class="numeric-cell">Total estimado</th>
@@ -74,6 +75,7 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
                             </td>
                             <td>@pedido.Cliente</td>
                             <td>@PedidoPresentacion.Tipo(pedido.TipoPedido)</td>
+                            <td>@PedidoPresentacion.Canal(pedido.CanalVenta)</td>
                             <td><span class="order-status @PedidoPresentacion.ClaseEstado(pedido.Estado)">@PedidoPresentacion.Estado(pedido.Estado)</span></td>
                             <td class="numeric-cell">@pedido.Detalles.Count</td>
                             <td class="numeric-cell"><strong>@PedidoPresentacion.Moneda(PedidoPresentacion.Total(pedido))</strong></td>
@@ -97,6 +99,7 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
                     </div>
                     <dl class="inventory-card-details">
                         <div><dt>Tipo</dt><dd>@PedidoPresentacion.Tipo(pedido.TipoPedido)</dd></div>
+                        <div><dt>Canal</dt><dd>@PedidoPresentacion.Canal(pedido.CanalVenta)</dd></div>
                         <div><dt>Detalles</dt><dd>@pedido.Detalles.Count</dd></div>
                         <div><dt>Total estimado</dt><dd><strong>@PedidoPresentacion.Moneda(PedidoPresentacion.Total(pedido))</strong></dd></div>
                     </dl>
