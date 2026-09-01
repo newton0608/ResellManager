@@ -1,5 +1,3 @@
-@page "/ventas"
-@page "/pagos"
 @page "/compras"
 @page "/proveedores"
 @inject NavigationManager Navigation
@@ -35,8 +33,6 @@
     private static readonly IReadOnlyDictionary<string, ModuleDefinition> Modules =
         new Dictionary<string, ModuleDefinition>(StringComparer.OrdinalIgnoreCase)
         {
-            ["ventas"] = new("Ventas", "Registro y consulta de ventas.", "cart"),
-            ["pagos"] = new("Pagos", "Registro de pagos y abonos de clientes.", "wallet"),
             ["compras"] = new("Compras", "Control de compras y comprobantes.", "bag"),
             ["proveedores"] = new("Proveedores", "Directorio y seguimiento de proveedores.", "truck")
         };
@@ -46,7 +42,7 @@
         get
         {
             var path = Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0].Trim('/');
-            return Modules.TryGetValue(path, out var module) ? module : Modules["ventas"];
+            return Modules.TryGetValue(path, out var module) ? module : Modules["compras"];
         }
     }
 

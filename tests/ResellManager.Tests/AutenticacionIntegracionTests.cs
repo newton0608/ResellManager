@@ -15,6 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace ResellManager.Tests;
 
+[Collection("Integración web")]
 public sealed class AutenticacionIntegracionTests(AplicacionAutenticacionFactory factory)
     : IClassFixture<AplicacionAutenticacionFactory>
 {
@@ -135,6 +136,8 @@ public sealed class AutenticacionIntegracionTests(AplicacionAutenticacionFactory
             {
                 "/clientes" => "Nuevo cliente",
                 "/productos" => "Nuevo producto",
+                "/ventas" => "Nueva venta",
+                "/pagos" => "Pagos y abonos",
                 "/inventario" => "Buscar unidad",
                 "/pedidos" => "Nuevo pedido",
                 "/categorias" => "Nueva categoría",
