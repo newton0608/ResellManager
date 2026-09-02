@@ -93,6 +93,7 @@ public sealed class Fase57UiIntegracionTests(AplicacionAutenticacionFactory fact
         Assert.DoesNotContain("ProductoId", contenido, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("venta-directa-codigo", contenido, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("Código de venta", contenido, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Canal de venta", contenido, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -205,6 +206,7 @@ public sealed class Fase57UiIntegracionTests(AplicacionAutenticacionFactory fact
             CodigoInterno = $"PED-UI-{sufijo}",
             Fecha = new DateOnly(2026, 8, 20),
             TipoPedido = TipoPedido.Catalogo,
+            CanalVenta = CanalVenta.WhatsApp,
             Estado = EstadoPedido.Pendiente,
             ClienteId = cliente.Id,
             Detalles =
@@ -294,6 +296,7 @@ public sealed class Fase57UiIntegracionTests(AplicacionAutenticacionFactory fact
             CodigoInterno = codigo,
             Fecha = new DateOnly(2026, 8, 20),
             TipoPedido = TipoPedido.VentaDirecta,
+            CanalVenta = CanalVenta.Presencial,
             Estado = EstadoPedido.Pendiente,
             ClienteId = clienteId,
             Detalles =

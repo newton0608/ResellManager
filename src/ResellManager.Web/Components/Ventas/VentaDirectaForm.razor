@@ -302,6 +302,7 @@ else
                     VentaPresentacion.CrearCodigoPedidoVentaDirecta(),
                     Modelo.Fecha,
                     TipoPedido.VentaDirecta,
+                    CanalVenta.Presencial,
                     Modelo.ClienteId,
                     ConstruirObservacionesPedido(),
                     seleccionadas.Select(x => x.ToPedidoInput()).ToArray());

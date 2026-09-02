@@ -17,6 +17,8 @@ public sealed class PedidoService(ResellManagerDbContext db) : IPedidoService
     {
         if (string.IsNullOrWhiteSpace(input.CodigoInterno) || input.Detalles.Count == 0)
             return ServiceResult<PedidoDto>.Failure("Código y detalles son obligatorios.");
+        if (!Enum.IsDefined(input.CanalVenta))
+            return ServiceResult<PedidoDto>.Failure("Canal de venta no válido.");
         if (!await db.Clientes.AnyAsync(x => x.Id == input.ClienteId, ct))
             return ServiceResult<PedidoDto>.Failure("Cliente no encontrado.");
         if (await db.Pedidos.AnyAsync(x => x.CodigoInterno == input.CodigoInterno.Trim(), ct))
@@ -29,6 +31,7 @@ public sealed class PedidoService(ResellManagerDbContext db) : IPedidoService
             CodigoInterno = input.CodigoInterno.Trim(),
             Fecha = input.Fecha,
             TipoPedido = input.TipoPedido,
+            CanalVenta = input.CanalVenta,
             Estado = EstadoPedido.Pendiente,
             ClienteId = input.ClienteId,
             Observaciones = input.Observaciones?.Trim(),
@@ -128,6 +131,7 @@ public sealed class PedidoService(ResellManagerDbContext db) : IPedidoService
                 x.CodigoInterno,
                 x.Fecha,
                 x.TipoPedido,
+                x.CanalVenta,
                 x.Estado,
                 x.Observaciones,
                 x.ClienteId,

@@ -149,7 +149,9 @@
 - [x] Mantener las ventas canceladas en modo de consulta.
 - [ ] V2: endurecer concurrencia de saldo por cliente e inventario físico sin bloqueo global.
 - [ ] Revisar globalmente los códigos internos todavía capturados manualmente en el resto de módulos.
-- [ ] Diseñar e implementar `CanalVenta` como concepto separado de `TipoPedido`.
+- [x] Diseñar e implementar `CanalVenta` como concepto separado de `TipoPedido`, persistido en `Pedido`.
+- [x] Asignar `CanalVenta.Presencial` automáticamente al pedido de Venta Directa, sin selector adicional.
+- [x] Migrar pedidos históricos a `CanalVenta.Otro` sin inferir su origen.
 - [x] Excluir ventas libres: toda venta nace obligatoriamente de un pedido.
 - [ ] V2: evaluar una orquestación transaccional atómica para crear `Pedido` y registrar `Venta` si el escenario multiusuario lo requiere.
 
@@ -183,6 +185,10 @@
 - [ ] Productos apartados
 
 - [ ] Últimos pagos
+
+- [ ] Ventas registradas por canal
+
+- [ ] Cantidad de pedidos por canal
 
 ## Compras
 

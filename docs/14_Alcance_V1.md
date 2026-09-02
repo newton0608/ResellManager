@@ -22,6 +22,10 @@
 
 ✅ Pedidos.
 
+✅ `CanalVenta` requerido en `Pedido`, separado de `TipoPedido`, visible en creación, listado y
+detalle. No se duplica en `Venta`; los pedidos históricos se migran a `Otro` y Venta Directa usa
+`Presencial` automáticamente.
+
 ✅ Ventas completas asociadas a pedidos.
 
 ✅ Venta presencial directa mediante creación automática de un `Pedido` de tipo `VentaDirecta`
@@ -88,15 +92,14 @@ e historial, con doble submit protegido y presentación responsive.
 
 🟡 Revisión general de códigos internos que todavía se capturan manualmente en otros módulos.
 
-🟡 Diseño e implementación de `CanalVenta`, separado de `TipoPedido`.
-
 🟡 Evaluar en V2 una orquestación transaccional atómica para la creación conjunta de `Pedido` y `Venta`
 si el escenario multiusuario lo requiere; V1 conserva explícitamente las dos operaciones actuales.
 
 🟡 Eliminación o desactivación segura de clientes, productos y categorías, pendiente de reglas
 que preserven relaciones e historial.
 
-🟡 Dashboard de negocio con información real.
+🟡 Dashboard de negocio con información real, incluyendo como posibles mejoras ventas registradas
+por canal y cantidad de pedidos por canal.
 
 🟡 Adjuntar/gestionar fotografías reales de comprobantes desde la UI.
 
@@ -109,6 +112,10 @@ que preserven relaciones e historial.
 ## Fuera del alcance V1 actual
 
 ❌ IA.
+
+❌ Integraciones automáticas con Facebook o WhatsApp.
+
+❌ Tienda Web/ecommerce; `CanalVenta.Web` solo prepara el concepto de dominio.
 
 ❌ OCR.
 

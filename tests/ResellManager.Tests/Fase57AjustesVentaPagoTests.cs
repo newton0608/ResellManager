@@ -41,6 +41,7 @@ public sealed class VentaDirectaPedidoAutomaticoTests
                 codigoPedido,
                 new DateOnly(2026, 8, 30),
                 TipoPedido.VentaDirecta,
+                CanalVenta.Presencial,
                 test.Cliente.Id,
                 "Pedido automático de prueba",
                 seleccionadas.Select(x => x.ToPedidoInput()).ToArray()
@@ -59,6 +60,7 @@ public sealed class VentaDirectaPedidoAutomaticoTests
         Assert.True(pedido.IsSuccess, pedido.ErrorMessage);
         Assert.True(venta.IsSuccess, venta.ErrorMessage);
         Assert.Equal(TipoPedido.VentaDirecta, pedido.Value.TipoPedido);
+        Assert.Equal(CanalVenta.Presencial, pedido.Value.CanalVenta);
         Assert.Equal(pedido.Value.Id, venta.Value!.PedidoId);
         Assert.Equal(test.Cliente.Id, pedido.Value.ClienteId);
         Assert.Equal(test.Cliente.Id, venta.Value.ClienteId);
@@ -162,6 +164,7 @@ public sealed class VentaDirectaPedidoAutomaticoTests
                 VentaPresentacion.CrearCodigoPedidoVentaDirecta(),
                 new DateOnly(2026, 8, 30),
                 TipoPedido.VentaDirecta,
+                CanalVenta.Presencial,
                 test.Cliente.Id,
                 null,
                 [renglon.ToPedidoInput()]
@@ -232,6 +235,7 @@ public sealed class VentaDirectaPedidoAutomaticoTests
         Assert.StartsWith(VentaPresentacion.PrefijoVentaDirecta, codigoInicial);
         Assert.NotEqual(pedidoPrimerIntento.CodigoInterno, codigoInicial);
         Assert.Equal(TipoPedido.VentaDirecta, pedidoPrimerIntento.TipoPedido);
+        Assert.Equal(CanalVenta.Presencial, pedidoPrimerIntento.CanalVenta);
         Assert.Equal(pedidosAntes + 1, await test.Db.Pedidos.CountAsync());
         Assert.Equal(2, ventas.Intentos.Count);
         Assert.All(ventas.Intentos, x => Assert.Equal(codigoInicial, x.CodigoInterno));

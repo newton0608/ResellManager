@@ -13,6 +13,7 @@ public sealed record PedidoInput(
     string CodigoInterno,
     DateOnly Fecha,
     TipoPedido TipoPedido,
+    CanalVenta CanalVenta,
     int ClienteId,
     string? Observaciones,
     IReadOnlyCollection<DetallePedidoInput> Detalles
@@ -33,6 +34,7 @@ public sealed record PedidoDto(
     string CodigoInterno,
     DateOnly Fecha,
     TipoPedido TipoPedido,
+    CanalVenta CanalVenta,
     EstadoPedido Estado,
     string? Observaciones,
     int ClienteId,

@@ -13,6 +13,9 @@ public sealed class PedidoFormModel
     public DateOnly Fecha { get; set; } = DateOnly.FromDateTime(DateTime.Today);
     public TipoPedido TipoPedido { get; set; } = TipoPedido.Importacion;
 
+    [EnumDataType(typeof(CanalVenta), ErrorMessage = "Selecciona un canal de venta válido.")]
+    public CanalVenta CanalVenta { get; set; } = CanalVenta.Presencial;
+
     [Range(1, int.MaxValue, ErrorMessage = "Selecciona un cliente.")]
     public int ClienteId { get; set; }
 
@@ -26,6 +29,7 @@ public sealed class PedidoFormModel
             CodigoInterno,
             Fecha,
             TipoPedido,
+            CanalVenta,
             ClienteId,
             Observaciones,
             Detalles.Select(x => x.ToInput()).ToArray()

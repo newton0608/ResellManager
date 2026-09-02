@@ -14,6 +14,16 @@ public static class PedidoPresentacion
         _ => tipo.ToString(),
     };
 
+    public static string Canal(CanalVenta canal) => canal switch
+    {
+        CanalVenta.Presencial => "Presencial",
+        CanalVenta.WhatsApp => "WhatsApp",
+        CanalVenta.Facebook => "Facebook",
+        CanalVenta.Web => "Web",
+        CanalVenta.Otro => "Otro",
+        _ => canal.ToString(),
+    };
+
     public static string Estado(EstadoPedido estado) => estado switch
     {
         EstadoPedido.Pendiente => "Pendiente",

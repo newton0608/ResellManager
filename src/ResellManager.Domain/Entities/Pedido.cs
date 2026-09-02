@@ -8,6 +8,7 @@ public class Pedido
     public string CodigoInterno { get; set; } = string.Empty;
     public DateOnly Fecha { get; set; }
     public TipoPedido TipoPedido { get; set; }
+    public CanalVenta CanalVenta { get; set; }
     public EstadoPedido Estado { get; set; }
     public string? Observaciones { get; set; }
     public int ClienteId { get; set; }

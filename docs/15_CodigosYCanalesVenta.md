@@ -92,9 +92,9 @@ No deben automatizarse como si fueran códigos internos los datos que realmente 
 
 La automatización de todos los códigos no se implementará de forma improvisada dentro de Fase 5.7; primero se revisarán contratos, reglas y uso real de cada entidad.
 
-## 5. Nuevo concepto: CanalVenta
+## 5. Concepto implementado: CanalVenta
 
-**Estado: pendiente; no implementado en Fase 5.7.**
+**Estado: implementado.**
 
 El negocio ya utiliza más de un canal comercial y debe poder distinguirse de `TipoPedido`.
 
@@ -109,20 +109,21 @@ El negocio ya utiliza más de un canal comercial y debe poder distinguirse de `T
 
 Son conceptos diferentes y no deben mezclarse.
 
-### Valores iniciales propuestos
+### Valores implementados
 
 ```csharp
 public enum CanalVenta
 {
-    Presencial,
-    WhatsApp,
-    Facebook,
-    Web,
-    Otro
+    Presencial = 1,
+    WhatsApp = 2,
+    Facebook = 3,
+    Web = 4,
+    Otro = 5
 }
 ```
 
-Los nombres finales se confirmarán al implementar.
+Los valores son explícitos porque se persisten en base de datos y su significado histórico no puede
+depender del orden de declaración.
 
 ### Motivo
 
@@ -130,7 +131,7 @@ Actualmente existen ventas y contactos comerciales por medios distintos. Registr
 
 ## 6. Ubicación conceptual de CanalVenta
 
-La opción preferida es almacenar `CanalVenta` en `Pedido`.
+`CanalVenta` se almacena como propiedad requerida de `Pedido`.
 
 Motivo:
 
@@ -146,7 +147,11 @@ Pedido / Apartado
 Venta
 ```
 
-La `Venta` podrá conocer el canal a través de su `Pedido` y no será necesario duplicar el dato.
+La `Venta` conoce el canal a través de su `Pedido`; no existe una propiedad ni columna duplicada en
+`Venta`, `VentaInput` o `VentaDto`.
+
+Los pedidos existentes al aplicar la migración reciben `CanalVenta.Otro`, porque no existe información
+confiable para reconstruir su origen. No se infiere el canal desde `TipoPedido`.
 
 ### Ejemplos
 
@@ -172,6 +177,18 @@ TipoPedido = VentaDirecta / Apartado / otro flujo válido
 CanalVenta = Web
 ```
 
+`Web` queda disponible como canal conceptual, pero no representa una tienda online implementada.
+
+La Venta Directa representa una operación física y crea automáticamente su pedido con:
+
+```text
+TipoPedido = VentaDirecta
+CanalVenta = Presencial
+```
+
+Este flujo no solicita el canal manualmente y conserva el mismo pedido y código de venta durante los
+reintentos ya soportados.
+
 ## 7. Uso futuro de CanalVenta
 
 El canal podrá utilizarse posteriormente en Dashboard y reportes para métricas como:
@@ -184,11 +201,9 @@ El canal podrá utilizarse posteriormente en Dashboard y reportes para métricas
 
 No se deben inventar métricas de conversión mientras el sistema no registre suficientes eventos para calcularlas correctamente.
 
-## 8. Alcance del próximo cambio de CanalVenta
+## 8. Alcance implementado de CanalVenta
 
-Antes de implementarlo se debe revisar el modelo actual de `Pedido`, DTOs, servicios, EF Core y migraciones.
-
-La implementación prevista deberá contemplar como mínimo:
+La implementación incluye:
 
 - agregar el enum `CanalVenta` en Domain;
 - agregar la propiedad a `Pedido`;
@@ -200,14 +215,17 @@ La implementación prevista deberá contemplar como mínimo:
 - mostrar el canal en detalle/listado donde aporte contexto;
 - conservar `CanalVenta` independiente de `TipoPedido`;
 - agregar tests de persistencia, creación y presentación;
-- preparar el valor `Web` sin implementar todavía una tienda web ni integración automática.
+- preparar el valor `Web` sin implementar una tienda web ni integración automática;
+- migrar pedidos históricos a `Otro`.
 
-No se implementará integración con Facebook, WhatsApp ni una tienda web en este cambio. El objetivo es únicamente registrar el origen comercial de manera estructurada.
+No existe integración automática con Facebook o WhatsApp, ni tienda Web/ecommerce. El objetivo
+implementado es únicamente registrar el origen comercial de manera estructurada.
 
 ## 9. Relación con V1 y V2
 
-La generación automática de los códigos del pedido y la venta directa quedó implementada como cierre de Fase 5.7.
-
-`CanalVenta` continúa pendiente como ampliación del modelo motivada por un flujo real del negocio y deberá planificarse antes de implementarse.
+La generación automática de los códigos del pedido y la venta directa permanece sin cambios.
+`CanalVenta` ya forma parte de V1 como dato del pedido.
 
 Siguen pendientes para V2 las protecciones de concurrencia ya documentadas y la posible orquestación transaccional atómica `Pedido + Venta`.
+También permanece pendiente el Dashboard por canal, con posibles métricas de ventas registradas por
+canal y cantidad de pedidos por canal.
