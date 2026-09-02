@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using ResellManager.Application.Interfaces;
 using ResellManager.Infrastructure.Persistence;
 using ResellManager.Infrastructure.Services;
+using ResellManager.Infrastructure.Storage;
 
 namespace ResellManager.Infrastructure;
 
@@ -43,6 +44,11 @@ public static class DependencyInjection
         services.AddScoped<IProductoService, ProductoService>();
         services.AddScoped<IProveedorService, ProveedorService>();
         services.AddScoped<ICompraService, CompraService>();
+        services.AddScoped<IAlmacenamientoComprobantes, AlmacenamientoComprobantesLocal>();
+        services.AddScoped<
+            IRegistroCompraConComprobanteService,
+            RegistroCompraConComprobanteService
+        >();
         services.AddScoped<IInventarioService, InventarioService>();
         services.AddScoped<IPedidoService, PedidoService>();
         services.AddScoped<IVentaService, VentaService>();

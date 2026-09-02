@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Identity;
+using ResellManager.Application.Interfaces;
 using ResellManager.Infrastructure;
+using ResellManager.Infrastructure.Storage;
 using ResellManager.Web.Components;
 using ResellManager.Web.Identity;
 
@@ -17,6 +19,16 @@ builder.Services.AddAuthorization();
 builder.Services.AddSingleton(TimeProvider.System);
 
 builder.Services.AddSingleton<IEmailSender<IdentityUser>, NoOpEmailSender>();
+
+var directorioConfigurado =
+    builder.Configuration[$"{AlmacenamientoComprobantesOptions.Seccion}:DirectorioBase"]
+    ?? "App_Data";
+var directorioComprobantes = Path.IsPathRooted(directorioConfigurado)
+    ? Path.GetFullPath(directorioConfigurado)
+    : Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, directorioConfigurado));
+builder.Services.Configure<AlmacenamientoComprobantesOptions>(options =>
+    options.DirectorioBase = directorioComprobantes
+);
 
 builder.Services.AddInfrastructure(builder.Configuration);
 
@@ -78,6 +90,38 @@ app.MapPost("/account/logout", async (
     await signInManager.SignOutAsync();
     return Results.LocalRedirect("/login?sesionCerrada=true");
 }).RequireAuthorization();
+
+app.MapGet(
+        "/comprobantes/{compraId:int}",
+        async (
+            int compraId,
+            ICompraService compras,
+            IAlmacenamientoComprobantes almacenamiento,
+            HttpContext contexto,
+            CancellationToken ct
+        ) =>
+        {
+            var comprobante = await compras.ObtenerComprobanteAsync(compraId, ct);
+            if (!comprobante.IsSuccess || comprobante.Value is null)
+                return Results.NotFound();
+
+            var archivo = await almacenamiento.AbrirLecturaAsync(
+                comprobante.Value.RutaDocumento,
+                ct
+            );
+            if (!archivo.IsSuccess || archivo.Value is null)
+                return Results.NotFound();
+
+            contexto.Response.Headers.XContentTypeOptions = "nosniff";
+            contexto.Response.Headers.ContentSecurityPolicy = "sandbox";
+            return Results.File(
+                archivo.Value.Contenido,
+                archivo.Value.ContentType,
+                enableRangeProcessing: true
+            );
+        }
+    )
+    .RequireAuthorization();
 
 app.Run();
 

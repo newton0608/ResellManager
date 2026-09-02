@@ -2,9 +2,9 @@
 
 ## Estado
 
-**Planificada; implementación pendiente.**
+**Implementada.**
 
-Este documento fija las decisiones de diseño para la Fase 5.8 antes de modificar código.
+Este documento registra las decisiones y el resultado implementado de la Fase 5.8.
 
 La fase debe completar la experiencia de Compras sobre la lógica de backend ya existente, manteniendo las reglas actuales de inventario, orígenes de compra, recepción y comprobantes.
 
@@ -538,3 +538,83 @@ Pago
 Después de Fase 5.8 se retomará el Dashboard y posteriormente el pulido final de V1.
 
 Roles y permisos permanecen como evolución posterior mientras los usuarios de confianza puedan compartir el mismo nivel de acceso.
+
+---
+
+## 22. Resultado implementado
+
+### Rutas y UX
+
+- `/compras`: historial ordenado por backend, tabla de escritorio y cards móviles.
+- `/compras/nueva`: proveedor/productos reales, múltiples detalles, subtotal y total visual, reglas reactivas por origen y comprobante opcional.
+- `/compras/{id}`: resumen, detalles, total backend, contexto de recepción y datos del comprobante sin mostrar `RutaDocumento`.
+- `/proveedores` y `/proveedores/nuevo`: consulta y registro responsive.
+- `/comprobantes/{compraId}`: lectura privada con autorización, tipo seguro, `X-Content-Type-Options: nosniff` y CSP `sandbox`.
+
+Los formularios de compra y proveedor deshabilitan el submit mientras la operación está activa. El formulario no contiene inputs para `Compra.CodigoInterno` ni `ComprobanteCompra.RutaDocumento`.
+
+### Códigos y reglas por origen
+
+`CodigosInternos.CrearCodigoCompra()` crea una vez por flujo un valor `COM-<GUID N>` en mayúsculas. La validación de unicidad de `CompraService` y el índice único EF continúan activos.
+
+`CompraService` no fue reemplazado: sigue calculando el total, creando `DetalleCompra` y, cuando corresponde, una `UnidadInventario` por cantidad con el costo del detalle.
+
+- `Importacion`: unidades `Comprada`, `FechaIngreso = null`; recepción posterior por `IInventarioService.RegistrarRecepcionAsync`.
+- `CompraLocal`: unidades `Disponible` y fecha de ingreso obligatoria.
+- `EnvioHermano`: unidades `Disponible` y fecha de ingreso obligatoria.
+- `Catalogo`: detalles sin ninguna `UnidadInventario`.
+
+### Biblioteca de imágenes
+
+- Nombre: **SkiaSharp**.
+- Versión: **4.151.1**.
+- Licencia revisada: **MIT**.
+- Paquetes: `SkiaSharp` y `SkiaSharp.NativeAssets.Linux.NoDependencies`, ambos 4.151.1.
+- Motivo: API mantenida y multiplataforma para decodificar/re-encodear JPG/JPEG, PNG y WebP sin usar `System.Drawing.Common`.
+- Despliegue: usa binarios nativos. Windows llega mediante los activos de `SkiaSharp`; Linux incluye la variante `NoDependencies`, que excluye Fontconfig y depende únicamente de bibliotecas base de glibc. Debe publicarse para una arquitectura Linux soportada.
+
+Las imágenes se validan primero por firma y después por decodificación, se limitan a 50 millones de píxeles, conservan la relación de aspecto, no se amplían y se reducen a un lado máximo de 1800 px. JPG y WebP se codifican a calidad 85; PNG se conserva lossless. El re-encode elimina metadatos no necesarios como efecto natural. Los PDF solo se validan, limitan y copian.
+
+### Almacenamiento y configuración
+
+La sección de configuración es:
+
+```json
+"AlmacenamientoComprobantes": {
+  "DirectorioBase": "App_Data"
+}
+```
+
+Una ruta relativa se resuelve desde el content root de la aplicación. Con el valor por defecto:
+
+```text
+src/ResellManager.Web/App_Data/
+├── .temporales-comprobantes/
+└── comprobantes/
+    └── CMP-<GUID>.<extensión-validada>
+```
+
+La carpeta está fuera de `wwwroot`, se excluye de Git y los tests sustituyen la configuración por directorios temporales aislados. SQLite solo almacena una ruta controlada como `comprobantes/CMP-....pdf`.
+
+### Estrategia de fallo parcial
+
+El flujo real es:
+
+```text
+stream con límite real de 10 MB
+→ copia RAW temporal
+→ firma/decodificación y re-encode cuando es imagen
+→ archivo preparado TMP-<GUID>
+→ confirmación/movimiento a CMP-<GUID>
+→ CompraService.RegistrarAsync con la ruta relativa
+```
+
+Se invierte deliberadamente confirmación y guardado DB respecto al flujo conceptual inicial: si falla la confirmación todavía no existe Compra, por lo que SQLite nunca queda apuntando a un archivo ausente. Si el backend rechaza la Compra, el archivo definitivo se elimina. Ante una excepción ambigua se consulta el listado por el código único: una compra persistida conserva su archivo y se recupera; una compra inexistente provoca limpieza. Si esa verificación tampoco está disponible, el archivo se conserva y se registra un error crítico para evitar destruir un documento que pudiera estar referenciado.
+
+No se simula una transacción distribuida. La estrategia es compensatoria, explícita y está cubierta por pruebas de fallo de procesamiento, confirmación, registro backend y recuperación posterior al commit.
+
+### Pruebas
+
+La suite pasó con **195 pruebas**: las 161 anteriores más 34 nuevas. Cubre códigos, orígenes, múltiples detalles, total backend, entidades reales, formatos admitidos, 10 MB, nombres/rutas seguras, resize, limpieza, unicidad 1:0..1, autorización, lectura real, ausencia de `DbContext` en Blazor, responsive y doble submit.
+
+Dashboard, roles, permisos, OCR, nube, edición/eliminación de compras y múltiples comprobantes permanecen fuera de alcance.

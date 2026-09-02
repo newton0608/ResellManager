@@ -1,5 +1,7 @@
 using System.Net;
 using System.Text.RegularExpressions;
+using System.Text;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Routing;
@@ -12,6 +14,7 @@ using ResellManager.Domain.Enums;
 using ResellManager.Infrastructure.Persistence;
 using ResellManager.Infrastructure.Services;
 using Microsoft.Extensions.DependencyInjection;
+using ResellManager.Application.Common;
 
 namespace ResellManager.Tests;
 
@@ -140,11 +143,86 @@ public sealed class AutenticacionIntegracionTests(AplicacionAutenticacionFactory
                 "/pagos" => "Pagos y abonos",
                 "/inventario" => "Buscar unidad",
                 "/pedidos" => "Nuevo pedido",
+                "/compras" => "Nueva compra",
+                "/proveedores" => "Nuevo proveedor",
                 "/categorias" => "Nueva categoría",
                 _ => "se implementarán en una fase posterior"
             };
             Assert.Contains(contenidoEsperado, contenido);
         }
+    }
+
+    [Fact]
+    public async Task ConsultaDeComprobante_RequiereAutenticacion()
+    {
+        using var cliente = CrearCliente();
+
+        var respuesta = await cliente.GetAsync("/comprobantes/1");
+        var endpoint = factory.Services.GetRequiredService<EndpointDataSource>().Endpoints
+            .OfType<RouteEndpoint>()
+            .Single(x => x.RoutePattern.RawText == "/comprobantes/{compraId:int}");
+
+        AssertRedirigeAlLogin(respuesta);
+        Assert.NotNull(endpoint.Metadata.GetMetadata<IAuthorizeData>());
+    }
+
+    [Fact]
+    public async Task UsuarioAutenticado_PuedeAbrirComprobantePorIdDeCompra()
+    {
+        var sufijo = Guid.NewGuid().ToString("N")[..8];
+        var pdf = Encoding.ASCII.GetBytes("%PDF-1.4\n%%EOF");
+        int compraId;
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ResellManagerDbContext>();
+            var categoria = new Categoria { Nombre = $"Categoría comprobante {sufijo}" };
+            var proveedor = new Proveedor { Nombre = $"Proveedor comprobante {sufijo}" };
+            var producto = new Producto
+            {
+                CodigoInterno = $"PROD-CMP-{sufijo}",
+                Nombre = $"Producto comprobante {sufijo}",
+                PrecioSugerido = 50m,
+                Categoria = categoria,
+            };
+            db.AddRange(categoria, proveedor, producto);
+            await db.SaveChangesAsync();
+
+            await using var stream = new MemoryStream(pdf);
+            var registro = scope.ServiceProvider
+                .GetRequiredService<IRegistroCompraConComprobanteService>();
+            var resultado = await registro.RegistrarAsync(
+                new CompraInput(
+                    CodigosInternos.CrearCodigoCompra(),
+                    new DateOnly(2026, 9, 1),
+                    null,
+                    OrigenCompra.Catalogo,
+                    proveedor.Id,
+                    null,
+                    [new DetalleCompraInput(producto.Id, 1, 20m)],
+                    null
+                ),
+                new DatosComprobanteCompraInput(
+                    "FAC-WEB",
+                    new DateOnly(2026, 9, 1),
+                    null
+                ),
+                new ArchivoComprobanteInput(stream, "factura.pdf", "application/pdf")
+            );
+            Assert.True(resultado.IsSuccess, resultado.ErrorMessage);
+            compraId = resultado.Value!.Id;
+        }
+
+        using var cliente = CrearCliente();
+        await IniciarSesionAsync(cliente, AplicacionAutenticacionFactory.ContrasenaValida);
+
+        var respuesta = await cliente.GetAsync($"/comprobantes/{compraId}");
+        var contenido = await respuesta.Content.ReadAsByteArrayAsync();
+
+        Assert.Equal(HttpStatusCode.OK, respuesta.StatusCode);
+        Assert.Equal("application/pdf", respuesta.Content.Headers.ContentType?.MediaType);
+        Assert.Equal("nosniff", respuesta.Headers.GetValues("X-Content-Type-Options").Single());
+        Assert.Equal("sandbox", respuesta.Headers.GetValues("Content-Security-Policy").Single());
+        Assert.Equal(pdf, contenido);
     }
 
     [Fact]
@@ -285,6 +363,8 @@ public sealed class AplicacionAutenticacionFactory : WebApplicationFactory<Progr
 
     private readonly string _rutaBaseDatos =
         Path.Combine(Path.GetTempPath(), $"resellmanager-auth-{Guid.NewGuid():N}.db");
+    private readonly string _rutaComprobantes =
+        Path.Combine(Path.GetTempPath(), $"resellmanager-auth-comprobantes-{Guid.NewGuid():N}");
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -295,7 +375,8 @@ public sealed class AplicacionAutenticacionFactory : WebApplicationFactory<Progr
             {
                 ["ConnectionStrings:ResellManager"] = $"Data Source={_rutaBaseDatos}",
                 ["UsuarioInicial:Correo"] = CorreoUsuario,
-                ["UsuarioInicial:Contrasena"] = ContrasenaValida
+                ["UsuarioInicial:Contrasena"] = ContrasenaValida,
+                ["AlmacenamientoComprobantes:DirectorioBase"] = _rutaComprobantes
             });
         });
     }
@@ -307,6 +388,10 @@ public sealed class AplicacionAutenticacionFactory : WebApplicationFactory<Progr
         if (disposing && File.Exists(_rutaBaseDatos))
         {
             File.Delete(_rutaBaseDatos);
+        }
+        if (disposing && Directory.Exists(_rutaComprobantes))
+        {
+            Directory.Delete(_rutaComprobantes, recursive: true);
         }
     }
 }

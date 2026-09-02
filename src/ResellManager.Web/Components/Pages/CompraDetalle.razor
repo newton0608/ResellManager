@@ -1,0 +1,220 @@
+@page "/compras/{Id:int}"
+@rendermode InteractiveServer
+@using ResellManager.Domain.Enums
+@inject ICompraService CompraService
+@inject ILogger<CompraDetalle> Logger
+
+<PageTitle>@(Compra is null ? "Compra" : Compra.CodigoInterno) | ResellManager</PageTitle>
+
+@if (Cargando)
+{
+    <div class="loading-state" role="status" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
+        Cargando compra...
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(ErrorCarga))
+{
+    <section class="error-state" role="alert">
+        <h1>No fue posible cargar la compra</h1>
+        <p>@ErrorCarga</p>
+        <div class="form-actions">
+            <button class="primary-button" type="button" @onclick="CargarAsync">Reintentar</button>
+            <a class="secondary-button" href="/compras">Volver a compras</a>
+        </div>
+    </section>
+}
+else if (Compra is not null)
+{
+    <section class="page-heading detail-heading" aria-labelledby="titulo-compra">
+        <div>
+            <p class="eyebrow">Detalle de compra</p>
+            <h1 id="titulo-compra">@Compra.CodigoInterno</h1>
+            <p class="page-lead">Compra registrada con @Compra.Detalles.Count @(Compra.Detalles.Count == 1 ? "detalle" : "detalles").</p>
+        </div>
+        <a class="secondary-button" href="/compras">Volver a compras</a>
+    </section>
+
+    @if (Mensaje == "compra-creada")
+    {
+        <div class="mensaje-exito" role="status">Compra registrada correctamente.</div>
+    }
+
+    <section class="purchase-summary" aria-label="Resumen de compra">
+        <article class="info-card">
+            <span class="info-label">Proveedor</span>
+            <strong>@Compra.Proveedor</strong>
+            <a class="contact-link" href="/proveedores">Ver proveedores</a>
+        </article>
+        <article class="info-card">
+            <span class="info-label">Fecha de compra</span>
+            <strong>@Compra.FechaCompra.ToString("dd/MM/yyyy")</strong>
+        </article>
+        <article class="info-card">
+            <span class="info-label">Origen</span>
+            <span class="status-badge @CompraPresentacion.ClaseOrigen(Compra.Origen)">
+                @CompraPresentacion.Origen(Compra.Origen)
+            </span>
+        </article>
+        <article class="info-card balance-card">
+            <span class="info-label">Total</span>
+            <strong class="balance-hero">@CompraPresentacion.Moneda(Compra.Total)</strong>
+            <span class="field-help">Calculado por el servicio de compras</span>
+        </article>
+    </section>
+
+    @if (Compra.Origen == OrigenCompra.Importacion)
+    {
+        <div class="purchase-reception-note">
+            <div>
+                <strong>Recepción pendiente</strong>
+                <p>Las unidades permanecen compradas hasta registrar su ingreso desde Inventario.</p>
+            </div>
+            <a class="secondary-button" href="/inventario">Ir a recepción</a>
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(Compra.Observaciones))
+    {
+        <section class="info-card purchase-notes" aria-labelledby="titulo-observaciones-compra">
+            <span class="info-label" id="titulo-observaciones-compra">Observaciones</span>
+            <p>@Compra.Observaciones</p>
+        </section>
+    }
+
+    <section class="data-panel purchase-detail-panel" aria-labelledby="titulo-detalles-compra">
+        <div class="data-panel-heading">
+            <h2 id="titulo-detalles-compra">Detalles</h2>
+            <span>@Compra.Detalles.Count @(Compra.Detalles.Count == 1 ? "producto" : "productos")</span>
+        </div>
+        <div class="desktop-table">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Producto</th>
+                        <th scope="col" class="numeric-cell">Cantidad</th>
+                        <th scope="col" class="numeric-cell">Costo unitario</th>
+                        <th scope="col" class="numeric-cell">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var detalle in Compra.Detalles)
+                    {
+                        <tr>
+                            <td><strong>@detalle.Producto</strong></td>
+                            <td class="numeric-cell">@detalle.Cantidad</td>
+                            <td class="numeric-cell">@CompraPresentacion.Moneda(detalle.CostoUnitario)</td>
+                            <td class="numeric-cell"><strong>@CompraPresentacion.Moneda(detalle.Subtotal)</strong></td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="3" scope="row">Total</th>
+                        <td class="numeric-cell">@CompraPresentacion.Moneda(Compra.Total)</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div class="mobile-card-list">
+            @foreach (var detalle in Compra.Detalles)
+            {
+                <article class="entity-card purchase-detail-card">
+                    <div class="entity-card-heading">
+                        <div>
+                            <h3>@detalle.Producto</h3>
+                            <p class="entity-card-subtitle">@detalle.Cantidad × @CompraPresentacion.Moneda(detalle.CostoUnitario)</p>
+                        </div>
+                        <strong class="transaction-amount">@CompraPresentacion.Moneda(detalle.Subtotal)</strong>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+
+    <section class="info-card receipt-detail" aria-labelledby="titulo-comprobante">
+        <div class="data-panel-heading">
+            <div>
+                <h2 id="titulo-comprobante">Comprobante</h2>
+                <p>Documento externo asociado con esta compra.</p>
+            </div>
+            @if (Comprobante is not null)
+            {
+                <a class="primary-button" href="/comprobantes/@Compra.Id" target="_blank" rel="noopener">Ver / abrir</a>
+            }
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(ErrorComprobante))
+        {
+            <div class="mensaje-error" role="alert">@ErrorComprobante</div>
+        }
+        else if (Comprobante is null)
+        {
+            <p class="receipt-empty">Esta compra no tiene comprobante adjunto.</p>
+        }
+        else
+        {
+            <dl class="receipt-values">
+                <div><dt>Número de documento</dt><dd>@TextoOpcional(Comprobante.NumeroDocumento)</dd></div>
+                <div><dt>Fecha</dt><dd>@Comprobante.Fecha.ToString("dd/MM/yyyy")</dd></div>
+                <div><dt>Observaciones</dt><dd>@TextoOpcional(Comprobante.Observaciones)</dd></div>
+            </dl>
+        }
+    </section>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    [SupplyParameterFromQuery(Name = "mensaje")]
+    public string? Mensaje { get; set; }
+
+    private CompraDto? Compra { get; set; }
+    private ComprobanteCompraDto? Comprobante { get; set; }
+    private bool Cargando { get; set; } = true;
+    private string? ErrorCarga { get; set; }
+    private string? ErrorComprobante { get; set; }
+
+    protected override Task OnParametersSetAsync() => CargarAsync();
+
+    private async Task CargarAsync()
+    {
+        Cargando = true;
+        ErrorCarga = null;
+        ErrorComprobante = null;
+        Comprobante = null;
+        try
+        {
+            var resultado = await CompraService.ObtenerPorIdAsync(Id);
+            if (!resultado.IsSuccess || resultado.Value is null)
+            {
+                ErrorCarga = resultado.ErrorMessage ?? "Compra no encontrada.";
+                return;
+            }
+            Compra = resultado.Value;
+
+            if (!string.IsNullOrWhiteSpace(Compra.RutaComprobante))
+            {
+                var comprobante = await CompraService.ObtenerComprobanteAsync(Id);
+                if (comprobante.IsSuccess && comprobante.Value is not null)
+                    Comprobante = comprobante.Value;
+                else
+                    ErrorComprobante =
+                        comprobante.ErrorMessage ?? "No fue posible consultar el comprobante.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible cargar la compra {CompraId}.", Id);
+            ErrorCarga = "Ocurrió un problema inesperado al cargar la compra. Intenta nuevamente.";
+        }
+        finally
+        {
+            Cargando = false;
+        }
+    }
+
+    private static string TextoOpcional(string? valor) =>
+        string.IsNullOrWhiteSpace(valor) ? "—" : valor;
+}

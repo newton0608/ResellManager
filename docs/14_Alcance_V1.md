@@ -32,7 +32,7 @@ detalle. No se duplica en `Venta`; los pedidos históricos se migran a `Otro` y 
 con código `PED-VD-<GUID>` y una `Venta` con código `VEN-VD-<GUID>`. Ambos códigos técnicos se generan
 sin captura de la usuaria; toda venta conserva un `PedidoId` y no existe venta sin pedido.
 
-✅ Ventas de catálogo sin `UnidadInventario` cuando la mercancía no pasa por inventario físico.
+✅ Ventas de catálogo siempre sin `UnidadInventario`: Pedido → Venta → Deuda/Pago.
 
 ✅ Pagos y abonos globales por cliente.
 
@@ -78,11 +78,17 @@ selección de unidades disponibles compatibles, costo de catálogo capturado man
 desde `IClienteService`, registro de pagos globales por cliente
 e historial, con doble submit protegido y presentación responsive.
 
+✅ Módulos Blazor de compras y proveedores implementados en Fase 5.8: listados responsive,
+registro de proveedores, compra con múltiples detalles y código `COM-<GUID>` automático, detalle,
+reglas de origen delegadas a `CompraService` y comprobante opcional real JPG/JPEG, PNG, WebP o PDF.
+Los archivos se validan hasta 10 MB, se almacenan fuera de SQLite con ruta relativa y nombre
+`CMP-<GUID>`, y solo se consultan mediante un endpoint autenticado.
+
+✅ Catálogo nunca genera `UnidadInventario`, tanto en Compra como en Pedido/Venta.
+
 ✅ Inicio y presentación del login alineados con la identidad visual de ResellManager.
 
 ## Pendiente para fases posteriores
-
-🟡 Pantallas Blazor completas y operaciones de negocio para compras y proveedores.
 
 🟡 Edición/eliminación de detalles, reactivación de pedidos e historial avanzado de reservas.
 
@@ -100,8 +106,6 @@ que preserven relaciones e historial.
 
 🟡 Dashboard de negocio con información real, incluyendo como posibles mejoras ventas registradas
 por canal y cantidad de pedidos por canal.
-
-🟡 Adjuntar/gestionar fotografías reales de comprobantes desde la UI.
 
 ## Pendiente de información del negocio
 

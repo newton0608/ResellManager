@@ -82,6 +82,37 @@ public interface ICompraService
     );
 }
 
+public interface IAlmacenamientoComprobantes
+{
+    Task<ServiceResult<ComprobantePreparadoDto>> PrepararAsync(
+        ArchivoComprobanteInput archivo,
+        CancellationToken ct = default
+    );
+    Task<ServiceResult<ComprobanteGuardadoDto>> ConfirmarAsync(
+        ComprobantePreparadoDto archivo,
+        CancellationToken ct = default
+    );
+    Task<ServiceResult> EliminarTemporalAsync(
+        string identificadorTemporal,
+        CancellationToken ct = default
+    );
+    Task<ServiceResult> EliminarAsync(string rutaRelativa, CancellationToken ct = default);
+    Task<ServiceResult<ArchivoComprobanteLecturaDto>> AbrirLecturaAsync(
+        string rutaRelativa,
+        CancellationToken ct = default
+    );
+}
+
+public interface IRegistroCompraConComprobanteService
+{
+    Task<ServiceResult<CompraDto>> RegistrarAsync(
+        CompraInput compra,
+        DatosComprobanteCompraInput? datosComprobante,
+        ArchivoComprobanteInput? archivo,
+        CancellationToken ct = default
+    );
+}
+
 public interface IInventarioService
 {
     Task<IReadOnlyList<UnidadInventarioDto>> ListarAsync(CancellationToken ct = default);
