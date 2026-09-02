@@ -45,6 +45,81 @@ public sealed class Fase58AlmacenamientoComprobantesTests
         Assert.True(File.Exists(RutaFisica(temporal.Ruta, guardado.Value.RutaRelativa)));
     }
 
+    [Theory]
+    [InlineData(SKEncodedOrigin.TopLeft, 120, 80, MarcadorColor.Rojo, MarcadorColor.Verde, MarcadorColor.Azul, MarcadorColor.Amarillo)]
+    [InlineData(SKEncodedOrigin.TopRight, 120, 80, MarcadorColor.Verde, MarcadorColor.Rojo, MarcadorColor.Amarillo, MarcadorColor.Azul)]
+    [InlineData(SKEncodedOrigin.BottomRight, 120, 80, MarcadorColor.Amarillo, MarcadorColor.Azul, MarcadorColor.Verde, MarcadorColor.Rojo)]
+    [InlineData(SKEncodedOrigin.BottomLeft, 120, 80, MarcadorColor.Azul, MarcadorColor.Amarillo, MarcadorColor.Rojo, MarcadorColor.Verde)]
+    [InlineData(SKEncodedOrigin.LeftTop, 80, 120, MarcadorColor.Rojo, MarcadorColor.Azul, MarcadorColor.Verde, MarcadorColor.Amarillo)]
+    [InlineData(SKEncodedOrigin.RightTop, 80, 120, MarcadorColor.Azul, MarcadorColor.Rojo, MarcadorColor.Amarillo, MarcadorColor.Verde)]
+    [InlineData(SKEncodedOrigin.RightBottom, 80, 120, MarcadorColor.Amarillo, MarcadorColor.Verde, MarcadorColor.Azul, MarcadorColor.Rojo)]
+    [InlineData(SKEncodedOrigin.LeftBottom, 80, 120, MarcadorColor.Verde, MarcadorColor.Amarillo, MarcadorColor.Rojo, MarcadorColor.Azul)]
+    public async Task JpegConExifOrientation_SeNormalizaEnPixeles(
+        SKEncodedOrigin orientacion,
+        int anchoEsperado,
+        int altoEsperado,
+        MarcadorColor superiorIzquierdo,
+        MarcadorColor superiorDerecho,
+        MarcadorColor inferiorIzquierdo,
+        MarcadorColor inferiorDerecho
+    )
+    {
+        using var temporal = new DirectorioTemporal();
+        var almacenamiento = CrearAlmacenamiento(temporal.Ruta);
+        var contenido = CrearJpegConOrientacion(orientacion, 120, 80);
+        using (var streamEntrada = new MemoryStream(contenido))
+        using (var codecEntrada = SKCodec.Create(streamEntrada))
+            Assert.Equal(orientacion, codecEntrada.EncodedOrigin);
+        await using var stream = new MemoryStream(contenido);
+
+        var preparado = await almacenamiento.PrepararAsync(
+            new ArchivoComprobanteInput(stream, "telefono.jpg", "image/jpeg")
+        );
+        var guardado = await almacenamiento.ConfirmarAsync(preparado.Value!);
+        var ruta = RutaFisica(temporal.Ruta, guardado.Value!.RutaRelativa);
+        using var imagen = SKBitmap.Decode(ruta);
+        using var codecSalida = SKCodec.Create(ruta);
+
+        Assert.True(preparado.IsSuccess, preparado.ErrorMessage);
+        Assert.True(guardado.IsSuccess, guardado.ErrorMessage);
+        Assert.NotNull(imagen);
+        Assert.Equal(anchoEsperado, imagen.Width);
+        Assert.Equal(altoEsperado, imagen.Height);
+        Assert.Equal(SKEncodedOrigin.TopLeft, codecSalida.EncodedOrigin);
+        AssertMarcador(imagen.GetPixel(imagen.Width / 4, imagen.Height / 4), superiorIzquierdo);
+        AssertMarcador(imagen.GetPixel(imagen.Width * 3 / 4, imagen.Height / 4), superiorDerecho);
+        AssertMarcador(imagen.GetPixel(imagen.Width / 4, imagen.Height * 3 / 4), inferiorIzquierdo);
+        AssertMarcador(imagen.GetPixel(imagen.Width * 3 / 4, imagen.Height * 3 / 4), inferiorDerecho);
+    }
+
+    [Fact]
+    public async Task JpegOrientadoGrande_SeOrientaAntesDeReducir()
+    {
+        using var temporal = new DirectorioTemporal();
+        var almacenamiento = CrearAlmacenamiento(temporal.Ruta);
+        await using var stream = new MemoryStream(
+            CrearJpegConOrientacion(SKEncodedOrigin.RightTop, 2400, 1200)
+        );
+
+        var preparado = await almacenamiento.PrepararAsync(
+            new ArchivoComprobanteInput(stream, "telefono-grande.jpg", "image/jpeg")
+        );
+        Assert.True(preparado.IsSuccess, preparado.ErrorMessage);
+        var guardado = await almacenamiento.ConfirmarAsync(preparado.Value!);
+        Assert.True(guardado.IsSuccess, guardado.ErrorMessage);
+        using var imagen = SKBitmap.Decode(
+            RutaFisica(temporal.Ruta, guardado.Value!.RutaRelativa)
+        );
+
+        Assert.NotNull(imagen);
+        Assert.Equal(900, imagen.Width);
+        Assert.Equal(1800, imagen.Height);
+        AssertMarcador(imagen.GetPixel(imagen.Width / 4, imagen.Height / 4), MarcadorColor.Azul);
+        AssertMarcador(imagen.GetPixel(imagen.Width * 3 / 4, imagen.Height / 4), MarcadorColor.Rojo);
+        AssertMarcador(imagen.GetPixel(imagen.Width / 4, imagen.Height * 3 / 4), MarcadorColor.Amarillo);
+        AssertMarcador(imagen.GetPixel(imagen.Width * 3 / 4, imagen.Height * 3 / 4), MarcadorColor.Verde);
+    }
+
     [Fact]
     public async Task PdfValido_SeConservaSinModificar()
     {
@@ -391,6 +466,65 @@ public sealed class Fase58AlmacenamientoComprobantesTests
         return datos.ToArray();
     }
 
+    private static byte[] CrearJpegConOrientacion(
+        SKEncodedOrigin orientacion,
+        int ancho,
+        int alto
+    )
+    {
+        using var bitmap = new SKBitmap(ancho, alto);
+        using var canvas = new SKCanvas(bitmap);
+        using var paint = new SKPaint();
+        paint.Color = SKColors.Red;
+        canvas.DrawRect(0, 0, ancho / 2f, alto / 2f, paint);
+        paint.Color = SKColors.Lime;
+        canvas.DrawRect(ancho / 2f, 0, ancho / 2f, alto / 2f, paint);
+        paint.Color = SKColors.Blue;
+        canvas.DrawRect(0, alto / 2f, ancho / 2f, alto / 2f, paint);
+        paint.Color = SKColors.Yellow;
+        canvas.DrawRect(ancho / 2f, alto / 2f, ancho / 2f, alto / 2f, paint);
+        using var imagen = SKImage.FromBitmap(bitmap);
+        using var datos = imagen.Encode(SKEncodedImageFormat.Jpeg, 100);
+        return AgregarOrientacionExif(datos.ToArray(), (byte)orientacion);
+    }
+
+    private static byte[] AgregarOrientacionExif(byte[] jpeg, byte orientacion)
+    {
+        Assert.True(jpeg.Length >= 2 && jpeg[0] == 0xFF && jpeg[1] == 0xD8);
+        var segmentoExif = new byte[]
+        {
+            0xFF, 0xE1, 0x00, 0x22,
+            0x45, 0x78, 0x69, 0x66, 0x00, 0x00,
+            0x49, 0x49, 0x2A, 0x00, 0x08, 0x00, 0x00, 0x00,
+            0x01, 0x00,
+            0x12, 0x01, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00,
+            orientacion, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00,
+        };
+        var resultado = new byte[jpeg.Length + segmentoExif.Length];
+        Buffer.BlockCopy(jpeg, 0, resultado, 0, 2);
+        Buffer.BlockCopy(segmentoExif, 0, resultado, 2, segmentoExif.Length);
+        Buffer.BlockCopy(jpeg, 2, resultado, 2 + segmentoExif.Length, jpeg.Length - 2);
+        return resultado;
+    }
+
+    private static void AssertMarcador(SKColor color, MarcadorColor esperado)
+    {
+        var coincide = esperado switch
+        {
+            MarcadorColor.Rojo => color.Red > 180 && color.Green < 80 && color.Blue < 80,
+            MarcadorColor.Verde => color.Red < 80 && color.Green > 180 && color.Blue < 80,
+            MarcadorColor.Azul => color.Red < 80 && color.Green < 80 && color.Blue > 180,
+            MarcadorColor.Amarillo => color.Red > 180 && color.Green > 180 && color.Blue < 80,
+            _ => false,
+        };
+
+        Assert.True(
+            coincide,
+            $"Se esperaba {esperado}, pero se obtuvo RGB({color.Red}, {color.Green}, {color.Blue})."
+        );
+    }
+
     private static string RutaFisica(string raiz, string relativa) =>
         Path.Combine(raiz, relativa.Replace('/', Path.DirectorySeparatorChar));
 
@@ -429,6 +563,14 @@ public sealed class Fase58AlmacenamientoComprobantesTests
             if (Directory.Exists(Ruta))
                 Directory.Delete(Ruta, recursive: true);
         }
+    }
+
+    public enum MarcadorColor
+    {
+        Rojo,
+        Verde,
+        Azul,
+        Amarillo,
     }
 
     private sealed class CompraControladaService(bool exito) : ICompraService

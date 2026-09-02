@@ -573,7 +573,7 @@ Los formularios de compra y proveedor deshabilitan el submit mientras la operaci
 - Motivo: API mantenida y multiplataforma para decodificar/re-encodear JPG/JPEG, PNG y WebP sin usar `System.Drawing.Common`.
 - Despliegue: usa binarios nativos. Windows llega mediante los activos de `SkiaSharp`; Linux incluye la variante `NoDependencies`, que excluye Fontconfig y depende únicamente de bibliotecas base de glibc. Debe publicarse para una arquitectura Linux soportada.
 
-Las imágenes se validan primero por firma y después por decodificación, se limitan a 50 millones de píxeles, conservan la relación de aspecto, no se amplían y se reducen a un lado máximo de 1800 px. JPG y WebP se codifican a calidad 85; PNG se conserva lossless. El re-encode elimina metadatos no necesarios como efecto natural. Los PDF solo se validan, limitan y copian.
+Las imágenes se validan primero por firma y después por decodificación, se limitan a 50 millones de píxeles, conservan la relación de aspecto, no se amplían y se reducen a un lado máximo de 1800 px. Antes del resize, `SKCodec.EncodedOrigin` normaliza físicamente sobre los píxeles las ocho orientaciones EXIF, incluidos reflejos y transposiciones. JPG y WebP se codifican a calidad 85; PNG se conserva lossless. El re-encode elimina metadatos no necesarios, incluida la etiqueta EXIF Orientation ya aplicada. Los PDF solo se validan, limitan y copian.
 
 ### Almacenamiento y configuración
 

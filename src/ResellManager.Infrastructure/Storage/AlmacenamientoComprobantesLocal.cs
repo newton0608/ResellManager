@@ -342,7 +342,8 @@ public sealed class AlmacenamientoComprobantesLocal : IAlmacenamientoComprobante
     )
     {
         ct.ThrowIfCancellationRequested();
-        using var bitmap = SKBitmap.Decode(entrada);
+        using var codec = SKCodec.Create(entrada);
+        using var bitmap = codec is null ? null : SKBitmap.Decode(codec);
         if (bitmap is null || bitmap.Width <= 0 || bitmap.Height <= 0)
             throw new ArchivoComprobanteException(
                 "La imagen seleccionada está dañada o no es válida."
@@ -350,18 +351,20 @@ public sealed class AlmacenamientoComprobantesLocal : IAlmacenamientoComprobante
         if ((long)bitmap.Width * bitmap.Height > PixelesMaximos)
             throw new ArchivoComprobanteException("La imagen tiene dimensiones demasiado grandes.");
 
-        var (ancho, alto) = CalcularDimensiones(bitmap.Width, bitmap.Height);
+        using var orientada = AplicarOrientacion(bitmap, codec!.EncodedOrigin);
+        var fuente = orientada ?? bitmap;
+        var (ancho, alto) = CalcularDimensiones(fuente.Width, fuente.Height);
         using var redimensionada =
-            ancho == bitmap.Width && alto == bitmap.Height
+            ancho == fuente.Width && alto == fuente.Height
                 ? null
-                : bitmap.Resize(
-                    new SKImageInfo(ancho, alto, bitmap.ColorType, bitmap.AlphaType),
+                : fuente.Resize(
+                    new SKImageInfo(ancho, alto, fuente.ColorType, fuente.AlphaType),
                     new SKSamplingOptions(SKCubicResampler.Mitchell)
                 );
-        if (ancho != bitmap.Width && redimensionada is null)
+        if (ancho != fuente.Width && redimensionada is null)
             throw new ArchivoComprobanteException("No fue posible redimensionar la imagen.");
 
-        using var imagen = SKImage.FromBitmap(redimensionada ?? bitmap);
+        using var imagen = SKImage.FromBitmap(redimensionada ?? fuente);
         using var datos = imagen.Encode(tipo.FormatoImagen!.Value, tipo.Calidad);
         if (datos is null)
             throw new ArchivoComprobanteException("No fue posible convertir la imagen.");
@@ -377,6 +380,93 @@ public sealed class AlmacenamientoComprobantesLocal : IAlmacenamientoComprobante
         datos.SaveTo(stream);
         await stream.FlushAsync(ct);
     }
+
+    private static SKBitmap? AplicarOrientacion(
+        SKBitmap origen,
+        SKEncodedOrigin orientacion
+    )
+    {
+        if (orientacion == SKEncodedOrigin.TopLeft)
+            return null;
+
+        var intercambiaDimensiones = orientacion is
+            SKEncodedOrigin.LeftTop or
+            SKEncodedOrigin.RightTop or
+            SKEncodedOrigin.RightBottom or
+            SKEncodedOrigin.LeftBottom;
+        var ancho = intercambiaDimensiones ? origen.Height : origen.Width;
+        var alto = intercambiaDimensiones ? origen.Width : origen.Height;
+        var destino = new SKBitmap(
+            new SKImageInfo(ancho, alto, origen.ColorType, origen.AlphaType, origen.ColorSpace)
+        );
+
+        try
+        {
+            using var canvas = new SKCanvas(destino);
+            canvas.Clear(SKColors.Transparent);
+            var matriz = CrearMatrizOrientacion(
+                orientacion,
+                origen.Width,
+                origen.Height
+            );
+            canvas.SetMatrix(matriz);
+            using var paint = new SKPaint();
+            canvas.DrawBitmap(
+                origen,
+                0,
+                0,
+                new SKSamplingOptions(SKFilterMode.Nearest),
+                paint
+            );
+            canvas.Flush();
+            return destino;
+        }
+        catch
+        {
+            destino.Dispose();
+            throw;
+        }
+    }
+
+    private static SKMatrix CrearMatrizOrientacion(
+        SKEncodedOrigin orientacion,
+        int ancho,
+        int alto
+    ) =>
+        orientacion switch
+        {
+            SKEncodedOrigin.TopRight => CrearMatriz(-1, 0, ancho, 0, 1, 0),
+            SKEncodedOrigin.BottomRight => CrearMatriz(-1, 0, ancho, 0, -1, alto),
+            SKEncodedOrigin.BottomLeft => CrearMatriz(1, 0, 0, 0, -1, alto),
+            SKEncodedOrigin.LeftTop => CrearMatriz(0, 1, 0, 1, 0, 0),
+            SKEncodedOrigin.RightTop => CrearMatriz(0, -1, alto, 1, 0, 0),
+            SKEncodedOrigin.RightBottom => CrearMatriz(0, -1, alto, -1, 0, ancho),
+            SKEncodedOrigin.LeftBottom => CrearMatriz(0, 1, 0, -1, 0, ancho),
+            _ => throw new ArchivoComprobanteException(
+                "La orientación de la imagen no es compatible."
+            ),
+        };
+
+    private static SKMatrix CrearMatriz(
+        float escalaX,
+        float sesgoX,
+        float traslacionX,
+        float sesgoY,
+        float escalaY,
+        float traslacionY
+    ) =>
+        new()
+        {
+            ScaleX = escalaX,
+            SkewX = sesgoX,
+            TransX = traslacionX,
+            SkewY = sesgoY,
+            ScaleY = escalaY,
+            TransY = traslacionY,
+            Persp0 = 0,
+            Persp1 = 0,
+            Persp2 = 1,
+        };
 
     private static (int Ancho, int Alto) CalcularDimensiones(int ancho, int alto)
     {
