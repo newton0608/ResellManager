@@ -1,0 +1,157 @@
+@page "/compras"
+@rendermode InteractiveServer
+@inject ICompraService CompraService
+@inject ILogger<Compras> Logger
+
+<PageTitle>Compras | ResellManager</PageTitle>
+
+<section class="page-heading" aria-labelledby="titulo-compras">
+    <div>
+        <p class="eyebrow">Abastecimiento</p>
+        <h1 id="titulo-compras">Compras</h1>
+        <p class="page-lead">Consulta el abastecimiento, sus proveedores y comprobantes.</p>
+    </div>
+    <a class="primary-button" href="/compras/nueva">Nueva compra</a>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(MensajeExito))
+{
+    <div class="mensaje-exito" role="status">@MensajeExito</div>
+}
+
+@if (!string.IsNullOrWhiteSpace(ErrorMessage))
+{
+    <div class="mensaje-error alert-with-action" role="alert">
+        <span>@ErrorMessage</span>
+        <button class="inline-button" type="button" disabled="@Cargando" @onclick="CargarAsync">Reintentar</button>
+    </div>
+}
+
+@if (Cargando)
+{
+    <div class="loading-state" role="status" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
+        Cargando compras...
+    </div>
+}
+else if (string.IsNullOrWhiteSpace(ErrorMessage) && ComprasRegistradas.Count == 0)
+{
+    <section class="empty-state" aria-labelledby="titulo-sin-compras">
+        <span class="empty-state-icon" aria-hidden="true"><NavIcon Name="bag" /></span>
+        <h2 id="titulo-sin-compras">Aún no hay compras</h2>
+        <p>Registra la primera compra con un proveedor y al menos un producto.</p>
+        <a class="primary-button" href="/compras/nueva">Registrar compra</a>
+    </section>
+}
+else if (string.IsNullOrWhiteSpace(ErrorMessage))
+{
+    <section class="data-panel" aria-labelledby="titulo-listado-compras">
+        <div class="data-panel-heading">
+            <h2 id="titulo-listado-compras">Historial de compras</h2>
+            <span>@ComprasRegistradas.Count @(ComprasRegistradas.Count == 1 ? "compra" : "compras")</span>
+        </div>
+
+        <div class="desktop-table purchase-desktop-table">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Código</th>
+                        <th scope="col">Fecha</th>
+                        <th scope="col">Origen</th>
+                        <th scope="col">Proveedor</th>
+                        <th scope="col" class="numeric-cell">Total</th>
+                        <th scope="col">Comprobante</th>
+                        <th scope="col" class="actions-cell">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var compra in ComprasRegistradas)
+                    {
+                        <tr>
+                            <td><span class="code-value">@compra.CodigoInterno</span></td>
+                            <td>@compra.FechaCompra.ToString("dd/MM/yyyy")</td>
+                            <td>
+                                <span class="status-badge @CompraPresentacion.ClaseOrigen(compra.Origen)">
+                                    @CompraPresentacion.Origen(compra.Origen)
+                                </span>
+                            </td>
+                            <td><strong>@compra.Proveedor</strong></td>
+                            <td class="numeric-cell"><span class="transaction-amount">@CompraPresentacion.Moneda(compra.Total)</span></td>
+                            <td>
+                                <span class="receipt-indicator @(TieneComprobante(compra) ? "receipt-attached" : "receipt-missing")">
+                                    @(TieneComprobante(compra) ? "Adjunto" : "Sin adjunto")
+                                </span>
+                            </td>
+                            <td class="actions-cell"><a class="table-action" href="/compras/@compra.Id">Ver</a></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mobile-card-list">
+            @foreach (var compra in ComprasRegistradas)
+            {
+                <article class="entity-card purchase-card">
+                    <div class="entity-card-heading">
+                        <div>
+                            <span class="code-value">@compra.CodigoInterno</span>
+                            <h3>@compra.Proveedor</h3>
+                            <p class="entity-card-subtitle">@compra.FechaCompra.ToString("dd/MM/yyyy")</p>
+                        </div>
+                        <span class="status-badge @CompraPresentacion.ClaseOrigen(compra.Origen)">
+                            @CompraPresentacion.Origen(compra.Origen)
+                        </span>
+                    </div>
+                    <dl class="inventory-card-details">
+                        <div><dt>Total</dt><dd><strong>@CompraPresentacion.Moneda(compra.Total)</strong></dd></div>
+                        <div><dt>Detalles</dt><dd>@compra.Detalles.Count</dd></div>
+                        <div>
+                            <dt>Comprobante</dt>
+                            <dd>@(TieneComprobante(compra) ? "Adjunto" : "Sin adjunto")</dd>
+                        </div>
+                    </dl>
+                    <div class="entity-card-actions">
+                        <a class="secondary-button" href="/compras/@compra.Id">Ver compra</a>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+}
+
+@code {
+    private IReadOnlyList<CompraDto> ComprasRegistradas { get; set; } = [];
+    private bool Cargando { get; set; } = true;
+    private string? ErrorMessage { get; set; }
+
+    [SupplyParameterFromQuery(Name = "mensaje")]
+    public string? Mensaje { get; set; }
+
+    private string? MensajeExito =>
+        Mensaje == "compra-creada" ? "Compra registrada correctamente." : null;
+
+    protected override Task OnInitializedAsync() => CargarAsync();
+
+    private async Task CargarAsync()
+    {
+        Cargando = true;
+        ErrorMessage = null;
+        try
+        {
+            ComprasRegistradas = await CompraService.ListarAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible cargar el listado de compras.");
+            ErrorMessage = "No pudimos cargar las compras. Intenta nuevamente.";
+        }
+        finally
+        {
+            Cargando = false;
+        }
+    }
+
+    private static bool TieneComprobante(CompraDto compra) =>
+        !string.IsNullOrWhiteSpace(compra.RutaComprobante);
+}

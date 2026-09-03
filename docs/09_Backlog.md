@@ -105,7 +105,7 @@
 - [x] Presentar el estado físico y la reserva comercial como conceptos separados.
 - [x] Registrar recepción de unidades compradas o en tránsito sin alterar reservas existentes.
 - [x] Exponer únicamente las transiciones manuales `Comprada → EnTransito` y `Vendida → Entregada`.
-- [ ] Integrar creación de unidades mediante la futura UI de compras; Inventario no crea unidades directamente.
+- [x] Integrar creación de unidades mediante la UI de compras; Inventario no crea unidades directamente y `CompraService` conserva la autoridad.
 - [x] Integrar creación y cancelación de reservas en la UI de pedidos; Inventario continúa como consulta del estado físico y la reserva.
 
 ---
@@ -190,17 +190,22 @@
 
 - [ ] Cantidad de pedidos por canal
 
-## Compras
+## Fase 5.8: compras, proveedores y comprobantes
 
-- [ ] Registrar Comprobante de compra
-
-- [ ] Registrar proveedor
-
-- [ ] Adjuntar Fotografía de comprobante
-
-- [ ] Consultar Comprobante de compra
-
-- [ ] Ver historial de compras
+- [x] Listar compras por fecha descendente con tabla de escritorio y cards móviles.
+- [x] Registrar compras con proveedor y productos reales, múltiples detalles y total calculado por backend.
+- [x] Generar `Compra.CodigoInterno` como `COM-<GUID>` sin captura manual.
+- [x] Mantener en `CompraService` la creación de detalles, unidades, costos, estados y fechas por origen.
+- [x] Mantener Catálogo completamente fuera de `UnidadInventario`.
+- [x] Listar y registrar proveedores, sin exponer eliminación física.
+- [x] Adjuntar cero o un comprobante JPG/JPEG, PNG, WebP o PDF de máximo 10 MB.
+- [x] Procesar imágenes a un lado máximo aproximado de 1800 px sin ampliar imágenes pequeñas.
+- [x] Generar nombres físicos `CMP-<GUID>` y guardar rutas relativas bajo almacenamiento administrado.
+- [x] Mantener archivos privados fuera de SQLite y fuera de `wwwroot`.
+- [x] Consultar comprobantes mediante un endpoint autenticado por identificador de compra.
+- [x] Manejar preparación temporal, confirmación definitiva y compensación ante fallos parciales.
+- [x] Proteger registro de compra/proveedor contra doble submit y presentar errores controlados.
+- [x] Cubrir reglas de negocio, almacenamiento, seguridad y markup responsive con pruebas automatizadas.
 
 ## Categorías
 

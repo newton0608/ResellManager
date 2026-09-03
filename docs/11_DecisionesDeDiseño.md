@@ -34,24 +34,24 @@ Una Web App cubre todos los dispositivos.
 Resultado:
 Blazor.
 
-## 005 Las ventas por catálogo pueden no generar inventario.
+## 005 Las ventas por catálogo no generan inventario.
 
 Motivo:
-En el flujo real del negocio, las ventas por catálogo pueden gestionarse como pedido y venta sin que el producto pase físicamente por inventario.
+En el flujo vigente del negocio, Catálogo se gestiona como pedido, venta y deuda/pago sin que el producto pase por inventario físico.
 
 Resultado:
-Una venta de catálogo puede registrar DetalleVenta con Producto, CostoUnitario y PrecioFinal sin UnidadInventario.
+Una venta de catálogo registra `DetalleVenta` con Producto, `CostoUnitario` y `PrecioFinal`, sin `UnidadInventario`.
 
 Restricción:
-Solo los pedidos de tipo Catálogo pueden generar ventas sin UnidadInventario.
+Solo los pedidos de tipo Catálogo generan ventas sin `UnidadInventario`; no existe una opción para convertir ese flujo en inventario físico.
 
-## 006 Una compra de catálogo no genera unidades automáticamente.
+## 006 Una compra de catálogo nunca genera unidades de inventario.
 
 Motivo:
 No tiene sentido crear UnidadInventario cuando el producto de catálogo no pasa físicamente por el inventario del negocio.
 
 Resultado:
-Las compras de catálogo no deben generar UnidadInventario automáticamente, salvo que se decida registrar recepción física de mercancía.
+Una compra de catálogo registra `DetalleCompra` y nunca genera `UnidadInventario`. Esta regla es absoluta en el modelo actual y no admite recepción física ni opciones de UI que la alteren.
 
 ## 007 La recepción de mercancía será un caso de uso explícito.
 
@@ -186,3 +186,15 @@ UsuarioInicial__Contrasena=<contraseña-segura>
 ```
 
 La contraseña debe tener al menos 12 caracteres e incluir mayúscula, minúscula, número y carácter no alfanumérico. Identity almacena únicamente su hash. Una vez creada la primera cuenta, las credenciales de seed deben retirarse de la configuración del entorno.
+
+## 017 Los comprobantes se almacenan como archivos privados administrados
+
+Motivo:
+Los comprobantes contienen información privada, no pertenecen a `wwwroot` y guardar sus binarios como BLOB inflaría SQLite. El sistema de archivos y SQLite tampoco comparten una transacción ACID.
+
+Resultado:
+Los archivos se validan detrás de `IAlmacenamientoComprobantes`, se preparan en una carpeta temporal y se confirman con un nombre `CMP-<GUID>` antes de invocar a `CompraService`. La base conserva únicamente una ruta relativa `comprobantes/CMP-...`; la lectura se realiza por `/comprobantes/{compraId}`, que exige autenticación y resuelve el archivo mediante el servicio.
+
+La confirmación se realiza antes del guardado de la compra para impedir que SQLite quede apuntando a un archivo inexistente. Si `CompraService` devuelve un fallo, se elimina el archivo confirmado. Si ocurre una excepción ambigua, se busca la compra por su código único usando el contrato existente: si quedó persistida se conserva el archivo y se recupera el resultado; si no existe se elimina. Si no es posible verificar el estado, se conserva el archivo y se registra un evento crítico, priorizando no romper una referencia que pudiera haber quedado confirmada.
+
+Las imágenes se re-encodean mediante SkiaSharp 4.151.1, con lado máximo de 1800 px y calidad 85 para formatos con pérdida. Los PDF se conservan sin transformación. SkiaSharp y sus activos Linux usan licencia MIT; el despliegue Linux incorpora `SkiaSharp.NativeAssets.Linux.NoDependencies`.

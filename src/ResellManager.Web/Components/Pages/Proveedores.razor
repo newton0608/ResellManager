@@ -1,0 +1,132 @@
+@page "/proveedores"
+@rendermode InteractiveServer
+@inject IProveedorService ProveedorService
+@inject ILogger<Proveedores> Logger
+
+<PageTitle>Proveedores | ResellManager</PageTitle>
+
+<section class="page-heading" aria-labelledby="titulo-proveedores">
+    <div>
+        <p class="eyebrow">Abastecimiento</p>
+        <h1 id="titulo-proveedores">Proveedores</h1>
+        <p class="page-lead">Consulta los proveedores disponibles para registrar compras reales.</p>
+    </div>
+    <a class="primary-button" href="/proveedores/nuevo">Nuevo proveedor</a>
+</section>
+
+@if (!string.IsNullOrWhiteSpace(MensajeExito))
+{
+    <div class="mensaje-exito" role="status">@MensajeExito</div>
+}
+
+@if (!string.IsNullOrWhiteSpace(ErrorMessage))
+{
+    <div class="mensaje-error alert-with-action" role="alert">
+        <span>@ErrorMessage</span>
+        <button class="inline-button" type="button" disabled="@Cargando" @onclick="CargarAsync">Reintentar</button>
+    </div>
+}
+
+@if (Cargando)
+{
+    <div class="loading-state" role="status" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
+        Cargando proveedores...
+    </div>
+}
+else if (string.IsNullOrWhiteSpace(ErrorMessage) && ProveedoresRegistrados.Count == 0)
+{
+    <section class="empty-state" aria-labelledby="titulo-sin-proveedores">
+        <span class="empty-state-icon" aria-hidden="true"><NavIcon Name="truck" /></span>
+        <h2 id="titulo-sin-proveedores">Aún no hay proveedores</h2>
+        <p>Registra el primer proveedor para asociarlo con una compra.</p>
+        <a class="primary-button" href="/proveedores/nuevo">Registrar proveedor</a>
+    </section>
+}
+else if (string.IsNullOrWhiteSpace(ErrorMessage))
+{
+    <section class="data-panel" aria-labelledby="titulo-listado-proveedores">
+        <div class="data-panel-heading">
+            <h2 id="titulo-listado-proveedores">Directorio de proveedores</h2>
+            <span>@ProveedoresRegistrados.Count @(ProveedoresRegistrados.Count == 1 ? "proveedor" : "proveedores")</span>
+        </div>
+
+        <div class="desktop-table">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Nombre</th>
+                        <th scope="col">País</th>
+                        <th scope="col">Teléfono</th>
+                        <th scope="col">Descripción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var proveedor in ProveedoresRegistrados)
+                    {
+                        <tr>
+                            <td><strong>@proveedor.Nombre</strong></td>
+                            <td>@TextoOpcional(proveedor.CodigoPais)</td>
+                            <td>@TextoOpcional(proveedor.Telefono)</td>
+                            <td>@TextoOpcional(proveedor.Descripcion)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mobile-card-list">
+            @foreach (var proveedor in ProveedoresRegistrados)
+            {
+                <article class="entity-card provider-card">
+                    <div class="entity-card-heading">
+                        <div>
+                            <h3>@proveedor.Nombre</h3>
+                            <p class="entity-card-subtitle">@TextoOpcional(proveedor.CodigoPais)</p>
+                        </div>
+                    </div>
+                    <dl class="inventory-card-details">
+                        <div><dt>Teléfono</dt><dd>@TextoOpcional(proveedor.Telefono)</dd></div>
+                        <div><dt>Descripción</dt><dd>@TextoOpcional(proveedor.Descripcion)</dd></div>
+                    </dl>
+                </article>
+            }
+        </div>
+    </section>
+}
+
+@code {
+    private IReadOnlyList<ProveedorDto> ProveedoresRegistrados { get; set; } = [];
+    private bool Cargando { get; set; } = true;
+    private string? ErrorMessage { get; set; }
+
+    [SupplyParameterFromQuery(Name = "mensaje")]
+    public string? Mensaje { get; set; }
+
+    private string? MensajeExito =>
+        Mensaje == "proveedor-creado" ? "Proveedor registrado correctamente." : null;
+
+    protected override Task OnInitializedAsync() => CargarAsync();
+
+    private async Task CargarAsync()
+    {
+        Cargando = true;
+        ErrorMessage = null;
+        try
+        {
+            ProveedoresRegistrados = await ProveedorService.ListarAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible cargar el listado de proveedores.");
+            ErrorMessage = "No pudimos cargar los proveedores. Intenta nuevamente.";
+        }
+        finally
+        {
+            Cargando = false;
+        }
+    }
+
+    private static string TextoOpcional(string? valor) =>
+        string.IsNullOrWhiteSpace(valor) ? "—" : valor;
+}

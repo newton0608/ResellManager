@@ -1,0 +1,98 @@
+@page "/proveedores/nuevo"
+@rendermode InteractiveServer
+@inject IProveedorService ProveedorService
+@inject NavigationManager Navigation
+@inject ILogger<ProveedorNuevo> Logger
+
+<PageTitle>Nuevo proveedor | ResellManager</PageTitle>
+
+<section class="page-heading" aria-labelledby="titulo-nuevo-proveedor">
+    <div>
+        <p class="eyebrow">Proveedores</p>
+        <h1 id="titulo-nuevo-proveedor">Nuevo proveedor</h1>
+        <p class="page-lead">Registra los datos básicos para seleccionarlo en futuras compras.</p>
+    </div>
+</section>
+
+<section class="form-panel" aria-label="Formulario de proveedor">
+    <EditForm Model="Modelo" OnValidSubmit="GuardarAsync" class="entity-form">
+        <DataAnnotationsValidator />
+
+        @if (!string.IsNullOrWhiteSpace(ErrorGuardado))
+        {
+            <div class="mensaje-error" role="alert">@ErrorGuardado</div>
+        }
+
+        <ValidationSummary class="validation-summary" />
+
+        <div class="form-grid">
+            <div class="form-field">
+                <label for="proveedor-nombre">Nombre <span aria-hidden="true">*</span></label>
+                <InputText id="proveedor-nombre" @bind-Value="Modelo.Nombre" autocomplete="organization" />
+                <ValidationMessage For="() => Modelo.Nombre" />
+            </div>
+
+            <div class="form-field">
+                <label for="proveedor-pais">Código de país</label>
+                <InputText id="proveedor-pais" @bind-Value="Modelo.CodigoPais" maxlength="10" autocomplete="country" />
+                <ValidationMessage For="() => Modelo.CodigoPais" />
+            </div>
+
+            <div class="form-field">
+                <label for="proveedor-telefono">Teléfono</label>
+                <InputText id="proveedor-telefono" @bind-Value="Modelo.Telefono" inputmode="tel" autocomplete="tel" />
+                <ValidationMessage For="() => Modelo.Telefono" />
+            </div>
+
+            <div class="form-field form-field-wide">
+                <label for="proveedor-descripcion">Descripción</label>
+                <InputTextArea id="proveedor-descripcion" @bind-Value="Modelo.Descripcion" rows="4" />
+                <ValidationMessage For="() => Modelo.Descripcion" />
+            </div>
+        </div>
+
+        <p class="required-note"><span aria-hidden="true">*</span> Campos obligatorios</p>
+
+        <div class="form-actions">
+            <button class="primary-button" type="submit" disabled="@Guardando">
+                @(Guardando ? "Guardando..." : "Guardar proveedor")
+            </button>
+            <a class="secondary-button" href="/proveedores">Cancelar</a>
+        </div>
+    </EditForm>
+</section>
+
+@code {
+    private ProveedorFormModel Modelo { get; } = new();
+    private bool Guardando { get; set; }
+    private string? ErrorGuardado { get; set; }
+
+    private async Task GuardarAsync()
+    {
+        if (Guardando)
+            return;
+
+        Guardando = true;
+        ErrorGuardado = null;
+        try
+        {
+            var resultado = await ProveedorService.CrearAsync(Modelo.ToInput());
+            if (!resultado.IsSuccess)
+            {
+                ErrorGuardado = resultado.ErrorMessage ?? "No fue posible guardar el proveedor.";
+                return;
+            }
+
+            Navigation.NavigateTo("/proveedores?mensaje=proveedor-creado");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible registrar el proveedor {Proveedor}.", Modelo.Nombre);
+            ErrorGuardado = "Ocurrió un problema inesperado al guardar. Intenta nuevamente.";
+        }
+        finally
+        {
+            Guardando = false;
+        }
+    }
+}

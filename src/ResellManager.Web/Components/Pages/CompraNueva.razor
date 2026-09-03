@@ -1,0 +1,412 @@
+@page "/compras/nueva"
+@rendermode InteractiveServer
+@using ResellManager.Domain.Enums
+@inject IRegistroCompraConComprobanteService RegistroCompraService
+@inject IProveedorService ProveedorService
+@inject IProductoService ProductoService
+@inject NavigationManager Navigation
+@inject ILogger<CompraNueva> Logger
+
+<PageTitle>Nueva compra | ResellManager</PageTitle>
+
+<section class="page-heading" aria-labelledby="titulo-nueva-compra">
+    <div>
+        <p class="eyebrow">Compras</p>
+        <h1 id="titulo-nueva-compra">Nueva compra</h1>
+        <p class="page-lead">Registra productos, costos y un comprobante opcional. El código interno se genera automáticamente.</p>
+    </div>
+</section>
+
+@if (Cargando)
+{
+    <div class="loading-state" role="status" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
+        Cargando proveedores y productos...
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(ErrorCarga))
+{
+    <section class="error-state" role="alert">
+        <h2>No fue posible abrir el formulario</h2>
+        <p>@ErrorCarga</p>
+        <div class="form-actions">
+            <button class="primary-button" type="button" @onclick="CargarAsync">Reintentar</button>
+            <a class="secondary-button" href="/compras">Volver a compras</a>
+        </div>
+    </section>
+}
+else
+{
+    @if (Proveedores.Count == 0 || Productos.Count == 0)
+    {
+        <div class="mensaje-error catalog-warning" role="alert">
+            <span>Para registrar una compra necesitas al menos un proveedor y un producto.</span>
+            <div class="heading-actions">
+                @if (Proveedores.Count == 0)
+                {
+                    <a class="inline-button" href="/proveedores/nuevo">Registrar proveedor</a>
+                }
+                @if (Productos.Count == 0)
+                {
+                    <a class="inline-button" href="/productos/nuevo">Registrar producto</a>
+                }
+            </div>
+        </div>
+    }
+
+    <section class="form-panel purchase-form-panel" aria-label="Formulario de compra">
+        <EditForm Model="Modelo" OnValidSubmit="GuardarAsync" class="entity-form">
+            <DataAnnotationsValidator />
+
+            @if (!string.IsNullOrWhiteSpace(ErrorGuardado))
+            {
+                <div class="mensaje-error" role="alert">@ErrorGuardado</div>
+            }
+
+            <ValidationSummary class="validation-summary" />
+
+            <div class="form-grid">
+                <div class="form-field">
+                    <label for="compra-fecha">Fecha de compra <span aria-hidden="true">*</span></label>
+                    <InputDate id="compra-fecha" @bind-Value="Modelo.FechaCompra" />
+                </div>
+
+                <div class="form-field">
+                    <label for="compra-origen">Origen <span aria-hidden="true">*</span></label>
+                    <select id="compra-origen" value="@Modelo.Origen" @onchange="CambiarOrigen">
+                        @foreach (var origen in Enum.GetValues<OrigenCompra>())
+                        {
+                            <option value="@origen">@CompraPresentacion.Origen(origen)</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="form-field">
+                    <label for="compra-proveedor">Proveedor <span aria-hidden="true">*</span></label>
+                    <InputSelect id="compra-proveedor" @bind-Value="Modelo.ProveedorId">
+                        <option value="0">Selecciona un proveedor</option>
+                        @foreach (var proveedor in Proveedores)
+                        {
+                            <option value="@proveedor.Id">@proveedor.Nombre</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="() => Modelo.ProveedorId" />
+                    <a class="field-help field-help-link" href="/proveedores/nuevo">¿Necesitas otro proveedor?</a>
+                </div>
+
+                @if (RequiereFechaIngreso)
+                {
+                    <div class="form-field">
+                        <label for="compra-ingreso">Fecha de ingreso <span aria-hidden="true">*</span></label>
+                        <InputDate id="compra-ingreso" @bind-Value="Modelo.FechaIngreso" />
+                        <p class="field-help">La mercancía ya está recibida y quedará disponible.</p>
+                    </div>
+                }
+
+                <div class="form-field form-field-wide">
+                    <label for="compra-observaciones">Observaciones</label>
+                    <InputTextArea id="compra-observaciones" @bind-Value="Modelo.Observaciones" rows="3" />
+                    <ValidationMessage For="() => Modelo.Observaciones" />
+                </div>
+            </div>
+
+            @if (Modelo.Origen == OrigenCompra.Importacion)
+            {
+                <div class="origin-guidance">
+                    <strong>Importación</strong>
+                    <span>Las unidades se crean como Compradas, sin fecha de ingreso. La recepción se registra después en Inventario.</span>
+                </div>
+            }
+            else if (Modelo.Origen == OrigenCompra.Catalogo)
+            {
+                <div class="origin-guidance catalog-origin-guidance">
+                    <strong>Catálogo</strong>
+                    <span>Se registran los detalles y costos, sin crear unidades de inventario.</span>
+                </div>
+            }
+
+            <section class="order-lines-editor purchase-lines-editor" aria-labelledby="titulo-detalles-compra">
+                <div class="data-panel-heading">
+                    <div>
+                        <h2 id="titulo-detalles-compra">Productos de la compra</h2>
+                        <p>El total mostrado es una referencia; el backend vuelve a calcularlo al registrar.</p>
+                    </div>
+                    <button class="secondary-button" type="button" disabled="@Guardando" @onclick="AgregarFila">Agregar producto</button>
+                </div>
+
+                <div class="order-lines-list">
+                    @for (var index = 0; index < Modelo.Detalles.Count; index++)
+                    {
+                        var detalle = Modelo.Detalles[index];
+                        var numero = index + 1;
+                        <article class="order-line-editor" @key="detalle">
+                            <div class="order-line-heading">
+                                <h3>Detalle @numero</h3>
+                                <button class="table-action button-link" type="button"
+                                        disabled="@(Guardando || Modelo.Detalles.Count == 1)"
+                                        aria-label="Quitar detalle @numero"
+                                        @onclick="() => QuitarFila(detalle)">Quitar</button>
+                            </div>
+                            <div class="purchase-line-grid">
+                                <div class="form-field purchase-product-field">
+                                    <label for="producto-compra-@numero">Producto <span aria-hidden="true">*</span></label>
+                                    <select id="producto-compra-@numero" @bind="detalle.ProductoId">
+                                        <option value="0">Selecciona un producto</option>
+                                        @foreach (var producto in Productos)
+                                        {
+                                            <option value="@producto.Id">@producto.CodigoInterno · @producto.Nombre</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="form-field">
+                                    <label for="cantidad-compra-@numero">Cantidad <span aria-hidden="true">*</span></label>
+                                    <input id="cantidad-compra-@numero" type="number" min="1" step="1" @bind="detalle.Cantidad" />
+                                </div>
+                                <div class="form-field">
+                                    <label for="costo-compra-@numero">Costo unitario <span aria-hidden="true">*</span></label>
+                                    <input id="costo-compra-@numero" type="number" min="0" step="0.01" @bind="detalle.CostoUnitario" />
+                                </div>
+                                <div class="purchase-line-subtotal">
+                                    <span>Subtotal</span>
+                                    <strong>@CompraPresentacion.Moneda(detalle.Subtotal)</strong>
+                                </div>
+                            </div>
+                        </article>
+                    }
+                </div>
+
+                <div class="purchase-total-preview">
+                    <span>Total visual</span>
+                    <strong>@CompraPresentacion.Moneda(Modelo.TotalVisual)</strong>
+                </div>
+            </section>
+
+            <section class="receipt-upload-panel" aria-labelledby="titulo-adjuntar-comprobante">
+                <div class="receipt-upload-heading">
+                    <div>
+                        <h2 id="titulo-adjuntar-comprobante">Comprobante opcional</h2>
+                        <p>Adjunta una imagen JPG, JPEG, PNG, WebP o un PDF de hasta 10 MB.</p>
+                    </div>
+                    <label class="receipt-toggle">
+                        <InputCheckbox @bind-Value="Modelo.AdjuntarComprobante" disabled="@Guardando" />
+                        Adjuntar comprobante
+                    </label>
+                </div>
+
+                @if (Modelo.AdjuntarComprobante)
+                {
+                    <div class="receipt-upload-body">
+                        @if (!string.IsNullOrWhiteSpace(ErrorArchivo))
+                        {
+                            <div class="mensaje-error" role="alert">@ErrorArchivo</div>
+                        }
+
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label for="comprobante-numero">Número de documento</label>
+                                <InputText id="comprobante-numero" @bind-Value="Modelo.NumeroDocumento" autocomplete="off" />
+                                <p class="field-help">Factura, recibo u otra referencia externa. Es opcional.</p>
+                                <ValidationMessage For="() => Modelo.NumeroDocumento" />
+                            </div>
+
+                            <div class="form-field">
+                                <label for="comprobante-fecha">Fecha del comprobante <span aria-hidden="true">*</span></label>
+                                <InputDate id="comprobante-fecha" @bind-Value="Modelo.FechaComprobante" />
+                            </div>
+
+                            <div class="form-field form-field-wide">
+                                <label for="comprobante-archivo">Archivo <span aria-hidden="true">*</span></label>
+                                <InputFile id="comprobante-archivo"
+                                           OnChange="SeleccionarArchivo"
+                                           accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
+                                           disabled="@Guardando" />
+                                @if (ArchivoSeleccionado is not null)
+                                {
+                                    <p class="selected-file" role="status">
+                                        <strong>@ArchivoSeleccionado.Name</strong>
+                                        <span>@FormatoTamano(ArchivoSeleccionado.Size)</span>
+                                    </p>
+                                }
+                            </div>
+
+                            <div class="form-field form-field-wide">
+                                <label for="comprobante-observaciones">Observaciones del comprobante</label>
+                                <InputTextArea id="comprobante-observaciones" @bind-Value="Modelo.ObservacionesComprobante" rows="3" />
+                                <ValidationMessage For="() => Modelo.ObservacionesComprobante" />
+                            </div>
+                        </div>
+                    </div>
+                }
+            </section>
+
+            <p class="required-note"><span aria-hidden="true">*</span> Campos obligatorios</p>
+
+            <div class="form-actions purchase-submit-actions">
+                <button class="primary-button" type="submit"
+                        disabled="@(Guardando || Proveedores.Count == 0 || Productos.Count == 0)">
+                    @(Guardando ? "Registrando y procesando..." : "Registrar compra")
+                </button>
+                <a class="secondary-button" href="/compras">Cancelar</a>
+            </div>
+        </EditForm>
+    </section>
+}
+
+@code {
+    private readonly string CodigoInterno = CodigosInternos.CrearCodigoCompra();
+    private CompraFormModel Modelo { get; } = new();
+    private IReadOnlyList<ProveedorDto> Proveedores { get; set; } = [];
+    private IReadOnlyList<ProductoDto> Productos { get; set; } = [];
+    private IBrowserFile? ArchivoSeleccionado { get; set; }
+    private bool Cargando { get; set; } = true;
+    private bool Guardando { get; set; }
+    private string? ErrorCarga { get; set; }
+    private string? ErrorGuardado { get; set; }
+    private string? ErrorArchivo { get; set; }
+
+    private bool RequiereFechaIngreso =>
+        Modelo.Origen is OrigenCompra.CompraLocal or OrigenCompra.EnvioHermano;
+
+    protected override Task OnInitializedAsync() => CargarAsync();
+
+    private async Task CargarAsync()
+    {
+        Cargando = true;
+        ErrorCarga = null;
+        try
+        {
+            var proveedoresTask = ProveedorService.ListarAsync();
+            var productosTask = ProductoService.ListarAsync();
+            await Task.WhenAll(proveedoresTask, productosTask);
+            Proveedores = await proveedoresTask;
+            Productos = await productosTask;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible cargar proveedores y productos para la compra.");
+            ErrorCarga = "Ocurrió un problema al cargar los datos. Intenta nuevamente.";
+        }
+        finally
+        {
+            Cargando = false;
+        }
+    }
+
+    private void CambiarOrigen(ChangeEventArgs evento)
+    {
+        if (!Enum.TryParse<OrigenCompra>(evento.Value?.ToString(), out var origen))
+            return;
+
+        Modelo.Origen = origen;
+        Modelo.FechaIngreso =
+            origen is OrigenCompra.CompraLocal or OrigenCompra.EnvioHermano
+                ? Modelo.FechaIngreso ?? DateOnly.FromDateTime(DateTime.Today)
+                : null;
+    }
+
+    private void AgregarFila() => Modelo.Detalles.Add(new DetalleCompraFormModel());
+
+    private void QuitarFila(DetalleCompraFormModel detalle)
+    {
+        if (!Guardando && Modelo.Detalles.Count > 1)
+            Modelo.Detalles.Remove(detalle);
+    }
+
+    private void SeleccionarArchivo(InputFileChangeEventArgs evento)
+    {
+        ErrorArchivo = null;
+        ArchivoSeleccionado = evento.File;
+        if (ArchivoSeleccionado.Size > ReglasComprobanteCompra.TamanoMaximoBytes)
+        {
+            ErrorArchivo = "El comprobante supera el límite máximo de 10 MB.";
+            ArchivoSeleccionado = null;
+        }
+    }
+
+    private async Task GuardarAsync()
+    {
+        if (Guardando)
+            return;
+
+        ErrorGuardado = ValidarFormulario();
+        if (ErrorGuardado is not null)
+            return;
+
+        Guardando = true;
+        Stream? stream = null;
+        try
+        {
+            ArchivoComprobanteInput? archivo = null;
+            if (Modelo.AdjuntarComprobante && ArchivoSeleccionado is not null)
+            {
+                try
+                {
+                    stream = ArchivoSeleccionado.OpenReadStream(
+                        ReglasComprobanteCompra.TamanoMaximoBytes
+                    );
+                }
+                catch (IOException)
+                {
+                    ErrorGuardado = "El comprobante supera el límite máximo de 10 MB.";
+                    return;
+                }
+
+                archivo = new ArchivoComprobanteInput(
+                    stream,
+                    ArchivoSeleccionado.Name,
+                    ArchivoSeleccionado.ContentType
+                );
+            }
+
+            var resultado = await RegistroCompraService.RegistrarAsync(
+                Modelo.ToInput(CodigoInterno),
+                Modelo.ToDatosComprobante(),
+                archivo
+            );
+            if (!resultado.IsSuccess || resultado.Value is null)
+            {
+                ErrorGuardado = resultado.ErrorMessage ?? "No fue posible registrar la compra.";
+                return;
+            }
+
+            Navigation.NavigateTo($"/compras/{resultado.Value.Id}?mensaje=compra-creada");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible registrar la compra {CodigoCompra}.", CodigoInterno);
+            ErrorGuardado = "Ocurrió un problema inesperado al registrar. Intenta nuevamente.";
+        }
+        finally
+        {
+            if (stream is not null)
+                await stream.DisposeAsync();
+            Guardando = false;
+        }
+    }
+
+    private string? ValidarFormulario()
+    {
+        if (!Proveedores.Any(x => x.Id == Modelo.ProveedorId))
+            return "Selecciona un proveedor válido.";
+        if (Modelo.Detalles.Count == 0)
+            return "Agrega al menos un detalle a la compra.";
+        if (Modelo.Detalles.Any(x => !Productos.Any(p => p.Id == x.ProductoId)))
+            return "Selecciona un producto válido en cada detalle.";
+        if (Modelo.Detalles.Any(x => x.Cantidad <= 0))
+            return "La cantidad de cada detalle debe ser mayor que cero.";
+        if (Modelo.Detalles.Any(x => x.CostoUnitario < 0))
+            return "El costo unitario no puede ser negativo.";
+        if (RequiereFechaIngreso && !Modelo.FechaIngreso.HasValue)
+            return "La fecha de ingreso es obligatoria para mercancía recibida.";
+        if (Modelo.AdjuntarComprobante && !string.IsNullOrWhiteSpace(ErrorArchivo))
+            return ErrorArchivo;
+        if (Modelo.AdjuntarComprobante && ArchivoSeleccionado is null)
+            return "Selecciona el archivo del comprobante o desactiva la opción de adjuntarlo.";
+        return null;
+    }
+
+    private static string FormatoTamano(long bytes) =>
+        bytes >= 1024 * 1024
+            ? $"{bytes / 1024d / 1024d:F1} MB"
+            : $"{Math.Max(1, Math.Ceiling(bytes / 1024d)):F0} KB";
+}
