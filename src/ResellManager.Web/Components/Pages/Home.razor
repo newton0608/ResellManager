@@ -1,65 +1,331 @@
 @page "/"
+@rendermode InteractiveServer
+@inject IDashboardService DashboardService
+@inject TimeProvider TimeProvider
+@inject ILogger<Home> Logger
 
-<PageTitle>Inicio | ResellManager</PageTitle>
+<PageTitle>Dashboard | ResellManager</PageTitle>
 
-<section class="page-heading" aria-labelledby="titulo-inicio">
+<section class="page-heading" aria-labelledby="titulo-dashboard">
     <div>
-        <p class="eyebrow">Inicio</p>
-        <h1 id="titulo-inicio">Bienvenido a ResellManager</h1>
-        <p class="page-lead">Tu espacio central para administrar el negocio familiar.</p>
+        <p class="eyebrow">Dashboard</p>
+        <h1 id="titulo-dashboard">Resumen del negocio</h1>
+        <p class="page-lead">Indicadores operativos calculados con ventas, pagos, inventario y pedidos reales.</p>
     </div>
 </section>
 
-<section class="welcome-card" aria-labelledby="titulo-dashboard">
-    <div class="welcome-icon" aria-hidden="true">
-        <NavIcon Name="home" />
+@if (CargandoDashboard)
+{
+    <div class="loading-state" role="status" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
+        Cargando resumen del negocio...
     </div>
-    <div>
-        <h2 id="titulo-dashboard">Panel en preparación</h2>
-        <p>El dashboard completo y sus indicadores se incorporarán en una fase posterior. Por ahora puedes usar estos accesos para recorrer la estructura de la aplicación.</p>
-    </div>
-</section>
+}
+else if (Dashboard is null)
+{
+    <section class="error-state dashboard-load-error" role="alert">
+        <h2>No fue posible cargar el resumen</h2>
+        <p>@ErrorDashboard</p>
+        <button class="primary-button" type="button" @onclick="CargarDashboardAsync">Reintentar</button>
+    </section>
+}
+else
+{
+    <section class="dashboard-metrics" aria-label="Métricas principales">
+        <article class="dashboard-metric-card dashboard-debt-card">
+            <span class="dashboard-metric-label">Total adeudado</span>
+            <strong>@ClientePresentacion.Moneda(Dashboard.TotalAdeudado)</strong>
+            <small>Ventas registradas menos pagos</small>
+        </article>
+        <article class="dashboard-metric-card">
+            <span class="dashboard-metric-label">Inventario disponible</span>
+            <strong>@ClientePresentacion.Moneda(Dashboard.ValorInventarioDisponible)</strong>
+            <small>Costo de unidades disponibles</small>
+        </article>
+        <article class="dashboard-metric-card">
+            <span class="dashboard-metric-label">Unidades disponibles</span>
+            <strong>@Dashboard.UnidadesDisponibles</strong>
+            <small>Existencias listas para venta</small>
+        </article>
+        <article class="dashboard-metric-card">
+            <span class="dashboard-metric-label">Pedidos activos</span>
+            <strong>@Dashboard.PedidosActivos</strong>
+            <small>Pendientes y confirmados</small>
+        </article>
+    </section>
+}
 
-<section class="quick-access" aria-labelledby="titulo-accesos">
-    <div class="section-heading">
+<section class="data-panel dashboard-utility-panel" aria-labelledby="titulo-utilidad">
+    <div class="data-panel-heading dashboard-panel-heading">
         <div>
-            <p class="eyebrow">Navegación</p>
-            <h2 id="titulo-accesos">Accesos rápidos</h2>
+            <h2 id="titulo-utilidad">Utilidad por periodo</h2>
+            <p>Ventas registradas: precio final menos costo unitario.</p>
         </div>
-        <span class="section-caption">Módulos previstos</span>
     </div>
-
-    <div class="module-grid">
-        @foreach (var item in Modules)
-        {
-            <a class="module-card" href="@item.Href">
-                <span class="module-card-icon"><NavIcon Name="@item.Icon" /></span>
-                <span class="module-card-copy">
-                    <strong>@item.Label</strong>
-                    <small>@item.Status</small>
-                </span>
-                <svg class="module-arrow" aria-hidden="true" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="2">
-                    <path d="m9 18 6-6-6-6" />
-                </svg>
-            </a>
-        }
-    </div>
+    <form class="dashboard-period-form" @onsubmit="ConsultarUtilidadAsync" @onsubmit:preventDefault>
+        <div class="form-field">
+            <label for="dashboard-desde">Desde</label>
+            <input id="dashboard-desde" type="date" @bind="Desde" disabled="@ConsultandoUtilidad" />
+        </div>
+        <div class="form-field">
+            <label for="dashboard-hasta">Hasta</label>
+            <input id="dashboard-hasta" type="date" @bind="Hasta" disabled="@ConsultandoUtilidad" />
+        </div>
+        <button class="primary-button" type="submit" disabled="@ConsultandoUtilidad">
+            @(ConsultandoUtilidad ? "Consultando..." : "Consultar utilidad")
+        </button>
+    </form>
+    @if (!string.IsNullOrWhiteSpace(ErrorUtilidad))
+    {
+        <div class="mensaje-error dashboard-utility-error" role="alert">@ErrorUtilidad</div>
+    }
+    else if (ConsultandoUtilidad)
+    {
+        <p class="dashboard-utility-status" role="status">Calculando utilidad...</p>
+    }
+    else if (Utilidad.HasValue)
+    {
+        <div class="dashboard-utility-result" aria-live="polite">
+            <span>Utilidad del @Desde.ToString("dd/MM/yyyy") al @Hasta.ToString("dd/MM/yyyy")</span>
+            <strong>@ClientePresentacion.Moneda(Utilidad.Value)</strong>
+        </div>
+    }
 </section>
+
+@if (Dashboard is not null)
+{
+    <section class="data-panel dashboard-channel-panel" aria-labelledby="titulo-canales">
+        <div class="data-panel-heading dashboard-panel-heading">
+            <div>
+                <h2 id="titulo-canales">Ventas por canal</h2>
+                <p>Pedidos no cancelados y ventas registradas, relacionados mediante Pedido.</p>
+            </div>
+        </div>
+        <div class="desktop-table dashboard-channel-table">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Canal</th>
+                        <th scope="col" class="numeric-cell">Pedidos</th>
+                        <th scope="col" class="numeric-cell">Ventas</th>
+                        <th scope="col" class="numeric-cell">Monto</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var canal in Dashboard.Canales)
+                    {
+                        <tr>
+                            <td>@PedidoPresentacion.Canal(canal.Canal)</td>
+                            <td class="numeric-cell">@canal.CantidadPedidos</td>
+                            <td class="numeric-cell">@canal.CantidadVentas</td>
+                            <td class="numeric-cell"><span class="transaction-amount">@ClientePresentacion.Moneda(canal.MontoVentas)</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="mobile-card-list dashboard-channel-cards">
+            @foreach (var canal in Dashboard.Canales)
+            {
+                <article class="entity-card dashboard-channel-card">
+                    <div class="entity-card-heading">
+                        <h3>@PedidoPresentacion.Canal(canal.Canal)</h3>
+                        <strong class="transaction-amount">@ClientePresentacion.Moneda(canal.MontoVentas)</strong>
+                    </div>
+                    <dl class="dashboard-card-values">
+                        <div><dt>Pedidos</dt><dd>@canal.CantidadPedidos</dd></div>
+                        <div><dt>Ventas</dt><dd>@canal.CantidadVentas</dd></div>
+                    </dl>
+                </article>
+            }
+        </div>
+    </section>
+
+    <div class="dashboard-recent-grid">
+        <section class="data-panel dashboard-recent-panel" aria-labelledby="titulo-pagos-recientes">
+            <div class="data-panel-heading dashboard-panel-heading">
+                <h2 id="titulo-pagos-recientes">Últimos pagos</h2>
+                <a class="table-action" href="/pagos">Ver pagos</a>
+            </div>
+            @if (Dashboard.UltimosPagos.Count == 0)
+            {
+                <p class="compact-empty dashboard-compact-empty">Sin pagos recientes</p>
+            }
+            else
+            {
+                <div class="desktop-table">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Cliente</th>
+                                <th scope="col">Fecha</th>
+                                <th scope="col">Método</th>
+                                <th scope="col" class="numeric-cell">Monto</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var pago in Dashboard.UltimosPagos)
+                            {
+                                <tr>
+                                    <td><a class="table-action dashboard-first-action" href="/clientes/@pago.ClienteId">@pago.Cliente</a></td>
+                                    <td>@pago.Fecha.ToString("dd/MM/yyyy")</td>
+                                    <td>@PagoPresentacion.Metodo(pago.MetodoPago)</td>
+                                    <td class="numeric-cell"><span class="transaction-amount">@ClientePresentacion.Moneda(pago.Monto)</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mobile-card-list dashboard-recent-cards">
+                    @foreach (var pago in Dashboard.UltimosPagos)
+                    {
+                        <article class="entity-card dashboard-recent-card">
+                            <div class="entity-card-heading">
+                                <div>
+                                    <h3><a href="/clientes/@pago.ClienteId">@pago.Cliente</a></h3>
+                                    <p class="entity-card-subtitle">@pago.Fecha.ToString("dd/MM/yyyy") · @PagoPresentacion.Metodo(pago.MetodoPago)</p>
+                                </div>
+                                <strong class="transaction-amount">@ClientePresentacion.Moneda(pago.Monto)</strong>
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+        </section>
+
+        <section class="data-panel dashboard-recent-panel" aria-labelledby="titulo-ventas-recientes">
+            <div class="data-panel-heading dashboard-panel-heading">
+                <h2 id="titulo-ventas-recientes">Últimas ventas</h2>
+                <a class="table-action" href="/ventas">Ver historial</a>
+            </div>
+            @if (Dashboard.UltimasVentas.Count == 0)
+            {
+                <p class="compact-empty dashboard-compact-empty">Sin ventas recientes</p>
+            }
+            else
+            {
+                <div class="desktop-table">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Venta</th>
+                                <th scope="col">Cliente</th>
+                                <th scope="col">Fecha</th>
+                                <th scope="col">Canal</th>
+                                <th scope="col" class="numeric-cell">Total</th>
+                                <th scope="col" class="actions-cell"><span class="visually-hidden">Acciones</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var venta in Dashboard.UltimasVentas)
+                            {
+                                <tr>
+                                    <td><span class="code-value">@venta.CodigoInterno</span></td>
+                                    <td><a class="table-action dashboard-first-action" href="/clientes/@venta.ClienteId">@venta.Cliente</a></td>
+                                    <td>@venta.Fecha.ToString("dd/MM/yyyy")</td>
+                                    <td>@PedidoPresentacion.Canal(venta.Canal)</td>
+                                    <td class="numeric-cell"><span class="transaction-amount">@ClientePresentacion.Moneda(venta.Total)</span></td>
+                                    <td class="actions-cell"><a class="table-action" href="/ventas/@venta.Id">Ver detalle</a></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mobile-card-list dashboard-recent-cards">
+                    @foreach (var venta in Dashboard.UltimasVentas)
+                    {
+                        <article class="entity-card dashboard-recent-card">
+                            <div class="entity-card-heading">
+                                <div>
+                                    <h3 class="code-value">@venta.CodigoInterno</h3>
+                                    <p class="entity-card-subtitle">@venta.Fecha.ToString("dd/MM/yyyy") · @PedidoPresentacion.Canal(venta.Canal)</p>
+                                </div>
+                                <strong class="transaction-amount">@ClientePresentacion.Moneda(venta.Total)</strong>
+                            </div>
+                            <a class="dashboard-customer-link" href="/clientes/@venta.ClienteId">@venta.Cliente</a>
+                            <div class="entity-card-actions">
+                                <a class="secondary-button" href="/ventas/@venta.Id">Ver detalle</a>
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+        </section>
+    </div>
+}
 
 @code {
-    private static readonly ModuleLink[] Modules =
-    [
-        new("/clientes", "Clientes", "users", "Disponible"),
-        new("/productos", "Productos", "tag"),
-        new("/inventario", "Inventario", "boxes"),
-        new("/pedidos", "Pedidos", "clipboard"),
-        new("/ventas", "Ventas", "cart"),
-        new("/pagos", "Pagos", "wallet"),
-        new("/compras", "Compras", "bag", "Disponible"),
-        new("/proveedores", "Proveedores", "truck", "Disponible"),
-        new("/categorias", "Categorías", "grid")
-    ];
+    private const int CantidadRecientes = 5;
 
-    private sealed record ModuleLink(string Href, string Label, string Icon, string Status = "Próximamente");
+    private DashboardDto? Dashboard { get; set; }
+    private DateOnly Desde { get; set; }
+    private DateOnly Hasta { get; set; }
+    private decimal? Utilidad { get; set; }
+    private bool CargandoDashboard { get; set; }
+    private bool ConsultandoUtilidad { get; set; }
+    private string? ErrorDashboard { get; set; }
+    private string? ErrorUtilidad { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var hoy = DateOnly.FromDateTime(TimeProvider.GetLocalNow().DateTime);
+        Desde = new DateOnly(hoy.Year, hoy.Month, 1);
+        Hasta = hoy;
+
+        await CargarDashboardAsync();
+        await ConsultarUtilidadAsync();
+    }
+
+    private async Task CargarDashboardAsync()
+    {
+        if (CargandoDashboard)
+            return;
+
+        CargandoDashboard = true;
+        ErrorDashboard = null;
+        try
+        {
+            Dashboard = await DashboardService.ObtenerAsync(CantidadRecientes);
+        }
+        catch (Exception ex)
+        {
+            Dashboard = null;
+            ErrorDashboard = "Ocurrió un error al consultar los indicadores. Intenta nuevamente.";
+            Logger.LogError(ex, "No fue posible cargar el Dashboard.");
+        }
+        finally
+        {
+            CargandoDashboard = false;
+        }
+    }
+
+    private async Task ConsultarUtilidadAsync()
+    {
+        if (ConsultandoUtilidad)
+            return;
+
+        ConsultandoUtilidad = true;
+        ErrorUtilidad = null;
+        Utilidad = null;
+        try
+        {
+            var resultado = await DashboardService.ObtenerUtilidadAsync(Desde, Hasta);
+            if (!resultado.IsSuccess)
+            {
+                ErrorUtilidad = resultado.ErrorMessage;
+                return;
+            }
+
+            Utilidad = resultado.Value;
+        }
+        catch (Exception ex)
+        {
+            ErrorUtilidad = "Ocurrió un error al consultar la utilidad. Intenta nuevamente.";
+            Logger.LogError(ex, "No fue posible consultar la utilidad del Dashboard.");
+        }
+        finally
+        {
+            ConsultandoUtilidad = false;
+        }
+    }
 }

@@ -176,19 +176,21 @@
 
 ---
 
-## Dashboard
+## Fase 5.9: Dashboard
 
-- [ ] Total adeudado
-
-- [ ] Inventario
-
-- [ ] Productos apartados
-
-- [ ] Últimos pagos
-
-- [ ] Ventas registradas por canal
-
-- [ ] Cantidad de pedidos por canal
+- [x] Reemplazar el placeholder de `/` por un Dashboard privado con información real.
+- [x] Mostrar total adeudado como ventas `Registrada` menos pagos, sin ocultar saldos negativos inconsistentes.
+- [x] Mostrar valor y cantidad de inventario usando exclusivamente unidades `Disponible` y su costo real.
+- [x] Definir pedidos activos como `Pendiente + Confirmado`, excluyendo `Cancelado` y `Completado`.
+- [x] Mostrar últimos pagos por fecha descendente e Id descendente, respetando el límite solicitado.
+- [x] Mostrar últimas ventas únicamente `Registrada`, por fecha descendente e Id descendente, con canal obtenido desde `Pedido`.
+- [x] Mostrar los cinco valores de `CanalVenta`, incluso en cero.
+- [x] Contar pedidos por canal en todos los estados excepto `Cancelado`.
+- [x] Contar y sumar ventas por canal únicamente para ventas `Registrada`, usando `DetalleVenta.PrecioFinal`.
+- [x] Consultar utilidad por rango inclusivo con `PrecioFinal - CostoUnitario`, sin usar precio sugerido, pagos ni flujo de caja.
+- [x] Mantener consultas y reglas en Infrastructure, sin usar `DbContext` ni agregaciones de negocio en Blazor.
+- [x] Separar el error general del Dashboard del error de utilidad y ofrecer reintento controlado.
+- [x] Presentar tablas de escritorio y cards móviles sin gráficas, tendencias o porcentajes ficticios.
 
 ## Fase 5.8: compras, proveedores y comprobantes
 
