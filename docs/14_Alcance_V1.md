@@ -40,7 +40,15 @@ sin captura de la usuaria; toda venta conserva un `PedidoId` y no existe venta s
 
 ✅ Cancelación protegida de ventas antes de entrega.
 
-✅ Consulta backend de utilidad por periodo; la pantalla Dashboard permanece pendiente.
+✅ Dashboard de negocio real en `/`, protegido por autenticación, con total adeudado, valor y unidades
+de inventario disponible, pedidos activos, utilidad por periodo, métricas tipadas por canal, últimos
+pagos y últimas ventas.
+
+Las definiciones V1 del Dashboard son explícitas: deuda = ventas `Registrada` menos pagos; inventario
+disponible = suma de `UnidadInventario.Costo` y conteo donde el estado es `Disponible`; pedidos activos
+= `Pendiente + Confirmado`; ventas recientes = solo `Registrada`; pedidos por canal = todos excepto
+`Cancelado`; ventas y monto por canal = solo `Registrada`, con monto de `DetalleVenta.PrecioFinal`.
+La utilidad usa `DetalleVenta.PrecioFinal - DetalleVenta.CostoUnitario` en un rango inclusivo.
 
 ✅ `Producto.PrecioSugerido` como referencia editable al vender.
 
@@ -52,7 +60,7 @@ sin captura de la usuaria; toda venta conserva un `PedidoId` y no existe venta s
 
 ✅ Shell visual responsive con sidebar, topbar, drawer móvil y área principal de contenido.
 
-✅ Navegación base implementada para los módulos previstos, con páginas placeholder claramente identificadas.
+✅ Navegación base implementada para los módulos de V1, con Dashboard real como página principal.
 
 ✅ Módulo Blazor de clientes implementado en Fase 5.3: listado, búsqueda, registro, edición,
 detalle, consulta del saldo calculado por el backend e historial de ventas y pagos/abonos,
@@ -103,9 +111,6 @@ si el escenario multiusuario lo requiere; V1 conserva explícitamente las dos op
 
 🟡 Eliminación o desactivación segura de clientes, productos y categorías, pendiente de reglas
 que preserven relaciones e historial.
-
-🟡 Dashboard de negocio con información real, incluyendo como posibles mejoras ventas registradas
-por canal y cantidad de pedidos por canal.
 
 ## Pendiente de información del negocio
 

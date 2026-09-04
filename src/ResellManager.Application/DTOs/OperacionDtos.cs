@@ -109,11 +109,29 @@ public sealed record ClienteHistorialDto(
     IReadOnlyCollection<PagoDto> Pagos
 );
 
+public sealed record ResumenCanalVentaDto(
+    CanalVenta Canal,
+    int CantidadPedidos,
+    int CantidadVentas,
+    decimal MontoVentas
+);
+
+public sealed record VentaRecienteDashboardDto(
+    int Id,
+    string CodigoInterno,
+    DateOnly Fecha,
+    int ClienteId,
+    string Cliente,
+    decimal Total,
+    CanalVenta Canal
+);
+
 public sealed record DashboardDto(
     decimal TotalAdeudado,
     decimal ValorInventarioDisponible,
     int UnidadesDisponibles,
-    int PedidosPendientes,
+    int PedidosActivos,
     IReadOnlyCollection<PagoDto> UltimosPagos,
-    IReadOnlyCollection<VentaDto> UltimasVentas
+    IReadOnlyCollection<VentaRecienteDashboardDto> UltimasVentas,
+    IReadOnlyCollection<ResumenCanalVentaDto> Canales
 );

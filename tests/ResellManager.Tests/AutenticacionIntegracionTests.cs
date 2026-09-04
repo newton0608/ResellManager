@@ -226,6 +226,93 @@ public sealed class AutenticacionIntegracionTests(AplicacionAutenticacionFactory
     }
 
     [Fact]
+    public async Task InicioAutenticado_RenderizaDashboardConDatosReales()
+    {
+        var sufijo = Guid.NewGuid().ToString("N")[..8];
+        var codigoVenta = $"VEN-DASH-{sufijo}";
+        var nombreCliente = $"Cliente Dashboard {sufijo}";
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ResellManagerDbContext>();
+            var categoria = new Categoria { Nombre = $"Categoría Dashboard {sufijo}" };
+            var cliente = new Cliente { Nombres = nombreCliente, Telefono = "555-5900" };
+            var producto = new Producto
+            {
+                CodigoInterno = $"PROD-DASH-{sufijo}",
+                Nombre = $"Producto Dashboard {sufijo}",
+                PrecioSugerido = 400m,
+                Categoria = categoria,
+            };
+            db.AddRange(categoria, cliente, producto);
+            await db.SaveChangesAsync();
+
+            var pedido = new Pedido
+            {
+                CodigoInterno = $"PED-DASH-{sufijo}",
+                Fecha = new DateOnly(2099, 12, 30),
+                TipoPedido = TipoPedido.Catalogo,
+                CanalVenta = CanalVenta.Facebook,
+                Estado = EstadoPedido.Pendiente,
+                ClienteId = cliente.Id,
+                Detalles =
+                [
+                    new DetallePedido
+                    {
+                        ProductoId = producto.Id,
+                        Cantidad = 1,
+                        PrecioUnitario = 321.45m,
+                    },
+                ],
+            };
+            db.Pedidos.Add(pedido);
+            await db.SaveChangesAsync();
+
+            var venta = await new VentaService(db).RegistrarDesdePedidoAsync(
+                new VentaInput(
+                    pedido.Id,
+                    codigoVenta,
+                    new DateOnly(2099, 12, 31),
+                    null,
+                    [new DetalleVentaInput(null, producto.Id, 111.11m, 321.45m, null)]
+                )
+            );
+            Assert.True(venta.IsSuccess, venta.ErrorMessage);
+
+            var pago = await new PagoService(db).RegistrarAsync(
+                new PagoInput(
+                    cliente.Id,
+                    new DateOnly(2099, 12, 31),
+                    21.45m,
+                    MetodoPago.Efectivo,
+                    null,
+                    null
+                )
+            );
+            Assert.True(pago.IsSuccess, pago.ErrorMessage);
+        }
+
+        using var clienteHttp = CrearCliente();
+        await IniciarSesionAsync(clienteHttp, AplicacionAutenticacionFactory.ContrasenaValida);
+
+        var respuesta = await clienteHttp.GetAsync("/");
+        var contenido = WebUtility.HtmlDecode(await respuesta.Content.ReadAsStringAsync());
+
+        Assert.Equal(HttpStatusCode.OK, respuesta.StatusCode);
+        Assert.Contains("Resumen del negocio", contenido);
+        Assert.Contains(codigoVenta, contenido);
+        Assert.Contains(nombreCliente, contenido);
+        Assert.Contains("Q 321.45", contenido);
+        Assert.Contains("Q 21.45", contenido);
+        Assert.Contains("Efectivo", contenido);
+        Assert.Contains("Facebook", contenido);
+        Assert.Contains("Presencial", contenido);
+        Assert.Contains("WhatsApp", contenido);
+        Assert.Contains("Web", contenido);
+        Assert.Contains("Otro", contenido);
+        Assert.DoesNotContain("Panel en preparación", contenido);
+    }
+
+    [Fact]
     public async Task InventarioAutenticado_RenderizaUnidadYSeparaEstadoDeReserva()
     {
         var sufijo = Guid.NewGuid().ToString("N")[..8];

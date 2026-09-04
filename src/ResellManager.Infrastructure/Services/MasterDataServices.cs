@@ -213,19 +213,7 @@ public sealed class ClienteService(ResellManagerDbContext db) : IClienteService
     }
 
     private async Task<decimal> SaldoAsync(int id, CancellationToken ct)
-    {
-        var ventas = await db
-            .DetallesVenta.AsNoTracking()
-            .Where(x => x.Venta.Estado == EstadoVenta.Registrada && x.Venta.Pedido.ClienteId == id)
-            .Select(x => x.PrecioFinal)
-            .ToListAsync(ct);
-        var pagos = await db
-            .Pagos.AsNoTracking()
-            .Where(x => x.ClienteId == id)
-            .Select(x => x.Monto)
-            .ToListAsync(ct);
-        return ventas.Sum() - pagos.Sum();
-    }
+        => await SaldoConsultas.CalcularAsync(db, id, ct);
 
     private static ClienteDto Map(Cliente x, decimal saldo) =>
         new(x.Id, x.Nombres, x.Apellidos, x.Telefono, x.Direccion, x.Observaciones, saldo);
