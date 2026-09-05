@@ -1,9 +1,12 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.Extensions.Options;
 using ResellManager.Application.Interfaces;
 using ResellManager.Infrastructure;
 using ResellManager.Infrastructure.Storage;
 using ResellManager.Web.Components;
 using ResellManager.Web.Identity;
+using ResellManager.Web.Inicializacion;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,15 +23,29 @@ builder.Services.AddSingleton(TimeProvider.System);
 
 builder.Services.AddSingleton<IEmailSender<IdentityUser>, NoOpEmailSender>();
 
-var directorioConfigurado =
-    builder.Configuration[$"{AlmacenamientoComprobantesOptions.Seccion}:DirectorioBase"]
-    ?? "App_Data";
-var directorioComprobantes = Path.IsPathRooted(directorioConfigurado)
-    ? Path.GetFullPath(directorioConfigurado)
-    : Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, directorioConfigurado));
-builder.Services.Configure<AlmacenamientoComprobantesOptions>(options =>
-    options.DirectorioBase = directorioComprobantes
-);
+builder.Services.AddOptions<AlmacenamientoComprobantesOptions>()
+    .Configure<IConfiguration, IWebHostEnvironment>((options, configuracion, entorno) =>
+    {
+        var directorioConfigurado =
+            configuracion[$"{AlmacenamientoComprobantesOptions.Seccion}:DirectorioBase"] ?? "App_Data";
+        var directorioComprobantes = Path.IsPathRooted(directorioConfigurado)
+            ? Path.GetFullPath(directorioConfigurado)
+            : Path.GetFullPath(Path.Combine(entorno.ContentRootPath, directorioConfigurado));
+        var directorioPublico = Path.GetFullPath(entorno.WebRootPath
+            ?? Path.Combine(entorno.ContentRootPath, "wwwroot"));
+        var comparacionRutas = OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+        if (directorioComprobantes.Equals(directorioPublico, comparacionRutas)
+            || directorioComprobantes.StartsWith(
+                Path.TrimEndingDirectorySeparator(directorioPublico) + Path.DirectorySeparatorChar,
+                comparacionRutas))
+        {
+            throw new InvalidOperationException("El almacenamiento de comprobantes debe estar fuera de wwwroot.");
+        }
+
+        options.DirectorioBase = directorioComprobantes;
+    });
 
 builder.Services.AddInfrastructure(builder.Configuration);
 
@@ -45,6 +62,9 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 var app = builder.Build();
 
+// Validar la configuración definitiva del host antes de abrir SQLite o crear usuarios.
+_ = app.Services.GetRequiredService<IOptions<AlmacenamientoComprobantesOptions>>().Value;
+await app.InicializarBaseDatosAsync();
 await app.CrearUsuarioInicialSiEstaConfiguradoAsync();
 
 if (!app.Environment.IsDevelopment())
@@ -55,6 +75,20 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+app.UseStatusCodePagesWithReExecute("/no-encontrado");
+app.Use(async (contexto, siguiente) =>
+{
+    await siguiente();
+    // La página de navegación no sustituye errores de formularios ni otros estados HTTP.
+    if (contexto.Response.StatusCode != StatusCodes.Status404NotFound
+        || !(HttpMethods.IsGet(contexto.Request.Method) || HttpMethods.IsHead(contexto.Request.Method)))
+    {
+        var paginasEstado = contexto.Features.Get<IStatusCodePagesFeature>();
+        if (paginasEstado is not null)
+            paginasEstado.Enabled = false;
+    }
+});
+app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();

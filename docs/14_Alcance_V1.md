@@ -22,6 +22,8 @@
 
 ✅ Pedidos.
 
+✅ Pedido normal con código automático `PED-<GUID>` y Venta desde pedido con `VEN-<GUID>`, estables durante los reintentos del formulario. `Producto.CodigoInterno` se conserva manual como referencia comercial y de búsqueda.
+
 ✅ `CanalVenta` requerido en `Pedido`, separado de `TipoPedido`, visible en creación, listado y
 detalle. No se duplica en `Venta`; los pedidos históricos se migran a `Otro` y Venta Directa usa
 `Presencial` automáticamente.
@@ -104,8 +106,6 @@ Los archivos se validan hasta 10 MB, se almacenan fuera de SQLite con ruta relat
 
 🟡 Endurecimiento V2 de concurrencia para saldo global por cliente en ventas, pagos/abonos y cancelaciones.
 
-🟡 Revisión general de códigos internos que todavía se capturan manualmente en otros módulos.
-
 🟡 Evaluar en V2 una orquestación transaccional atómica para la creación conjunta de `Pedido` y `Venta`
 si el escenario multiusuario lo requiere; V1 conserva explícitamente las dos operaciones actuales.
 
@@ -132,6 +132,18 @@ que preserven relaciones e historial.
 
 ❌ Multiusuario avanzado.
 
+❌ Roles/permisos y administración de usuarios.
+
+❌ PostgreSQL, despliegue productivo y CI/CD complejo en esta fase de cierre.
+
+❌ Exportación y notificaciones.
+
 ❌ Funcionamiento offline.
 
 ❌ Devoluciones y cambios de unidades ya entregadas; requieren un flujo específico futuro.
+
+## Cierre técnico de Fase 5.10
+
+Apartados se resuelven con Pedido + Reserva, no con otro módulo. Se corrigen presentación, navegación, códigos técnicos, errores de selección, IDs inválidos y doble submit sin cambiar las reglas existentes. Las migraciones de arranque son independientes del usuario inicial y el almacenamiento de comprobantes se valida fuera de `wwwroot`.
+
+La evidencia de pruebas, las rutas definitivas y cualquier validación visual pendiente están en [Fase 5.10 — Cierre V1](18_Fase510_CierreV1.md). El cierre técnico no equivale a despliegue productivo ni a validación multiusuario concurrente.

@@ -30,7 +30,6 @@ body {
   margin: 0;
   min-height: 100%;
   max-width: 100%;
-  overflow-x: hidden;
 }
 
 body {
@@ -39,7 +38,9 @@ body {
 }
 
 button,
-input {
+input,
+select,
+textarea {
   font: inherit;
 }
 
@@ -1043,7 +1044,61 @@ h2 {
 }
 
 .desktop-table {
+  overflow-x: auto;
   width: 100%;
+}
+
+/* Contenido variable: los códigos y nombres no deben ensanchar el viewport. */
+.page-heading > *,
+.entity-card-heading > *,
+.order-detail-heading > *,
+.reservation-card > *,
+.timeline-heading > *,
+.data-panel-heading > *,
+.form-actions > *,
+.info-card,
+.entity-card,
+.order-detail-item,
+.sale-line-editor {
+  min-width: 0;
+  max-width: 100%;
+}
+
+h3,
+strong,
+dd,
+.code-value,
+.table-secondary,
+.contact-link,
+.table-action {
+  overflow-wrap: anywhere;
+}
+
+.data-table td {
+  overflow-wrap: anywhere;
+}
+
+input,
+select,
+textarea {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.primary-button,
+.secondary-button,
+.danger-button {
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+}
+
+.table-action,
+.button-link,
+.inline-button {
+  align-items: center;
+  display: inline-flex;
+  min-height: 2.75rem;
 }
 
 .data-table {
@@ -1399,7 +1454,7 @@ h2 {
   }
 }
 
-@media (max-width: 47.99rem) {
+@media (max-width: 64rem) {
   .app-shell {
     display: block;
   }
@@ -1807,7 +1862,7 @@ h2 {
   }
 }
 
-@media (max-width: 47.99rem) {
+@media (max-width: 64rem) {
   .page-heading,
   .detail-heading {
     display: grid;
@@ -2661,6 +2716,18 @@ h2 {
 
   .payment-layout {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sale-line-grid,
+  .sale-origin-summary,
+  .order-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sale-mode-selector,
+  .direct-sale-intro,
+  .direct-sale-partial-warning {
+    flex-wrap: wrap;
   }
 }
 

@@ -46,7 +46,7 @@ else
 
 @code {
     [Parameter]
-    public int Id { get; set; }
+    public int? Id { get; set; }
 
     private ClienteFormModel Modelo { get; set; } = new();
     private bool Guardando { get; set; }
@@ -55,18 +55,18 @@ else
     private string? ErrorGuardado { get; set; }
     private int? IdCargado { get; set; }
 
-    private bool EsEdicion => Id > 0;
-    private string CancelarHref => EsEdicion ? $"/clientes/{Id}" : "/clientes";
+    private bool EsEdicion => Id.HasValue;
+    private string CancelarHref => Id > 0 ? $"/clientes/{Id}" : "/clientes";
 
     protected override async Task OnParametersSetAsync()
     {
         if (!EsEdicion)
         {
-            if (IdCargado != 0)
-            {
-                Modelo = new ClienteFormModel();
-                IdCargado = 0;
-            }
+            ErrorCarga = null;
+            ErrorGuardado = null;
+            Cargando = false;
+            Modelo = new ClienteFormModel();
+            IdCargado = null;
 
             return;
         }
@@ -84,7 +84,7 @@ else
 
         try
         {
-            var resultado = await ClienteService.ObtenerPorIdAsync(Id);
+            var resultado = await ClienteService.ObtenerPorIdAsync(Id.GetValueOrDefault());
             if (!resultado.IsSuccess || resultado.Value is null)
             {
                 ErrorCarga = resultado.ErrorMessage ?? "Cliente no encontrado.";
@@ -107,7 +107,7 @@ else
 
     private async Task GuardarAsync(ClienteFormModel modelo)
     {
-        if (Guardando)
+        if (Guardando || Id is <= 0 || ErrorCarga is not null)
         {
             return;
         }
@@ -118,7 +118,7 @@ else
         try
         {
             var resultado = EsEdicion
-                ? await ClienteService.EditarAsync(Id, modelo.ToInput())
+                ? await ClienteService.EditarAsync(Id!.Value, modelo.ToInput())
                 : await ClienteService.CrearAsync(modelo.ToInput());
 
             if (!resultado.IsSuccess)

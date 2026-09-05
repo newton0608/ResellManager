@@ -83,6 +83,7 @@ else
                         <label for="venta-directa-cliente">Cliente <span aria-hidden="true">*</span></label>
                         <InputSelect id="venta-directa-cliente"
                                      @bind-Value="Modelo.ClienteId"
+                                     aria-required="true" aria-describedby="venta-directa-cliente-error"
                                      disabled="@(Registrando || PedidoAutomaticoCreado is not null)">
                             <option value="0">Selecciona un cliente</option>
                             @foreach (var cliente in Clientes)
@@ -90,7 +91,7 @@ else
                                 <option value="@cliente.Id">@ClientePresentacion.NombreCompleto(cliente)</option>
                             }
                         </InputSelect>
-                        <ValidationMessage For="() => Modelo.ClienteId" />
+                        <ValidationMessage id="venta-directa-cliente-error" For="() => Modelo.ClienteId" />
                     </div>
                     <div class="form-field">
                         <label for="venta-directa-fecha">Fecha <span aria-hidden="true">*</span></label>
@@ -100,9 +101,9 @@ else
                         <label for="venta-directa-observaciones">Observaciones</label>
                         <InputTextArea id="venta-directa-observaciones"
                                        @bind-Value="Modelo.Observaciones"
-                                       rows="3"
+                                       rows="3" maxlength="500" aria-describedby="venta-directa-observaciones-error"
                                        disabled="@(Registrando || PedidoAutomaticoCreado is not null)" />
-                        <ValidationMessage For="() => Modelo.Observaciones" />
+                        <ValidationMessage id="venta-directa-observaciones-error" For="() => Modelo.Observaciones" />
                     </div>
                 </div>
             </section>
@@ -225,7 +226,11 @@ else
 }
 
 @code {
+    [Parameter]
+    public EventCallback<bool> OcupadoChanged { get; set; }
+
     private VentaDirectaFormModel Modelo { get; } = new();
+    private string CodigoPedidoDirecto { get; } = VentaPresentacion.CrearCodigoPedidoVentaDirecta();
     private string CodigoVentaDirecta { get; } = VentaPresentacion.CrearCodigoVentaDirecta();
     private IReadOnlyList<ClienteDto> Clientes { get; set; } = [];
     private List<UnidadVentaDirectaFormModel> Unidades { get; set; } = [];
@@ -246,14 +251,12 @@ else
         ErrorCarga = null;
         try
         {
-            var clientesTask = ClienteService.ListarAsync();
-            var inventarioTask = InventarioService.ListarDisponiblesAsync();
-            var productosTask = ProductoService.ListarAsync();
-            await Task.WhenAll(clientesTask, inventarioTask, productosTask);
-
-            Clientes = await clientesTask;
-            var productos = (await productosTask).ToDictionary(x => x.Id);
-            Unidades = (await inventarioTask)
+            await OcupadoChanged.InvokeAsync(true);
+            // Las consultas comparten la sesión de datos del circuito.
+            Clientes = await ClienteService.ListarAsync();
+            var inventario = await InventarioService.ListarDisponiblesAsync();
+            var productos = (await ProductoService.ListarAsync()).ToDictionary(x => x.Id);
+            Unidades = inventario
                 .Where(VentaPresentacion.EsUnidadElegibleVentaDirecta)
                 .OrderBy(x => x.Producto)
                 .ThenBy(x => x.CodigoInterno)
@@ -274,11 +277,15 @@ else
         finally
         {
             Cargando = false;
+            await OcupadoChanged.InvokeAsync(false);
         }
     }
 
-    private static void CambiarSeleccion(UnidadVentaDirectaFormModel detalle, object? valor) =>
-        detalle.Seleccionada = valor is bool seleccionado && seleccionado;
+    private void CambiarSeleccion(UnidadVentaDirectaFormModel detalle, object? valor)
+    {
+        if (!Registrando && PedidoAutomaticoCreado is null)
+            detalle.Seleccionada = valor is bool seleccionado && seleccionado;
+    }
 
     private async Task RegistrarVentaDirectaAsync()
     {
@@ -293,13 +300,14 @@ else
         Registrando = true;
         try
         {
+            await OcupadoChanged.InvokeAsync(true);
             if (PedidoAutomaticoCreado is null)
             {
                 if (!await SiguenElegiblesAsync(seleccionadas))
                     return;
 
                 var pedidoInput = new PedidoInput(
-                    VentaPresentacion.CrearCodigoPedidoVentaDirecta(),
+                    CodigoPedidoDirecto,
                     Modelo.Fecha,
                     TipoPedido.VentaDirecta,
                     CanalVenta.Presencial,
@@ -346,6 +354,7 @@ else
         finally
         {
             Registrando = false;
+            await OcupadoChanged.InvokeAsync(false);
         }
     }
 
@@ -382,5 +391,5 @@ else
     private string ConstruirObservacionesPedido() =>
         string.IsNullOrWhiteSpace(Modelo.Observaciones)
             ? "Pedido generado automáticamente desde una venta directa presencial."
-            : $"Pedido generado automáticamente desde una venta directa presencial. {Modelo.Observaciones.Trim()}";
+            : Modelo.Observaciones.Trim();
 }

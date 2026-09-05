@@ -300,8 +300,7 @@ public sealed class PedidoModuloTests
 public sealed class PedidosUiNoParalelaCollection;
 
 [Collection("Pedidos UI no paralela")]
-public sealed class PedidosUiIntegracionTests(AplicacionAutenticacionFactory factory)
-    : IClassFixture<AplicacionAutenticacionFactory>
+public sealed class PedidosUiIntegracionTests : PruebaWebAislada
 {
     [Fact]
     public async Task RutasPedidos_EstanProtegidas()

@@ -1,6 +1,4 @@
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using ResellManager.Infrastructure.Persistence;
 
 namespace ResellManager.Web.Identity;
 
@@ -26,9 +24,6 @@ public static class InicializadorUsuarioIdentity
         }
 
         await using var scope = app.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<ResellManagerDbContext>();
-        await db.Database.MigrateAsync();
-
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
         if (await userManager.FindByEmailAsync(correo) is not null)
         {

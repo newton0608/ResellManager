@@ -10,7 +10,7 @@ public static class VentaPresentacion
     {
         EstadoVenta.Registrada => "Registrada",
         EstadoVenta.Cancelada => "Cancelada",
-        _ => estado.ToString(),
+        _ => "Estado desconocido",
     };
 
     public static string ClaseEstado(EstadoVenta estado) => estado switch

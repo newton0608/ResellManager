@@ -79,8 +79,7 @@ public sealed class ClienteServicioModuloTests
     }
 }
 
-public sealed class ClienteModuloIntegracionTests(AplicacionAutenticacionFactory factory)
-    : IClassFixture<AplicacionAutenticacionFactory>
+public sealed class ClienteModuloIntegracionTests : PruebaWebAislada
 {
     [Theory]
     [InlineData("/clientes")]

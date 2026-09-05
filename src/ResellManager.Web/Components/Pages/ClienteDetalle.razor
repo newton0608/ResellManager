@@ -43,7 +43,7 @@ else
         <article class="info-card balance-card">
             <p class="info-label">Saldo actual</p>
             <p class="balance-hero">@ClientePresentacion.Moneda(SaldoActual.Value)</p>
-            <p class="info-help">Calculado por el servicio de clientes.</p>
+            <p class="info-help">Total pendiente después de ventas y pagos.</p>
         </article>
 
         <article class="info-card">
@@ -101,11 +101,11 @@ else
                                 <article class="timeline-item">
                                     <div class="timeline-heading">
                                         <div>
-                                            <strong>@venta.CodigoInterno</strong>
+                                            <a class="contact-link code-value" href="/ventas/@venta.Id">@venta.CodigoInterno</a>
                                             <time datetime="@venta.Fecha.ToString("yyyy-MM-dd")">@venta.Fecha.ToString("dd/MM/yyyy")</time>
                                         </div>
-                                        <span class="status-badge @(venta.Estado == EstadoVenta.Registrada ? "status-badge-success" : "status-badge-neutral")">
-                                            @venta.Estado
+                                        <span class="status-badge @VentaPresentacion.ClaseEstado(venta.Estado)">
+                                            @VentaPresentacion.Estado(venta.Estado)
                                         </span>
                                     </div>
                                     <p class="transaction-amount">@ClientePresentacion.Moneda(venta.Total)</p>
@@ -146,10 +146,10 @@ else
                                 <article class="timeline-item payment-item">
                                     <div class="timeline-heading">
                                         <div>
-                                            <strong>Pago #@pago.Id</strong>
+                                            <strong>Pago recibido</strong>
                                             <time datetime="@pago.Fecha.ToString("yyyy-MM-dd")">@pago.Fecha.ToString("dd/MM/yyyy")</time>
                                         </div>
-                                        <span class="status-badge status-badge-payment">@pago.MetodoPago</span>
+                                        <span class="status-badge status-badge-payment">@PagoPresentacion.Metodo(pago.MetodoPago)</span>
                                     </div>
                                     <p class="transaction-amount payment-amount">@ClientePresentacion.Moneda(pago.Monto)</p>
                                     @if (!string.IsNullOrWhiteSpace(pago.Referencia))

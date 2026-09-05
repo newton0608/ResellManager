@@ -80,7 +80,6 @@ public sealed class CanalVentaTests
     {
         var modelo = new PedidoFormModel
         {
-            CodigoInterno = "PED-FORM-CANAL",
             Fecha = new DateOnly(2026, 8, 31),
             TipoPedido = TipoPedido.Catalogo,
             CanalVenta = CanalVenta.Facebook,
@@ -89,7 +88,7 @@ public sealed class CanalVentaTests
         modelo.Detalles.Single().ProductoId = 11;
         modelo.Detalles.Single().PrecioUnitario = 125m;
 
-        var input = modelo.ToInput();
+        var input = modelo.ToInput("PED-FORM-CANAL");
 
         Assert.Equal(TipoPedido.Catalogo, input.TipoPedido);
         Assert.Equal(CanalVenta.Facebook, input.CanalVenta);

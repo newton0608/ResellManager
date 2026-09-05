@@ -48,7 +48,7 @@ else
 
 @code {
     [Parameter]
-    public int Id { get; set; }
+    public int? Id { get; set; }
 
     private ProductoFormModel Modelo { get; set; } = new();
     private IReadOnlyList<CategoriaDto> CategoriasDisponibles { get; set; } = [];
@@ -58,13 +58,12 @@ else
     private string? ErrorGuardado { get; set; }
     private int? IdCargado { get; set; }
 
-    private bool EsEdicion => Id > 0;
-    private string CancelarHref => EsEdicion ? $"/productos/{Id}" : "/productos";
+    private bool EsEdicion => Id.HasValue;
+    private string CancelarHref => Id > 0 ? $"/productos/{Id}" : "/productos";
 
     protected override async Task OnParametersSetAsync()
     {
-        var idEsperado = EsEdicion ? Id : 0;
-        if (IdCargado != idEsperado)
+        if (!EsEdicion || IdCargado != Id)
         {
             await CargarAsync();
         }
@@ -82,7 +81,7 @@ else
 
             if (EsEdicion)
             {
-                var resultado = await ProductoService.ObtenerPorIdAsync(Id);
+                var resultado = await ProductoService.ObtenerPorIdAsync(Id!.Value);
                 if (!resultado.IsSuccess || resultado.Value is null)
                 {
                     ErrorCarga = resultado.ErrorMessage ?? "Producto no encontrado.";
@@ -96,7 +95,7 @@ else
                 Modelo = new ProductoFormModel();
             }
 
-            IdCargado = EsEdicion ? Id : 0;
+            IdCargado = Id;
         }
         catch (Exception ex)
         {
@@ -114,7 +113,7 @@ else
 
     private async Task GuardarAsync(ProductoFormModel modelo)
     {
-        if (Guardando)
+        if (Guardando || Id is <= 0 || ErrorCarga is not null)
         {
             return;
         }
@@ -131,7 +130,7 @@ else
         try
         {
             var resultado = EsEdicion
-                ? await ProductoService.EditarAsync(Id, modelo.ToInput())
+                ? await ProductoService.EditarAsync(Id!.Value, modelo.ToInput())
                 : await ProductoService.CrearAsync(modelo.ToInput());
 
             if (!resultado.IsSuccess)

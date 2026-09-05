@@ -11,6 +11,6 @@ public static class PagoPresentacion
         MetodoPago.Deposito => "Depósito",
         MetodoPago.Tarjeta => "Tarjeta",
         MetodoPago.Otro => "Otro",
-        _ => metodo.ToString(),
+        _ => "Método no disponible",
     };
 }

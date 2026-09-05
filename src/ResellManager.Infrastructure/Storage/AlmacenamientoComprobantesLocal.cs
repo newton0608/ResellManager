@@ -89,9 +89,8 @@ public sealed class AlmacenamientoComprobantesLocal : IAlmacenamientoComprobante
         {
             logger.LogError(
                 ex,
-                "No fue posible preparar el comprobante {NombreOriginal} ({ContentType}).",
-                Path.GetFileName(archivo.NombreOriginal),
-                archivo.ContentType
+                "No fue posible preparar el comprobante de la operación {IdOperacion}.",
+                idOperacion
             );
             return ServiceResult<ComprobantePreparadoDto>.Failure(
                 "No fue posible procesar el comprobante. Verifica el archivo e intenta nuevamente."

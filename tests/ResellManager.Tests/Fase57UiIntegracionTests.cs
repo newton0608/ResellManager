@@ -16,8 +16,7 @@ public sealed class IntegracionWebCollection { }
 
 [Collection("Integración web")]
 
-public sealed class Fase57UiIntegracionTests(AplicacionAutenticacionFactory factory)
-    : IClassFixture<AplicacionAutenticacionFactory>
+public sealed class Fase57UiIntegracionTests : PruebaWebAislada
 {
     [Fact]
     public async Task RutasVentasYPagos_EstanProtegidasGlobalmente()
@@ -148,7 +147,7 @@ public sealed class Fase57UiIntegracionTests(AplicacionAutenticacionFactory fact
         var contenido = WebUtility.HtmlDecode(await respuesta.Content.ReadAsStringAsync());
 
         Assert.Equal(HttpStatusCode.OK, respuesta.StatusCode);
-        Assert.Contains("Saldo actual provisto por el sistema", contenido);
+        Assert.Contains("Saldo actual", contenido);
         Assert.Contains("Q 100.00", contenido);
         Assert.Contains("Efectivo", contenido);
         Assert.Contains("Transferencia", contenido);

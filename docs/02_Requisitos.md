@@ -48,4 +48,4 @@
 - La información debe persistir aunque se cierre la aplicación.
 - Debe adaptarse a diferentes tamaños de pantalla.
 - Debe permitir respaldar la información.
-- Debe proteger los datos mediante autenticación; la implementación completa de acceso se realizará en la Fase 5.
+- Debe proteger los datos mediante autenticación; implementado con Identity desde Fase 5.1, sin autorregistro público.
