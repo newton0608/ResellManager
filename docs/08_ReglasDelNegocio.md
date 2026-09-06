@@ -91,7 +91,7 @@
 
 ## Fuera del flujo V1 actual
 
-- La autenticación completa se implementará en la Fase 5.
+- La autenticación está implementada desde Fase 5.1; las páginas de negocio y los comprobantes requieren sesión.
 - Devoluciones y cambios requieren un caso de uso futuro y no se resuelven con transiciones manuales arbitrarias.
 - La automatización de comisiones de catálogo queda pendiente hasta confirmar porcentajes y fórmula real por proveedor/categoría.
-- Esta fase no introduce pantallas ni lógica visual.
+- Las reglas se mantienen en los servicios; las pantallas V1 de Fase 5 las consumen sin duplicarlas.

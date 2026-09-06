@@ -1,5 +1,7 @@
 using ResellManager.Application.DTOs;
 using ResellManager.Domain.Enums;
+using ResellManager.Web.Components.Clientes;
+using ResellManager.Web.Components.Compras;
 
 namespace ResellManager.Web.Components.Inventario;
 
@@ -13,7 +15,7 @@ public static class InventarioPresentacion
             EstadoUnidadInventario.Disponible => "Disponible",
             EstadoUnidadInventario.Vendida => "Vendida",
             EstadoUnidadInventario.Entregada => "Entregada",
-            _ => estado.ToString(),
+            _ => "Estado no disponible",
         };
 
     public static string ClaseEstado(EstadoUnidadInventario estado) =>
@@ -49,13 +51,7 @@ public static class InventarioPresentacion
             _ => string.Empty,
         };
 
-    public static string Origen(OrigenCompra origen) =>
-        origen switch
-        {
-            OrigenCompra.Importacion => "Importación",
-            OrigenCompra.CompraLocal => "Compra local",
-            OrigenCompra.Catalogo => "Catálogo",
-            OrigenCompra.EnvioHermano => "Envío del hijo",
-            _ => origen.ToString(),
-        };
+    public static string Origen(OrigenCompra origen) => CompraPresentacion.Origen(origen);
+
+    public static string Moneda(decimal importe) => ClientePresentacion.Moneda(importe);
 }

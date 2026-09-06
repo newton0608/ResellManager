@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.RegularExpressions;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Routing;
@@ -14,13 +15,14 @@ using ResellManager.Domain.Enums;
 using ResellManager.Infrastructure.Persistence;
 using ResellManager.Infrastructure.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using ResellManager.Application.Common;
+using ResellManager.Infrastructure.Storage;
 
 namespace ResellManager.Tests;
 
 [Collection("Integración web")]
-public sealed class AutenticacionIntegracionTests(AplicacionAutenticacionFactory factory)
-    : IClassFixture<AplicacionAutenticacionFactory>
+public sealed class AutenticacionIntegracionTests : PruebaWebAislada
 {
     [Fact]
     public async Task UsuarioNoAutenticado_NoPuedeAccederAlInicioProtegido()
@@ -318,7 +320,6 @@ public sealed class AutenticacionIntegracionTests(AplicacionAutenticacionFactory
         var sufijo = Guid.NewGuid().ToString("N")[..8];
         var codigoProducto = $"PROD-INV-{sufijo}";
         var codigoCompra = $"IMP-INV-{sufijo}";
-        int unidadId;
         await using (var scope = factory.Services.CreateAsyncScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ResellManagerDbContext>();
@@ -370,7 +371,6 @@ public sealed class AutenticacionIntegracionTests(AplicacionAutenticacionFactory
 
             var unidad = await db.UnidadesInventario.SingleAsync(x =>
                 x.DetalleCompra.Compra.CodigoInterno == codigoCompra);
-            unidadId = unidad.Id;
             var inventario = scope.ServiceProvider.GetRequiredService<IInventarioService>();
             var transito = await inventario.CambiarEstadoAsync(
                 unidad.Id,
@@ -387,7 +387,8 @@ public sealed class AutenticacionIntegracionTests(AplicacionAutenticacionFactory
         var contenido = WebUtility.HtmlDecode(await respuesta.Content.ReadAsStringAsync());
 
         Assert.Equal(HttpStatusCode.OK, respuesta.StatusCode);
-        Assert.Contains($"Unidad #{unidadId}", contenido);
+        Assert.Contains($"{codigoCompra}-01-001", contenido);
+        Assert.Contains("Ver pedido de la reserva", contenido);
         Assert.Contains("Producto inventario web", contenido);
         Assert.Contains("Estado físico", contenido);
         Assert.Contains("En tránsito", contenido);
@@ -453,6 +454,10 @@ public sealed class AplicacionAutenticacionFactory : WebApplicationFactory<Progr
     private readonly string _rutaComprobantes =
         Path.Combine(Path.GetTempPath(), $"resellmanager-auth-comprobantes-{Guid.NewGuid():N}");
 
+    internal string RutaBaseDatos => _rutaBaseDatos;
+    internal string RutaComprobantes => _rutaComprobantes;
+    private string CadenaConexion => $"Data Source={_rutaBaseDatos};Pooling=False";
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Development");
@@ -460,12 +465,34 @@ public sealed class AplicacionAutenticacionFactory : WebApplicationFactory<Progr
         {
             configuracion.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["ConnectionStrings:ResellManager"] = $"Data Source={_rutaBaseDatos}",
+                ["ConnectionStrings:ResellManager"] = CadenaConexion,
                 ["UsuarioInicial:Correo"] = CorreoUsuario,
                 ["UsuarioInicial:Contrasena"] = ContrasenaValida,
                 ["AlmacenamientoComprobantes:DirectorioBase"] = _rutaComprobantes
             });
         });
+        builder.ConfigureServices(services => services.AddSingleton<IStartupFilter>(
+            new ComprobarAislamientoAntesDeSolicitudes(CadenaConexion, _rutaComprobantes)));
+    }
+
+    private sealed class ComprobarAislamientoAntesDeSolicitudes(
+        string cadenaConexionEsperada, string rutaComprobantesEsperada) : IStartupFilter
+    {
+        public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> siguiente) => app =>
+        {
+            using var scope = app.ApplicationServices.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<ResellManagerDbContext>();
+            var almacenamiento = scope.ServiceProvider
+                .GetRequiredService<IOptions<AlmacenamientoComprobantesOptions>>().Value;
+            if (db.Database.GetConnectionString() != cadenaConexionEsperada
+                || almacenamiento.DirectorioBase != Path.GetFullPath(rutaComprobantesEsperada))
+            {
+                throw new InvalidOperationException(
+                    "El host de pruebas no está aislado en sus rutas temporales de SQLite y comprobantes.");
+            }
+
+            siguiente(app);
+        };
     }
 
     protected override void Dispose(bool disposing)

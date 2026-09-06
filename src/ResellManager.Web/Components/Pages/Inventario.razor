@@ -65,6 +65,10 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage) && Unidades.Count == 0)
         <span class="empty-state-icon" aria-hidden="true"><NavIcon Name="boxes" /></span>
         <h2 id="titulo-sin-inventario">@(BusquedaActiva ? "No se encontraron unidades" : "Aún no hay unidades de inventario")</h2>
         <p>@(BusquedaActiva ? "Prueba con otros criterios o limpia los filtros." : "Las unidades físicas aparecerán cuando sean generadas por un flujo de compra que use inventario.")</p>
+        @if (!BusquedaActiva)
+        {
+            <a class="primary-button" href="/compras/nueva">Registrar primera compra</a>
+        }
     </section>
 }
 else if (string.IsNullOrWhiteSpace(ErrorMessage))
@@ -115,8 +119,7 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
                         var siguienteEstado = InventarioPresentacion.SiguienteEstadoManual(unidad);
                         <tr>
                             <td>
-                                <strong>#@unidad.Id</strong>
-                                <span class="table-secondary code-value">@unidad.CodigoInterno</span>
+                                <strong class="code-value">@unidad.CodigoInterno</strong>
                             </td>
                             <td>
                                 <strong>@unidad.Producto</strong>
@@ -129,7 +132,7 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
                                 @if (InventarioPresentacion.EstaReservada(unidad))
                                 {
                                     <span class="inventory-badge reservation-badge">Reservada</span>
-                                    <span class="table-secondary">Pedido #@unidad.PedidoReservaId · Detalle #@unidad.DetallePedidoReservaId</span>
+                                    <a class="table-secondary contact-link" href="/pedidos/@unidad.PedidoReservaId">Ver pedido de la reserva</a>
                                 }
                                 else
                                 {
@@ -139,7 +142,7 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
                             <td>@(unidad.FechaIngreso?.ToString("dd/MM/yyyy") ?? "Pendiente")</td>
                             <td>
                                 <span>@InventarioPresentacion.Origen(unidad.OrigenCompra)</span>
-                                <span class="table-secondary">Detalle #@unidad.DetalleCompraId · Costo Q @unidad.Costo.ToString("N2")</span>
+                                <span class="table-secondary">Costo @InventarioPresentacion.Moneda(unidad.Costo)</span>
                             </td>
                             <td class="actions-cell inventory-actions-cell">
                                 @if (InventarioPresentacion.PuedeRecibirse(unidad))
@@ -171,7 +174,7 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
                 <article class="entity-card inventory-card">
                     <div class="entity-card-heading">
                         <div>
-                            <span class="code-value">Unidad #@unidad.Id · @unidad.CodigoInterno</span>
+                            <span class="code-value">@unidad.CodigoInterno</span>
                             <h3>@unidad.Producto</h3>
                             <p class="entity-card-subtitle">Producto @unidad.CodigoProducto</p>
                         </div>
@@ -184,10 +187,19 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
                         </div>
                     </div>
                     <dl class="inventory-card-details">
-                        <div><dt>Reserva</dt><dd>@(InventarioPresentacion.EstaReservada(unidad) ? $"Pedido #{unidad.PedidoReservaId} · Detalle #{unidad.DetallePedidoReservaId}" : "Sin reserva")</dd></div>
+                        <div><dt>Reserva</dt><dd>
+                            @if (InventarioPresentacion.EstaReservada(unidad))
+                            {
+                                <a class="contact-link" href="/pedidos/@unidad.PedidoReservaId">Ver pedido de la reserva</a>
+                            }
+                            else
+                            {
+                                <span>Sin reserva</span>
+                            }
+                        </dd></div>
                         <div><dt>Ingreso</dt><dd>@(unidad.FechaIngreso?.ToString("dd/MM/yyyy") ?? "Pendiente")</dd></div>
-                        <div><dt>Origen</dt><dd>@InventarioPresentacion.Origen(unidad.OrigenCompra) · Detalle #@unidad.DetalleCompraId</dd></div>
-                        <div><dt>Costo de unidad</dt><dd>Q @unidad.Costo.ToString("N2")</dd></div>
+                        <div><dt>Origen</dt><dd>@InventarioPresentacion.Origen(unidad.OrigenCompra)</dd></div>
+                        <div><dt>Costo de unidad</dt><dd>@InventarioPresentacion.Moneda(unidad.Costo)</dd></div>
                     </dl>
                     @if (InventarioPresentacion.PuedeRecibirse(unidad) || siguienteEstado.HasValue)
                     {
@@ -304,7 +316,7 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
 
     private async Task RegistrarRecepcionAsync()
     {
-        if (ProcesandoRecepcion || UnidadesSeleccionadas.Count == 0)
+        if (Ocupado || UnidadesSeleccionadas.Count == 0)
             return;
 
         ProcesandoRecepcion = true;

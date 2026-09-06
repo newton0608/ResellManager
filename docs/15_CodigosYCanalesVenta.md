@@ -1,115 +1,61 @@
 # Códigos internos y canales de venta
 
-Este documento registra decisiones y pendientes detectados durante la Fase 5.7 antes de continuar con las siguientes fases.
+Estado vigente al cierre de Fase 5.10. Sustituye los pendientes históricos de revisión de códigos y Dashboard de Fase 5.7. No modifica reglas de negocio ni esquema.
 
-## 1. Regla general para códigos internos
+## 1. Clasificación y decisión final
 
-Los códigos que existen únicamente para identificar registros dentro de ResellManager deben ser generados automáticamente por el sistema cuando sea técnicamente razonable.
+Un nombre de propiedad no determina su tratamiento: se revisó `CodigoInterno` en Domain, DTOs, servicios, formularios, pruebas y documentación.
 
-La usuaria no debería tener que inventar, recordar ni coordinar manualmente códigos internos como parte de una operación normal del negocio.
+| Campo / flujo | Clase | Captura y formato V1 |
+| --- | --- | --- |
+| Pedido normal | A: técnico del sistema | Automático: `PED-<GUID>` |
+| Pedido de Venta Directa | A: técnico del sistema | Automático: `PED-VD-<GUID>` |
+| Venta desde pedido | A: técnico del sistema | Automático: `VEN-<GUID>` |
+| Venta Directa | A: técnico del sistema | Automático: `VEN-VD-<GUID>` |
+| Compra | A: técnico del sistema | Automático: `COM-<GUID>` |
+| Nombre físico del comprobante | A: técnico del sistema (no propiedad CodigoInterno) | Automático: `CMP-<GUID>.<extensión>` |
+| UnidadInventario | A: técnico del sistema | Automático en CompraService: `<código-compra>-<detalle:D2>-<unidad:D3>` |
+| Producto.CodigoInterno | B: referencia comercial significativa para búsqueda | Manual; conserva validación de unicidad |
+| Producto.CodigoBarras | B: referencia externa | Manual y opcional |
+| ComprobanteCompra.NumeroDocumento | B: documento externo | Manual y opcional |
+| Pago.Referencia | B: referencia de cobro/banco | Manual y opcional |
+| Proveedor.CodigoPais | B: referencia externa | Manual |
 
-### Distinción importante
+Cliente, Categoría, Proveedor, DetalleCompra, DetallePedido, DetalleVenta y Pago no tienen una propiedad `CodigoInterno`. No se agregan campos o generadores para ellos.
 
-**Código interno**
+## 2. Por qué Producto permanece manual
 
-- Lo genera ResellManager.
-- Identifica de forma única una entidad o transacción dentro del sistema.
-- No debe confundirse con números o referencias de terceros.
+`IProductoService.BuscarAsync` permite localizar un producto por su código; los listados y selectores lo presentan como referencia comercial junto al nombre. Su uso real no se limita a relacionar tablas.
 
-**Referencia externa**
+Se conserva manual por ese valor para búsqueda e identificación de mercancía. No se presupone que siempre provenga de un proveedor, ni que todos los códigos existentes sean SKU externos. No hay fundamento para reemplazarlos por GUID por uniformidad estética. El código de barras permanece separado y opcional.
 
-- Proviene de un proveedor, banco, factura, comprobante u otra fuente externa.
-- Puede requerir captura manual porque representa información real fuera de ResellManager.
+## 3. Generación y estabilidad
 
-Ejemplo conceptual:
+`GUID` significa los 32 caracteres hexadecimales de `Guid.NewGuid().ToString("N").ToUpperInvariant()`, sin guiones internos. No se emplean contadores de UI ni `MAX()+1`.
 
-```text
-Compra interna: COM-...
-Factura del proveedor: FAC-001827
-```
+- `CodigosInternos` genera Pedido normal, Venta normal y Compra.
+- `PedidoNuevo`, `VentaNueva` y `CompraNueva` conservan sus códigos en campos inicializados una vez por instancia del formulario, no durante cada render ni submit.
+- `VentaPresentacion` conserva los prefijos y generadores directos existentes. `VentaDirectaForm` inicializa una sola vez tanto el código de pedido como el de venta.
+- Si falla la creación del pedido directo se reintenta con el mismo código. Si el pedido ya quedó creado y falla la venta, se reutiliza ese pedido.
+- Cambiar de modo en la misma página conserva el componente de Venta Directa. El cambio queda deshabilitado durante carga/registro para no perder el estado parcial.
+- Recargar la página, cerrar el navegador o perder el circuito no constituye un reintento de la misma instancia. No se implementó recuperación persistente ni idempotencia distribuida.
+- Los DTOs continúan enviando el código al servicio. Las validaciones de unicidad del backend y los índices únicos se conservan; automatizar UI no los reemplaza.
 
-El primer valor pertenece al sistema; el segundo pertenece al documento o proveedor externo.
+Los códigos existentes no se renumeran. Se muestran cuando aportan trazabilidad, sin exigir que la usuaria los invente.
 
-## 2. Estrategia de generación
+## 4. Unidades y comprobantes: estrategia conservada
 
-En V1 se prefiere una estrategia que no dependa de contadores calculados en la UI, `MAX()+1` ni del supuesto de que solo existe un proceso activo.
+CompraService crea las unidades junto a sus detalles en la transacción existente. Para una compra `COM-` más GUID, la primera unidad tiene el sufijo `-01-001`: el ordinal de detalle y el ordinal de unidad hacen distinguibles productos y cantidades dentro de esa compra. La combinación con el código único de compra y el índice único de unidad preserva la unicidad; no se regenera al reservar, recibir, vender o cancelar.
 
-Para los casos que actualmente necesitan generación desde la capa de presentación, puede utilizarse un prefijo legible más un GUID, por ejemplo:
+La longitud habitual de una unidad generada con el formato actual es 43 caracteres. No se encontró una colisión conocida en el flujo V1 auditado y no se refactorizó el algoritmo. No existe input manual de código de unidad.
 
-```text
-PED-VD-<GUID>
-VEN-VD-<GUID>
-```
+El archivo del comprobante se nombra al prepararlo, separado de `NumeroDocumento`. La ruta persistida es relativa: `comprobantes/CMP-...<extensión>`. Se mantienen preparación temporal, confirmación y compensación de Fase 5.8; un archivo rechazado puede requerir una nueva preparación, sin alterar el código de Compra del formulario.
 
-Esta estrategia evita coordinación adicional y colisiones prácticas sin introducir todavía un servicio global de numeración.
+## 5. CanalVenta y TipoPedido son independientes
 
-En una evolución futura se podrá diseñar un generador centralizado de códigos más cortos y amigables para presentación, siempre que preserve unicidad y seguridad frente a concurrencia.
+`TipoPedido` describe la operación: Importación, Catálogo, Apartado o Venta directa. `CanalVenta` describe cómo se originó comercialmente.
 
-## 3. Fase 5.7 — código automático de venta directa (implementado)
-
-La venta presencial directa crea automáticamente un `Pedido` de tipo `VentaDirecta` con código `PED-VD-<GUID>`.
-
-El código interno de la `Venta` generada por este mismo flujo también se crea automáticamente como `VEN-VD-<GUID>`.
-
-### Motivo
-
-Pedir a la usuaria un código técnico de venta no aporta valor al flujo real y agrega una causa evitable de error, especialmente códigos duplicados.
-
-### Resultado implementado
-
-En el modo `Venta directa` de `/ventas/nueva`:
-
-- la usuaria no captura `CodigoInterno` de la venta;
-- ResellManager genera automáticamente un código con prefijo distinguible, inicialmente `VEN-VD-<GUID>`;
-- el código se conserva como identificador interno de la venta;
-- el flujo `Desde pedido` existente no debe modificarse todavía más allá de lo necesario;
-- no se modifica el esquema ni se vuelve opcional `Venta.CodigoInterno`;
-- la validación de unicidad del backend permanece activa como segunda defensa.
-
-La generación automática reduce una de las causas plausibles del estado parcial `Pedido creado / Venta no registrada`, aunque ese estado sigue siendo posible por concurrencia o fallos técnicos entre ambas operaciones. El mismo código de venta y el mismo pedido se conservan durante los reintentos del flujo mientras permanece activo el componente.
-
-Este cierre no cambia la política del modo `Desde pedido` ni implementa un generador general para otros módulos.
-
-## 4. Revisión futura de códigos internos
-
-Antes de cerrar V1 se debe revisar de forma sistemática qué entidades aún piden códigos internos manuales y decidir cuáles deben automatizarse.
-
-Candidatos principales:
-
-- `Pedido.CodigoInterno`;
-- `Venta.CodigoInterno`;
-- `Compra.CodigoInterno` si aplica en el modelo actual;
-- códigos internos de unidades físicas;
-- cualquier otro identificador técnico capturado actualmente desde UI.
-
-No deben automatizarse como si fueran códigos internos los datos que realmente son referencias externas, por ejemplo:
-
-- número de factura;
-- número de comprobante;
-- referencia bancaria;
-- código de barras del producto;
-- referencias proporcionadas por proveedores.
-
-La automatización de todos los códigos no se implementará de forma improvisada dentro de Fase 5.7; primero se revisarán contratos, reglas y uso real de cada entidad.
-
-## 5. Concepto implementado: CanalVenta
-
-**Estado: implementado.**
-
-El negocio ya utiliza más de un canal comercial y debe poder distinguirse de `TipoPedido`.
-
-`TipoPedido` responde a qué clase de operación se está realizando, por ejemplo:
-
-- `Importacion`;
-- `Catalogo`;
-- `Apartado`;
-- `VentaDirecta`.
-
-`CanalVenta` responde a través de qué medio llegó o se originó comercialmente el pedido.
-
-Son conceptos diferentes y no deben mezclarse.
-
-### Valores implementados
+Valores persistidos de CanalVenta:
 
 ```csharp
 public enum CanalVenta
@@ -122,110 +68,22 @@ public enum CanalVenta
 }
 ```
 
-Los valores son explícitos porque se persisten en base de datos y su significado histórico no puede
-depender del orden de declaración.
+CanalVenta pertenece únicamente a Pedido. Venta lo conoce a través de su Pedido; no se duplica la columna ni la propiedad en Venta, VentaInput o VentaDto. La migración de pedidos históricos usa Otro sin inferirlo desde TipoPedido.
 
-### Motivo
+Ejemplos válidos: Apartado/Facebook, Catálogo/WhatsApp. La Venta Directa crea automáticamente TipoPedido.VentaDirecta con CanalVenta.Presencial, sin selector adicional.
 
-Actualmente existen ventas y contactos comerciales por medios distintos. Registrar el canal permitirá medir qué medio realmente produce pedidos y ventas y preparar el sistema para nuevos canales sin alterar `TipoPedido`.
+Web es un canal conceptual disponible, no una tienda online implementada. Facebook y WhatsApp son valores manuales, no APIs integradas.
 
-## 6. Ubicación conceptual de CanalVenta
+## 6. Dashboard por canal: ya implementado
 
-`CanalVenta` se almacena como propiedad requerida de `Pedido`.
+Desde Fase 5.9 el Dashboard en `/` incluye los cinco canales, incluso en cero:
 
-Motivo:
+- Pedidos: todos excepto Cancelado.
+- Cantidad y monto de ventas: solo Registrada; monto = suma de PrecioFinal.
+- Ventas recientes: canal obtenido desde el pedido.
 
-El canal puede existir antes de que exista una venta registrada.
+La deuda, inventario disponible y utilidad no se sustituyen por métricas de conversión inventadas. Definiciones completas en [Fase 5.9](17_Fase59_Dashboard.md); regresiones después de compra, venta, pago y cancelación en [Fase 5.10](18_Fase510_CierreV1.md).
 
-Ejemplo:
+## 7. Límites V1 / pendientes V2
 
-```text
-Facebook
-   ↓
-Pedido / Apartado
-   ↓
-Venta
-```
-
-La `Venta` conoce el canal a través de su `Pedido`; no existe una propiedad ni columna duplicada en
-`Venta`, `VentaInput` o `VentaDto`.
-
-Los pedidos existentes al aplicar la migración reciben `CanalVenta.Otro`, porque no existe información
-confiable para reconstruir su origen. No se infiere el canal desde `TipoPedido`.
-
-### Ejemplos
-
-```text
-TipoPedido = Apartado
-CanalVenta = Facebook
-```
-
-```text
-TipoPedido = VentaDirecta
-CanalVenta = Presencial
-```
-
-```text
-TipoPedido = Catalogo
-CanalVenta = WhatsApp
-```
-
-En el futuro:
-
-```text
-TipoPedido = VentaDirecta / Apartado / otro flujo válido
-CanalVenta = Web
-```
-
-`Web` queda disponible como canal conceptual, pero no representa una tienda online implementada.
-
-La Venta Directa representa una operación física y crea automáticamente su pedido con:
-
-```text
-TipoPedido = VentaDirecta
-CanalVenta = Presencial
-```
-
-Este flujo no solicita el canal manualmente y conserva el mismo pedido y código de venta durante los
-reintentos ya soportados.
-
-## 7. Uso futuro de CanalVenta
-
-El canal podrá utilizarse posteriormente en Dashboard y reportes para métricas como:
-
-- número de pedidos por canal;
-- ventas registradas por canal;
-- monto vendido por canal;
-- pedidos cancelados por canal;
-- comparación entre Facebook, WhatsApp, presencial y futura web.
-
-No se deben inventar métricas de conversión mientras el sistema no registre suficientes eventos para calcularlas correctamente.
-
-## 8. Alcance implementado de CanalVenta
-
-La implementación incluye:
-
-- agregar el enum `CanalVenta` en Domain;
-- agregar la propiedad a `Pedido`;
-- actualizar configuración EF Core y migración;
-- actualizar `PedidoInput` y `PedidoDto`;
-- actualizar `IPedidoService`/implementación según sea necesario;
-- permitir seleccionar canal al crear pedidos manuales;
-- asignar automáticamente `Presencial` a la venta directa presencial;
-- mostrar el canal en detalle/listado donde aporte contexto;
-- conservar `CanalVenta` independiente de `TipoPedido`;
-- agregar tests de persistencia, creación y presentación;
-- preparar el valor `Web` sin implementar una tienda web ni integración automática;
-- migrar pedidos históricos a `Otro`.
-
-No existe integración automática con Facebook o WhatsApp, ni tienda Web/ecommerce. El objetivo
-implementado es únicamente registrar el origen comercial de manera estructurada.
-
-## 9. Relación con V1 y V2
-
-La generación automática de los códigos del pedido y la venta directa permanece sin cambios.
-`CanalVenta` ya forma parte de V1 como dato del pedido.
-
-Siguen pendientes para V2 las protecciones de concurrencia ya documentadas y la posible orquestación transaccional atómica `Pedido + Venta`.
-También permanece pendiente el Dashboard por canal, con posibles métricas de ventas registradas por
-canal y cantidad de pedidos por canal.
+Siguen fuera de esta implementación la concurrencia fuerte de saldo/reservas, la posible orquestación atómica Pedido + Venta Directa, una numeración humana más corta, roles, administración de usuarios, devoluciones, ecommerce e integraciones automáticas. Deshabilitar botones evita doble submit del formulario; no es una garantía frente a procesos o usuarios concurrentes.

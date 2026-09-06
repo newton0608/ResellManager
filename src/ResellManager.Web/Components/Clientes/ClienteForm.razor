@@ -6,37 +6,37 @@
         <div class="mensaje-error" role="alert">@ErrorMessage</div>
     }
 
-    <ValidationSummary class="validation-summary" />
+    <ValidationSummary class="validation-summary" role="alert" />
 
     <div class="form-grid">
         <div class="form-field">
             <label for="cliente-nombres">Nombres <span aria-hidden="true">*</span></label>
-            <InputText id="cliente-nombres" @bind-Value="Modelo.Nombres" autocomplete="given-name" />
-            <ValidationMessage For="() => Modelo.Nombres" />
+            <InputText disabled="@Guardando" aria-describedby="cliente-nombres-validacion" aria-required="true" id="cliente-nombres" @bind-Value="Modelo.Nombres" autocomplete="given-name" />
+            <div id="cliente-nombres-validacion"><ValidationMessage For="() => Modelo.Nombres" /></div>
         </div>
 
         <div class="form-field">
             <label for="cliente-apellidos">Apellidos</label>
-            <InputText id="cliente-apellidos" @bind-Value="Modelo.Apellidos" autocomplete="family-name" />
-            <ValidationMessage For="() => Modelo.Apellidos" />
+            <InputText disabled="@Guardando" aria-describedby="cliente-apellidos-validacion" id="cliente-apellidos" @bind-Value="Modelo.Apellidos" autocomplete="family-name" />
+            <div id="cliente-apellidos-validacion"><ValidationMessage For="() => Modelo.Apellidos" /></div>
         </div>
 
         <div class="form-field">
             <label for="cliente-telefono">Teléfono <span aria-hidden="true">*</span></label>
-            <InputText id="cliente-telefono" @bind-Value="Modelo.Telefono" inputmode="tel" autocomplete="tel" />
-            <ValidationMessage For="() => Modelo.Telefono" />
+            <InputText disabled="@Guardando" aria-describedby="cliente-telefono-validacion" aria-required="true" id="cliente-telefono" @bind-Value="Modelo.Telefono" inputmode="tel" autocomplete="tel" />
+            <div id="cliente-telefono-validacion"><ValidationMessage For="() => Modelo.Telefono" /></div>
         </div>
 
         <div class="form-field form-field-wide">
             <label for="cliente-direccion">Dirección</label>
-            <InputTextArea id="cliente-direccion" @bind-Value="Modelo.Direccion" rows="3" autocomplete="street-address" />
-            <ValidationMessage For="() => Modelo.Direccion" />
+            <InputTextArea disabled="@Guardando" aria-describedby="cliente-direccion-validacion" id="cliente-direccion" @bind-Value="Modelo.Direccion" rows="3" autocomplete="street-address" />
+            <div id="cliente-direccion-validacion"><ValidationMessage For="() => Modelo.Direccion" /></div>
         </div>
 
         <div class="form-field form-field-wide">
             <label for="cliente-observaciones">Observaciones</label>
-            <InputTextArea id="cliente-observaciones" @bind-Value="Modelo.Observaciones" rows="4" />
-            <ValidationMessage For="() => Modelo.Observaciones" />
+            <InputTextArea disabled="@Guardando" aria-describedby="cliente-observaciones-validacion" id="cliente-observaciones" @bind-Value="Modelo.Observaciones" rows="4" />
+            <div id="cliente-observaciones-validacion"><ValidationMessage For="() => Modelo.Observaciones" /></div>
         </div>
     </div>
 

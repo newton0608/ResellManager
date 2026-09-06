@@ -6,10 +6,6 @@ namespace ResellManager.Web.Components.Pedidos;
 
 public sealed class PedidoFormModel
 {
-    [Required(ErrorMessage = "El código interno es obligatorio.")]
-    [StringLength(80, ErrorMessage = "El código interno no puede exceder 80 caracteres.")]
-    public string CodigoInterno { get; set; } = string.Empty;
-
     public DateOnly Fecha { get; set; } = DateOnly.FromDateTime(DateTime.Today);
     public TipoPedido TipoPedido { get; set; } = TipoPedido.Importacion;
 
@@ -19,14 +15,14 @@ public sealed class PedidoFormModel
     [Range(1, int.MaxValue, ErrorMessage = "Selecciona un cliente.")]
     public int ClienteId { get; set; }
 
-    [StringLength(1000, ErrorMessage = "Las observaciones no pueden exceder 1000 caracteres.")]
+    [StringLength(500, ErrorMessage = "Las observaciones no pueden exceder 500 caracteres.")]
     public string? Observaciones { get; set; }
 
     public List<DetallePedidoFormModel> Detalles { get; } = [new()];
 
-    public PedidoInput ToInput() =>
+    public PedidoInput ToInput(string codigoInterno) =>
         new(
-            CodigoInterno,
+            codigoInterno,
             Fecha,
             TipoPedido,
             CanalVenta,

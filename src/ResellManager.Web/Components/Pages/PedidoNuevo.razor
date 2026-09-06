@@ -67,19 +67,13 @@ else
 
             <div class="form-grid">
                 <div class="form-field">
-                    <label for="pedido-codigo">Código interno <span aria-hidden="true">*</span></label>
-                    <InputText id="pedido-codigo" @bind-Value="Modelo.CodigoInterno" autocomplete="off" />
-                    <ValidationMessage For="() => Modelo.CodigoInterno" />
-                </div>
-
-                <div class="form-field">
                     <label for="pedido-fecha">Fecha <span aria-hidden="true">*</span></label>
-                    <InputDate id="pedido-fecha" @bind-Value="Modelo.Fecha" />
+                    <InputDate id="pedido-fecha" @bind-Value="Modelo.Fecha" disabled="@Guardando" aria-required="true" />
                 </div>
 
                 <div class="form-field">
                     <label for="pedido-tipo">Tipo de pedido <span aria-hidden="true">*</span></label>
-                    <InputSelect id="pedido-tipo" @bind-Value="Modelo.TipoPedido">
+                    <InputSelect id="pedido-tipo" @bind-Value="Modelo.TipoPedido" disabled="@Guardando">
                         @foreach (var tipo in Enum.GetValues<TipoPedido>())
                         {
                             <option value="@tipo">@PedidoPresentacion.Tipo(tipo)</option>
@@ -89,31 +83,31 @@ else
 
                 <div class="form-field">
                     <label for="pedido-canal">Canal de venta <span aria-hidden="true">*</span></label>
-                    <InputSelect id="pedido-canal" @bind-Value="Modelo.CanalVenta">
+                    <InputSelect id="pedido-canal" @bind-Value="Modelo.CanalVenta" disabled="@Guardando" aria-describedby="pedido-canal-error" aria-required="true">
                         @foreach (var canal in Enum.GetValues<CanalVenta>())
                         {
                             <option value="@canal">@PedidoPresentacion.Canal(canal)</option>
                         }
                     </InputSelect>
-                    <ValidationMessage For="() => Modelo.CanalVenta" />
+                    <ValidationMessage id="pedido-canal-error" For="() => Modelo.CanalVenta" />
                 </div>
 
                 <div class="form-field">
                     <label for="pedido-cliente">Cliente <span aria-hidden="true">*</span></label>
-                    <InputSelect id="pedido-cliente" @bind-Value="Modelo.ClienteId">
+                    <InputSelect id="pedido-cliente" @bind-Value="Modelo.ClienteId" disabled="@Guardando" aria-required="true" aria-describedby="pedido-cliente-error">
                         <option value="0">Selecciona un cliente</option>
                         @foreach (var cliente in Clientes)
                         {
                             <option value="@cliente.Id">@NombreCliente(cliente)</option>
                         }
                     </InputSelect>
-                    <ValidationMessage For="() => Modelo.ClienteId" />
+                    <ValidationMessage id="pedido-cliente-error" For="() => Modelo.ClienteId" />
                 </div>
 
                 <div class="form-field form-field-wide">
                     <label for="pedido-observaciones">Observaciones</label>
-                    <InputTextArea id="pedido-observaciones" @bind-Value="Modelo.Observaciones" rows="3" />
-                    <ValidationMessage For="() => Modelo.Observaciones" />
+                    <InputTextArea id="pedido-observaciones" @bind-Value="Modelo.Observaciones" rows="3" maxlength="500" disabled="@Guardando" aria-describedby="pedido-observaciones-error" />
+                    <ValidationMessage id="pedido-observaciones-error" For="() => Modelo.Observaciones" />
                 </div>
             </div>
 
@@ -142,7 +136,7 @@ else
                             <div class="order-line-grid">
                                 <div class="form-field order-product-field">
                                     <label for="producto-@numero">Producto <span aria-hidden="true">*</span></label>
-                                    <select id="producto-@numero" value="@detalle.ProductoId"
+                                    <select id="producto-@numero" value="@detalle.ProductoId" disabled="@Guardando" aria-required="true"
                                             @onchange="evento => SeleccionarProducto(detalle, evento.Value?.ToString())">
                                         <option value="0">Selecciona un producto</option>
                                         @foreach (var producto in Productos)
@@ -153,15 +147,15 @@ else
                                 </div>
                                 <div class="form-field">
                                     <label for="cantidad-@numero">Cantidad <span aria-hidden="true">*</span></label>
-                                    <input id="cantidad-@numero" type="number" min="1" step="1" @bind="detalle.Cantidad" />
+                                    <input id="cantidad-@numero" type="number" min="1" step="1" required disabled="@Guardando" @bind="detalle.Cantidad" />
                                 </div>
                                 <div class="form-field">
                                     <label for="precio-@numero">Precio unitario <span aria-hidden="true">*</span></label>
-                                    <input id="precio-@numero" type="number" min="0" step="0.01" @bind="detalle.PrecioUnitario" />
+                                    <input id="precio-@numero" type="number" min="0" step="0.01" required disabled="@Guardando" @bind="detalle.PrecioUnitario" />
                                 </div>
                                 <div class="form-field order-line-note">
                                     <label for="observaciones-@numero">Observaciones</label>
-                                    <input id="observaciones-@numero" type="text" maxlength="500" @bind="detalle.Observaciones" />
+                                    <input id="observaciones-@numero" type="text" maxlength="500" disabled="@Guardando" @bind="detalle.Observaciones" />
                                 </div>
                             </div>
                         </article>
@@ -184,6 +178,7 @@ else
 
 @code {
     private PedidoFormModel Modelo { get; } = new();
+    private string CodigoPedido { get; } = CodigosInternos.CrearCodigoPedido();
     private IReadOnlyList<ClienteDto> Clientes { get; set; } = [];
     private IReadOnlyList<ProductoDto> Productos { get; set; } = [];
     private bool Cargando { get; set; } = true;
@@ -199,11 +194,9 @@ else
         ErrorCarga = null;
         try
         {
-            var clientesTask = ClienteService.ListarAsync();
-            var productosTask = ProductoService.ListarAsync();
-            await Task.WhenAll(clientesTask, productosTask);
-            Clientes = await clientesTask;
-            Productos = await productosTask;
+            // Los servicios comparten la sesión de datos del circuito.
+            Clientes = await ClienteService.ListarAsync();
+            Productos = await ProductoService.ListarAsync();
         }
         catch (Exception ex)
         {
@@ -216,7 +209,11 @@ else
         }
     }
 
-    private void AgregarFila() => Modelo.Detalles.Add(new DetallePedidoFormModel());
+    private void AgregarFila()
+    {
+        if (!Guardando)
+            Modelo.Detalles.Add(new DetallePedidoFormModel());
+    }
 
     private void QuitarFila(DetallePedidoFormModel detalle)
     {
@@ -226,6 +223,9 @@ else
 
     private void SeleccionarProducto(DetallePedidoFormModel detalle, string? valor)
     {
+        if (Guardando)
+            return;
+
         if (!int.TryParse(valor, out var productoId))
             productoId = 0;
 
@@ -247,7 +247,7 @@ else
         Guardando = true;
         try
         {
-            var resultado = await PedidoService.CrearAsync(Modelo.ToInput());
+            var resultado = await PedidoService.CrearAsync(Modelo.ToInput(CodigoPedido));
             if (!resultado.IsSuccess || resultado.Value is null)
             {
                 ErrorGuardado = resultado.ErrorMessage ?? "No fue posible crear el pedido.";
@@ -258,7 +258,7 @@ else
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "No fue posible crear el pedido {CodigoPedido}.", Modelo.CodigoInterno);
+            Logger.LogError(ex, "No fue posible crear el pedido {CodigoPedido}.", CodigoPedido);
             ErrorGuardado = "Ocurrió un problema inesperado al guardar. Intenta nuevamente.";
         }
         finally

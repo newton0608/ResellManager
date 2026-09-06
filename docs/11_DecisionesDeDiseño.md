@@ -171,6 +171,8 @@ No significa administrar `Cliente`; se refiere exclusivamente a las cuentas de a
 
 El seed es opcional e idempotente: crea una cuenta solo cuando no existe y están configurados tanto el correo como la contraseña. Nunca reemplaza la contraseña de una cuenta existente. Si falta cualquier credencial, la aplicación inicia normalmente sin crear usuarios.
 
+Desde Fase 5.10 el arranque aplica las migraciones de SQLite **antes e independientemente** del seed. Retirar sus credenciales no impide crear o actualizar el esquema. Una base nueva sin credenciales no tiene usuarios y requiere configurar la cuenta inicial para poder entrar; no existe autorregistro.
+
 En desarrollo se configura con User Secrets desde la raíz del repositorio:
 
 ```powershell
@@ -198,3 +200,23 @@ Los archivos se validan detrás de `IAlmacenamientoComprobantes`, se preparan en
 La confirmación se realiza antes del guardado de la compra para impedir que SQLite quede apuntando a un archivo inexistente. Si `CompraService` devuelve un fallo, se elimina el archivo confirmado. Si ocurre una excepción ambigua, se busca la compra por su código único usando el contrato existente: si quedó persistida se conserva el archivo y se recupera el resultado; si no existe se elimina. Si no es posible verificar el estado, se conserva el archivo y se registra un evento crítico, priorizando no romper una referencia que pudiera haber quedado confirmada.
 
 Las imágenes se re-encodean mediante SkiaSharp 4.151.1, con lado máximo de 1800 px y calidad 85 para formatos con pérdida. Los PDF se conservan sin transformación. SkiaSharp y sus activos Linux usan licencia MIT; el despliegue Linux incorpora `SkiaSharp.NativeAssets.Linux.NoDependencies`.
+
+En Fase 5.10 el host rechaza una configuración de almacenamiento dentro de `wwwroot` (incluidas rutas normalizadas con `..`). Los logs de preparación usan un identificador de operación, no el nombre original del archivo. Se mantiene la orientación EXIF y toda la estrategia de limpieza de Fase 5.8.
+
+## 018 Códigos técnicos automáticos, referencias comerciales manuales
+
+Pedido normal usa `PED-<GUID>` y Venta desde pedido `VEN-<GUID>`, creados una sola vez por instancia del formulario y reutilizados durante reintentos. Venta Directa conserva `PED-VD-<GUID>` y `VEN-VD-<GUID>`; cambiar de modo en la misma página conserva su componente y el pedido parcial ya creado. No se promete recuperación del formulario tras recargar o cerrar el navegador ni idempotencia distribuida.
+
+Compra conserva `COM-<GUID>`; comprobantes `CMP-<GUID>.<extensión>` y unidades el código determinista de compra + número de detalle + número de unidad. No cambian las validaciones ni índices únicos del backend.
+
+`Producto.CodigoInterno` se mantiene manual: el servicio de búsqueda y los selectores lo usan como referencia reconocible de producto. No hay evidencia para clasificarlo como un mero identificador técnico ni para afirmar que siempre lo aporta un proveedor. Automatizarlo solo por uniformidad eliminaría una referencia útil. Código de barras, número de documento, referencia de pago y código de país siguen siendo datos externos manuales. Clasificación completa en `15_CodigosYCanalesVenta.md`.
+
+## 019 Apartado está resuelto por Pedido + Reserva
+
+No se crea entidad `Apartado`, módulo duplicado ni una segunda reserva. El pedido `TipoPedido.Apartado` describe la intención comercial; sus detalles permiten reservar una o varias unidades compatibles usando `DetallePedidoReservaId`. Liberar una reserva no cambia el estado físico. Cancelar el pedido libera todas sus reservas en el guardado existente del servicio. Catálogo continúa sin unidades físicas.
+
+## 020 Cierre V1 sin ampliar las reglas de negocio
+
+La presentación usa `Q 1,234.56`, fechas visibles `dd/MM/yyyy` y etiquetas amigables por módulo. Los códigos útiles permanecen para trazabilidad; la usuaria navega por nombres y enlaces sin capturar IDs internos. Los controles de doble submit y las cargas secuenciales de servicios compartidos son correcciones de UI, no concurrencia fuerte V2.
+
+No se modifica el esquema en Fase 5.10. Las pruebas de cierre y las limitaciones de validación visual se registran en `18_Fase510_CierreV1.md`. Roles, administración de usuarios, concurrencia multiusuario, devoluciones y ecommerce siguen sin implementar.

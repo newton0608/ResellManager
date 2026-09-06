@@ -23,31 +23,31 @@
             <div class="mensaje-error" role="alert">@ErrorGuardado</div>
         }
 
-        <ValidationSummary class="validation-summary" />
+        <ValidationSummary class="validation-summary" role="alert" />
 
         <div class="form-grid">
             <div class="form-field">
                 <label for="proveedor-nombre">Nombre <span aria-hidden="true">*</span></label>
-                <InputText id="proveedor-nombre" @bind-Value="Modelo.Nombre" autocomplete="organization" />
-                <ValidationMessage For="() => Modelo.Nombre" />
+                <InputText disabled="@Guardando" id="proveedor-nombre" aria-describedby="proveedor-nombre-validacion" @bind-Value="Modelo.Nombre" autocomplete="organization" />
+                <div id="proveedor-nombre-validacion"><ValidationMessage For="() => Modelo.Nombre" /></div>
             </div>
 
             <div class="form-field">
                 <label for="proveedor-pais">Código de país</label>
-                <InputText id="proveedor-pais" @bind-Value="Modelo.CodigoPais" maxlength="10" autocomplete="country" />
-                <ValidationMessage For="() => Modelo.CodigoPais" />
+                <InputText disabled="@Guardando" id="proveedor-pais" aria-describedby="proveedor-pais-validacion" @bind-Value="Modelo.CodigoPais" maxlength="10" autocomplete="country" />
+                <div id="proveedor-pais-validacion"><ValidationMessage For="() => Modelo.CodigoPais" /></div>
             </div>
 
             <div class="form-field">
                 <label for="proveedor-telefono">Teléfono</label>
-                <InputText id="proveedor-telefono" @bind-Value="Modelo.Telefono" inputmode="tel" autocomplete="tel" />
-                <ValidationMessage For="() => Modelo.Telefono" />
+                <InputText disabled="@Guardando" id="proveedor-telefono" aria-describedby="proveedor-telefono-validacion" @bind-Value="Modelo.Telefono" inputmode="tel" autocomplete="tel" />
+                <div id="proveedor-telefono-validacion"><ValidationMessage For="() => Modelo.Telefono" /></div>
             </div>
 
             <div class="form-field form-field-wide">
                 <label for="proveedor-descripcion">Descripción</label>
-                <InputTextArea id="proveedor-descripcion" @bind-Value="Modelo.Descripcion" rows="4" />
-                <ValidationMessage For="() => Modelo.Descripcion" />
+                <InputTextArea disabled="@Guardando" id="proveedor-descripcion" aria-describedby="proveedor-descripcion-validacion" @bind-Value="Modelo.Descripcion" rows="4" />
+                <div id="proveedor-descripcion-validacion"><ValidationMessage For="() => Modelo.Descripcion" /></div>
             </div>
         </div>
 
@@ -87,7 +87,7 @@
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "No fue posible registrar el proveedor {Proveedor}.", Modelo.Nombre);
+            Logger.LogError(ex, "No fue posible registrar el proveedor.");
             ErrorGuardado = "Ocurrió un problema inesperado al guardar. Intenta nuevamente.";
         }
         finally

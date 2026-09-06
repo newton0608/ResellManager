@@ -24,12 +24,14 @@
     <div class="sale-mode-actions" role="group" aria-label="Modo de venta">
         <button class="secondary-button @(ModoActual == ModoVenta.DesdePedido ? "sale-mode-active" : null)"
                 type="button"
+                disabled="@OperacionEnCurso"
                 aria-pressed="@(ModoActual == ModoVenta.DesdePedido)"
                 @onclick="() => CambiarModo(ModoVenta.DesdePedido)">
             Desde pedido
         </button>
         <button class="secondary-button @(ModoActual == ModoVenta.VentaDirecta ? "sale-mode-active" : null)"
                 type="button"
+                disabled="@OperacionEnCurso"
                 aria-pressed="@(ModoActual == ModoVenta.VentaDirecta)"
                 @onclick="() => CambiarModo(ModoVenta.VentaDirecta)">
             Venta directa
@@ -37,8 +39,7 @@
     </div>
 </section>
 
-@if (ModoActual == ModoVenta.DesdePedido)
-{
+<div hidden="@(ModoActual != ModoVenta.DesdePedido)">
 
 @if (Cargando)
 {
@@ -69,7 +70,7 @@ else
         </div>
         <div class="form-field">
             <label for="venta-pedido">Pedido <span aria-hidden="true">*</span></label>
-            <select id="venta-pedido" value="@PedidoSeleccionadoId" @onchange="CambiarPedidoAsync" disabled="@(CargandoPedido || Registrando)">
+            <select id="venta-pedido" value="@PedidoSeleccionadoId" @onchange="CambiarPedidoAsync" disabled="@OperacionEnCurso" aria-required="true">
                 <option value="0">Selecciona un pedido</option>
                 @foreach (var pedido in PedidosElegibles)
                 {
@@ -78,6 +79,11 @@ else
             </select>
         </div>
     </section>
+
+    @if (!string.IsNullOrWhiteSpace(ErrorGuardado))
+    {
+        <div class="mensaje-error" role="alert">@ErrorGuardado</div>
+    }
 
     @if (PedidosElegibles.Count == 0)
     {
@@ -118,27 +124,18 @@ else
         <EditForm Model="Modelo" OnValidSubmit="RegistrarAsync" class="entity-form sale-form">
             <DataAnnotationsValidator />
 
-            @if (!string.IsNullOrWhiteSpace(ErrorGuardado))
-            {
-                <div class="mensaje-error" role="alert">@ErrorGuardado</div>
-            }
             <ValidationSummary class="validation-summary" />
 
             <section class="form-panel" aria-label="Datos generales de la venta">
                 <div class="form-grid">
                     <div class="form-field">
-                        <label for="venta-codigo">Código interno <span aria-hidden="true">*</span></label>
-                        <InputText id="venta-codigo" @bind-Value="Modelo.CodigoInterno" autocomplete="off" />
-                        <ValidationMessage For="() => Modelo.CodigoInterno" />
-                    </div>
-                    <div class="form-field">
                         <label for="venta-fecha">Fecha <span aria-hidden="true">*</span></label>
-                        <InputDate id="venta-fecha" @bind-Value="Modelo.Fecha" />
+                        <InputDate id="venta-fecha" @bind-Value="Modelo.Fecha" disabled="@Registrando" aria-required="true" />
                     </div>
                     <div class="form-field form-field-wide">
                         <label for="venta-observaciones">Observaciones</label>
-                        <InputTextArea id="venta-observaciones" @bind-Value="Modelo.Observaciones" rows="3" />
-                        <ValidationMessage For="() => Modelo.Observaciones" />
+                        <InputTextArea id="venta-observaciones" @bind-Value="Modelo.Observaciones" rows="3" maxlength="500" disabled="@Registrando" aria-describedby="venta-observaciones-error" />
+                        <ValidationMessage id="venta-observaciones-error" For="() => Modelo.Observaciones" />
                     </div>
                 </div>
             </section>
@@ -171,8 +168,8 @@ else
                                 {
                                     <div class="form-field">
                                         <label for="costo-@detalle.DetallePedidoId-@detalle.Numero">Costo unitario <span aria-hidden="true">*</span></label>
-                                        <input id="costo-@detalle.DetallePedidoId-@detalle.Numero" type="number" min="0" step="0.01" required @bind="detalle.CostoUnitario" />
-                                        <p class="field-help">Snapshot manual; no se calculan comisiones.</p>
+                                        <input id="costo-@detalle.DetallePedidoId-@detalle.Numero" type="number" min="0" step="0.01" required disabled="@Registrando" @bind="detalle.CostoUnitario" />
+                                        <p class="field-help">Este costo queda registrado para calcular la utilidad; no se calculan comisiones.</p>
                                     </div>
                                 }
                                 else
@@ -181,6 +178,7 @@ else
                                     <div class="form-field sale-unit-field">
                                         <label for="unidad-@detalle.DetallePedidoId-@detalle.Numero">Unidad de inventario <span aria-hidden="true">*</span></label>
                                         <select id="unidad-@detalle.DetallePedidoId-@detalle.Numero"
+                                                disabled="@Registrando" required
                                                 value="@(detalle.UnidadInventarioId?.ToString() ?? string.Empty)"
                                                 @onchange="evento => SeleccionarUnidad(detalle, evento.Value?.ToString())">
                                             <option value="">Selecciona una unidad disponible</option>
@@ -198,12 +196,12 @@ else
 
                                 <div class="form-field">
                                     <label for="precio-@detalle.DetallePedidoId-@detalle.Numero">Precio final <span aria-hidden="true">*</span></label>
-                                    <input id="precio-@detalle.DetallePedidoId-@detalle.Numero" type="number" min="0" step="0.01" required @bind="detalle.PrecioFinal" />
+                                    <input id="precio-@detalle.DetallePedidoId-@detalle.Numero" type="number" min="0" step="0.01" required disabled="@Registrando" @bind="detalle.PrecioFinal" />
                                     <p class="field-help">Precio real editable; no modifica el precio sugerido.</p>
                                 </div>
                                 <div class="form-field sale-line-note">
                                     <label for="nota-@detalle.DetallePedidoId-@detalle.Numero">Observaciones</label>
-                                    <input id="nota-@detalle.DetallePedidoId-@detalle.Numero" type="text" maxlength="500" @bind="detalle.Observaciones" />
+                                    <input id="nota-@detalle.DetallePedidoId-@detalle.Numero" type="text" maxlength="500" disabled="@Registrando" @bind="detalle.Observaciones" />
                                 </div>
                             </div>
                         </article>
@@ -220,22 +218,34 @@ else
         </EditForm>
     }
 }
-}
-else
-{
-    <VentaDirectaForm />
-}
+</div>
+<div hidden="@(ModoActual != ModoVenta.VentaDirecta)">
+    @if (DirectaInicializada)
+    {
+        <VentaDirectaForm OcupadoChanged="CambiarOcupacionDirecta" />
+    }
+</div>
 
 @code {
     private ModoVenta ModoActual { get; set; } = ModoVenta.DesdePedido;
+    private bool DirectaInicializada { get; set; }
+    private bool DirectaOcupada { get; set; }
+    private bool OperacionEnCurso => Registrando || DirectaOcupada || CargandoPedido || Cargando;
+
+    private void CambiarOcupacionDirecta(bool ocupado) => DirectaOcupada = ocupado;
 
     private void CambiarModo(ModoVenta modo)
     {
-        if (!Registrando)
-            ModoActual = modo;
+        if (OperacionEnCurso)
+            return;
+
+        ModoActual = modo;
+        if (modo == ModoVenta.VentaDirecta)
+            DirectaInicializada = true;
     }
 
     private VentaFormModel Modelo { get; set; } = new();
+    private string CodigoVenta { get; } = CodigosInternos.CrearCodigoVenta();
     private IReadOnlyList<PedidoDto> PedidosElegibles { get; set; } = [];
     private IReadOnlyList<UnidadInventarioDto> UnidadesDisponibles { get; set; } = [];
     private List<DetalleVentaFormModel> Detalles { get; } = [];
@@ -248,7 +258,7 @@ else
     private string? ErrorGuardado { get; set; }
 
     [SupplyParameterFromQuery(Name = "pedido")]
-    public int? PedidoDesdeQuery { get; set; }
+    public string? PedidoDesdeQuery { get; set; }
     [SupplyParameterFromQuery(Name = "modo")]
     public string? ModoDesdeQuery { get; set; }
 
@@ -258,9 +268,15 @@ else
     protected override async Task OnInitializedAsync()
     {
         if (string.Equals(ModoDesdeQuery, "directa", StringComparison.OrdinalIgnoreCase))
+        {
             ModoActual = ModoVenta.VentaDirecta;
+        }
 
         await CargarAsync();
+        // La carga inicial termina antes de montar otro consumidor de la sesión de datos.
+        // Una vez montado, el formulario conserva su pedido parcial incluso al recargar esta lista.
+        if (ModoActual == ModoVenta.VentaDirecta)
+            DirectaInicializada = true;
     }
 
     private async Task CargarAsync()
@@ -276,8 +292,13 @@ else
                 .ThenByDescending(x => x.Id)
                 .ToList();
 
-            if (PedidoDesdeQuery.HasValue && PedidosElegibles.Any(x => x.Id == PedidoDesdeQuery.Value))
-                await SeleccionarPedidoAsync(PedidoDesdeQuery.Value);
+            if (PedidoDesdeQuery is not null)
+            {
+                if (!int.TryParse(PedidoDesdeQuery, out var pedidoId) || pedidoId <= 0)
+                    ErrorGuardado = "El enlace contiene un pedido inválido. Selecciona un pedido de la lista.";
+                else
+                    await SeleccionarPedidoAsync(pedidoId);
+            }
         }
         catch (Exception ex)
         {
@@ -298,7 +319,7 @@ else
 
     private async Task SeleccionarPedidoAsync(int pedidoId)
     {
-        if (Registrando)
+        if (Registrando || CargandoPedido || DirectaOcupada)
             return;
 
         PedidoSeleccionadoId = pedidoId;
@@ -333,7 +354,6 @@ else
             }
 
             PedidoSeleccionado = resultado.Value;
-            Modelo.CodigoInterno = $"VEN-{PedidoSeleccionado.CodigoInterno}";
             if (!EsCatalogo)
                 UnidadesDisponibles = await InventarioService.ListarDisponiblesAsync();
             ConstruirDetallesExactos();
@@ -341,6 +361,8 @@ else
         catch (Exception ex)
         {
             Logger.LogError(ex, "No fue posible preparar el pedido {PedidoId} para venta.", pedidoId);
+            PedidoSeleccionado = null;
+            Detalles.Clear();
             ErrorGuardado = "No pudimos preparar el pedido. Intenta nuevamente.";
         }
         finally
@@ -405,8 +427,11 @@ else
             .ToList();
     }
 
-    private void SeleccionarUnidad(DetalleVentaFormModel detalle, string? valor) =>
-        detalle.UnidadInventarioId = int.TryParse(valor, out var unidadId) ? unidadId : null;
+    private void SeleccionarUnidad(DetalleVentaFormModel detalle, string? valor)
+    {
+        if (!Registrando)
+            detalle.UnidadInventarioId = int.TryParse(valor, out var unidadId) ? unidadId : null;
+    }
 
     private async Task RegistrarAsync()
     {
@@ -422,7 +447,7 @@ else
         {
             var input = new VentaInput(
                 PedidoSeleccionado.Id,
-                Modelo.CodigoInterno,
+                CodigoVenta,
                 Modelo.Fecha,
                 Modelo.Observaciones,
                 Detalles.Select(x => x.ToInput(EsCatalogo)).ToArray());

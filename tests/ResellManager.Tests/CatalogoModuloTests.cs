@@ -213,8 +213,7 @@ public sealed class ProductoModuloTests
     }
 }
 
-public sealed class CatalogoModuloIntegracionTests(AplicacionAutenticacionFactory factory)
-    : IClassFixture<AplicacionAutenticacionFactory>
+public sealed class CatalogoModuloIntegracionTests : PruebaWebAislada
 {
     [Theory]
     [InlineData("/categorias")]

@@ -6,19 +6,19 @@
         <div class="mensaje-error" role="alert">@ErrorMessage</div>
     }
 
-    <ValidationSummary class="validation-summary" />
+    <ValidationSummary class="validation-summary" role="alert" />
 
     <div class="form-grid">
         <div class="form-field form-field-wide">
             <label for="categoria-nombre">Nombre <span aria-hidden="true">*</span></label>
-            <InputText id="categoria-nombre" @bind-Value="Modelo.Nombre" autocomplete="off" />
-            <ValidationMessage For="() => Modelo.Nombre" />
+            <InputText disabled="@Guardando" aria-describedby="categoria-nombre-validacion" aria-required="true" id="categoria-nombre" @bind-Value="Modelo.Nombre" autocomplete="off" />
+            <div id="categoria-nombre-validacion"><ValidationMessage For="() => Modelo.Nombre" /></div>
         </div>
 
         <div class="form-field form-field-wide">
             <label for="categoria-observaciones">Observaciones</label>
-            <InputTextArea id="categoria-observaciones" @bind-Value="Modelo.Observaciones" rows="4" />
-            <ValidationMessage For="() => Modelo.Observaciones" />
+            <InputTextArea disabled="@Guardando" aria-describedby="categoria-observaciones-validacion" id="categoria-observaciones" @bind-Value="Modelo.Observaciones" rows="4" />
+            <div id="categoria-observaciones-validacion"><ValidationMessage For="() => Modelo.Observaciones" /></div>
         </div>
     </div>
 

@@ -364,7 +364,7 @@ public sealed class PagoRecargaClienteTests
         Establecer(componente, "PagoService", (IPagoService)new PagoService(test.Db));
         Establecer(componente, "ClienteService", (IClienteService)new ClienteService(test.Db));
         Establecer(componente, "Logger", NullLogger<PagosPage>.Instance);
-        componente.ClienteDesdeQuery = test.Cliente.Id;
+        componente.ClienteDesdeQuery = test.Cliente.Id.ToString();
         await InvocarAsync(componente, "CargarClientesAsync");
 
         var modelo = Obtener<PagoFormModel>(componente, "Modelo");

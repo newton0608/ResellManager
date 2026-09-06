@@ -18,11 +18,9 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("ResellManager")
-            ?? throw new InvalidOperationException("Connection string 'ResellManager' was not found.");
-
         services.AddDbContext<ResellManagerDbContext>(options =>
-            options.UseSqlite(connectionString));
+            options.UseSqlite(configuration.GetConnectionString("ResellManager")
+                ?? throw new InvalidOperationException("Connection string 'ResellManager' was not found.")));
 
         services.AddIdentityCore<IdentityUser>(options =>
         {

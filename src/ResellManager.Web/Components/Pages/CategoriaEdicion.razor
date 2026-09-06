@@ -45,7 +45,7 @@ else
 
 @code {
     [Parameter]
-    public int Id { get; set; }
+    public int? Id { get; set; }
 
     private CategoriaFormModel Modelo { get; set; } = new();
     private bool Guardando { get; set; }
@@ -54,17 +54,17 @@ else
     private string? ErrorGuardado { get; set; }
     private int? IdCargado { get; set; }
 
-    private bool EsEdicion => Id > 0;
+    private bool EsEdicion => Id.HasValue;
 
     protected override async Task OnParametersSetAsync()
     {
         if (!EsEdicion)
         {
-            if (IdCargado != 0)
-            {
-                Modelo = new CategoriaFormModel();
-                IdCargado = 0;
-            }
+            ErrorCarga = null;
+            ErrorGuardado = null;
+            Cargando = false;
+            Modelo = new CategoriaFormModel();
+            IdCargado = null;
 
             return;
         }
@@ -82,7 +82,7 @@ else
 
         try
         {
-            var resultado = await CategoriaService.ObtenerPorIdAsync(Id);
+            var resultado = await CategoriaService.ObtenerPorIdAsync(Id.GetValueOrDefault());
             if (!resultado.IsSuccess || resultado.Value is null)
             {
                 ErrorCarga = resultado.ErrorMessage ?? "Categoría no encontrada.";
@@ -105,7 +105,7 @@ else
 
     private async Task GuardarAsync(CategoriaFormModel modelo)
     {
-        if (Guardando)
+        if (Guardando || Id is <= 0 || ErrorCarga is not null)
         {
             return;
         }
@@ -116,7 +116,7 @@ else
         try
         {
             var resultado = EsEdicion
-                ? await CategoriaService.EditarAsync(Id, modelo.ToInput())
+                ? await CategoriaService.EditarAsync(Id!.Value, modelo.ToInput())
                 : await CategoriaService.CrearAsync(modelo.ToInput());
 
             if (!resultado.IsSuccess)

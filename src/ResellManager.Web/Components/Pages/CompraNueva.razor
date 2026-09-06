@@ -129,7 +129,7 @@ else
                 <div class="data-panel-heading">
                     <div>
                         <h2 id="titulo-detalles-compra">Productos de la compra</h2>
-                        <p>El total mostrado es una referencia; el backend vuelve a calcularlo al registrar.</p>
+                        <p>Revisa cantidades y costos; el total se confirma al registrar la compra.</p>
                     </div>
                     <button class="secondary-button" type="button" disabled="@Guardando" @onclick="AgregarFila">Agregar producto</button>
                 </div>
@@ -275,11 +275,8 @@ else
         ErrorCarga = null;
         try
         {
-            var proveedoresTask = ProveedorService.ListarAsync();
-            var productosTask = ProductoService.ListarAsync();
-            await Task.WhenAll(proveedoresTask, productosTask);
-            Proveedores = await proveedoresTask;
-            Productos = await productosTask;
+            Proveedores = await ProveedorService.ListarAsync();
+            Productos = await ProductoService.ListarAsync();
         }
         catch (Exception ex)
         {
@@ -294,7 +291,7 @@ else
 
     private void CambiarOrigen(ChangeEventArgs evento)
     {
-        if (!Enum.TryParse<OrigenCompra>(evento.Value?.ToString(), out var origen))
+        if (Guardando || !Enum.TryParse<OrigenCompra>(evento.Value?.ToString(), out var origen))
             return;
 
         Modelo.Origen = origen;
@@ -304,7 +301,11 @@ else
                 : null;
     }
 
-    private void AgregarFila() => Modelo.Detalles.Add(new DetalleCompraFormModel());
+    private void AgregarFila()
+    {
+        if (!Guardando)
+            Modelo.Detalles.Add(new DetalleCompraFormModel());
+    }
 
     private void QuitarFila(DetalleCompraFormModel detalle)
     {
@@ -314,6 +315,9 @@ else
 
     private void SeleccionarArchivo(InputFileChangeEventArgs evento)
     {
+        if (Guardando)
+            return;
+
         ErrorArchivo = null;
         ArchivoSeleccionado = evento.File;
         if (ArchivoSeleccionado.Size > ReglasComprobanteCompra.TamanoMaximoBytes)

@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @using ResellManager.Domain.Enums
 @inject IPedidoService PedidoService
+@inject IVentaService VentaService
 @inject IInventarioService InventarioService
 @inject IProductoService ProductoService
 @inject IJSRuntime JS
@@ -31,11 +32,19 @@ else
 {
     <section class="page-heading detail-heading" aria-labelledby="titulo-pedido">
         <div>
-            <p class="eyebrow">Pedido #@Pedido.Id</p>
+            <p class="eyebrow">Detalle de pedido</p>
             <h1 id="titulo-pedido" class="code-value">@Pedido.CodigoInterno</h1>
-            <p class="page-lead">@Pedido.Fecha.ToString("dd/MM/yyyy") · @Pedido.Cliente</p>
+            <p class="page-lead">@Pedido.Fecha.ToString("dd/MM/yyyy") · <a class="contact-link" href="/clientes/@Pedido.ClienteId">@Pedido.Cliente</a></p>
         </div>
         <div class="heading-actions">
+            @if (Pedido.VentaId.HasValue)
+            {
+                <a class="primary-button" href="/ventas/@Pedido.VentaId">Ver venta</a>
+            }
+            else if (EsModificable)
+            {
+                <a class="primary-button" href="/ventas/nueva?pedido=@Pedido.Id">Registrar venta</a>
+            }
             <span class="order-status @PedidoPresentacion.ClaseEstado(Pedido.Estado)">@PedidoPresentacion.Estado(Pedido.Estado)</span>
             @if (PuedeCancelarPedido)
             {
@@ -68,7 +77,7 @@ else
                 <div><dt>Fecha</dt><dd>@Pedido.Fecha.ToString("dd/MM/yyyy")</dd></div>
                 <div>
                     <dt>Venta</dt>
-                    <dd>@(Pedido.VentaId.HasValue ? $"Venta #{Pedido.VentaId.Value}" : "Sin venta registrada")</dd>
+                    <dd>@(VentaVinculada is not null ? VentaPresentacion.Estado(VentaVinculada.Estado) : "Sin venta registrada")</dd>
                 </div>
                 <div><dt>Observaciones</dt><dd>@(string.IsNullOrWhiteSpace(Pedido.Observaciones) ? "Sin observaciones" : Pedido.Observaciones)</dd></div>
             </dl>
@@ -102,7 +111,6 @@ else
                 <article class="order-detail-item">
                     <header class="order-detail-heading">
                         <div>
-                            <span class="order-detail-number">Detalle #@detalle.Id</span>
                             <h3>@detalle.Producto</h3>
                             @if (!string.IsNullOrWhiteSpace(detalle.Observaciones))
                             {
@@ -140,7 +148,7 @@ else
                                         <article class="reservation-card">
                                             <div>
                                                 <strong class="code-value">@unidad.CodigoInterno</strong>
-                                                <span>Unidad #@unidad.Id</span>
+                                                <span>Reservada para este pedido</span>
                                             </div>
                                             <div class="inventory-badge-group">
                                                 <span class="inventory-badge @InventarioPresentacion.ClaseEstado(unidad.Estado)">@InventarioPresentacion.Estado(unidad.Estado)</span>
@@ -204,7 +212,7 @@ else
         <details class="form-panel add-order-line">
             <summary>Agregar otro producto al pedido</summary>
             <div class="add-order-line-body">
-                <p>Los detalles existentes no pueden editarse ni eliminarse en esta fase.</p>
+                <p>Agrega un producto adicional. Los productos ya registrados se conservan.</p>
                 <div class="order-line-grid">
                     <div class="form-field order-product-field">
                         <label for="nuevo-detalle-producto">Producto</label>
@@ -248,6 +256,7 @@ else
     public string? Mensaje { get; set; }
 
     private PedidoDto? Pedido { get; set; }
+    private VentaDto? VentaVinculada { get; set; }
     private IReadOnlyList<UnidadInventarioDto> Unidades { get; set; } = [];
     private IReadOnlyList<ProductoDto> Productos { get; set; } = [];
     private DetallePedidoFormModel NuevoDetalle { get; set; } = new();
@@ -263,7 +272,8 @@ else
     private string? MensajeExito { get; set; }
 
     private bool EsModificable => Pedido is not null && PedidoPresentacion.EsModificable(Pedido.Estado);
-    private bool PuedeCancelarPedido => EsModificable && !Pedido!.VentaId.HasValue;
+    private bool PuedeCancelarPedido => EsModificable
+        && (!Pedido!.VentaId.HasValue || VentaVinculada?.Estado == EstadoVenta.Cancelada);
     private bool Procesando => AgregandoDetalle || CancelandoPedido || DetalleProcesandoId.HasValue || UnidadProcesandoId.HasValue;
 
     protected override async Task OnParametersSetAsync()
@@ -288,13 +298,23 @@ else
             }
 
             Pedido = resultado.Value;
-            var productosTask = ProductoService.ListarAsync();
-            var inventarioTask = Pedido.TipoPedido == TipoPedido.Catalogo
-                ? Task.FromResult<IReadOnlyList<UnidadInventarioDto>>([])
-                : InventarioService.ListarAsync();
-            await Task.WhenAll(productosTask, inventarioTask);
-            Productos = await productosTask;
-            Unidades = await inventarioTask;
+            VentaVinculada = null;
+            if (Pedido.VentaId is int ventaId)
+            {
+                var venta = await VentaService.ObtenerPorIdAsync(ventaId);
+                if (!venta.IsSuccess || venta.Value is null)
+                {
+                    ErrorCarga = "No pudimos consultar la venta vinculada. Reintenta antes de modificar el pedido.";
+                    return;
+                }
+
+                VentaVinculada = venta.Value;
+            }
+
+            Productos = await ProductoService.ListarAsync();
+            Unidades = Pedido.TipoPedido == TipoPedido.Catalogo
+                ? []
+                : await InventarioService.ListarAsync();
             SincronizarSelectores();
             IdCargado = Id;
 
@@ -421,16 +441,16 @@ else
         if (Procesando || !EsModificable)
             return;
 
-        var confirmado = await JS.InvokeAsync<bool>(
-            "confirm",
-            "Cancelar reserva: esta unidad quedará libre para otro pedido. Su estado físico y su compra no cambiarán.");
-        if (!confirmado)
-            return;
-
         UnidadProcesandoId = unidad.Id;
         ErrorOperacion = null;
         try
         {
+            var confirmado = await JS.InvokeAsync<bool>(
+                "confirm",
+                "Cancelar reserva: esta unidad quedará libre para otro pedido. Su estado físico y su compra no cambiarán.");
+            if (!confirmado)
+                return;
+
             var resultado = await InventarioService.CancelarReservaAsync(unidad.Id);
             if (!resultado.IsSuccess)
             {
@@ -457,16 +477,16 @@ else
         if (Procesando || !PuedeCancelarPedido)
             return;
 
-        var confirmado = await JS.InvokeAsync<bool>(
-            "confirm",
-            "El pedido será cancelado y todas sus reservas se liberarán. La mercancía ya comprada seguirá existiendo en inventario.");
-        if (!confirmado)
-            return;
-
         CancelandoPedido = true;
         ErrorOperacion = null;
         try
         {
+            var confirmado = await JS.InvokeAsync<bool>(
+                "confirm",
+                "El pedido será cancelado y todas sus reservas se liberarán. La mercancía ya comprada seguirá existiendo en inventario.");
+            if (!confirmado)
+                return;
+
             var resultado = await PedidoService.CancelarAsync(Id);
             if (!resultado.IsSuccess)
             {

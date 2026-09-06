@@ -24,11 +24,11 @@
 - [x] Implementar navegación base y estado activo para los módulos previstos.
 - [x] Adaptar el shell para escritorio, tablet y teléfono con drawer móvil.
 - [x] Integrar usuario autenticado y logout POST protegido en la topbar.
-- [x] Crear inicio sin métricas ficticias y placeholders explícitos para módulos pendientes.
+- [x] Crear inicio sin métricas ficticias; el Dashboard de Fase 5.9 sustituyó el placeholder inicial.
 - [x] Ajustar visualmente login y error sin modificar su arquitectura de autenticación.
-- [ ] Implementar las pantallas y operaciones completas de cada módulo en sus fases correspondientes.
+- [x] Implementar las pantallas y operaciones V1 de cada módulo (Fases 5.3 a 5.9).
 
-## Endurecimiento de concurrencia después de completar la UI
+## Endurecimiento de concurrencia — V2, no implementado
 
 ### Saldo global por cliente
 
@@ -148,16 +148,16 @@
 - [x] Proteger registro y cancelación contra doble submit en UI.
 - [x] Mantener las ventas canceladas en modo de consulta.
 - [ ] V2: endurecer concurrencia de saldo por cliente e inventario físico sin bloqueo global.
-- [ ] Revisar globalmente los códigos internos todavía capturados manualmente en el resto de módulos.
+- [x] Auditar todos los códigos internos: Pedido y Venta normales automáticos; Producto manual por su uso comercial/búsqueda; Compra, comprobante y unidades ya automáticos. Ver `15_CodigosYCanalesVenta.md`.
 - [x] Diseñar e implementar `CanalVenta` como concepto separado de `TipoPedido`, persistido en `Pedido`.
 - [x] Asignar `CanalVenta.Presencial` automáticamente al pedido de Venta Directa, sin selector adicional.
 - [x] Migrar pedidos históricos a `CanalVenta.Otro` sin inferir su origen.
 - [x] Excluir ventas libres: toda venta nace obligatoriamente de un pedido.
 - [ ] V2: evaluar una orquestación transaccional atómica para crear `Pedido` y registrar `Venta` si el escenario multiusuario lo requiere.
 
-- [ ] Registrar apartado
+- [x] Registrar apartado mediante `Pedido` de tipo `Apartado`, detalles y reserva de unidades físicas. Satisfecho por Pedido + Reserva, sin entidad ni módulo adicional.
 
-- [ ] Cancelar apartado
+- [x] Cancelar apartado mediante liberación individual de reservas o cancelación de Pedido con liberación atómica de todas ellas, sin cambiar estados físicos.
 
 ---
 

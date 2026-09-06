@@ -1,5 +1,6 @@
 using ResellManager.Application.DTOs;
 using ResellManager.Domain.Enums;
+using ResellManager.Web.Components.Clientes;
 
 namespace ResellManager.Web.Components.Pedidos;
 
@@ -11,7 +12,7 @@ public static class PedidoPresentacion
         TipoPedido.Catalogo => "Catálogo",
         TipoPedido.Apartado => "Apartado",
         TipoPedido.VentaDirecta => "Venta directa",
-        _ => tipo.ToString(),
+        _ => "Tipo no disponible",
     };
 
     public static string Canal(CanalVenta canal) => canal switch
@@ -21,7 +22,7 @@ public static class PedidoPresentacion
         CanalVenta.Facebook => "Facebook",
         CanalVenta.Web => "Web",
         CanalVenta.Otro => "Otro",
-        _ => canal.ToString(),
+        _ => "Canal no disponible",
     };
 
     public static string Estado(EstadoPedido estado) => estado switch
@@ -30,7 +31,7 @@ public static class PedidoPresentacion
         EstadoPedido.Confirmado => "Confirmado",
         EstadoPedido.Cancelado => "Cancelado",
         EstadoPedido.Completado => "Completado",
-        _ => estado.ToString(),
+        _ => "Estado no disponible",
     };
 
     public static string ClaseEstado(EstadoPedido estado) => estado switch
@@ -47,5 +48,5 @@ public static class PedidoPresentacion
 
     public static decimal Total(PedidoDto pedido) => pedido.Detalles.Sum(x => x.Subtotal);
 
-    public static string Moneda(decimal valor) => $"Q {valor:N2}";
+    public static string Moneda(decimal valor) => ClientePresentacion.Moneda(valor);
 }

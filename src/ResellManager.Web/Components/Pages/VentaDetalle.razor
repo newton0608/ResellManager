@@ -31,7 +31,7 @@ else if (Venta is not null)
         <div>
             <p class="eyebrow">Detalle de venta</p>
             <h1 id="titulo-venta">@Venta.CodigoInterno</h1>
-            <p class="page-lead">Venta originada en el pedido #@Venta.PedidoId.</p>
+            <p class="page-lead">Consulta los productos vendidos y el pedido de origen.</p>
         </div>
         <div class="heading-actions">
             <a class="secondary-button" href="/pagos?cliente=@Venta.ClienteId">Pagos del cliente</a>
@@ -61,7 +61,6 @@ else if (Venta is not null)
         </article>
         <article class="info-card">
             <span class="info-label">Pedido</span>
-            <strong>#@Venta.PedidoId</strong>
             <a class="contact-link" href="/pedidos/@Venta.PedidoId">Ver pedido</a>
         </article>
         <article class="info-card">
@@ -196,17 +195,17 @@ else if (Venta is not null)
         if (Cancelando || Venta?.Estado != EstadoVenta.Registrada)
             return;
 
-        var confirmado = await JS.InvokeAsync<bool>(
-            "confirm",
-            "Cancelar esta venta puede liberar sus unidades y devolver el pedido a pendiente. Los pagos existentes pueden impedir la operación. ¿Deseas continuar?");
-        if (!confirmado)
-            return;
-
         Cancelando = true;
         ErrorOperacion = null;
         MensajeExito = null;
         try
         {
+            var confirmado = await JS.InvokeAsync<bool>(
+                "confirm",
+                "Cancelar esta venta puede liberar sus unidades y devolver el pedido a pendiente. Los pagos existentes pueden impedir la operación. ¿Deseas continuar?");
+            if (!confirmado)
+                return;
+
             var resultado = await VentaService.CancelarAsync(Id);
             if (!resultado.IsSuccess)
             {

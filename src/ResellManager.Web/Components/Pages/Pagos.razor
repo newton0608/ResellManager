@@ -32,6 +32,21 @@ else if (!string.IsNullOrWhiteSpace(ErrorCarga))
 }
 else
 {
+    @if (!string.IsNullOrWhiteSpace(MensajeExito))
+    {
+        <div class="mensaje-exito" role="status">@MensajeExito</div>
+    }
+    @if (!string.IsNullOrWhiteSpace(ErrorOperacion))
+    {
+        <div class="mensaje-error alert-with-action" role="alert">
+            <span>@ErrorOperacion</span>
+            @if (ClienteSeleccionado is not null && !SaldoActual.HasValue)
+            {
+                <button class="inline-button" type="button" disabled="@(CargandoCliente || Registrando)" @onclick="RecargarClienteAsync">Reintentar saldo e historial</button>
+            }
+        </div>
+    }
+
     <section class="form-panel payment-customer-picker" aria-labelledby="titulo-cliente-pago">
         <div class="form-field">
             <label for="pago-cliente" id="titulo-cliente-pago">Cliente <span aria-hidden="true">*</span></label>
@@ -63,19 +78,10 @@ else
     }
     else if (ClienteSeleccionado is not null && SaldoActual.HasValue)
     {
-        @if (!string.IsNullOrWhiteSpace(MensajeExito))
-        {
-            <div class="mensaje-exito" role="status">@MensajeExito</div>
-        }
-        @if (!string.IsNullOrWhiteSpace(ErrorOperacion))
-        {
-            <div class="mensaje-error" role="alert">@ErrorOperacion</div>
-        }
-
         <section class="payment-layout">
             <div>
                 <article class="info-card balance-card payment-balance-card" aria-labelledby="titulo-saldo-cliente">
-                    <span class="info-label">Saldo actual provisto por el sistema</span>
+                    <span class="info-label">Saldo actual</span>
                     <h2 id="titulo-saldo-cliente">@ClientePresentacion.NombreCompleto(ClienteSeleccionado)</h2>
                     <strong class="balance-hero">@ClientePresentacion.Moneda(SaldoActual.Value)</strong>
                     <p class="field-help">El pago reducirá la deuda global del cliente; no se asigna a una venta específica.</p>
@@ -93,8 +99,8 @@ else
                             </div>
                             <div class="form-field">
                                 <label for="pago-monto">Monto <span aria-hidden="true">*</span></label>
-                                <InputNumber id="pago-monto" @bind-Value="Modelo.Monto" min="0.01" step="0.01" />
-                                <ValidationMessage For="() => Modelo.Monto" />
+                                <InputNumber id="pago-monto" @bind-Value="Modelo.Monto" min="0.01" step="0.01" aria-describedby="pago-monto-error" />
+                                <ValidationMessage id="pago-monto-error" For="() => Modelo.Monto" />
                                 <p class="field-help">Máximo disponible: @ClientePresentacion.Moneda(SaldoActual.Value)</p>
                             </div>
                             <div class="form-field">
@@ -108,13 +114,13 @@ else
                             </div>
                             <div class="form-field">
                                 <label for="pago-referencia">Referencia</label>
-                                <InputText id="pago-referencia" @bind-Value="Modelo.Referencia" autocomplete="off" />
-                                <ValidationMessage For="() => Modelo.Referencia" />
+                                <InputText id="pago-referencia" @bind-Value="Modelo.Referencia" autocomplete="off" aria-describedby="pago-referencia-error" />
+                                <ValidationMessage id="pago-referencia-error" For="() => Modelo.Referencia" />
                             </div>
                             <div class="form-field form-field-wide">
                                 <label for="pago-observaciones">Observaciones</label>
-                                <InputTextArea id="pago-observaciones" @bind-Value="Modelo.Observaciones" rows="3" />
-                                <ValidationMessage For="() => Modelo.Observaciones" />
+                                <InputTextArea id="pago-observaciones" @bind-Value="Modelo.Observaciones" rows="3" aria-describedby="pago-observaciones-error" />
+                                <ValidationMessage id="pago-observaciones-error" For="() => Modelo.Observaciones" />
                             </div>
                         </div>
                         <div class="form-actions">
@@ -125,7 +131,7 @@ else
                     </EditForm>
                     @if (SaldoActual.Value <= 0)
                     {
-                        <p class="payment-no-debt" role="status">Este cliente no tiene deuda pendiente; el backend no permite registrar pagos adicionales.</p>
+                        <p class="payment-no-debt" role="status">Este cliente no tiene deuda pendiente. No necesita registrar otro pago.</p>
                     }
                 </section>
             </div>
@@ -205,11 +211,14 @@ else
     private string? ErrorCarga { get; set; }
     private string? ErrorOperacion { get; set; }
     private string? MensajeExito { get; set; }
+    private string? QueryCargada { get; set; }
+    private bool ClientesCargados { get; set; }
 
     [SupplyParameterFromQuery(Name = "cliente")]
-    public int? ClienteDesdeQuery { get; set; }
+    public string? ClienteDesdeQuery { get; set; }
 
-    protected override Task OnInitializedAsync() => CargarClientesAsync();
+    protected override Task OnParametersSetAsync() =>
+        !ClientesCargados || QueryCargada != ClienteDesdeQuery ? CargarClientesAsync() : Task.CompletedTask;
 
     private async Task CargarClientesAsync()
     {
@@ -218,8 +227,18 @@ else
         try
         {
             Clientes = await ClienteService.ListarAsync();
-            if (ClienteDesdeQuery.HasValue && Clientes.Any(x => x.Id == ClienteDesdeQuery.Value))
-                await SeleccionarClienteAsync(ClienteDesdeQuery.Value);
+            ClientesCargados = true;
+            QueryCargada = ClienteDesdeQuery;
+            if (ClienteDesdeQuery is not null)
+            {
+                if (int.TryParse(ClienteDesdeQuery, out var clienteId) && clienteId > 0 && Clientes.Any(x => x.Id == clienteId))
+                    await SeleccionarClienteAsync(clienteId);
+                else
+                {
+                    await SeleccionarClienteAsync(0);
+                    ErrorOperacion = "El cliente solicitado no está disponible. Selecciona un cliente de la lista.";
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -240,7 +259,7 @@ else
 
     private async Task SeleccionarClienteAsync(int clienteId)
     {
-        if (Registrando)
+        if (Registrando || CargandoCliente)
             return;
 
         ClienteSeleccionado = Clientes.FirstOrDefault(x => x.Id == clienteId);
@@ -257,26 +276,24 @@ else
 
     private async Task RecargarClienteAsync()
     {
-        if (ClienteSeleccionado is null)
+        if (ClienteSeleccionado is null || CargandoCliente)
             return;
 
         CargandoCliente = true;
         ErrorOperacion = null;
+        SaldoActual = null;
         try
         {
             var clienteId = ClienteSeleccionado.Id;
-            var saldoTask = ClienteService.ObtenerSaldoAsync(clienteId);
-            var historialTask = PagoService.ListarPorClienteAsync(clienteId);
-            await Task.WhenAll(saldoTask, historialTask);
-            var saldo = await saldoTask;
+            var saldo = await ClienteService.ObtenerSaldoAsync(clienteId);
             if (!saldo.IsSuccess)
             {
                 ErrorOperacion = saldo.ErrorMessage ?? "No fue posible consultar el saldo.";
                 return;
             }
 
+            Historial = await PagoService.ListarPorClienteAsync(clienteId);
             SaldoActual = saldo.Value;
-            Historial = await historialTask;
         }
         catch (Exception ex)
         {
@@ -319,7 +336,9 @@ else
             var clienteId = Modelo.ClienteId;
             Modelo = new PagoFormModel { ClienteId = clienteId };
             await RecargarClienteAsync();
-            MensajeExito = "Pago registrado correctamente. El saldo fue recalculado por el sistema.";
+            MensajeExito = SaldoActual.HasValue
+                ? "Pago registrado correctamente. El saldo fue recalculado por el sistema."
+                : "Pago registrado correctamente. Reintenta la consulta del saldo; no vuelvas a registrar este pago.";
         }
         catch (Exception ex)
         {
