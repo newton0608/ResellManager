@@ -4,13 +4,11 @@
 @inject TimeProvider TimeProvider
 @inject ILogger<Home> Logger
 
-<PageTitle>Dashboard | ResellManager</PageTitle>
+<PageTitle>Inicio | ResellManager</PageTitle>
 
-<section class="page-heading" aria-labelledby="titulo-dashboard">
+<section class="page-heading dashboard-heading" aria-labelledby="titulo-dashboard">
     <div>
-        <p class="eyebrow">Dashboard</p>
-        <h1 id="titulo-dashboard">Resumen del negocio</h1>
-        <p class="page-lead">Indicadores operativos calculados con ventas, pagos, inventario y pedidos reales.</p>
+        <h1 id="titulo-dashboard">Inicio</h1>
     </div>
 </section>
 
@@ -31,35 +29,37 @@ else if (Dashboard is null)
 }
 else
 {
-    <section class="dashboard-metrics" aria-label="Métricas principales">
+    <h2 class="dashboard-summary-heading" id="titulo-resumen">Resumen</h2>
+    <section class="dashboard-metrics" aria-labelledby="titulo-resumen">
         <article class="dashboard-metric-card dashboard-debt-card">
-            <span class="dashboard-metric-label">Total adeudado</span>
+            <span class="dashboard-metric-label">Total por cobrar</span>
             <strong>@ClientePresentacion.Moneda(Dashboard.TotalAdeudado)</strong>
-            <small>Ventas registradas menos pagos</small>
-        </article>
-        <article class="dashboard-metric-card">
-            <span class="dashboard-metric-label">Inventario disponible</span>
-            <strong>@ClientePresentacion.Moneda(Dashboard.ValorInventarioDisponible)</strong>
-            <small>Costo de unidades disponibles</small>
+            <a href="/clientes">Ver saldos de clientes</a>
         </article>
         <article class="dashboard-metric-card">
             <span class="dashboard-metric-label">Unidades disponibles</span>
             <strong>@Dashboard.UnidadesDisponibles</strong>
-            <small>Existencias listas para venta</small>
+            <a href="/inventario">Ver inventario</a>
         </article>
         <article class="dashboard-metric-card">
             <span class="dashboard-metric-label">Pedidos activos</span>
             <strong>@Dashboard.PedidosActivos</strong>
-            <small>Pendientes y confirmados</small>
+            <a href="/pedidos">Ver pedidos</a>
+        </article>
+        <article class="dashboard-metric-card">
+            <span class="dashboard-metric-label">Inventario al costo</span>
+            <strong>@ClientePresentacion.Moneda(Dashboard.ValorInventarioDisponible)</strong>
+            <small>Unidades disponibles</small>
         </article>
     </section>
 }
 
+<a class="primary-button dashboard-direct-sale" href="/ventas/nueva?modo=directa">Venta directa</a>
+
 <section class="data-panel dashboard-utility-panel" aria-labelledby="titulo-utilidad">
     <div class="data-panel-heading dashboard-panel-heading">
         <div>
-            <h2 id="titulo-utilidad">Utilidad por periodo</h2>
-            <p>Ventas registradas: precio final menos costo unitario.</p>
+            <h2 id="titulo-utilidad">Ganancia total</h2>
         </div>
     </div>
     <form class="dashboard-period-form" @onsubmit="ConsultarUtilidadAsync" @onsubmit:preventDefault>
@@ -72,7 +72,7 @@ else
             <input id="dashboard-hasta" type="date" @bind="Hasta" disabled="@ConsultandoUtilidad" />
         </div>
         <button class="primary-button" type="submit" disabled="@ConsultandoUtilidad">
-            @(ConsultandoUtilidad ? "Consultando..." : "Consultar utilidad")
+            @(ConsultandoUtilidad ? "Consultando..." : "Consultar")
         </button>
     </form>
     @if (!string.IsNullOrWhiteSpace(ErrorUtilidad))
@@ -81,12 +81,12 @@ else
     }
     else if (ConsultandoUtilidad)
     {
-        <p class="dashboard-utility-status" role="status">Calculando utilidad...</p>
+        <p class="dashboard-utility-status" role="status">Calculando ganancia...</p>
     }
     else if (Utilidad.HasValue)
     {
         <div class="dashboard-utility-result" aria-live="polite">
-            <span>Utilidad del @Desde.ToString("dd/MM/yyyy") al @Hasta.ToString("dd/MM/yyyy")</span>
+            <span>Ganancia del @DesdeConsultado.ToString("dd/MM/yyyy") al @HastaConsultado.ToString("dd/MM/yyyy")</span>
             <strong>@ClientePresentacion.Moneda(Utilidad.Value)</strong>
         </div>
     }
@@ -260,6 +260,8 @@ else
     private DashboardDto? Dashboard { get; set; }
     private DateOnly Desde { get; set; }
     private DateOnly Hasta { get; set; }
+    private DateOnly DesdeConsultado { get; set; }
+    private DateOnly HastaConsultado { get; set; }
     private decimal? Utilidad { get; set; }
     private bool CargandoDashboard { get; set; }
     private bool ConsultandoUtilidad { get; set; }
@@ -307,9 +309,11 @@ else
         ConsultandoUtilidad = true;
         ErrorUtilidad = null;
         Utilidad = null;
+        var desdeConsultado = Desde;
+        var hastaConsultado = Hasta;
         try
         {
-            var resultado = await DashboardService.ObtenerUtilidadAsync(Desde, Hasta);
+            var resultado = await DashboardService.ObtenerUtilidadAsync(desdeConsultado, hastaConsultado);
             if (!resultado.IsSuccess)
             {
                 ErrorUtilidad = resultado.ErrorMessage;
@@ -317,10 +321,12 @@ else
             }
 
             Utilidad = resultado.Value;
+            DesdeConsultado = desdeConsultado;
+            HastaConsultado = hastaConsultado;
         }
         catch (Exception ex)
         {
-            ErrorUtilidad = "Ocurrió un error al consultar la utilidad. Intenta nuevamente.";
+            ErrorUtilidad = "Ocurrió un error al consultar la ganancia. Intenta nuevamente.";
             Logger.LogError(ex, "No fue posible consultar la utilidad del Dashboard.");
         }
         finally

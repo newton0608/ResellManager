@@ -464,3 +464,19 @@ Antes de prueba real y posterior despliegue:
 3. Configurar conexión, HTTPS y secretos sin credenciales reales en el repositorio; retirar las credenciales de inicialización después del alta.
 4. Verificar migraciones sobre una copia de los datos objetivo y ensayar recuperación del respaldo. Las pruebas temporales no sustituyen esta verificación operativa.
 5. Confirmar aceptación de negocio y resolver hallazgos reales antes de autorizar despliegue. Esta fase no despliega a producción.
+
+## 12. Ajuste UX posterior al cierre técnico
+
+Se conserva el cierre V1 anterior; este ajuste no reabre la fase ni cambia reglas de negocio, servicios, esquema o almacenamiento.
+
+- **Inicio compacto:** resumen con las cuatro métricas existentes (total por cobrar, unidades disponibles, pedidos activos e inventario al costo). CSS de dos columnas en móvil cuando hay espacio y cuatro desde tablet, con CTA **Venta directa** inmediatamente después.
+- **Ganancia total:** nuevo texto visible para Utilidad, dentro de una sola card con fechas, botón Consultar y resultado compacto. El cálculo sigue intacto. Se corrigió que editar fechas sin consultar reetiquetara el importe anterior: ahora el resultado conserva el rango de la consulta que lo produjo.
+- **Controles responsive:** los grids implícitos de formularios/listas y los mínimos de las columnas podían propagar el ancho intrínseco de los controles. Se definieron tracks `minmax(0, 1fr)`, hijos encogibles y límites de ancho para inputs/selects/textarea; los ajustes WebKit de fecha conservan el selector nativo. No se oculta el overflow del body.
+- **Nueva compra:** el encabezado de productos y Agregar producto se apilan en móvil; campos, líneas y botones respetan el contenedor. Se reutiliza el CSS compartido, sin modificar CompraService.
+- **Alertas prematuras:** ClienteEdicion, ProductoEdicion y CategoriaEdicion pasaban `ErrorMessage="ErrorGuardado"` como literal Razor. Se corrigió a `ErrorMessage="@ErrorGuardado"`; las condiciones existentes de los formularios solo muestran errores reales. La advertencia amarilla cuando faltan categorías se conserva.
+- **Código de producto:** continúa **manual**, obligatorio y único, utilizado en búsquedas y selectores. Solo se aclararon el placeholder y el mensaje requerido; no cambia la decisión de V1.
+- **Regresiones:** seis casos de formularios (render inicial sin alertas/validaciones prematuras, errores reales, reintentos y referencia manual) y dos de Ganancia (rango/importe estable y consulta pendiente sin duplicación). Se usa la infraestructura existente, SQLite aislada y renderizado Razor; no son pruebas visuales de CSS ni se añadió una librería de UI testing.
+
+**Verificación del ajuste:** `dotnet build ResellManager.sln` correcto, 0 errores y 0 warnings; `dotnet test ResellManager.sln`: **272 aprobadas** (264 anteriores + 8 nuevas), 0 fallidas y 0 omitidas. `git diff --check` correcto. Los primeros intentos de build/test quedaron bloqueados por el ejecutable de una instancia local en ejecución; una vez liberado, ambos comandos normales finalizaron correctamente, sin cambiar la configuración de compilación ni relajar pruebas.
+
+**Validación automática visual no disponible; requiere comprobación manual.** El navegador falló al inicializarse (`trusted Node process exited unexpectedly`); no se reintentó. Quedan pendientes escritorio y 390 × 844 CSS px en Inicio/Ganancia, Cliente nuevo, Producto nuevo y Nueva compra, incluyendo Safari/iPhone, ausencia de scroll horizontal y controles dentro de las cards. La revisión de código y las pruebas de render no sustituyen esa aceptación visual.

@@ -22,7 +22,7 @@
     <div class="form-grid">
         <div class="form-field">
             <label for="producto-codigo-interno">Código de producto <span aria-hidden="true">*</span></label>
-            <InputText disabled="@Guardando" aria-describedby="producto-codigo-interno-validacion" aria-required="true" id="producto-codigo-interno" placeholder="Referencia o SKU que usas para buscar" @bind-Value="Modelo.CodigoInterno" autocomplete="off" />
+            <InputText disabled="@Guardando" aria-describedby="producto-codigo-interno-validacion" aria-required="true" id="producto-codigo-interno" placeholder="Referencia o SKU para buscar este producto" @bind-Value="Modelo.CodigoInterno" autocomplete="off" />
             <div id="producto-codigo-interno-validacion"><ValidationMessage For="() => Modelo.CodigoInterno" /></div>
         </div>
 

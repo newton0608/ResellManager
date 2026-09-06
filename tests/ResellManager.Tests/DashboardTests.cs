@@ -400,11 +400,13 @@ public sealed class DashboardUiTests
         );
 
         Assert.Contains("IDashboardService", home, StringComparison.Ordinal);
-        Assert.Contains("Resumen del negocio", home, StringComparison.Ordinal);
-        Assert.Contains("Total adeudado", home, StringComparison.Ordinal);
-        Assert.Contains("Inventario disponible", home, StringComparison.Ordinal);
+        Assert.Contains("id=\"titulo-dashboard\">Inicio", home, StringComparison.Ordinal);
+        Assert.Contains("id=\"titulo-resumen\">Resumen", home, StringComparison.Ordinal);
+        Assert.Contains("Total por cobrar", home, StringComparison.Ordinal);
+        Assert.Contains("Inventario al costo", home, StringComparison.Ordinal);
         Assert.Contains("Pedidos activos", home, StringComparison.Ordinal);
-        Assert.Contains("Utilidad por periodo", home, StringComparison.Ordinal);
+        Assert.Contains("Ganancia total", home, StringComparison.Ordinal);
+        Assert.Contains("href=\"/ventas/nueva?modo=directa\"", home, StringComparison.Ordinal);
         Assert.Contains("Ventas por canal", home, StringComparison.Ordinal);
         Assert.Contains("Últimos pagos", home, StringComparison.Ordinal);
         Assert.Contains("Últimas ventas", home, StringComparison.Ordinal);

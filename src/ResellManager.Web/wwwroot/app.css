@@ -843,10 +843,30 @@ h2 {
   background: #fff;
   border: 1px solid #b8c3d1;
   border-radius: .55rem;
+  box-sizing: border-box;
   color: var(--color-text);
+  max-width: 100%;
   min-height: 2.85rem;
+  min-width: 0;
   padding: .65rem .75rem;
   width: 100%;
+}
+
+/* El control nativo de fecha debe respetar el ancho disponible, también en WebKit. */
+.form-field input[type="date"] {
+  inline-size: 100%;
+  max-inline-size: 100%;
+  min-inline-size: 0;
+}
+
+.form-field input[type="date"]::-webkit-datetime-edit {
+  min-width: 0;
+  padding: 0;
+}
+
+.form-field input[type="date"]::-webkit-date-and-time-value {
+  min-width: 0;
+  text-align: left;
 }
 
 .form-field textarea {
@@ -872,12 +892,24 @@ h2 {
 
 .form-panel {
   max-width: 58rem;
+  min-width: 0;
   padding: clamp(1rem, 3vw, 1.5rem);
+  width: 100%;
 }
 
 .entity-form {
   display: grid;
   gap: 1rem;
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+}
+
+/* No dejar que el tamaño intrínseco de inputs/selects ensanche el formulario. */
+.entity-form > *,
+.form-grid > *,
+.catalog-warning > * {
+  max-width: 100%;
+  min-width: 0;
 }
 
 .form-grid {
@@ -1595,6 +1627,33 @@ textarea {
   max-width: none;
 }
 
+.purchase-lines-editor > .data-panel-heading {
+  flex-wrap: wrap;
+  gap: .75rem;
+}
+
+.purchase-lines-editor > .data-panel-heading > div {
+  flex: 1 1 16rem;
+}
+
+.purchase-lines-editor > .data-panel-heading > button {
+  flex: 0 1 auto;
+}
+
+.purchase-lines-editor .order-line-heading {
+  flex-wrap: wrap;
+}
+
+.purchase-line-grid > *,
+.purchase-lines-editor .order-line-heading > *,
+.origin-guidance > *,
+.receipt-upload-heading > *,
+.purchase-total-preview > * {
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .field-help-link {
   color: var(--color-primary-dark);
   display: inline-block;
@@ -1637,7 +1696,7 @@ textarea {
   align-items: end;
   display: grid;
   gap: .75rem;
-  grid-template-columns: minmax(13rem, 2fr) minmax(6rem, .55fr) minmax(8rem, .8fr) minmax(8rem, .7fr);
+  grid-template-columns: minmax(0, 2fr) minmax(0, .55fr) minmax(0, .8fr) minmax(0, .7fr);
 }
 
 .purchase-line-subtotal {
@@ -1838,9 +1897,15 @@ textarea {
   }
 
   .receipt-upload-heading,
-  .purchase-reception-note {
+  .purchase-reception-note,
+  .purchase-lines-editor > .data-panel-heading {
     align-items: stretch;
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .purchase-lines-editor > .data-panel-heading > button {
+    justify-self: start;
   }
 
   .receipt-toggle {
@@ -1859,6 +1924,7 @@ textarea {
   .purchase-total-preview {
     align-items: flex-start;
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -1912,6 +1978,7 @@ textarea {
   .catalog-warning {
     align-items: stretch;
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .alert-with-action {
@@ -2243,6 +2310,7 @@ textarea {
 .order-detail-list {
   display: grid;
   gap: .85rem;
+  grid-template-columns: minmax(0, 1fr);
   padding-top: 1rem;
 }
 
@@ -2251,6 +2319,7 @@ textarea {
   background: #fbfdff;
   border: 1px solid var(--color-border);
   border-radius: .7rem;
+  min-width: 0;
   padding: 1rem;
 }
 
@@ -2925,11 +2994,20 @@ textarea {
 }
 
 /* Dashboard */
+.dashboard-heading {
+  margin-bottom: .75rem;
+}
+
+.dashboard-summary-heading {
+  font-size: 1rem;
+  margin: 0 0 .65rem;
+}
+
 .dashboard-metrics {
   display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13.5rem), 1fr));
-  margin-bottom: 1.25rem;
+  gap: .65rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: .75rem;
 }
 
 .dashboard-metric-card {
@@ -2937,10 +3015,31 @@ textarea {
   border: 1px solid var(--color-border);
   border-radius: .85rem;
   box-shadow: var(--shadow-sm);
+  align-content: start;
   display: grid;
-  gap: .45rem;
+  gap: .35rem;
+  grid-template-columns: minmax(0, 1fr);
   min-width: 0;
-  padding: 1.15rem;
+  padding: .8rem;
+}
+
+.dashboard-metric-card > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-metric-card a {
+  align-items: center;
+  color: var(--color-primary-dark);
+  display: inline-flex;
+  font-size: .76rem;
+  line-height: 1.35;
+  min-height: 2.75rem;
+}
+
+.dashboard-direct-sale {
+  margin-bottom: 1rem;
+  width: 100%;
 }
 
 .dashboard-debt-card {
@@ -2950,15 +3049,16 @@ textarea {
 
 .dashboard-metric-label {
   color: #475569;
-  font-size: .78rem;
+  font-size: .72rem;
   font-weight: 800;
-  letter-spacing: .045em;
+  letter-spacing: .025em;
+  line-height: 1.35;
   text-transform: uppercase;
 }
 
 .dashboard-metric-card strong {
   color: #172033;
-  font-size: clamp(1.55rem, 3vw, 2rem);
+  font-size: clamp(1.25rem, 2.5vw, 1.65rem);
   font-variant-numeric: tabular-nums;
   line-height: 1.15;
 }
@@ -2979,6 +3079,21 @@ textarea {
   margin-bottom: 1.25rem;
 }
 
+.dashboard-utility-panel {
+  min-width: 0;
+  padding: 1rem;
+}
+
+.dashboard-utility-panel > .dashboard-panel-heading {
+  border: 0;
+  margin-bottom: .75rem;
+  padding: 0;
+}
+
+.dashboard-utility-panel h2 {
+  font-size: 1rem;
+}
+
 .dashboard-panel-heading {
   align-items: flex-start;
   gap: 1rem;
@@ -2992,33 +3107,40 @@ textarea {
 .dashboard-period-form {
   align-items: end;
   display: grid;
-  gap: .8rem;
-  grid-template-columns: repeat(2, minmax(9rem, 14rem)) auto;
-  padding: 1rem 1.1rem;
+  gap: .65rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+}
+
+.dashboard-period-form > * {
+  min-width: 0;
 }
 
 .dashboard-period-form .primary-button {
+  justify-self: end;
   min-height: 2.85rem;
 }
 
 .dashboard-utility-error {
-  margin: 0 1.1rem 1rem;
+  margin: .75rem 0 0;
 }
 
 .dashboard-utility-status {
   font-size: .85rem;
-  margin: 0;
-  padding: 0 1.1rem 1rem;
+  margin: .75rem 0 0;
 }
 
 .dashboard-utility-result {
-  align-items: center;
-  background: #f0fdfa;
   border-top: 1px solid #99f6e4;
-  display: flex;
-  gap: 1rem;
-  justify-content: space-between;
-  padding: 1rem 1.1rem;
+  display: grid;
+  gap: .2rem;
+  grid-template-columns: minmax(0, 1fr);
+  margin-top: .75rem;
+  padding-top: .75rem;
+}
+
+.dashboard-utility-result > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .dashboard-utility-result span {
@@ -3029,9 +3151,8 @@ textarea {
 
 .dashboard-utility-result strong {
   color: #115e59;
-  font-size: 1.45rem;
+  font-size: 1.35rem;
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
 }
 
 .dashboard-recent-grid {
@@ -3106,6 +3227,12 @@ textarea {
   text-decoration: underline;
 }
 
+@media (min-width: 48rem) {
+  .dashboard-metrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 47.99rem) {
   .dashboard-period-form {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3122,26 +3249,25 @@ textarea {
 }
 
 @media (max-width: 30rem) {
-  .dashboard-period-form {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .dashboard-period-form .primary-button {
-    grid-column: auto;
-    width: 100%;
-  }
-
-  .dashboard-utility-result,
   .dashboard-panel-heading {
     align-items: flex-start;
     display: grid;
-  }
-
-  .dashboard-utility-result strong {
-    white-space: normal;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .dashboard-card-values {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 25rem) {
+  .dashboard-period-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 21rem) {
+  .dashboard-metrics {
     grid-template-columns: minmax(0, 1fr);
   }
 }

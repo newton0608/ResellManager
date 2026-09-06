@@ -5,7 +5,7 @@ namespace ResellManager.Web.Components.Productos;
 
 public sealed class ProductoFormModel : IValidatableObject
 {
-    [Required(ErrorMessage = "El código interno es obligatorio.")]
+    [Required(ErrorMessage = "El código de producto es obligatorio.")]
     public string CodigoInterno { get; set; } = string.Empty;
 
     public string? CodigoBarras { get; set; }
