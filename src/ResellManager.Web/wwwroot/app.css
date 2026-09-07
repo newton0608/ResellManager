@@ -3280,3 +3280,82 @@ textarea {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Reconexión: las clases y los contadores components-reconnect-* pertenecen a Blazor. */
+#components-reconnect-modal {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 1rem;
+  box-shadow: var(--shadow-md);
+  color: var(--color-text);
+  margin: auto;
+  max-height: calc(100% - 2rem);
+  max-width: calc(100% - 2rem);
+  overflow-wrap: anywhere;
+  padding: clamp(1.25rem, 4vw, 2rem);
+  width: min(26rem, calc(100% - 2rem));
+}
+
+#components-reconnect-modal::backdrop {
+  background: rgb(15 23 42 / 45%);
+}
+
+#components-reconnect-modal:not([open]),
+#components-reconnect-modal .reconnect-state {
+  display: none;
+}
+
+#components-reconnect-modal.components-reconnect-show .reconnect-state-show,
+#components-reconnect-modal.components-reconnect-failed .reconnect-state-failed,
+#components-reconnect-modal.components-reconnect-rejected .reconnect-state-rejected {
+  display: grid;
+  gap: 1rem;
+  justify-items: center;
+  min-width: 0;
+  text-align: center;
+}
+
+#components-reconnect-modal h2 {
+  font-size: clamp(1.25rem, 4vw, 1.6rem);
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 0;
+}
+
+#components-reconnect-modal p {
+  font-size: 1rem;
+  margin: 0;
+}
+
+#components-reconnect-modal .reconnect-attempts {
+  color: var(--color-muted);
+  font-size: .95rem;
+  font-variant-numeric: tabular-nums;
+}
+
+#components-reconnect-modal[data-manual-retry] .reconnect-attempts {
+  display: none;
+}
+
+#components-reconnect-modal .primary-button {
+  min-height: 2.85rem;
+}
+
+.reconnect-spinner {
+  animation: reconnect-spin 1s linear infinite;
+  border: .3rem solid #dbeafe;
+  border-radius: 50%;
+  border-top-color: var(--color-primary);
+  height: 3.25rem;
+  width: 3.25rem;
+}
+
+@keyframes reconnect-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reconnect-spinner {
+    animation: none;
+  }
+}

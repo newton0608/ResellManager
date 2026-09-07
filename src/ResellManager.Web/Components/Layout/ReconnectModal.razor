@@ -1,0 +1,26 @@
+@* Blazor actualiza las clases de estado y los contadores de este único elemento. *@
+<dialog id="components-reconnect-modal" class="components-reconnect-hide" data-permanent
+        aria-modal="true" aria-labelledby="reconnect-title-show" aria-busy="false">
+    <section class="reconnect-state reconnect-state-show" tabindex="-1"
+             role="status" aria-live="polite" aria-atomic="true">
+        <span class="reconnect-spinner" aria-hidden="true"></span>
+        <h2 id="reconnect-title-show">Reconectando…</h2>
+        <p id="reconnect-description-show">Intentando conectar con el servidor.</p>
+        <p class="reconnect-attempts">
+            Intento <span id="components-reconnect-current-attempt"></span>
+            de <span id="components-reconnect-max-retries"></span>
+        </p>
+    </section>
+    <section class="reconnect-state reconnect-state-failed" tabindex="-1"
+             role="alert" aria-live="assertive" aria-atomic="true">
+        <h2 id="reconnect-title-failed">No se pudo restablecer la conexión</h2>
+        <p id="reconnect-description-failed">Revisa tu conexión a Internet e intenta nuevamente.</p>
+        <button id="reconnect-retry" class="primary-button" type="button">Reintentar</button>
+    </section>
+    <section class="reconnect-state reconnect-state-rejected" tabindex="-1"
+             role="alert" aria-live="assertive" aria-atomic="true">
+        <h2 id="reconnect-title-rejected">La sesión ya no está disponible</h2>
+        <p id="reconnect-description-rejected">Recarga la página para continuar.</p>
+        <button id="reconnect-reload" class="primary-button" type="button">Recargar página</button>
+    </section>
+</dialog>
