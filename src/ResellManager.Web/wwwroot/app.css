@@ -869,6 +869,21 @@ h2 {
   text-align: left;
 }
 
+/* iOS suma el padding del control date al 100% aun con border-box.
+   Mantener el espacio en su contenido interno, sin alterar el picker nativo.
+   https://bugs.webkit.org/show_bug.cgi?id=301648 */
+@supports (-webkit-touch-callout: none) {
+  .form-field input[type="date"] {
+    padding-inline: 0;
+  }
+
+  .form-field input[type="date"]::-webkit-date-and-time-value {
+    box-sizing: border-box;
+    max-inline-size: 100%;
+    padding-inline: .75rem;
+  }
+}
+
 .form-field textarea {
   min-height: 5.5rem;
   resize: vertical;
@@ -919,6 +934,7 @@ h2 {
 }
 
 .form-field {
+  max-width: 100%;
   min-width: 0;
 }
 
@@ -3109,9 +3125,12 @@ textarea {
   display: grid;
   gap: .65rem;
   grid-template-columns: minmax(0, 1fr);
+  max-width: 100%;
+  min-width: 0;
 }
 
 .dashboard-period-form > * {
+  max-width: 100%;
   min-width: 0;
 }
 
