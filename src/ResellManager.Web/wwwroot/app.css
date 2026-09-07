@@ -3249,6 +3249,10 @@ textarea {
 }
 
 @media (max-width: 30rem) {
+  .dashboard-period-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .dashboard-panel-heading {
     align-items: flex-start;
     display: grid;
@@ -3256,12 +3260,6 @@ textarea {
   }
 
   .dashboard-card-values {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-@media (max-width: 25rem) {
-  .dashboard-period-form {
     grid-template-columns: minmax(0, 1fr);
   }
 }
