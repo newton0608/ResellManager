@@ -5,9 +5,6 @@ namespace ResellManager.Web.Components.Productos;
 
 public sealed class ProductoFormModel : IValidatableObject
 {
-    [Required(ErrorMessage = "El código de producto es obligatorio.")]
-    public string CodigoInterno { get; set; } = string.Empty;
-
     public string? CodigoBarras { get; set; }
 
     [Required(ErrorMessage = "El nombre es obligatorio.")]
@@ -46,7 +43,6 @@ public sealed class ProductoFormModel : IValidatableObject
 
     public ProductoInput ToInput() =>
         new(
-            CodigoInterno,
             CodigoBarras,
             Nombre,
             Descripcion,
@@ -60,7 +56,6 @@ public sealed class ProductoFormModel : IValidatableObject
     public static ProductoFormModel FromDto(ProductoDto producto) =>
         new()
         {
-            CodigoInterno = producto.CodigoInterno,
             CodigoBarras = producto.CodigoBarras,
             Nombre = producto.Nombre,
             Descripcion = producto.Descripcion,

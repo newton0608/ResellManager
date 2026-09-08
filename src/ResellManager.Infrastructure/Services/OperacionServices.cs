@@ -12,6 +12,13 @@ namespace ResellManager.Infrastructure.Services;
 
 public sealed class PedidoService(ResellManagerDbContext db) : IPedidoService
 {
+    public Task<ServiceResult<PedidoDto>> CrearManualAsync(PedidoInput input, CancellationToken ct = default)
+    {
+        if (TiposPedidoManual.Validar(input.TipoPedido) is { } error)
+            return Task.FromResult(ServiceResult<PedidoDto>.Failure(error));
+        return CrearAsync(input, ct);
+    }
+
     public async Task<ServiceResult<PedidoDto>> CrearAsync(
         PedidoInput input,
         CancellationToken ct = default

@@ -74,7 +74,7 @@ else
                 <div class="form-field">
                     <label for="pedido-tipo">Tipo de pedido <span aria-hidden="true">*</span></label>
                     <InputSelect id="pedido-tipo" @bind-Value="Modelo.TipoPedido" disabled="@Guardando">
-                        @foreach (var tipo in Enum.GetValues<TipoPedido>())
+                        @foreach (var tipo in PedidoFormModel.TiposManuales)
                         {
                             <option value="@tipo">@PedidoPresentacion.Tipo(tipo)</option>
                         }
@@ -247,7 +247,7 @@ else
         Guardando = true;
         try
         {
-            var resultado = await PedidoService.CrearAsync(Modelo.ToInput(CodigoPedido));
+            var resultado = await PedidoService.CrearManualAsync(Modelo.ToInput(CodigoPedido));
             if (!resultado.IsSuccess || resultado.Value is null)
             {
                 ErrorGuardado = resultado.ErrorMessage ?? "No fue posible crear el pedido.";
@@ -269,6 +269,8 @@ else
 
     private string? ValidarDetalles()
     {
+        if (Modelo.ValidarTipoManual() is { } errorTipo)
+            return errorTipo;
         if (Modelo.Detalles.Count == 0)
             return "Agrega al menos un detalle al pedido.";
         if (Modelo.Detalles.Any(x => !Productos.Any(p => p.Id == x.ProductoId)))

@@ -148,7 +148,8 @@
 - [x] Proteger registro y cancelación contra doble submit en UI.
 - [x] Mantener las ventas canceladas en modo de consulta.
 - [ ] V2: endurecer concurrencia de saldo por cliente e inventario físico sin bloqueo global.
-- [x] Auditar todos los códigos internos: Pedido y Venta normales automáticos; Producto manual por su uso comercial/búsqueda; Compra, comprobante y unidades ya automáticos. Ver `15_CodigosYCanalesVenta.md`.
+- [x] Auditar todos los códigos internos: Pedido y Venta normales automáticos; Producto también automático en backend como `PRO-<GUID>` tras validación manual V1, conservando códigos históricos; Compra, comprobante y unidades ya automáticos. Ver `15_CodigosYCanalesVenta.md`.
+- [x] Restringir Nuevo pedido manual a Importación, Catálogo y Apartado en selector y contrato del servicio. VentaDirecta permanece reservada a su flujo específico.
 - [x] Diseñar e implementar `CanalVenta` como concepto separado de `TipoPedido`, persistido en `Pedido`.
 - [x] Asignar `CanalVenta.Presencial` automáticamente al pedido de Venta Directa, sin selector adicional.
 - [x] Migrar pedidos históricos a `CanalVenta.Otro` sin inferir su origen.

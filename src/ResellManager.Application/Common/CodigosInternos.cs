@@ -5,6 +5,10 @@ public static class CodigosInternos
     public const string PrefijoPedido = "PED-";
     public const string PrefijoVenta = "VEN-";
     public const string PrefijoCompra = "COM-";
+    public const string PrefijoProducto = "PRO-";
+
+    public static string CrearCodigoProducto() =>
+        PrefijoProducto + Guid.NewGuid().ToString("N").ToUpperInvariant();
 
     public static string CrearCodigoPedido() =>
         PrefijoPedido + Guid.NewGuid().ToString("N").ToUpperInvariant();

@@ -1,11 +1,14 @@
 using System.ComponentModel.DataAnnotations;
+using ResellManager.Application.Common;
 using ResellManager.Application.DTOs;
 using ResellManager.Domain.Enums;
 
 namespace ResellManager.Web.Components.Pedidos;
 
-public sealed class PedidoFormModel
+public sealed class PedidoFormModel : IValidatableObject
 {
+    public static IReadOnlyList<TipoPedido> TiposManuales => TiposPedidoManual.Permitidos;
+
     public DateOnly Fecha { get; set; } = DateOnly.FromDateTime(DateTime.Today);
     public TipoPedido TipoPedido { get; set; } = TipoPedido.Importacion;
 
@@ -19,6 +22,14 @@ public sealed class PedidoFormModel
     public string? Observaciones { get; set; }
 
     public List<DetallePedidoFormModel> Detalles { get; } = [new()];
+
+    public string? ValidarTipoManual() => TiposPedidoManual.Validar(TipoPedido);
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (ValidarTipoManual() is { } error)
+            yield return new ValidationResult(error, [nameof(TipoPedido)]);
+    }
 
     public PedidoInput ToInput(string codigoInterno) =>
         new(

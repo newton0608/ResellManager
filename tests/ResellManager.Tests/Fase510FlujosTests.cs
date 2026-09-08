@@ -296,7 +296,7 @@ public sealed class Fase510FlujosTests
 
         public async Task<ProductoDto> CrearProductoAsync(string codigo) =>
             Exito(await EjecutarAsync(db => new ProductoService(db).CrearAsync(new ProductoInput(
-                codigo, null, "Producto " + codigo, null, null, null, null, null, 100m, Categoria.Id))));
+                null, "Producto " + codigo, null, null, null, null, null, 100m, Categoria.Id))));
 
         public async Task<CompraDto> ComprarAsync(OrigenCompra origen, int cantidad = 1, int? productoId = null) =>
             Exito(await EjecutarAsync(db => new CompraService(db).RegistrarAsync(new CompraInput(

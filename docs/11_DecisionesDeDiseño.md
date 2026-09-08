@@ -209,7 +209,11 @@ Pedido normal usa `PED-<GUID>` y Venta desde pedido `VEN-<GUID>`, creados una so
 
 Compra conserva `COM-<GUID>`; comprobantes `CMP-<GUID>.<extensión>` y unidades el código determinista de compra + número de detalle + número de unidad. No cambian las validaciones ni índices únicos del backend.
 
-`Producto.CodigoInterno` se mantiene manual: el servicio de búsqueda y los selectores lo usan como referencia reconocible de producto. No hay evidencia para clasificarlo como un mero identificador técnico ni para afirmar que siempre lo aporta un proveedor. Automatizarlo solo por uniformidad eliminaría una referencia útil. Código de barras, número de documento, referencia de pago y código de país siguen siendo datos externos manuales. Clasificación completa en `15_CodigosYCanalesVenta.md`.
+Decisión vigente tras validación manual V1 (sustituye la captura manual anterior): `Producto.CodigoInterno` es un identificador técnico automático `PRO-<GUID>`. ProductoService lo genera al crear, mediante el helper común y GUID N hexadecimal en mayúsculas. No se captura ni modifica al editar; los códigos históricos se conservan exactamente, sin regeneración ni normalización. Sigue disponible para búsqueda y trazabilidad. `ProductoInput` ya no acepta este campo. No cambia el esquema ni su índice único.
+
+`Producto.CodigoBarras` continúa externo, manual y opcional. Número de documento, referencia de pago y código de país siguen siendo datos externos manuales. Clasificación completa en `15_CodigosYCanalesVenta.md`.
+
+`TipoPedido.VentaDirecta` permanece en el dominio y conserva su valor persistido, pero está reservado al pedido automático del flujo Venta Directa (CanalVenta.Presencial). Nuevo pedido manual solo admite Importacion, Catalogo y Apartado; selector, modelo y `PedidoService.CrearManualAsync` comparten la lista `TiposPedidoManual.Permitidos`.
 
 ## 019 Apartado está resuelto por Pedido + Reserva
 

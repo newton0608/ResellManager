@@ -22,7 +22,9 @@
 
 ✅ Pedidos.
 
-✅ Pedido normal con código automático `PED-<GUID>` y Venta desde pedido con `VEN-<GUID>`, estables durante los reintentos del formulario. `Producto.CodigoInterno` se conserva manual como referencia comercial y de búsqueda.
+✅ Pedido normal con código automático `PED-<GUID>` y Venta desde pedido con `VEN-<GUID>`, estables durante los reintentos del formulario. Producto nuevo recibe `PRO-<GUID>` generado en backend, sin captura manual; editar no modifica el código y conserva exactamente los históricos. Las búsquedas existentes se mantienen.
+
+✅ Nuevo pedido manual solo permite Importación, Catálogo y Apartado, con validación también en el servicio. `TipoPedido.VentaDirecta` permanece en dominio, reservado al flujo específico Venta Directa que genera su Pedido automáticamente con CanalVenta.Presencial.
 
 ✅ `CanalVenta` requerido en `Pedido`, separado de `TipoPedido`, visible en creación, listado y
 detalle. No se duplica en `Venta`; los pedidos históricos se migran a `Otro` y Venta Directa usa

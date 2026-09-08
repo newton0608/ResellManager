@@ -283,10 +283,10 @@ public sealed class ProductoService(ResellManagerDbContext db) : IProductoServic
         CancellationToken ct = default
     )
     {
-        var error = await Validar(input, null, ct);
+        var x = new Producto { CodigoInterno = CodigosInternos.CrearCodigoProducto() };
+        var error = await Validar(input, x.CodigoInterno, null, ct);
         if (error is not null)
             return ServiceResult<ProductoDto>.Failure(error);
-        var x = new Producto();
         Apply(x, input);
         db.Productos.Add(x);
         await db.SaveChangesAsync(ct);
@@ -302,7 +302,7 @@ public sealed class ProductoService(ResellManagerDbContext db) : IProductoServic
         var x = await db.Productos.FindAsync([id], ct);
         if (x is null)
             return ServiceResult<ProductoDto>.Failure("Producto no encontrado.");
-        var error = await Validar(input, id, ct);
+        var error = await Validar(input, x.CodigoInterno, id, ct);
         if (error is not null)
             return ServiceResult<ProductoDto>.Failure(error);
         Apply(x, input);
@@ -338,17 +338,17 @@ public sealed class ProductoService(ResellManagerDbContext db) : IProductoServic
         return await Query(productos.OrderBy(x => x.Nombre)).ToListAsync(ct);
     }
 
-    private async Task<string?> Validar(ProductoInput x, int? id, CancellationToken ct)
+    private async Task<string?> Validar(ProductoInput x, string codigoInterno, int? id, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(x.CodigoInterno) || string.IsNullOrWhiteSpace(x.Nombre))
-            return "Código interno y nombre son obligatorios.";
+        if (string.IsNullOrWhiteSpace(x.Nombre))
+            return "El nombre es obligatorio.";
         if (x.PrecioSugerido < 0)
             return "El precio sugerido no puede ser negativo.";
         if (!await db.Categorias.AnyAsync(c => c.Id == x.CategoriaId, ct))
             return "Categoría no encontrada.";
         if (
             await db.Productos.AnyAsync(
-                p => p.CodigoInterno == x.CodigoInterno.Trim() && p.Id != id,
+                p => p.CodigoInterno == codigoInterno && p.Id != id,
                 ct
             )
         )
@@ -358,7 +358,6 @@ public sealed class ProductoService(ResellManagerDbContext db) : IProductoServic
 
     private static void Apply(Producto x, ProductoInput i)
     {
-        x.CodigoInterno = i.CodigoInterno.Trim();
         x.CodigoBarras = i.CodigoBarras?.Trim();
         x.Nombre = i.Nombre.Trim();
         x.Descripcion = i.Descripcion?.Trim();

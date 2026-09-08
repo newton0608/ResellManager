@@ -19,6 +19,26 @@ namespace ResellManager.Tests;
 [Collection("Integración web")]
 public sealed class FormularioUxTests
 {
+    [Fact]
+    public async Task PedidoNuevo_RenderizaSoloTiposManuales()
+    {
+        using var factory = new AplicacionAutenticacionFactory();
+        using var cliente = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false,
+            BaseAddress = new Uri("https://localhost"),
+        });
+        await IniciarSesionAsync(cliente);
+        using var respuesta = await cliente.GetAsync("/pedidos/nuevo");
+        Assert.Equal(HttpStatusCode.OK, respuesta.StatusCode);
+        var html = await respuesta.Content.ReadAsStringAsync();
+        var selector = Regex.Match(html, "<select[^>]*id=\"pedido-tipo\"[^>]*>(.*?)</select>", RegexOptions.Singleline);
+        Assert.True(selector.Success);
+        var opciones = Regex.Matches(selector.Groups[1].Value, "<option value=\"([^\"]+)\"")
+            .Select(x => x.Groups[1].Value);
+        Assert.Equal(new[] { "Importacion", "Catalogo", "Apartado" }, opciones);
+    }
+
     [Theory]
     [InlineData("/clientes/nuevo")]
     [InlineData("/productos/nuevo")]
@@ -45,8 +65,8 @@ public sealed class FormularioUxTests
             Assert.Contains("No hay categorías disponibles.", html);
             Assert.Contains("Crea una categoría antes de registrar un producto.", html);
             Assert.Contains("href=\"/categorias\">Ir a categorías</a>", html);
-            Assert.Contains("Código de producto", html);
-            Assert.Contains("Referencia o SKU para buscar este producto", html);
+            Assert.DoesNotContain("producto-codigo-interno", html);
+            Assert.Contains("Código de barras", html);
         }
     }
 
@@ -69,15 +89,14 @@ public sealed class FormularioUxTests
             pagina = new ProductoEdicion();
             var modeloProducto = new ProductoFormModel
             {
-                CodigoInterno = test.Producto.CodigoInterno,
-                Nombre = "Producto del reintento",
+                Nombre = "",
                 CategoriaId = test.Categoria.Id,
                 PrecioSugerido = 100m,
             };
             modelo = modeloProducto;
             formulario = typeof(ProductoForm);
-            corregirModelo = () => modeloProducto.CodigoInterno = "SKU-MANUAL-REINTENTO";
-            mensajeEsperado = "El código interno ya está registrado.";
+            corregirModelo = () => modeloProducto.Nombre = "Producto del reintento";
+            mensajeEsperado = "El nombre es obligatorio.";
             Establecer(pagina, "ProductoService", new ProductoService(test.Db));
             Establecer(pagina, "CategoriasDisponibles", categorias);
             Establecer(pagina, "Logger", NullLogger<ProductoEdicion>.Instance);
@@ -116,25 +135,24 @@ public sealed class FormularioUxTests
 
         if (producto)
         {
-            var encontrados = await new ProductoService(test.Db).BuscarAsync("SKU-MANUAL-REINTENTO");
-            Assert.Equal("SKU-MANUAL-REINTENTO", Assert.Single(encontrados).CodigoInterno);
+            var servicio = new ProductoService(test.Db);
+            var creado = Assert.Single(await servicio.BuscarAsync("Producto del reintento"));
+            Assert.Matches("^PRO-[A-F0-9]{32}$", creado.CodigoInterno);
+            Assert.Equal(creado.Id, Assert.Single(await servicio.BuscarAsync(creado.CodigoInterno)).Id);
         }
     }
 
     [Fact]
-    public void CodigoDeProducto_ConservaCapturaManualYObligatoriedadConMensajeAmable()
+    public void Producto_SeValidaSinCodigoInternoYCodigoBarrasSigueManualOpcional()
     {
         var modelo = new ProductoFormModel { Nombre = "Producto", CategoriaId = 1 };
-        Assert.Empty(modelo.CodigoInterno);
+        Assert.Null(typeof(ProductoFormModel).GetProperty("CodigoInterno"));
+        Assert.Null(typeof(ProductoInput).GetProperty("CodigoInterno"));
         var errores = new List<ValidationResult>();
-        Assert.False(Validator.TryValidateObject(modelo, new ValidationContext(modelo), errores, true));
-        Assert.Contains(errores, error => error.MemberNames.Contains(nameof(ProductoFormModel.CodigoInterno))
-            && error.ErrorMessage == "El código de producto es obligatorio.");
-
-        modelo.CodigoInterno = "SKU-ELEGIDO-POR-USUARIA";
-        errores.Clear();
         Assert.True(Validator.TryValidateObject(modelo, new ValidationContext(modelo), errores, true));
-        Assert.Equal("SKU-ELEGIDO-POR-USUARIA", modelo.ToInput().CodigoInterno);
+        Assert.Null(modelo.ToInput().CodigoBarras);
+        modelo.CodigoBarras = "7401234567890";
+        Assert.Equal("7401234567890", modelo.ToInput().CodigoBarras);
     }
 
     private static async Task<string> RenderizarFormularioAsync(Type formulario, object modelo,

@@ -76,11 +76,10 @@ public sealed class ProductoModuloTests
             validateAllProperties: true);
 
         Assert.False(esValido);
-        Assert.Contains(errores, error => error.MemberNames.Contains(nameof(ProductoFormModel.CodigoInterno)));
+        Assert.Null(typeof(ProductoFormModel).GetProperty("CodigoInterno"));
         Assert.Contains(errores, error => error.MemberNames.Contains(nameof(ProductoFormModel.Nombre)));
         var referenciasInvalidas = new ProductoFormModel
         {
-            CodigoInterno = "BLU-001",
             Nombre = "Blusa negra",
             PrecioSugerido = -1m,
         };
@@ -97,7 +96,6 @@ public sealed class ProductoModuloTests
 
         var valido = new ProductoFormModel
         {
-            CodigoInterno = "BLU-001",
             Nombre = "Blusa negra",
             PrecioSugerido = 250m,
             CategoriaId = 1,
@@ -141,7 +139,6 @@ public sealed class ProductoModuloTests
 
         var creado = await productos.CrearAsync(
             new ProductoInput(
-                "TEN-001",
                 "740000000001",
                 "Tenis urbano",
                 "Edición casual",
@@ -181,7 +178,6 @@ public sealed class ProductoModuloTests
 
         var resultado = await servicio.CrearAsync(
             new ProductoInput(
-                "INVALIDO-001",
                 null,
                 "Producto inválido",
                 null,
@@ -269,6 +265,11 @@ public sealed class CatalogoModuloIntegracionTests : PruebaWebAislada
         Assert.Contains("Q 250.00", productos);
         Assert.Contains("Ropa de prueba", productoNuevo);
         Assert.Contains("Blusa Nike negra", productoEditar);
+        Assert.DoesNotContain("producto-codigo-interno", productoNuevo);
+        Assert.DoesNotContain("producto-codigo-interno", productoEditar);
+        Assert.Contains("Código de barras", productoNuevo);
+        Assert.Contains("Código de barras", productoEditar);
+        Assert.Contains("BLU-007", detalle);
         Assert.Contains("Código de barras", detalle);
         Assert.Contains("740000000007", detalle);
         Assert.Contains("Sin información", detalle);
@@ -433,7 +434,6 @@ internal static class ProductoDtoTestExtensions
 {
     public static ProductoInput ToInput(this ProductoDto producto) =>
         new(
-            producto.CodigoInterno,
             producto.CodigoBarras,
             producto.Nombre,
             producto.Descripcion,

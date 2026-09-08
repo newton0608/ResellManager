@@ -144,6 +144,7 @@ public interface IInventarioService
 
 public interface IPedidoService
 {
+    Task<ServiceResult<PedidoDto>> CrearManualAsync(PedidoInput input, CancellationToken ct = default);
     Task<ServiceResult<PedidoDto>> CrearAsync(PedidoInput input, CancellationToken ct = default);
     Task<ServiceResult<PedidoDto>> AgregarDetalleAsync(
         int pedidoId,

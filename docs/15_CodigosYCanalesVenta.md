@@ -1,6 +1,6 @@
 # Códigos internos y canales de venta
 
-Estado vigente al cierre de Fase 5.10. Sustituye los pendientes históricos de revisión de códigos y Dashboard de Fase 5.7. No modifica reglas de negocio ni esquema.
+Estado vigente tras validación manual V1. Sustituye los pendientes históricos de Fase 5.7 y la decisión anterior de capturar manualmente el código de Producto. La generación de Producto y la restricción de pedidos manuales no requieren cambios de esquema.
 
 ## 1. Clasificación y decisión final
 
@@ -15,7 +15,7 @@ Un nombre de propiedad no determina su tratamiento: se revisó `CodigoInterno` e
 | Compra | A: técnico del sistema | Automático: `COM-<GUID>` |
 | Nombre físico del comprobante | A: técnico del sistema (no propiedad CodigoInterno) | Automático: `CMP-<GUID>.<extensión>` |
 | UnidadInventario | A: técnico del sistema | Automático en CompraService: `<código-compra>-<detalle:D2>-<unidad:D3>` |
-| Producto.CodigoInterno | B: referencia comercial significativa para búsqueda | Manual; conserva validación de unicidad |
+| Producto.CodigoInterno | A: técnico del sistema | Automático en backend: `PRO-<GUID>`; conserva validación e índice de unicidad |
 | Producto.CodigoBarras | B: referencia externa | Manual y opcional |
 | ComprobanteCompra.NumeroDocumento | B: documento externo | Manual y opcional |
 | Pago.Referencia | B: referencia de cobro/banco | Manual y opcional |
@@ -23,23 +23,23 @@ Un nombre de propiedad no determina su tratamiento: se revisó `CodigoInterno` e
 
 Cliente, Categoría, Proveedor, DetalleCompra, DetallePedido, DetalleVenta y Pago no tienen una propiedad `CodigoInterno`. No se agregan campos o generadores para ellos.
 
-## 2. Por qué Producto permanece manual
+## 2. Producto: generación automática y códigos históricos
 
-`IProductoService.BuscarAsync` permite localizar un producto por su código; los listados y selectores lo presentan como referencia comercial junto al nombre. Su uso real no se limita a relacionar tablas.
+`ProductoService.CrearAsync` genera el código técnico una sola vez para la entidad a persistir, mediante `CodigosInternos.CrearCodigoProducto()`. No depende de Blazor ni de un código enviado por otro caller. `ProductoInput`, compartido por creación y edición, no contiene CodigoInterno; `ProductoDto` conserva el dato de salida.
 
-Se conserva manual por ese valor para búsqueda e identificación de mercancía. No se presupone que siempre provenga de un proveedor, ni que todos los códigos existentes sean SKU externos. No hay fundamento para reemplazarlos por GUID por uniformidad estética. El código de barras permanece separado y opcional.
+La edición no asigna ni normaliza el código persistido: códigos históricos como `CAM-001` se conservan exactamente. No hay migración de datos. El formulario no ofrece un input de código interno en creación ni edición; detalle, listados y selectores conservan su trazabilidad. `IProductoService.BuscarAsync` mantiene búsquedas por nombre, código interno y código de barras. `CodigoBarras` es un dato externo separado, manual y opcional; nunca se genera automáticamente.
 
 ## 3. Generación y estabilidad
 
 `GUID` significa los 32 caracteres hexadecimales de `Guid.NewGuid().ToString("N").ToUpperInvariant()`, sin guiones internos. No se emplean contadores de UI ni `MAX()+1`.
 
-- `CodigosInternos` genera Pedido normal, Venta normal y Compra.
+- `CodigosInternos` genera Pedido normal, Venta normal, Compra y Producto. Para Producto, la autoridad de generación es el backend al crear la entidad; editar nunca llama al generador.
 - `PedidoNuevo`, `VentaNueva` y `CompraNueva` conservan sus códigos en campos inicializados una vez por instancia del formulario, no durante cada render ni submit.
 - `VentaPresentacion` conserva los prefijos y generadores directos existentes. `VentaDirectaForm` inicializa una sola vez tanto el código de pedido como el de venta.
 - Si falla la creación del pedido directo se reintenta con el mismo código. Si el pedido ya quedó creado y falla la venta, se reutiliza ese pedido.
 - Cambiar de modo en la misma página conserva el componente de Venta Directa. El cambio queda deshabilitado durante carga/registro para no perder el estado parcial.
 - Recargar la página, cerrar el navegador o perder el circuito no constituye un reintento de la misma instancia. No se implementó recuperación persistente ni idempotencia distribuida.
-- Los DTOs continúan enviando el código al servicio. Las validaciones de unicidad del backend y los índices únicos se conservan; automatizar UI no los reemplaza.
+- Los inputs de Pedido, Venta y Compra continúan enviando el código al servicio. ProductoInput ya no lo recibe: ProductoService lo genera. Las validaciones de unicidad del backend y los índices únicos se conservan.
 
 Los códigos existentes no se renumeran. Se muestran cuando aportan trazabilidad, sin exigir que la usuaria los invente.
 
@@ -54,6 +54,8 @@ El archivo del comprobante se nombra al prepararlo, separado de `NumeroDocumento
 ## 5. CanalVenta y TipoPedido son independientes
 
 `TipoPedido` describe la operación: Importación, Catálogo, Apartado o Venta directa. `CanalVenta` describe cómo se originó comercialmente.
+
+`TipoPedido.VentaDirecta` conserva su valor persistido y clasifica exclusivamente los pedidos creados por el flujo específico de Venta Directa. No es seleccionable en Nuevo pedido. La lista única `TiposPedidoManual.Permitidos` contiene Importacion, Catalogo y Apartado; alimenta el selector y valida modelo y `PedidoService.CrearManualAsync`, que rechaza VentaDirecta incluso con un input manipulado. El flujo directo conserva `CrearAsync`, el pedido automático `PED-VD-`, la venta `VEN-VD-` y sus reintentos.
 
 Valores persistidos de CanalVenta:
 

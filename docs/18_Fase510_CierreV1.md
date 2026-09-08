@@ -33,7 +33,9 @@ Se revisaron autenticación, layout/navegación, dashboard, clientes, productos,
 
 Se conservan las reglas de `VentaService`, saldo global, inventario, recepción, catálogo, cancelación y reserva. No hay cambio intencional de esquema ni migración nueva vacía.
 
-## 3. Códigos internos finales
+## 3. Códigos internos del cierre original
+
+Registro histórico: la clasificación manual de Producto de esta sección fue sustituida por la decisión posterior de la sección 13. La referencia vigente es `15_CodigosYCanalesVenta.md`.
 
 `<GUID>` representa 32 caracteres hexadecimales en mayúsculas, sin guiones internos.
 
@@ -474,9 +476,21 @@ Se conserva el cierre V1 anterior; este ajuste no reabre la fase ni cambia regla
 - **Controles responsive:** los grids implícitos de formularios/listas y los mínimos de las columnas podían propagar el ancho intrínseco de los controles. Se definieron tracks `minmax(0, 1fr)`, hijos encogibles y límites de ancho para inputs/selects/textarea; los ajustes WebKit de fecha conservan el selector nativo. No se oculta el overflow del body.
 - **Nueva compra:** el encabezado de productos y Agregar producto se apilan en móvil; campos, líneas y botones respetan el contenedor. Se reutiliza el CSS compartido, sin modificar CompraService.
 - **Alertas prematuras:** ClienteEdicion, ProductoEdicion y CategoriaEdicion pasaban `ErrorMessage="ErrorGuardado"` como literal Razor. Se corrigió a `ErrorMessage="@ErrorGuardado"`; las condiciones existentes de los formularios solo muestran errores reales. La advertencia amarilla cuando faltan categorías se conserva.
-- **Código de producto:** continúa **manual**, obligatorio y único, utilizado en búsquedas y selectores. Solo se aclararon el placeholder y el mensaje requerido; no cambia la decisión de V1.
+- **Código de producto (histórico):** en ese ajuste se mantuvo manual, obligatorio y único, y solo se aclararon placeholder y mensaje requerido. Esta decisión fue sustituida posteriormente por la sección 13.
 - **Regresiones:** seis casos de formularios (render inicial sin alertas/validaciones prematuras, errores reales, reintentos y referencia manual) y dos de Ganancia (rango/importe estable y consulta pendiente sin duplicación). Se usa la infraestructura existente, SQLite aislada y renderizado Razor; no son pruebas visuales de CSS ni se añadió una librería de UI testing.
 
 **Verificación del ajuste:** `dotnet build ResellManager.sln` correcto, 0 errores y 0 warnings; `dotnet test ResellManager.sln`: **272 aprobadas** (264 anteriores + 8 nuevas), 0 fallidas y 0 omitidas. `git diff --check` correcto. Los primeros intentos de build/test quedaron bloqueados por el ejecutable de una instancia local en ejecución; una vez liberado, ambos comandos normales finalizaron correctamente, sin cambiar la configuración de compilación ni relajar pruebas.
 
 **Validación automática visual no disponible; requiere comprobación manual.** El navegador falló al inicializarse (`trusted Node process exited unexpectedly`); no se reintentó. Quedan pendientes escritorio y 390 × 844 CSS px en Inicio/Ganancia, Cliente nuevo, Producto nuevo y Nueva compra, incluyendo Safari/iPhone, ausencia de scroll horizontal y controles dentro de las cards. La revisión de código y las pruebas de render no sustituyen esa aceptación visual.
+
+## 13. Decisiones posteriores a validación manual: pedidos y productos
+
+- VentaDirecta se retiró del selector de Nuevo pedido: su pedido nace desde el flujo específico de Venta Directa. Importacion, Catalogo y Apartado comparten una lista permitida en Application, usada por el selector, el modelo y `PedidoService.CrearManualAsync`. Este contrato rechaza VentaDirecta e incluso valores de enum desconocidos sin persistir un pedido.
+- `TipoPedido.VentaDirecta` sigue en dominio con el mismo valor. El flujo directo conserva CanalVenta.Presencial, pedido `PED-VD-`, venta `VEN-VD-` y reintentos existentes; no se cambió VentaService.
+- `Producto.CodigoInterno` pasa a identificador técnico automático `PRO-<GUID>` (GUID N de 32 hexadecimales en mayúsculas). ProductoService lo genera una vez por nueva entidad mediante CodigosInternos, no desde la UI.
+- ProductoInput elimina CodigoInterno tanto para crear como editar. El formulario compartido ya no lo solicita; ProductoDto, detalle, búsquedas y selectores lo conservan. Editar nunca reasigna ni normaliza el código, incluidos los históricos manuales.
+- CodigoBarras continúa externo, manual y opcional. No se generaron códigos de barras, migraciones ni cambios de esquema; se conserva columna requerida e índice único de Producto.
+- Regresiones: lista manual y enum persistido, rechazo directo en servicio sin depender de UI, tipos manuales admitidos, selector renderizado, formato y unicidad PRO, creación sin código, edición de nuevos e históricos sin alterar código, código de barras y búsquedas. Las pruebas antiguas de captura manual se adaptan a la nueva decisión, preservando validación, errores reales y reintentos. SQLite aislada por prueba; no se usan datos reales.
+- Este ajuste no incluye cambios del Dashboard ni implementa el roadmap V2. `19_V2_Pendientes.md` se conserva íntegro. La aceptación visual sigue pendiente de comprobación manual; las pruebas de render no equivalen a validación en iPhone.
+
+**Verificación de este ajuste (07/09/2026):** build correcto con 0 errores y 0 warnings; 286 pruebas .NET aprobadas (274 anteriores adaptadas donde cambió la decisión + 12 nuevas), 0 fallidas y 0 omitidas. También pasan las 8 pruebas JavaScript existentes de reconexión. `git diff --check` correcto. El primer build encontró DLL bloqueadas por la instancia local; se detuvo únicamente esa instancia y se repitieron los comandos normales con éxito. La reconciliación con origin conservó los 12 archivos de trabajo parcial mediante stash, fast-forward de los dos commits documentales y reaplicación sin conflictos; el roadmap V2 no se modificó.

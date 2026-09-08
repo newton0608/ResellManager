@@ -161,6 +161,8 @@ public sealed class Fase510CodigosTests
 
         Assert.Matches("^PED-VD-[A-F0-9]{32}$", codigoPedido);
         Assert.Matches("^VEN-VD-[A-F0-9]{32}$", codigoVenta);
+        Assert.Equal(TipoPedido.VentaDirecta, pedidoCreado.TipoPedido);
+        Assert.Equal(CanalVenta.Presencial, pedidoCreado.CanalVenta);
         Assert.Equal(2, pedidos.Intentos.Count);
         Assert.All(pedidos.Intentos, input => Assert.Equal(codigoPedido, input.CodigoInterno));
         Assert.Equal(2, ventas.Intentos.Count);
@@ -281,6 +283,8 @@ public sealed class Fase510CodigosTests
     private sealed class PedidoRegistradoService(Func<PedidoInput, int, Task<ServiceResult<PedidoDto>>> registrar) : IPedidoService
     {
         public List<PedidoInput> Intentos { get; } = [];
+        public Task<ServiceResult<PedidoDto>> CrearManualAsync(PedidoInput input, CancellationToken ct = default) =>
+            CrearAsync(input, ct);
         public Task<ServiceResult<PedidoDto>> CrearAsync(PedidoInput input, CancellationToken ct = default)
         {
             Intentos.Add(input);
