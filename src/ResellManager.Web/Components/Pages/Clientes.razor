@@ -34,6 +34,14 @@
     </div>
 </form>
 
+@if (SoloConDeuda)
+{
+    <div class="origin-guidance context-filter" role="status">
+        <span>Clientes con saldo pendiente mayor que cero</span>
+        <a class="inline-button" href="/clientes">Quitar filtro de deuda</a>
+    </div>
+}
+
 @if (!string.IsNullOrWhiteSpace(ErrorMessage))
 {
     <div class="mensaje-error alert-with-action" role="alert">
@@ -53,9 +61,9 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage) && ClientesEncontrados.Count ==
 {
     <section class="empty-state" aria-labelledby="titulo-sin-clientes">
         <span class="empty-state-icon" aria-hidden="true"><NavIcon Name="users" /></span>
-        <h2 id="titulo-sin-clientes">@(BusquedaActiva ? "No se encontraron clientes" : "Aún no hay clientes")</h2>
-        <p>@(BusquedaActiva ? "Prueba con otro nombre, apellido o teléfono." : "Registra el primer cliente para comenzar.")</p>
-        @if (!BusquedaActiva)
+        <h2 id="titulo-sin-clientes">@(SoloConDeuda ? "No hay clientes con saldo pendiente para estos criterios" : BusquedaActiva ? "No se encontraron clientes" : "Aún no hay clientes")</h2>
+        <p>@(SoloConDeuda ? "Puedes quitar el filtro para consultar todos los clientes." : BusquedaActiva ? "Prueba con otro nombre, apellido o teléfono." : "Registra el primer cliente para comenzar.")</p>
+        @if (!BusquedaActiva && !SoloConDeuda)
         {
             <a class="primary-button" href="/clientes/nuevo">Registrar cliente</a>
         }
@@ -118,6 +126,11 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
 }
 
 @code {
+    [SupplyParameterFromQuery(Name = "saldo")]
+    public string? SaldoFiltro { get; set; }
+    private bool SoloConDeuda => string.Equals(SaldoFiltro, "pendiente", StringComparison.OrdinalIgnoreCase);
+    private IReadOnlyList<ClienteDto> AplicarFiltroSaldo(IReadOnlyList<ClienteDto> clientes) =>
+        SoloConDeuda ? clientes.Where(x => x.Saldo > 0).ToArray() : clientes;
     private IReadOnlyList<ClienteDto> ClientesEncontrados { get; set; } = [];
     private string Termino { get; set; } = string.Empty;
     private bool BusquedaActiva { get; set; }
@@ -134,7 +147,7 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
         _ => null,
     };
 
-    protected override Task OnInitializedAsync() => CargarClientesAsync();
+    protected override Task OnParametersSetAsync() => BuscarAsync();
 
     private async Task CargarClientesAsync()
     {
@@ -144,7 +157,7 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
 
         try
         {
-            ClientesEncontrados = await ClienteService.ListarAsync();
+            ClientesEncontrados = AplicarFiltroSaldo(await ClienteService.ListarAsync());
         }
         catch (Exception ex)
         {
@@ -171,7 +184,7 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
 
         try
         {
-            ClientesEncontrados = await ClienteService.BuscarAsync(Termino);
+            ClientesEncontrados = AplicarFiltroSaldo(await ClienteService.BuscarAsync(Termino));
         }
         catch (Exception ex)
         {

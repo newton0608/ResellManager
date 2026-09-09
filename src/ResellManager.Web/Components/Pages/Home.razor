@@ -34,27 +34,35 @@ else
         <article class="dashboard-metric-card dashboard-debt-card">
             <span class="dashboard-metric-label">Total por cobrar</span>
             <strong>@ClientePresentacion.Moneda(Dashboard.TotalAdeudado)</strong>
-            <a href="/clientes">Ver saldos de clientes</a>
+            <a href="/clientes?saldo=pendiente">Ver saldos de clientes</a>
         </article>
         <article class="dashboard-metric-card">
             <span class="dashboard-metric-label">Unidades disponibles</span>
             <strong>@Dashboard.UnidadesDisponibles</strong>
-            <a href="/inventario">Ver inventario</a>
+            <a href="/inventario?estado=disponible">Ver inventario</a>
         </article>
         <article class="dashboard-metric-card">
-            <span class="dashboard-metric-label">Pedidos activos</span>
-            <strong>@Dashboard.PedidosActivos</strong>
-            <a href="/pedidos">Ver pedidos</a>
+            <span class="dashboard-metric-label">Pendiente de entregar</span>
+            <strong>@Dashboard.PendientesEntrega</strong>
+            <a href="/inventario?estado=vendida">Ver pendientes</a>
         </article>
         <article class="dashboard-metric-card">
             <span class="dashboard-metric-label">Inventario al costo</span>
             <strong>@ClientePresentacion.Moneda(Dashboard.ValorInventarioDisponible)</strong>
-            <small>Unidades disponibles</small>
+            <a href="/inventario?estado=disponible">Unidades disponibles</a>
         </article>
     </section>
 }
 
-<a class="primary-button dashboard-direct-sale" href="/ventas/nueva?modo=directa">Venta directa</a>
+<section class="dashboard-quick-actions" aria-labelledby="titulo-acciones-rapidas">
+    <h2 class="dashboard-summary-heading" id="titulo-acciones-rapidas">Acciones rápidas</h2>
+    <div class="dashboard-action-grid">
+        <a class="secondary-button" href="/pagos">Registrar abono</a>
+        <a class="primary-button" href="/ventas/nueva?modo=directa">Venta directa</a>
+        <a class="secondary-button" href="/pedidos/nuevo">Registrar pedido</a>
+        <a class="secondary-button" href="/clientes">Buscar cliente</a>
+    </div>
+</section>
 
 <section class="data-panel dashboard-utility-panel" aria-labelledby="titulo-utilidad">
     <div class="data-panel-heading dashboard-panel-heading">

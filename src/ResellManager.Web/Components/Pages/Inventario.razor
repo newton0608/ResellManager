@@ -3,6 +3,7 @@
 @using ResellManager.Domain.Enums
 @inject IInventarioService InventarioService
 @inject ILogger<Inventario> Logger
+@inject NavigationManager Navigation
 
 <PageTitle>Inventario | ResellManager</PageTitle>
 
@@ -43,6 +44,14 @@
         }
     </div>
 </form>
+
+@if (EstadoFiltro.HasValue)
+{
+    <div class="origin-guidance context-filter" role="status">
+        <span>Estado físico: @InventarioPresentacion.Estado(EstadoFiltro.Value)</span>
+        <button class="inline-button" type="button" disabled="@Ocupado" @onclick="LimpiarFiltrosAsync">Quitar filtro de estado</button>
+    </div>
+}
 
 @if (!string.IsNullOrWhiteSpace(ErrorMessage))
 {
@@ -228,6 +237,8 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
 }
 
 @code {
+    [SupplyParameterFromQuery(Name = "estado")]
+    public string? EstadoConsulta { get; set; }
     private IReadOnlyList<UnidadInventarioDto> Unidades { get; set; } = [];
     private HashSet<int> UnidadesSeleccionadas { get; } = [];
     private string Termino { get; set; } = string.Empty;
@@ -243,7 +254,12 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
     private bool FiltrosActivos => !string.IsNullOrWhiteSpace(Termino) || EstadoFiltro.HasValue;
     private bool Ocupado => Cargando || ProcesandoRecepcion || UnidadProcesandoId.HasValue;
 
-    protected override Task OnInitializedAsync() => CargarInventarioAsync();
+    protected override Task OnParametersSetAsync()
+    {
+        EstadoFiltro = Enum.TryParse<EstadoUnidadInventario>(EstadoConsulta, true, out var estado)
+            && Enum.IsDefined(estado) ? estado : null;
+        return BuscarAsync();
+    }
 
     private async Task CargarInventarioAsync()
     {
@@ -301,6 +317,11 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
         Termino = string.Empty;
         EstadoFiltro = null;
         MensajeExito = null;
+        if (!string.IsNullOrWhiteSpace(EstadoConsulta))
+        {
+            Navigation.NavigateTo("/inventario");
+            return;
+        }
         await CargarInventarioAsync();
     }
 

@@ -1,5 +1,6 @@
 @page "/pedidos"
 @rendermode InteractiveServer
+@using ResellManager.Domain.Enums
 @inject IPedidoService PedidoService
 @inject ILogger<Pedidos> Logger
 
@@ -11,8 +12,22 @@
         <h1 id="titulo-pedidos">Pedidos</h1>
         <p class="page-lead">Consulta pedidos, apartados y sus reservas sin registrar ventas.</p>
     </div>
-    <a class="primary-button" href="/pedidos/nuevo">Nuevo pedido</a>
+    <div class="heading-actions">
+        <a class="primary-button" href="/pedidos/nuevo">Nuevo pedido</a>
+        @if (!SoloActivos)
+        {
+            <a class="secondary-button" href="/pedidos?estado=activos">Ver pedidos activos</a>
+        }
+    </div>
 </section>
+
+@if (SoloActivos)
+{
+    <div class="origin-guidance context-filter" role="status">
+        <span>Pedidos activos: pendientes y confirmados</span>
+        <a class="inline-button" href="/pedidos">Quitar filtro de estado</a>
+    </div>
+}
 
 @if (!string.IsNullOrWhiteSpace(MensajeExito))
 {
@@ -38,8 +53,8 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage) && PedidosEncontrados.Count == 
 {
     <section class="empty-state" aria-labelledby="titulo-sin-pedidos">
         <span class="empty-state-icon" aria-hidden="true"><NavIcon Name="clipboard" /></span>
-        <h2 id="titulo-sin-pedidos">Aún no hay pedidos</h2>
-        <p>Crea el primer pedido con un cliente y al menos un producto.</p>
+        <h2 id="titulo-sin-pedidos">@(SoloActivos ? "No hay pedidos activos" : "Aún no hay pedidos")</h2>
+        <p>@(SoloActivos ? "Puedes quitar el filtro para consultar el historial completo." : "Crea el primer pedido con un cliente y al menos un producto.")</p>
         <a class="primary-button" href="/pedidos/nuevo">Crear pedido</a>
     </section>
 }
@@ -113,6 +128,9 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
 }
 
 @code {
+    [SupplyParameterFromQuery(Name = "estado")]
+    public string? EstadoConsulta { get; set; }
+    private bool SoloActivos => string.Equals(EstadoConsulta, "activos", StringComparison.OrdinalIgnoreCase);
     private IReadOnlyList<PedidoDto> PedidosEncontrados { get; set; } = [];
     private bool Cargando { get; set; } = true;
     private string? ErrorMessage { get; set; }
@@ -126,7 +144,7 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
         _ => null,
     };
 
-    protected override Task OnInitializedAsync() => CargarAsync();
+    protected override Task OnParametersSetAsync() => CargarAsync();
 
     private async Task CargarAsync()
     {
@@ -135,6 +153,9 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
         try
         {
             PedidosEncontrados = await PedidoService.ListarAsync();
+            if (SoloActivos)
+                PedidosEncontrados = PedidosEncontrados
+                    .Where(x => x.Estado is EstadoPedido.Pendiente or EstadoPedido.Confirmado).ToArray();
         }
         catch (Exception ex)
         {

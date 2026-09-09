@@ -471,7 +471,7 @@ Antes de prueba real y posterior despliegue:
 
 Se conserva el cierre V1 anterior; este ajuste no reabre la fase ni cambia reglas de negocio, servicios, esquema o almacenamiento.
 
-- **Inicio compacto:** resumen con las cuatro métricas existentes (total por cobrar, unidades disponibles, pedidos activos e inventario al costo). CSS de dos columnas en móvil cuando hay espacio y cuatro desde tablet, con CTA **Venta directa** inmediatamente después.
+- **Inicio compacto (ajuste original):** resumen con las cuatro métricas entonces existentes (total por cobrar, unidades disponibles, pedidos activos e inventario al costo), dos columnas móviles y CTA Venta directa. La composición vigente posterior se describe en la sección 15.
 - **Ganancia total:** nuevo texto visible para Utilidad, dentro de una sola card con fechas, botón Consultar y resultado compacto. El cálculo sigue intacto. Se corrigió que editar fechas sin consultar reetiquetara el importe anterior: ahora el resultado conserva el rango de la consulta que lo produjo.
 - **Controles responsive:** los grids implícitos de formularios/listas y los mínimos de las columnas podían propagar el ancho intrínseco de los controles. Se definieron tracks `minmax(0, 1fr)`, hijos encogibles y límites de ancho para inputs/selects/textarea; los ajustes WebKit de fecha conservan el selector nativo. No se oculta el overflow del body.
 - **Nueva compra:** el encabezado de productos y Agregar producto se apilan en móvil; campos, líneas y botones respetan el contenedor. Se reutiliza el CSS compartido, sin modificar CompraService.
@@ -506,3 +506,14 @@ ProductoAltaPanel reutiliza ProductoForm fuera del EditForm de compra, evitando 
 Sin categorías se mantiene la advertencia; el enlace las abre en otra pestaña y permite actualizar la lista al volver, sin navegación que descarte la compra. No hay una cadena de altas anidadas. Las regresiones usan SQLite aislada y prueban búsquedas, límites/prioridad, debounce, selección y alta integrada preservando la compra.
 
 Verificación técnica de Compra: build con 0 errores y 0 warnings; 294 pruebas .NET aprobadas (286 anteriores + 8 nuevas). Validación visual automática no disponible por la limitación previamente registrada; requiere comprobación manual, especialmente a 390 px y con teclado.
+
+## 15. Productividad posterior: Dashboard y filtros contextuales
+
+- El resumen conserva cuatro cards compactas: Total por cobrar, Unidades disponibles, Pendiente de entregar e Inventario al costo. PendientesEntrega se agrega al DTO y se calcula en DashboardService como COUNT de unidades Vendida. Comprada, EnTransito, Disponible y Entregada no cuentan. PedidosActivos permanece en DTO/servicio como Pendiente + Confirmado, sin renombrarlo ni eliminarlo.
+- Deuda, inventario al costo y ganancia mantienen sus fórmulas. Total por cobrar enlaza a `/clientes?saldo=pendiente`, usando el saldo calculado por ClienteService y filtrando > 0. Buscar cliente sin filtro sigue en `/clientes`.
+- `/pedidos?estado=activos` incluye Pendiente/Confirmado y excluye Cancelado/Completado. El listado ofrece un acceso visible a activos. Inventario procesa `estado=vendida` y `estado=disponible` reutilizando su servicio de búsqueda. Cada filtro puede quitarse y la navegación al mismo componente vuelve a aplicar los parámetros.
+- Acciones rápidas reemplaza el CTA individual con Registrar abono (`/pagos`), Venta directa (`/ventas/nueva?modo=directa`), Registrar pedido (`/pedidos/nuevo`) y Buscar cliente (`/clientes`). Grid 2 × 2, una columna hasta 21rem; Venta directa conserva énfasis. Ganancia y sus fechas no se rediseñaron.
+- Se agregan regresiones de saldo/estados con SQLite aislada y renderizado autenticado de rutas con query strings, además de las pruebas existentes de fórmulas y movimientos. No hay EF en Razor ni migraciones.
+- `19_V2_Pendientes.md` permanece intacto; no se implementó cámara, lector, ecommerce ni otro alcance V2. La aceptación visual real queda pendiente: no se reintentó el navegador del entorno. Verificar manualmente Compra, Dashboard y filtros a 390 px y escritorio; las pruebas de render no demuestran apariencia visual.
+
+Verificación final de ambos ajustes (08/09/2026): `dotnet build ResellManager.sln` con 0 errores y 0 warnings; `dotnet test ResellManager.sln` con 306 aprobadas, 0 fallidas y 0 omitidas (286 anteriores + 8 de Compra + 12 de Dashboard/filtros). Las 8 pruebas JavaScript existentes también pasan. `git diff --check` correcto. Entrega separada en commits de productividad de compras y de acciones/métricas/filtros del Dashboard, sin merge.

@@ -592,6 +592,10 @@ public sealed class DashboardService : IDashboardService
                 x => x.Estado == EstadoPedido.Pendiente || x.Estado == EstadoPedido.Confirmado,
                 ct
             );
+            var pendientesEntrega = await db.UnidadesInventario.CountAsync(
+                x => x.Estado == EstadoUnidadInventario.Vendida,
+                ct
+            );
 
             var ultimosPagos = await QueryPagos(
                     db.Pagos.OrderByDescending(x => x.Fecha)
@@ -609,7 +613,8 @@ public sealed class DashboardService : IDashboardService
                 pedidosActivos,
                 ultimosPagos,
                 ultimasVentas,
-                canales
+                canales,
+                pendientesEntrega
             );
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)

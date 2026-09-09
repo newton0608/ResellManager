@@ -19,6 +19,36 @@ namespace ResellManager.Tests;
 [Collection("Integración web")]
 public sealed class FormularioUxTests
 {
+    [Theory]
+    [InlineData("/clientes?saldo=pendiente", "Quitar filtro de deuda")]
+    [InlineData("/pedidos?estado=activos", "Quitar filtro de estado")]
+    [InlineData("/inventario?estado=vendida", "Estado físico: Vendida")]
+    [InlineData("/inventario?estado=disponible", "Estado físico: Disponible")]
+    [InlineData("/", "Acciones rápidas")]
+    public async Task RutasContextuales_RenderizanFiltroYAccesos(string ruta, string esperado)
+    {
+        using var factory = new AplicacionAutenticacionFactory();
+        using var cliente = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false,
+            BaseAddress = new Uri("https://localhost"),
+        });
+        await IniciarSesionAsync(cliente);
+        using var respuesta = await cliente.GetAsync(ruta);
+        Assert.Equal(HttpStatusCode.OK, respuesta.StatusCode);
+        var html = WebUtility.HtmlDecode(await respuesta.Content.ReadAsStringAsync());
+        Assert.Contains(esperado, html);
+        if (ruta == "/")
+        {
+            Assert.Contains("href=\"/pagos\">Registrar abono", html);
+            Assert.Contains("href=\"/ventas/nueva?modo=directa\">Venta directa", html);
+            Assert.Contains("href=\"/pedidos/nuevo\">Registrar pedido", html);
+            Assert.Contains("href=\"/clientes\">Buscar cliente", html);
+            Assert.Contains("Pendiente de entregar", html);
+            Assert.DoesNotContain("Pedidos activos", html);
+        }
+    }
+
     [Fact]
     public async Task PedidoNuevo_RenderizaSoloTiposManuales()
     {

@@ -104,6 +104,7 @@ public sealed class DashboardTests
 
         Assert.Equal(1, dashboard.UnidadesDisponibles);
         Assert.Equal(40m, dashboard.ValorInventarioDisponible);
+        Assert.Equal(1, dashboard.PendientesEntrega);
     }
 
     [Fact]
@@ -404,7 +405,15 @@ public sealed class DashboardUiTests
         Assert.Contains("id=\"titulo-resumen\">Resumen", home, StringComparison.Ordinal);
         Assert.Contains("Total por cobrar", home, StringComparison.Ordinal);
         Assert.Contains("Inventario al costo", home, StringComparison.Ordinal);
-        Assert.Contains("Pedidos activos", home, StringComparison.Ordinal);
+        Assert.Contains("Pendiente de entregar", home, StringComparison.Ordinal);
+        Assert.Contains("Dashboard.PendientesEntrega", home, StringComparison.Ordinal);
+        Assert.Contains("Acciones rápidas", home, StringComparison.Ordinal);
+        Assert.Contains("href=\"/pagos\">Registrar abono", home, StringComparison.Ordinal);
+        Assert.Contains("href=\"/pedidos/nuevo\">Registrar pedido", home, StringComparison.Ordinal);
+        Assert.Contains("href=\"/clientes\">Buscar cliente", home, StringComparison.Ordinal);
+        Assert.Contains("href=\"/clientes?saldo=pendiente\"", home, StringComparison.Ordinal);
+        Assert.Contains("href=\"/inventario?estado=vendida\"", home, StringComparison.Ordinal);
+        Assert.Contains("href=\"/inventario?estado=disponible\"", home, StringComparison.Ordinal);
         Assert.Contains("Ganancia total", home, StringComparison.Ordinal);
         Assert.Contains("href=\"/ventas/nueva?modo=directa\"", home, StringComparison.Ordinal);
         Assert.Contains("Ventas por canal", home, StringComparison.Ordinal);

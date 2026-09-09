@@ -3053,9 +3053,39 @@ textarea {
   min-height: 2.75rem;
 }
 
-.dashboard-direct-sale {
+.dashboard-quick-actions {
   margin-bottom: 1rem;
-  width: 100%;
+}
+
+.context-filter {
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.context-filter > span {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.dashboard-action-grid {
+  display: grid;
+  gap: .65rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dashboard-action-grid > a {
+  min-width: 0;
+  min-height: 3rem;
+  padding: .75rem;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 21rem) {
+  .dashboard-action-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .dashboard-debt-card {

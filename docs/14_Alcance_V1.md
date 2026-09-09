@@ -47,7 +47,7 @@ sin captura de la usuaria; toda venta conserva un `PedidoId` y no existe venta s
 ✅ Cancelación protegida de ventas antes de entrega.
 
 ✅ Dashboard de negocio real en `/`, protegido por autenticación, con total adeudado, valor y unidades
-de inventario disponible, pedidos activos, utilidad por periodo, métricas tipadas por canal, últimos
+de inventario disponible, pendientes de entrega, utilidad por periodo, métricas tipadas por canal, últimos
 pagos y últimas ventas.
 
 Las definiciones V1 del Dashboard son explícitas: deuda = ventas `Registrada` menos pagos; inventario
@@ -55,6 +55,10 @@ disponible = suma de `UnidadInventario.Costo` y conteo donde el estado es `Dispo
 = `Pendiente + Confirmado`; ventas recientes = solo `Registrada`; pedidos por canal = todos excepto
 `Cancelado`; ventas y monto por canal = solo `Registrada`, con monto de `DetalleVenta.PrecioFinal`.
 La utilidad usa `DetalleVenta.PrecioFinal - DetalleVenta.CostoUnitario` en un rango inclusivo.
+
+Pendiente de entregar cuenta únicamente unidades físicas `Vendida`; no se deriva de pedidos activos. `DashboardDto.PedidosActivos` se conserva con su definición original aunque ya no ocupa una tarjeta principal. Acciones rápidas: Registrar abono (`/pagos`), Venta directa (`/ventas/nueva?modo=directa`), Registrar pedido (`/pedidos/nuevo`) y Buscar cliente (`/clientes`).
+
+Los enlaces contextuales admiten `/clientes?saldo=pendiente` (Saldo > 0 provisto por backend), `/pedidos?estado=activos` (Pendiente + Confirmado) y `/inventario?estado=disponible` o `estado=vendida`. Sin query se conservan todos los registros; cada filtro tiene una forma visible de quitarse. No se recalcula saldo en Razor.
 
 ✅ `Producto.PrecioSugerido` como referencia editable al vender.
 

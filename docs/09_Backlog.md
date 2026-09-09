@@ -183,6 +183,9 @@
 - [x] Mostrar total adeudado como ventas `Registrada` menos pagos, sin ocultar saldos negativos inconsistentes.
 - [x] Mostrar valor y cantidad de inventario usando exclusivamente unidades `Disponible` y su costo real.
 - [x] Definir pedidos activos como `Pendiente + Confirmado`, excluyendo `Cancelado` y `Completado`.
+- [x] Mostrar Pendiente de entregar como conteo real de unidades `Vendida`, sin contar `Entregada`, en lugar de la tarjeta de pedidos activos.
+- [x] Añadir acciones rápidas: Registrar abono, Venta directa, Registrar pedido y Buscar cliente.
+- [x] Enlazar filtros contextuales de clientes con deuda, pedidos activos e inventario disponible/vendido, con opción visible para quitarlos.
 - [x] Mostrar últimos pagos por fecha descendente e Id descendente, respetando el límite solicitado.
 - [x] Mostrar últimas ventas únicamente `Registrada`, por fecha descendente e Id descendente, con canal obtenido desde `Pedido`.
 - [x] Mostrar los cinco valores de `CanalVenta`, incluso en cero.
