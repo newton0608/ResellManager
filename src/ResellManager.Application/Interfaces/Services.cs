@@ -50,7 +50,7 @@ public interface IProductoService
     );
     Task<ServiceResult<ProductoDto>> ObtenerPorIdAsync(int id, CancellationToken ct = default);
     Task<IReadOnlyList<ProductoDto>> ListarAsync(CancellationToken ct = default);
-    Task<IReadOnlyList<ProductoDto>> BuscarAsync(string termino, CancellationToken ct = default);
+    Task<IReadOnlyList<ProductoDto>> BuscarAsync(string termino, CancellationToken ct = default, int? limite = null);
 }
 
 public interface IProveedorService

@@ -494,3 +494,15 @@ Se conserva el cierre V1 anterior; este ajuste no reabre la fase ni cambia regla
 - Este ajuste no incluye cambios del Dashboard ni implementa el roadmap V2. `19_V2_Pendientes.md` se conserva íntegro. La aceptación visual sigue pendiente de comprobación manual; las pruebas de render no equivalen a validación en iPhone.
 
 **Verificación de este ajuste (07/09/2026):** build correcto con 0 errores y 0 warnings; 286 pruebas .NET aprobadas (274 anteriores adaptadas donde cambió la decisión + 12 nuevas), 0 fallidas y 0 omitidas. También pasan las 8 pruebas JavaScript existentes de reconexión. `git diff --check` correcto. El primer build encontró DLL bloqueadas por la instancia local; se detuvo únicamente esa instancia y se repitieron los comandos normales con éxito. La reconciliación con origin conservó los 12 archivos de trabajo parcial mediante stash, fast-forward de los dos commits documentales y reaplicación sin conflictos; el roadmap V2 no se modificó.
+
+## 14. Productividad posterior: productos dentro de Nueva compra
+
+Nueva compra ya no carga el catálogo completo en selectores. ProductoBuscador reutiliza IProductoService.BuscarAsync por nombre, CodigoInterno y CodigoBarras: mínimo 2 caracteres, debounce de 300 ms, cancelación de búsquedas anteriores y hasta 12 resultados limitados en SQL. Las coincidencias exactas de código se ordenan primero; la comparación ignora mayúsculas dentro del soporte de LOWER de SQLite (no promete normalización de acentos). Las consultas normales sin límite conservan todos sus resultados.
+
+Los resultados son botones accesibles mediante Tab/Enter, táctil y lector de pantalla, con etiqueta y estado anunciados. Escape oculta resultados. Cada búsqueda usa un scope independiente para no solapar consultas en el DbContext del circuito. No se añadió librería frontend ni lector/cámara.
+
+ProductoAltaPanel reutiliza ProductoForm fuera del EditForm de compra, evitando formularios anidados. Crear llama a ProductoService; el código PRO- sigue siendo exclusivamente backend. El callback selecciona el nuevo ProductoDto en la línea original y conserva el modelo de compra, proveedor, fechas, detalles, cantidades, costos y comprobante. El resto del formulario queda temporalmente deshabilitado. No se promete recuperación después de recargar o perder el circuito.
+
+Sin categorías se mantiene la advertencia; el enlace las abre en otra pestaña y permite actualizar la lista al volver, sin navegación que descarte la compra. No hay una cadena de altas anidadas. Las regresiones usan SQLite aislada y prueban búsquedas, límites/prioridad, debounce, selección y alta integrada preservando la compra.
+
+Verificación técnica de Compra: build con 0 errores y 0 warnings; 294 pruebas .NET aprobadas (286 anteriores + 8 nuevas). Validación visual automática no disponible por la limitación previamente registrada; requiere comprobación manual, especialmente a 390 px y con teclado.

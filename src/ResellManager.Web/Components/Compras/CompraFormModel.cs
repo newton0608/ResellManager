@@ -60,6 +60,7 @@ public sealed class CompraFormModel
 
 public sealed class DetalleCompraFormModel
 {
+    public ProductoDto? ProductoSeleccionado { get; set; }
     public int ProductoId { get; set; }
     public int Cantidad { get; set; } = 1;
     public decimal CostoUnitario { get; set; }

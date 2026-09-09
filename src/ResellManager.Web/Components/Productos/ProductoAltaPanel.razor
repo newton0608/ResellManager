@@ -1,0 +1,79 @@
+@inject ICategoriaService CategoriaService
+@inject IProductoService ProductoService
+@inject ILogger<ProductoAltaPanel> Logger
+
+<section class="form-panel product-create-panel" aria-labelledby="titulo-alta-producto">
+    <h2 id="titulo-alta-producto" tabindex="-1" @ref="Titulo">Registrar producto para esta compra</h2>
+    <p>La compra permanece abierta. Al guardar se seleccionará este producto en el detalle de origen.</p>
+    @if (Cargando)
+    {
+        <p role="status">Cargando categorías...</p>
+    }
+    else
+    {
+        <ProductoForm Modelo="Modelo" Categorias="Categorias" Guardando="Guardando"
+                      ErrorMessage="@Error" OnGuardar="GuardarAsync" OnCancelar="OnCancelar"
+                      CategoriasEnOtraPestana="true" />
+    }
+    <button class="secondary-button" type="button" disabled="@(Guardando || Cargando)"
+            @onclick="CargarCategoriasAsync">Actualizar categorías</button>
+</section>
+
+@code {
+    [Parameter] public EventCallback<ProductoDto> OnCreado { get; set; }
+    [Parameter] public EventCallback OnCancelar { get; set; }
+    private ProductoFormModel Modelo { get; } = new();
+    private IReadOnlyList<CategoriaDto> Categorias { get; set; } = [];
+    private bool Cargando { get; set; }
+    private bool Guardando { get; set; }
+    private string? Error { get; set; }
+    private ElementReference Titulo;
+
+    protected override Task OnInitializedAsync() => CargarCategoriasAsync();
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) await Titulo.FocusAsync();
+    }
+
+    private async Task CargarCategoriasAsync()
+    {
+        if (Cargando || Guardando) return;
+        Cargando = true;
+        Error = null;
+        try { Categorias = await CategoriaService.ListarAsync(); }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible cargar categorías para alta de producto en compra.");
+            Error = "No pudimos cargar las categorías. Actualízalas para reintentar.";
+        }
+        finally { Cargando = false; }
+    }
+
+    private async Task GuardarAsync(ProductoFormModel modelo)
+    {
+        if (Guardando || Cargando) return;
+        if (!Categorias.Any(x => x.Id == modelo.CategoriaId))
+        {
+            Error = "Selecciona una categoría válida antes de guardar.";
+            return;
+        }
+        Guardando = true;
+        Error = null;
+        try
+        {
+            var resultado = await ProductoService.CrearAsync(modelo.ToInput());
+            if (!resultado.IsSuccess || resultado.Value is null)
+            {
+                Error = resultado.ErrorMessage ?? "No fue posible registrar el producto.";
+                return;
+            }
+            await OnCreado.InvokeAsync(resultado.Value);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible crear el producto desde la compra.");
+            Error = "No pudimos guardar el producto. Intenta nuevamente.";
+        }
+        finally { Guardando = false; }
+    }
+}

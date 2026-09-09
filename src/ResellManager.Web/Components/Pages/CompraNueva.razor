@@ -3,7 +3,6 @@
 @using ResellManager.Domain.Enums
 @inject IRegistroCompraConComprobanteService RegistroCompraService
 @inject IProveedorService ProveedorService
-@inject IProductoService ProductoService
 @inject NavigationManager Navigation
 @inject ILogger<CompraNueva> Logger
 
@@ -21,7 +20,7 @@
 {
     <div class="loading-state" role="status" aria-live="polite">
         <span class="spinner" aria-hidden="true"></span>
-        Cargando proveedores y productos...
+        Cargando proveedores...
     </div>
 }
 else if (!string.IsNullOrWhiteSpace(ErrorCarga))
@@ -37,26 +36,31 @@ else if (!string.IsNullOrWhiteSpace(ErrorCarga))
 }
 else
 {
-    @if (Proveedores.Count == 0 || Productos.Count == 0)
+    @if (Proveedores.Count == 0)
     {
         <div class="mensaje-error catalog-warning" role="alert">
-            <span>Para registrar una compra necesitas al menos un proveedor y un producto.</span>
+            <span>Para registrar una compra necesitas un proveedor. Puedes buscar o registrar productos en cada detalle.</span>
             <div class="heading-actions">
                 @if (Proveedores.Count == 0)
                 {
                     <a class="inline-button" href="/proveedores/nuevo">Registrar proveedor</a>
                 }
-                @if (Productos.Count == 0)
-                {
-                    <a class="inline-button" href="/productos/nuevo">Registrar producto</a>
-                }
             </div>
         </div>
     }
 
+    @if (DetalleAlta is not null)
+    {
+        <ProductoAltaPanel OnCreado="ProductoCreado" OnCancelar="CerrarAlta" />
+    }
+    @if (ConfirmacionProducto is not null)
+    {
+        <p class="mensaje-exito" role="status">@ConfirmacionProducto</p>
+    }
     <section class="form-panel purchase-form-panel" aria-label="Formulario de compra">
         <EditForm Model="Modelo" OnValidSubmit="GuardarAsync" class="entity-form">
             <DataAnnotationsValidator />
+            <fieldset class="purchase-fields" disabled="@(Guardando || DetalleAlta is not null)">
 
             @if (!string.IsNullOrWhiteSpace(ErrorGuardado))
             {
@@ -148,16 +152,11 @@ else
                                         @onclick="() => QuitarFila(detalle)">Quitar</button>
                             </div>
                             <div class="purchase-line-grid">
-                                <div class="form-field purchase-product-field">
-                                    <label for="producto-compra-@numero">Producto <span aria-hidden="true">*</span></label>
-                                    <select id="producto-compra-@numero" @bind="detalle.ProductoId">
-                                        <option value="0">Selecciona un producto</option>
-                                        @foreach (var producto in Productos)
-                                        {
-                                            <option value="@producto.Id">@producto.CodigoInterno · @producto.Nombre</option>
-                                        }
-                                    </select>
-                                </div>
+                                <ProductoBuscador Id="@($"producto-compra-{numero}")"
+                                                  Seleccionado="detalle.ProductoSeleccionado"
+                                                  Deshabilitado="@(Guardando || DetalleAlta is not null)"
+                                                  OnSeleccionado="producto => SeleccionarProducto(detalle, producto)"
+                                                  OnRegistrar="() => AbrirAlta(detalle)" />
                                 <div class="form-field">
                                     <label for="cantidad-compra-@numero">Cantidad <span aria-hidden="true">*</span></label>
                                     <input id="cantidad-compra-@numero" type="number" min="1" step="1" @bind="detalle.Cantidad" />
@@ -243,11 +242,12 @@ else
 
             <div class="form-actions purchase-submit-actions">
                 <button class="primary-button" type="submit"
-                        disabled="@(Guardando || Proveedores.Count == 0 || Productos.Count == 0)">
+                        disabled="@(Guardando || Proveedores.Count == 0 || DetalleAlta is not null)">
                     @(Guardando ? "Registrando y procesando..." : "Registrar compra")
                 </button>
                 <a class="secondary-button" href="/compras">Cancelar</a>
             </div>
+            </fieldset>
         </EditForm>
     </section>
 }
@@ -256,7 +256,8 @@ else
     private readonly string CodigoInterno = CodigosInternos.CrearCodigoCompra();
     private CompraFormModel Modelo { get; } = new();
     private IReadOnlyList<ProveedorDto> Proveedores { get; set; } = [];
-    private IReadOnlyList<ProductoDto> Productos { get; set; } = [];
+    private DetalleCompraFormModel? DetalleAlta { get; set; }
+    private string? ConfirmacionProducto { get; set; }
     private IBrowserFile? ArchivoSeleccionado { get; set; }
     private bool Cargando { get; set; } = true;
     private bool Guardando { get; set; }
@@ -276,11 +277,10 @@ else
         try
         {
             Proveedores = await ProveedorService.ListarAsync();
-            Productos = await ProductoService.ListarAsync();
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "No fue posible cargar proveedores y productos para la compra.");
+            Logger.LogError(ex, "No fue posible cargar proveedores para la compra.");
             ErrorCarga = "Ocurrió un problema al cargar los datos. Intenta nuevamente.";
         }
         finally
@@ -307,6 +307,30 @@ else
             Modelo.Detalles.Add(new DetalleCompraFormModel());
     }
 
+    private void SeleccionarProducto(DetalleCompraFormModel detalle, ProductoDto? producto)
+    {
+        if (Guardando || !Modelo.Detalles.Contains(detalle)) return;
+        detalle.ProductoSeleccionado = producto;
+        detalle.ProductoId = producto?.Id ?? 0;
+    }
+
+    private void AbrirAlta(DetalleCompraFormModel detalle)
+    {
+        if (Guardando || DetalleAlta is not null || !Modelo.Detalles.Contains(detalle)) return;
+        ConfirmacionProducto = null;
+        DetalleAlta = detalle;
+    }
+
+    private void CerrarAlta() => DetalleAlta = null;
+
+    private void ProductoCreado(ProductoDto producto)
+    {
+        if (DetalleAlta is null) return;
+        SeleccionarProducto(DetalleAlta, producto);
+        ConfirmacionProducto = $"Producto {producto.Nombre} registrado y seleccionado. Continúa con cantidad y costo unitario.";
+        CerrarAlta();
+    }
+
     private void QuitarFila(DetalleCompraFormModel detalle)
     {
         if (!Guardando && Modelo.Detalles.Count > 1)
@@ -329,7 +353,7 @@ else
 
     private async Task GuardarAsync()
     {
-        if (Guardando)
+        if (Guardando || DetalleAlta is not null)
             return;
 
         ErrorGuardado = ValidarFormulario();
@@ -394,7 +418,7 @@ else
             return "Selecciona un proveedor válido.";
         if (Modelo.Detalles.Count == 0)
             return "Agrega al menos un detalle a la compra.";
-        if (Modelo.Detalles.Any(x => !Productos.Any(p => p.Id == x.ProductoId)))
+        if (Modelo.Detalles.Any(x => x.ProductoId <= 0))
             return "Selecciona un producto válido en cada detalle.";
         if (Modelo.Detalles.Any(x => x.Cantidad <= 0))
             return "La cantidad de cada detalle debe ser mayor que cero.";

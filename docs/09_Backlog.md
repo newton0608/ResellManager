@@ -195,6 +195,8 @@
 
 ## Fase 5.8: compras, proveedores y comprobantes
 
+- [x] Buscar productos bajo demanda en Nueva compra por nombre, código de barras o código del sistema, y dar de alta con el formulario reutilizado sin abandonar la compra.
+
 - [x] Listar compras por fecha descendente con tabla de escritorio y cards móviles.
 - [x] Registrar compras con proveedor y productos reales, múltiples detalles y total calculado por backend.
 - [x] Generar `Compra.CodigoInterno` como `COM-<GUID>` sin captura manual.

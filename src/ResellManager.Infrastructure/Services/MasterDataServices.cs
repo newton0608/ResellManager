@@ -326,16 +326,24 @@ public sealed class ProductoService(ResellManagerDbContext db) : IProductoServic
 
     public async Task<IReadOnlyList<ProductoDto>> BuscarAsync(
         string termino,
-        CancellationToken ct = default
+        CancellationToken ct = default,
+        int? limite = null
     )
     {
         termino = termino.Trim();
+        var terminoMinusculas = termino.ToLowerInvariant();
         var productos = db.Productos.Where(x =>
-            x.Nombre.Contains(termino)
-            || x.CodigoInterno.Contains(termino)
-            || (x.CodigoBarras != null && x.CodigoBarras.Contains(termino))
+            x.Nombre.ToLower().Contains(terminoMinusculas)
+            || x.CodigoInterno.ToLower().Contains(terminoMinusculas)
+            || (x.CodigoBarras != null && x.CodigoBarras.ToLower().Contains(terminoMinusculas))
         );
-        return await Query(productos.OrderBy(x => x.Nombre)).ToListAsync(ct);
+        IQueryable<Producto> ordenados = productos
+            .OrderByDescending(x => x.CodigoInterno.ToLower() == terminoMinusculas
+                || (x.CodigoBarras != null && x.CodigoBarras.ToLower() == terminoMinusculas))
+            .ThenBy(x => x.Nombre).ThenBy(x => x.Id);
+        if (limite.HasValue)
+            ordenados = ordenados.Take(Math.Clamp(limite.Value, 1, 50));
+        return await Query(ordenados).ToListAsync(ct);
     }
 
     private async Task<string?> Validar(ProductoInput x, string codigoInterno, int? id, CancellationToken ct)

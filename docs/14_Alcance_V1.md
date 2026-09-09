@@ -6,6 +6,8 @@
 
 ✅ Productos y categorías.
 
+✅ Nueva compra permite buscar productos por nombre, CodigoBarras o CodigoInterno en un solo textbox, y registrar un producto en un panel sin perder la compra. El producto creado queda seleccionado; PRO- sigue generado en backend. Código de barras manual/opcional; cámara y lector siguen en V2.
+
 ✅ Proveedores.
 
 ✅ Compras y comprobantes de compra.

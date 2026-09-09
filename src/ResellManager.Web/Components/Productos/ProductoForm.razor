@@ -13,7 +13,12 @@
                 <strong>No hay categorías disponibles.</strong>
                 <p>Crea una categoría antes de registrar un producto.</p>
             </div>
-            <a class="secondary-button" href="/categorias">Ir a categorías</a>
+            <a class="secondary-button" href="/categorias"
+               target="@(CategoriasEnOtraPestana ? "_blank" : null)" rel="@(CategoriasEnOtraPestana ? "noopener" : null)">Ir a categorías</a>
+            @if (CategoriasEnOtraPestana)
+            {
+                <p>Se abrirá otra pestaña. Conserva esta compra abierta y después actualiza las categorías.</p>
+            }
         </div>
     }
 
@@ -88,7 +93,14 @@
         <button class="primary-button" type="submit" disabled="@(!PuedeGuardar)">
             @(Guardando ? "Guardando..." : "Guardar producto")
         </button>
-        <a class="secondary-button" href="@CancelarHref">Cancelar</a>
+        @if (OnCancelar.HasDelegate)
+        {
+            <button class="secondary-button" type="button" disabled="@Guardando" @onclick="OnCancelar">Cancelar</button>
+        }
+        else
+        {
+            <a class="secondary-button" href="@CancelarHref">Cancelar</a>
+        }
     </div>
 </EditForm>
 
@@ -110,6 +122,9 @@
 
     [Parameter]
     public string CancelarHref { get; set; } = "/productos";
+
+    [Parameter] public EventCallback OnCancelar { get; set; }
+    [Parameter] public bool CategoriasEnOtraPestana { get; set; }
 
     private bool PuedeGuardar => !Guardando && Categorias.Count > 0;
 

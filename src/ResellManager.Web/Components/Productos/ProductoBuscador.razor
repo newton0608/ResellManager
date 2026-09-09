@@ -1,0 +1,160 @@
+@implements IDisposable
+@inject IServiceScopeFactory ScopeFactory
+@inject ILogger<ProductoBuscador> Logger
+@using Microsoft.Extensions.DependencyInjection
+
+<div class="form-field product-search">
+    <label for="@Id">Producto <span aria-hidden="true">*</span></label>
+    <input id="@Id" type="search" value="@Texto" @oninput="CambiarTextoAsync" @onkeydown="Tecla"
+           placeholder="Buscar por nombre, código de barras o código del sistema"
+           autocomplete="off" disabled="@Deshabilitado" aria-required="true" aria-describedby="@(Id + "-estado")" />
+    <div id="@(Id + "-estado")" class="field-help" role="status" aria-live="polite">
+        @if (Seleccionado is not null)
+        {
+            <span>Seleccionado: <strong>@Seleccionado.Nombre</strong> · @Seleccionado.CodigoInterno</span>
+        }
+        else if (Buscando)
+        {
+            <span>Buscando productos...</span>
+        }
+        else if (Error is not null)
+        {
+            <span>@Error</span>
+        }
+        else if (MostrarResultados)
+        {
+            <span>@(Resultados.Count == 0 ? "No se encontraron productos." : $"{Resultados.Count} resultados. Selecciona un producto.")</span>
+        }
+        else
+        {
+            <span>Escribe al menos 2 caracteres. Puedes cambiar el producto buscando de nuevo.</span>
+        }
+    </div>
+    @if (MostrarResultados && Resultados.Count > 0)
+    {
+        <ul class="product-search-results" aria-label="Resultados de productos">
+            @foreach (var producto in Resultados)
+            {
+                <li @key="producto.Id">
+                    <button class="product-search-result" type="button" disabled="@Deshabilitado"
+                            @onclick="() => SeleccionarAsync(producto)">
+                        <strong>@producto.Nombre</strong>
+                        @if (!string.IsNullOrWhiteSpace(producto.CodigoBarras))
+                        {
+                            <span>Barras: @producto.CodigoBarras</span>
+                        }
+                        <span>Sistema: @producto.CodigoInterno</span>
+                    </button>
+                </li>
+            }
+        </ul>
+        @if (Resultados.Count == Limite)
+        {
+            <p class="field-help">Se muestran hasta @Limite resultados. Precisa la búsqueda si no encuentras el producto.</p>
+        }
+    }
+    <button class="inline-button" type="button" disabled="@Deshabilitado" @onclick="RegistrarAsync">Registrar producto</button>
+</div>
+
+@code {
+    private const int Limite = 12;
+    [Parameter, EditorRequired] public string Id { get; set; } = string.Empty;
+    [Parameter] public ProductoDto? Seleccionado { get; set; }
+    [Parameter] public bool Deshabilitado { get; set; }
+    [Parameter] public EventCallback<ProductoDto?> OnSeleccionado { get; set; }
+    [Parameter] public EventCallback OnRegistrar { get; set; }
+    private string Texto { get; set; } = string.Empty;
+    private int? UltimoId { get; set; }
+    private IReadOnlyList<ProductoDto> Resultados { get; set; } = [];
+    private bool Buscando { get; set; }
+    private bool MostrarResultados { get; set; }
+    private string? Error { get; set; }
+    private CancellationTokenSource? Busqueda;
+
+    protected override void OnParametersSet()
+    {
+        if (UltimoId != Seleccionado?.Id)
+        {
+            CancelarBusqueda();
+            UltimoId = Seleccionado?.Id;
+            Texto = Seleccionado?.Nombre ?? string.Empty;
+        }
+        if (Deshabilitado)
+            CancelarBusqueda();
+    }
+
+    private async Task CambiarTextoAsync(ChangeEventArgs evento)
+    {
+        if (Deshabilitado) return;
+        CancelarBusqueda();
+        Texto = evento.Value?.ToString() ?? string.Empty;
+        UltimoId = null;
+        await OnSeleccionado.InvokeAsync(null);
+        var termino = Texto.Trim();
+        if (termino.Length < 2) return;
+        using var cancelacion = new CancellationTokenSource();
+        Busqueda = cancelacion;
+        Buscando = true;
+        try
+        {
+            await Task.Delay(300, cancelacion.Token);
+            // Cada consulta usa servicios de su propio scope, independientes del circuito.
+            await using var scope = ScopeFactory.CreateAsyncScope();
+            var servicio = scope.ServiceProvider.GetRequiredService<IProductoService>();
+            var encontrados = await servicio.BuscarAsync(termino, cancelacion.Token, Limite);
+            if (cancelacion.IsCancellationRequested) return;
+            Resultados = encontrados;
+            MostrarResultados = true;
+        }
+        catch (OperationCanceledException) when (cancelacion.IsCancellationRequested) { }
+        catch (Exception ex)
+        {
+            if (!cancelacion.IsCancellationRequested)
+            {
+                Logger.LogError(ex, "No fue posible buscar productos para selección.");
+                Error = "No pudimos buscar productos. Modifica el texto para reintentar.";
+            }
+        }
+        finally
+        {
+            if (ReferenceEquals(Busqueda, cancelacion))
+            {
+                Busqueda = null;
+                Buscando = false;
+            }
+        }
+    }
+
+    private async Task SeleccionarAsync(ProductoDto producto)
+    {
+        if (Deshabilitado) return;
+        CancelarBusqueda();
+        Texto = producto.Nombre;
+        UltimoId = producto.Id;
+        await OnSeleccionado.InvokeAsync(producto);
+    }
+
+    private Task RegistrarAsync()
+    {
+        if (Deshabilitado) return Task.CompletedTask;
+        CancelarBusqueda();
+        return OnRegistrar.InvokeAsync();
+    }
+
+    private void Tecla(KeyboardEventArgs evento)
+    {
+        if (evento.Key == "Escape") CancelarBusqueda();
+    }
+
+    private void CancelarBusqueda()
+    {
+        Busqueda?.Cancel();
+        Busqueda = null;
+        Resultados = [];
+        MostrarResultados = false;
+        Buscando = false;
+        Error = null;
+    }
+
+    public void Dispose() => CancelarBusqueda();
+}
