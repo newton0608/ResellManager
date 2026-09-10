@@ -122,6 +122,42 @@ Las decisiones deben priorizar los flujos que realmente ahorran tiempo a la usua
 
 Objetivo: ampliar los procesos comerciales que V1 dejó deliberadamente fuera o simplificados.
 
+## Informes del negocio
+
+Incorporar un módulo formal de **Informes** para analizar la operación real del negocio a partir de los datos acumulados en ResellManager.
+
+Los informes son distintos de la analítica de uso de la aplicación: aquí el objetivo es responder qué está pasando en el negocio, no cómo se utiliza la interfaz.
+
+### Informes previstos inicialmente
+
+- ventas por período;
+- utilidad por período;
+- cuentas por cobrar;
+- clientes con mayor saldo pendiente;
+- productos más vendidos;
+- inventario actual;
+- valor de inventario al costo;
+- compras por período;
+- compras por proveedor;
+- compras por origen;
+- pagos/abonos recibidos por período;
+- pedidos pendientes o activos.
+
+### Criterios de diseño
+
+- reutilizar la lógica de negocio y consultas existentes cuando corresponda;
+- permitir filtros por rangos de fecha cuando tenga sentido;
+- mostrar totales y detalles de forma entendible para la usuaria;
+- evitar duplicar fórmulas ya definidas en Dashboard o servicios de negocio;
+- diferenciar claramente utilidad comercial, deuda, inventario y flujo de pagos;
+- priorizar informes que respondan preguntas reales del negocio.
+
+### Exportación
+
+Evaluar exportación de informes a formatos como PDF y Excel una vez que los informes principales estén estables.
+
+La exportación avanzada no es requisito para la primera entrega de V2.2 y puede implementarse posteriormente si aporta valor real.
+
 ## Devoluciones y cambios
 
 Diseñar un flujo formal para devoluciones y cambios de mercancía ya vendida o entregada.
@@ -258,7 +294,7 @@ Estas ideas siguen siendo posibles expansiones, pero no se consideran obligatori
 - funciones de IA;
 - predicciones o forecasting;
 - numeraciones humanas más cortas;
-- exportaciones avanzadas;
+- exportaciones avanzadas más allá de los informes principales;
 - otras integraciones externas.
 
 Antes de incorporar cualquiera de estas funciones se debe comprobar que resuelva un problema real y que su costo de mantenimiento sea razonable.
