@@ -96,7 +96,7 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
                     <input id="fecha-recepcion" type="date" @bind="FechaRecepcion" />
                 </div>
                 <button class="primary-button" type="button" disabled="@(Ocupado || UnidadesSeleccionadas.Count == 0)"
-                        @onclick="RegistrarRecepcionAsync">
+                        @onclick="RevisarRecepcion">
                     @(ProcesandoRecepcion ? "Procesando..." : $"Recibir ({UnidadesSeleccionadas.Count})")
                 </button>
             </div>
@@ -165,7 +165,7 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
                                 @if (siguienteEstado.HasValue)
                                 {
                                     <button class="table-action button-link" type="button" disabled="@Ocupado"
-                                            @onclick="() => CambiarEstadoAsync(unidad, siguienteEstado.Value)">
+                                            @onclick="() => RevisarCambioAsync(unidad, siguienteEstado.Value)">
                                         @(UnidadProcesandoId == unidad.Id ? "Procesando..." : InventarioPresentacion.AccionEstado(siguienteEstado.Value))
                                     </button>
                                 }
@@ -224,7 +224,7 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
                             @if (siguienteEstado.HasValue)
                             {
                                 <button class="secondary-button" type="button" disabled="@Ocupado"
-                                        @onclick="() => CambiarEstadoAsync(unidad, siguienteEstado.Value)">
+                                        @onclick="() => RevisarCambioAsync(unidad, siguienteEstado.Value)">
                                     @(UnidadProcesandoId == unidad.Id ? "Procesando..." : InventarioPresentacion.AccionEstado(siguienteEstado.Value))
                                 </button>
                             }
@@ -236,7 +236,60 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
     </section>
 }
 
+@if (RevisandoRecepcion || UnidadEntrega is not null)
+{
+    <ConfirmacionOperacion Titulo="@(RevisandoRecepcion ? "Confirmar recepción" : "Confirmar entrega")"
+                           TextoConfirmar="@(RevisandoRecepcion ? "Recibir mercancía" : "Confirmar entrega")"
+                           TextoEditar="Cancelar" Ocupado="Ocupado" Error="@ErrorMessage"
+                           OnEditar="CerrarRevisionInventario" OnConfirmar="ConfirmarInventarioAsync">
+        @if (RevisandoRecepcion)
+        {
+            <p>@UnidadesSeleccionadas.Count unidades pasarán a Disponible con fecha @FechaRecepcion.ToString("dd/MM/yyyy"). Sus reservas se conservan.</p>
+            <ul>
+                @foreach (var unidad in Unidades.Where(x => UnidadesSeleccionadas.Contains(x.Id)))
+                {
+                    <li>@unidad.Producto · @unidad.CodigoInterno</li>
+                }
+            </ul>
+        }
+        else if (UnidadEntrega is not null)
+        {
+            <p>@UnidadEntrega.Producto · @UnidadEntrega.CodigoInterno</p>
+            <p>La unidad pasará de Vendida a Entregada. Después no podrá cancelarse la venta por el flujo normal.</p>
+        }
+    </ConfirmacionOperacion>
+}
+
 @code {
+    private bool RevisandoRecepcion { get; set; }
+    private UnidadInventarioDto? UnidadEntrega { get; set; }
+    private void RevisarRecepcion()
+    {
+        if (Ocupado || UnidadesSeleccionadas.Count == 0) return;
+        ErrorMessage = null;
+        RevisandoRecepcion = true;
+    }
+    private Task RevisarCambioAsync(UnidadInventarioDto unidad, EstadoUnidadInventario estado)
+    {
+        if (Ocupado) return Task.CompletedTask;
+        if (estado != EstadoUnidadInventario.Entregada) return CambiarEstadoAsync(unidad, estado);
+        ErrorMessage = null;
+        UnidadEntrega = unidad;
+        return Task.CompletedTask;
+    }
+    private void CerrarRevisionInventario()
+    {
+        if (Ocupado) return;
+        RevisandoRecepcion = false;
+        UnidadEntrega = null;
+    }
+    private async Task ConfirmarInventarioAsync()
+    {
+        if (Ocupado) return;
+        if (RevisandoRecepcion) await RegistrarRecepcionAsync();
+        else if (UnidadEntrega is not null) await CambiarEstadoAsync(UnidadEntrega, EstadoUnidadInventario.Entregada);
+        if (ErrorMessage is null) CerrarRevisionInventario();
+    }
     [SupplyParameterFromQuery(Name = "estado")]
     public string? EstadoConsulta { get; set; }
     private IReadOnlyList<UnidadInventarioDto> Unidades { get; set; } = [];

@@ -1,0 +1,70 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<dialog class="operation-review" @ref="Dialogo" aria-labelledby="@TituloId"
+        aria-busy="@Bloqueado.ToString().ToLowerInvariant()" data-ocupado="@Bloqueado.ToString().ToLowerInvariant()">
+    <h2 id="@TituloId">@Titulo</h2>
+    <div class="operation-review-content">@ChildContent</div>
+    @if (!string.IsNullOrWhiteSpace(Error))
+    {
+        <p class="mensaje-error" role="alert">@Error</p>
+    }
+    <div class="form-actions operation-review-actions">
+        <button class="secondary-button" type="button" disabled="@Bloqueado" @onclick="EditarAsync">@TextoEditar</button>
+        <button class="primary-button" type="button" disabled="@Bloqueado" @onclick="ConfirmarAsync">
+            @(Bloqueado ? "Procesando..." : TextoConfirmar)
+        </button>
+    </div>
+</dialog>
+
+@code {
+    [Parameter, EditorRequired] public string Titulo { get; set; } = string.Empty;
+    [Parameter] public string TextoEditar { get; set; } = "Editar";
+    [Parameter] public string TextoConfirmar { get; set; } = "Confirmar";
+    [Parameter] public string? Error { get; set; }
+    [Parameter] public bool Ocupado { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public EventCallback OnEditar { get; set; }
+    [Parameter] public EventCallback OnConfirmar { get; set; }
+    private bool Enviando;
+    private bool Bloqueado => Ocupado || Enviando;
+    private string TituloId { get; } = "revision-" + Guid.NewGuid().ToString("N");
+    private ElementReference Dialogo;
+    private IJSObjectReference? Modulo;
+    private DotNetObjectReference<ConfirmacionOperacion>? Referencia;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        Modulo = await JS.InvokeAsync<IJSObjectReference>("import", "./operation-review.js");
+        Referencia = DotNetObjectReference.Create(this);
+        await Modulo.InvokeVoidAsync("abrir", Dialogo, Referencia);
+    }
+
+    private async Task ConfirmarAsync()
+    {
+        if (Bloqueado) return;
+        Enviando = true;
+        try { await OnConfirmar.InvokeAsync(); }
+        finally { Enviando = false; }
+    }
+
+    private Task EditarAsync() => Bloqueado ? Task.CompletedTask : OnEditar.InvokeAsync();
+
+    [JSInvokable]
+    public Task CancelarDesdeTeclado() => EditarAsync();
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (Modulo is not null)
+            {
+                await Modulo.InvokeVoidAsync("cerrar", Dialogo);
+                await Modulo.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException) { }
+        finally { Referencia?.Dispose(); }
+    }
+}

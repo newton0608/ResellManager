@@ -54,7 +54,7 @@ else
     }
     else
     {
-        <EditForm Model="Modelo" OnValidSubmit="RegistrarVentaDirectaAsync" class="entity-form direct-sale-form">
+        <EditForm Model="Modelo" OnValidSubmit="RevisarVentaDirectaAsync" class="entity-form direct-sale-form">
             <DataAnnotationsValidator />
             <ValidationSummary class="validation-summary" />
 
@@ -216,8 +216,8 @@ else
                     @(Registrando
                         ? "Registrando..."
                         : PedidoAutomaticoCreado is null
-                            ? "Crear pedido y registrar venta"
-                            : "Reintentar registro de venta")
+                            ? "Revisar venta"
+                            : "Revisar reintento de venta")
                 </button>
                 <a class="secondary-button" href="/ventas">Cancelar</a>
             </div>
@@ -225,7 +225,45 @@ else
     }
 }
 
+@if (RevisandoVenta)
+{
+    <ConfirmacionOperacion Titulo="Confirmar venta directa" TextoConfirmar="Confirmar venta"
+                           Ocupado="Registrando" Error="@ErrorGuardado" OnEditar="EditarVentaAsync" OnConfirmar="ConfirmarVentaAsync">
+        <p>Cliente: @ClientePresentacion.NombreCompleto(Clientes.First(x => x.Id == Modelo.ClienteId))</p>
+        <p>Venta directa · Presencial · @Modelo.Fecha.ToString("dd/MM/yyyy")</p>
+        <ul>
+            @foreach (var detalle in Seleccionadas)
+            {
+                <li>@detalle.Unidad.Producto · @detalle.Unidad.CodigoInterno:
+                    1 × @VentaPresentacion.Moneda(detalle.PrecioFinal) = @VentaPresentacion.Moneda(detalle.PrecioFinal)</li>
+            }
+        </ul>
+        <p><strong>Total: @VentaPresentacion.Moneda(Seleccionadas.Sum(x => x.PrecioFinal))</strong></p>
+        <p>Saldo estimado: @ClientePresentacion.Moneda(Clientes.First(x => x.Id == Modelo.ClienteId).Saldo + Seleccionadas.Sum(x => x.PrecioFinal)). Los abonos se registran por separado.</p>
+        @if (PedidoAutomaticoCreado is not null)
+        {
+            <p>Se reutilizará el pedido @PedidoAutomaticoCreado.CodigoInterno. Los datos ya registrados en él no se pueden editar aquí.</p>
+        }
+    </ConfirmacionOperacion>
+}
+
 @code {
+    private bool RevisandoVenta { get; set; }
+    private async Task RevisarVentaDirectaAsync()
+    {
+        if (Registrando) return;
+        ErrorGuardado = ValidacionFormulario.PrimerError(Modelo) ?? Validar(Seleccionadas);
+        if (ErrorGuardado is not null) return;
+        RevisandoVenta = true;
+        await OcupadoChanged.InvokeAsync(true);
+    }
+    private async Task EditarVentaAsync()
+    {
+        if (Registrando) return;
+        RevisandoVenta = false;
+        await OcupadoChanged.InvokeAsync(false);
+    }
+    private Task ConfirmarVentaAsync() => RevisandoVenta && !Registrando ? RegistrarVentaDirectaAsync() : Task.CompletedTask;
     [Parameter]
     public EventCallback<bool> OcupadoChanged { get; set; }
 
@@ -339,6 +377,7 @@ else
                 return;
             }
 
+            RevisandoVenta = false;
             Navigation.NavigateTo($"/ventas/{venta.Value.Id}");
         }
         catch (Exception ex)
@@ -354,7 +393,7 @@ else
         finally
         {
             Registrando = false;
-            await OcupadoChanged.InvokeAsync(false);
+            await OcupadoChanged.InvokeAsync(RevisandoVenta);
         }
     }
 

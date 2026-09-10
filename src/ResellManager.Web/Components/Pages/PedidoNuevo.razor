@@ -55,7 +55,7 @@ else
     }
 
     <section class="form-panel order-form-panel" aria-label="Formulario de pedido">
-        <EditForm Model="Modelo" OnValidSubmit="GuardarAsync" class="entity-form">
+        <EditForm Model="Modelo" OnValidSubmit="RevisarPedido" class="entity-form">
             <DataAnnotationsValidator />
 
             @if (!string.IsNullOrWhiteSpace(ErrorGuardado))
@@ -168,7 +168,7 @@ else
             <div class="form-actions">
                 <button class="primary-button" type="submit"
                         disabled="@(Guardando || Clientes.Count == 0 || Productos.Count == 0)">
-                    @(Guardando ? "Guardando..." : "Crear pedido")
+                    @(Guardando ? "Guardando..." : "Revisar pedido")
                 </button>
                 <a class="secondary-button" href="/pedidos">Cancelar</a>
             </div>
@@ -176,7 +176,35 @@ else
     </section>
 }
 
+@if (RevisandoPedido)
+{
+    <ConfirmacionOperacion Titulo="Confirmar pedido" TextoConfirmar="Confirmar pedido"
+                           Ocupado="Guardando" Error="@ErrorGuardado" OnEditar="EditarPedido" OnConfirmar="ConfirmarPedidoAsync">
+        <p>Cliente: @Clientes.Where(x => x.Id == Modelo.ClienteId).Select(NombreCliente).FirstOrDefault()</p>
+        <p>@PedidoPresentacion.Tipo(Modelo.TipoPedido) · @PedidoPresentacion.Canal(Modelo.CanalVenta) · @Modelo.Fecha.ToString("dd/MM/yyyy")</p>
+        <ul>
+            @foreach (var detalle in Modelo.Detalles)
+            {
+                <li>@Productos.FirstOrDefault(x => x.Id == detalle.ProductoId)?.Nombre:
+                    @detalle.Cantidad × @PedidoPresentacion.Moneda(detalle.PrecioUnitario)
+                    = @PedidoPresentacion.Moneda(detalle.Cantidad * detalle.PrecioUnitario)</li>
+            }
+        </ul>
+        <p><strong>Total estimado: @PedidoPresentacion.Moneda(Modelo.Detalles.Sum(x => x.Cantidad * x.PrecioUnitario))</strong></p>
+        <p>Las reservas se asignan después desde el detalle del pedido.</p>
+    </ConfirmacionOperacion>
+}
+
 @code {
+    private bool RevisandoPedido { get; set; }
+    private void RevisarPedido()
+    {
+        if (Guardando) return;
+        ErrorGuardado = ValidacionFormulario.PrimerError(Modelo) ?? ValidarDetalles();
+        RevisandoPedido = ErrorGuardado is null;
+    }
+    private void EditarPedido() { if (!Guardando) RevisandoPedido = false; }
+    private Task ConfirmarPedidoAsync() => RevisandoPedido && !Guardando ? GuardarAsync() : Task.CompletedTask;
     private PedidoFormModel Modelo { get; } = new();
     private string CodigoPedido { get; } = CodigosInternos.CrearCodigoPedido();
     private IReadOnlyList<ClienteDto> Clientes { get; set; } = [];
@@ -254,6 +282,7 @@ else
                 return;
             }
 
+            RevisandoPedido = false;
             Navigation.NavigateTo($"/pedidos/{resultado.Value.Id}?mensaje=pedido-creado");
         }
         catch (Exception ex)

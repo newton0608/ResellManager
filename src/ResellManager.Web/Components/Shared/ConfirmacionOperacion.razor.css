@@ -1,0 +1,19 @@
+.operation-review {
+    box-sizing: border-box;
+    width: min(38rem, calc(100% - 2rem));
+    max-width: calc(100% - 2rem);
+    max-height: calc(100dvh - 2rem);
+    overflow-y: auto;
+    border: 1px solid var(--color-border);
+    border-radius: 1rem;
+    padding: 1.25rem;
+    color: #172033;
+    background: var(--color-surface);
+}
+.operation-review::backdrop { background: rgb(15 23 42 / 55%); }
+.operation-review h2 { font-size: clamp(1.25rem, 4vw, 1.5rem); }
+.operation-review-content { min-width: 0; overflow-wrap: anywhere; }
+.operation-review-actions { margin-top: 1rem; flex-wrap: wrap; }
+.operation-review-actions button { min-height: 3rem; }
+.operation-review-content ::deep ul { padding-left: 1.25rem; }
+.operation-review-content ::deep li { margin-block: .6rem; }
