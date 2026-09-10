@@ -398,6 +398,18 @@ public sealed class ProductoService(ResellManagerDbContext db) : IProductoServic
 
 public sealed class ProveedorService(ResellManagerDbContext db) : IProveedorService
 {
+    public async Task<IReadOnlyList<ProveedorDto>> BuscarAsync(string termino, CancellationToken ct = default, int limite = 12)
+    {
+        var texto = termino.Trim().ToLowerInvariant();
+        return await db.Proveedores.AsNoTracking()
+            .Where(x => x.Nombre.ToLower().Contains(texto)
+                || (x.Telefono != null && x.Telefono.Contains(texto)))
+            .OrderByDescending(x => x.Telefono == texto)
+            .ThenBy(x => x.Nombre).ThenBy(x => x.Id)
+            .Take(Math.Clamp(limite, 1, 50))
+            .Select(x => Map(x)).ToListAsync(ct);
+    }
+
     public async Task<ServiceResult<ProveedorDto>> CrearAsync(
         ProveedorInput input,
         CancellationToken ct = default

@@ -1,0 +1,47 @@
+@inject IProveedorService ProveedorService
+@inject ILogger<ProveedorAltaPanel> Logger
+
+<section class="form-panel" aria-labelledby="titulo-alta-proveedor">
+    <h2 id="titulo-alta-proveedor" tabindex="-1" @ref="Titulo">Registrar proveedor para esta compra</h2>
+    <p>La compra permanece abierta. Al guardar se seleccionará este proveedor.</p>
+    <ProveedorForm Modelo="Modelo" Guardando="Guardando" ErrorGuardado="@Error"
+                   OnGuardar="GuardarAsync" OnCancelar="OnCancelar" />
+</section>
+
+@code {
+    [Parameter] public EventCallback<ProveedorDto> OnCreado { get; set; }
+    [Parameter] public EventCallback OnCancelar { get; set; }
+    private ProveedorFormModel Modelo { get; } = new();
+    private bool Guardando { get; set; }
+    private string? Error { get; set; }
+    private ElementReference Titulo;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) await Titulo.FocusAsync();
+    }
+
+    private async Task GuardarAsync()
+    {
+        if (Guardando) return;
+        Error = ValidacionFormulario.PrimerError(Modelo);
+        if (Error is not null) return;
+        Guardando = true;
+        try
+        {
+            var resultado = await ProveedorService.CrearAsync(Modelo.ToInput());
+            if (!resultado.IsSuccess || resultado.Value is null)
+            {
+                Error = resultado.ErrorMessage ?? "No fue posible registrar el proveedor.";
+                return;
+            }
+            await OnCreado.InvokeAsync(resultado.Value);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible crear el proveedor desde la compra.");
+            Error = "No pudimos guardar el proveedor. Intenta nuevamente.";
+        }
+        finally { Guardando = false; }
+    }
+}

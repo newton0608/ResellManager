@@ -7,3 +7,7 @@
     min-width: 0;
     max-width: 100%;
 }
+
+.purchase-lines-editor + .receipt-upload-panel {
+    margin-top: .25rem; /* Se suma al gap de 1rem del formulario. */
+}

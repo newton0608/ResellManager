@@ -55,6 +55,7 @@ public interface IProductoService
 
 public interface IProveedorService
 {
+    Task<IReadOnlyList<ProveedorDto>> BuscarAsync(string termino, CancellationToken ct = default, int limite = 12);
     Task<ServiceResult<ProveedorDto>> CrearAsync(
         ProveedorInput input,
         CancellationToken ct = default

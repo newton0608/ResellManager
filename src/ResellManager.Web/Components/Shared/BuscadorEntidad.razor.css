@@ -1,0 +1,8 @@
+.lookup-results { list-style: none; padding: 0; margin: 0; max-height: 18rem; overflow-y: auto; }
+.lookup-result {
+    display: grid; gap: .2rem; width: 100%; min-width: 0; box-sizing: border-box;
+    min-height: 3rem; padding: .65rem; margin-bottom: .35rem; text-align: left;
+    border: 1px solid var(--color-border); border-radius: .5rem;
+    background: #f8fafc; color: #172033; overflow-wrap: anywhere; cursor: pointer;
+}
+.lookup-result:hover, .lookup-result:focus-visible { background: #eff6ff; outline: 2px solid var(--color-primary); }

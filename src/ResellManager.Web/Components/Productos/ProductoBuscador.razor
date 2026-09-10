@@ -53,7 +53,10 @@
             <p class="field-help">Se muestran hasta @Limite resultados. Precisa la búsqueda si no encuentras el producto.</p>
         }
     }
-    <button class="inline-button" type="button" disabled="@Deshabilitado" @onclick="RegistrarAsync">Registrar producto</button>
+    @if (MostrarResultados && Resultados.Count == 0 && Error is null)
+    {
+        <button class="inline-button" type="button" disabled="@Deshabilitado" @onclick="RegistrarAsync">Agregar producto</button>
+    }
 </div>
 
 @code {
@@ -136,7 +139,7 @@
 
     private Task RegistrarAsync()
     {
-        if (Deshabilitado) return Task.CompletedTask;
+        if (Deshabilitado || !MostrarResultados || Resultados.Count != 0 || Error is not null) return Task.CompletedTask;
         CancelarBusqueda();
         return OnRegistrar.InvokeAsync();
     }
