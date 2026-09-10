@@ -14,7 +14,7 @@ public interface IClienteService
     );
     Task<ServiceResult<ClienteDto>> ObtenerPorIdAsync(int id, CancellationToken ct = default);
     Task<IReadOnlyList<ClienteDto>> ListarAsync(CancellationToken ct = default);
-    Task<IReadOnlyList<ClienteDto>> BuscarAsync(string termino, CancellationToken ct = default);
+    Task<IReadOnlyList<ClienteDto>> BuscarAsync(string termino, CancellationToken ct = default, int? limite = null);
     Task<ServiceResult<decimal>> ObtenerSaldoAsync(int clienteId, CancellationToken ct = default);
     Task<ServiceResult<ClienteHistorialDto>> ObtenerHistorialAsync(
         int clienteId,

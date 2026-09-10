@@ -190,7 +190,7 @@ public sealed class ClienteModuloIntegracionTests : PruebaWebAislada
 
         public Task<IReadOnlyList<ClienteDto>> BuscarAsync(
             string termino,
-            CancellationToken ct = default) =>
+            CancellationToken ct = default, int? limite = null) =>
             Task.FromResult<IReadOnlyList<ClienteDto>>([cliente]);
 
         public Task<ServiceResult<decimal>> ObtenerSaldoAsync(

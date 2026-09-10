@@ -73,20 +73,23 @@ public sealed class ClienteService(ResellManagerDbContext db) : IClienteService
 
     public async Task<IReadOnlyList<ClienteDto>> BuscarAsync(
         string termino,
-        CancellationToken ct = default
+        CancellationToken ct = default,
+        int? limite = null
     )
     {
-        termino = termino.Trim();
-        var clientes = await db
+        termino = termino.Trim().ToLowerInvariant();
+        var consulta = db
             .Clientes.AsNoTracking()
             .Where(x =>
-                x.Nombres.Contains(termino)
-                || (x.Apellidos != null && x.Apellidos.Contains(termino))
+                (x.Nombres + " " + (x.Apellidos ?? "")).ToLower().Contains(termino)
                 || x.Telefono.Contains(termino)
             )
-            .OrderBy(x => x.Nombres)
+            .OrderByDescending(x => x.Telefono == termino)
+            .ThenBy(x => x.Nombres)
             .ThenBy(x => x.Apellidos)
-            .ToListAsync(ct);
+            .ThenBy(x => x.Id).AsQueryable();
+        if (limite.HasValue) consulta = consulta.Take(Math.Clamp(limite.Value, 1, 50));
+        var clientes = await consulta.ToListAsync(ct);
         return await MapConSaldosAsync(clientes, ct);
     }
 

@@ -47,26 +47,18 @@ else
         </div>
     }
 
-    <section class="form-panel payment-customer-picker" aria-labelledby="titulo-cliente-pago">
-        <div class="form-field">
-            <label for="pago-cliente" id="titulo-cliente-pago">Cliente <span aria-hidden="true">*</span></label>
-            <select id="pago-cliente" value="@Modelo.ClienteId" @onchange="CambiarClienteAsync" disabled="@(CargandoCliente || Registrando)">
-                <option value="0">Selecciona un cliente</option>
-                @foreach (var cliente in Clientes)
-                {
-                    <option value="@cliente.Id">@ClientePresentacion.NombreCompleto(cliente)</option>
-                }
-            </select>
-        </div>
+    <section class="form-panel payment-customer-picker" aria-label="Buscar cliente para registrar abono">
+        <ClienteBuscador Seleccionado="ClienteSeleccionado" Deshabilitado="@(CargandoCliente || Registrando || RevisandoPago)"
+                         OnSeleccionado="SeleccionarClienteAsync" />
     </section>
 
-    @if (Clientes.Count == 0)
+    @if (ClienteSeleccionado is null)
     {
         <section class="empty-state" aria-labelledby="titulo-sin-clientes-pago">
             <span class="empty-state-icon" aria-hidden="true"><NavIcon Name="users" /></span>
-            <h2 id="titulo-sin-clientes-pago">No hay clientes registrados</h2>
-            <p>Registra un cliente antes de capturar pagos.</p>
-            <a class="primary-button" href="/clientes/nuevo">Nuevo cliente</a>
+            <h2 id="titulo-sin-clientes-pago">Busca y selecciona un cliente</h2>
+            <p>Consulta su saldo antes de registrar un abono. Si aún no existe, regístralo desde Clientes.</p>
+            <a class="secondary-button" href="/clientes">Ir a clientes</a>
         </section>
     }
     else if (CargandoCliente)
@@ -89,7 +81,7 @@ else
 
                 <section class="form-panel payment-form-panel" aria-labelledby="titulo-registrar-pago">
                     <h2 id="titulo-registrar-pago">Registrar pago o abono</h2>
-                    <EditForm Model="Modelo" OnValidSubmit="RegistrarPagoAsync" class="entity-form">
+                    <EditForm Model="Modelo" OnValidSubmit="RevisarPago" class="entity-form">
                         <DataAnnotationsValidator />
                         <ValidationSummary class="validation-summary" />
                         <div class="form-grid">
@@ -125,7 +117,7 @@ else
                         </div>
                         <div class="form-actions">
                             <button class="primary-button" type="submit" disabled="@(Registrando || SaldoActual.Value <= 0)">
-                                @(Registrando ? "Registrando..." : "Registrar pago")
+                                @(Registrando ? "Registrando..." : "Revisar abono")
                             </button>
                         </div>
                     </EditForm>
@@ -199,15 +191,32 @@ else
     }
 }
 
+@if (RevisandoPago && ClienteSeleccionado is not null && SaldoActual.HasValue)
+{
+    <ConfirmacionOperacion Titulo="Revisar abono" TextoConfirmar="Confirmar abono" Ocupado="Registrando"
+                           Error="@ErrorOperacion" OnEditar="EditarPago" OnConfirmar="ConfirmarPagoAsync">
+        <p><strong>@ClientePresentacion.NombreCompleto(ClienteSeleccionado)</strong></p>
+        <dl>
+            <dt>Saldo actual</dt><dd>@ClientePresentacion.Moneda(SaldoActual.Value)</dd>
+            <dt>Monto del abono</dt><dd>@ClientePresentacion.Moneda(Modelo.Monto)</dd>
+            <dt>Saldo después del abono</dt><dd>@ClientePresentacion.Moneda(SaldoActual.Value - Modelo.Monto)</dd>
+            <dt>Fecha</dt><dd>@Modelo.Fecha.ToString("dd/MM/yyyy")</dd>
+            <dt>Método</dt><dd>@PagoPresentacion.Metodo(Modelo.MetodoPago)</dd>
+            <dt>Referencia</dt><dd>@(Modelo.Referencia ?? "Sin referencia")</dd>
+        </dl>
+        <p>El sistema volverá a validar el saldo al confirmar.</p>
+    </ConfirmacionOperacion>
+}
+
 @code {
     private PagoFormModel Modelo { get; set; } = new();
-    private IReadOnlyList<ClienteDto> Clientes { get; set; } = [];
     private IReadOnlyList<PagoDto> Historial { get; set; } = [];
     private ClienteDto? ClienteSeleccionado { get; set; }
     private decimal? SaldoActual { get; set; }
     private bool CargandoClientes { get; set; } = true;
     private bool CargandoCliente { get; set; }
     private bool Registrando { get; set; }
+    private bool RevisandoPago { get; set; }
     private string? ErrorCarga { get; set; }
     private string? ErrorOperacion { get; set; }
     private string? MensajeExito { get; set; }
@@ -218,7 +227,7 @@ else
     public string? ClienteDesdeQuery { get; set; }
 
     protected override Task OnParametersSetAsync() =>
-        !ClientesCargados || QueryCargada != ClienteDesdeQuery ? CargarClientesAsync() : Task.CompletedTask;
+        !Registrando && !RevisandoPago && (!ClientesCargados || QueryCargada != ClienteDesdeQuery) ? CargarClientesAsync() : Task.CompletedTask;
 
     private async Task CargarClientesAsync()
     {
@@ -226,19 +235,19 @@ else
         ErrorCarga = null;
         try
         {
-            Clientes = await ClienteService.ListarAsync();
-            ClientesCargados = true;
-            QueryCargada = ClienteDesdeQuery;
             if (ClienteDesdeQuery is not null)
             {
-                if (int.TryParse(ClienteDesdeQuery, out var clienteId) && clienteId > 0 && Clientes.Any(x => x.Id == clienteId))
-                    await SeleccionarClienteAsync(clienteId);
-                else
+                var cliente = int.TryParse(ClienteDesdeQuery, out var clienteId) && clienteId > 0
+                    ? (await ClienteService.ObtenerPorIdAsync(clienteId)).Value : null;
+                await SeleccionarClienteAsync(cliente);
+                if (cliente is null)
                 {
-                    await SeleccionarClienteAsync(0);
-                    ErrorOperacion = "El cliente solicitado no está disponible. Selecciona un cliente de la lista.";
+                    ErrorOperacion = "El cliente solicitado no está disponible. Busca y selecciona otro cliente.";
                 }
             }
+            else if (QueryCargada is not null) await SeleccionarClienteAsync(null);
+            ClientesCargados = true;
+            QueryCargada = ClienteDesdeQuery;
         }
         catch (Exception ex)
         {
@@ -251,18 +260,12 @@ else
         }
     }
 
-    private async Task CambiarClienteAsync(ChangeEventArgs evento)
+    private async Task SeleccionarClienteAsync(ClienteDto? cliente)
     {
-        var clienteId = int.TryParse(evento.Value?.ToString(), out var id) ? id : 0;
-        await SeleccionarClienteAsync(clienteId);
-    }
-
-    private async Task SeleccionarClienteAsync(int clienteId)
-    {
-        if (Registrando || CargandoCliente)
+        if (Registrando || CargandoCliente || RevisandoPago)
             return;
 
-        ClienteSeleccionado = Clientes.FirstOrDefault(x => x.Id == clienteId);
+        ClienteSeleccionado = cliente;
         Modelo = new PagoFormModel { ClienteId = ClienteSeleccionado?.Id ?? 0 };
         Historial = [];
         SaldoActual = null;
@@ -306,6 +309,18 @@ else
         }
     }
 
+    private void RevisarPago()
+    {
+        if (Registrando || CargandoCliente || ClienteSeleccionado is null || !SaldoActual.HasValue) return;
+        ErrorOperacion = ValidacionFormulario.PrimerError(Modelo);
+        if (ErrorOperacion is null && Modelo.Monto > SaldoActual.Value)
+            ErrorOperacion = $"El monto no puede superar el saldo actual de {ClientePresentacion.Moneda(SaldoActual.Value)}.";
+        RevisandoPago = ErrorOperacion is null;
+    }
+
+    private void EditarPago() { if (!Registrando) RevisandoPago = false; }
+    private Task ConfirmarPagoAsync() => RevisandoPago && !Registrando ? RegistrarPagoAsync() : Task.CompletedTask;
+
     private async Task RegistrarPagoAsync()
     {
         if (Registrando || ClienteSeleccionado is null || !SaldoActual.HasValue)
@@ -333,6 +348,7 @@ else
                 return;
             }
 
+            RevisandoPago = false;
             var clienteId = Modelo.ClienteId;
             Modelo = new PagoFormModel { ClienteId = clienteId };
             await RecargarClienteAsync();

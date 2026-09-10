@@ -1,0 +1,24 @@
+@inject IServiceScopeFactory ScopeFactory
+
+<BuscadorEntidad TItem="ClienteDto" Id="pago-cliente" Etiqueta="Cliente"
+                 Placeholder="Buscar por nombre completo o teléfono"
+                 SinResultados="No se encontraron clientes. Puedes registrar uno desde Clientes."
+                 Seleccionado="Seleccionado" TextoSeleccionado="@(Seleccionado is null ? null : ClientePresentacion.NombreCompleto(Seleccionado))"
+                 Deshabilitado="Deshabilitado" Buscar="BuscarAsync" OnSeleccionado="OnSeleccionado">
+    <Resultado Context="cliente">
+        <strong>@ClientePresentacion.NombreCompleto(cliente)</strong>
+        <span>@cliente.Telefono</span>
+    </Resultado>
+</BuscadorEntidad>
+
+@code {
+    [Parameter] public ClienteDto? Seleccionado { get; set; }
+    [Parameter] public bool Deshabilitado { get; set; }
+    [Parameter] public EventCallback<ClienteDto?> OnSeleccionado { get; set; }
+
+    private async Task<IReadOnlyList<ClienteDto>> BuscarAsync(string termino, CancellationToken ct)
+    {
+        await using var scope = ScopeFactory.CreateAsyncScope();
+        return await scope.ServiceProvider.GetRequiredService<IClienteService>().BuscarAsync(termino, ct, 12);
+    }
+}

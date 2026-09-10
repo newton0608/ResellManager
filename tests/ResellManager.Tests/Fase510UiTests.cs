@@ -78,7 +78,7 @@ public sealed class Fase510UiTests
             ("/inventario", "Aún no hay unidades de inventario", "/compras/nueva"),
             ("/pedidos", "Aún no hay pedidos", "/pedidos/nuevo"),
             ("/ventas", "Aún no hay ventas", "/ventas/nueva"),
-            ("/pagos", "No hay clientes registrados", "/clientes/nuevo"),
+            ("/pagos", "Busca y selecciona un cliente", "/clientes"),
             ("/compras", "Aún no hay compras", "/compras/nueva"),
             ("/proveedores", "Aún no hay proveedores", "/proveedores/nuevo"),
         };
@@ -91,6 +91,12 @@ public sealed class Fase510UiTests
             Assert.True(vacio.Success, ruta);
             Assert.Contains($"href=\"{destino}\"", vacio.Value);
             Assert.DoesNotContain("<table", html);
+            if (ruta == "/pagos")
+            {
+                Assert.Contains("id=\"pago-cliente\"", html);
+                Assert.Contains("Buscar por nombre completo o teléfono", html);
+                Assert.DoesNotContain("<select", html);
+            }
         }
 
         await using var scope = factory.Services.CreateAsyncScope();
