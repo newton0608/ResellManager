@@ -34,11 +34,18 @@
     </div>
 </form>
 
+<nav class="search-actions context-filter" aria-label="Filtrar clientes por saldo">
+    <a class="@(SoloConDeuda ? "secondary-button" : "primary-button")" href="@UrlFiltro(false)"
+       aria-current="@(!SoloConDeuda ? "page" : null)">Todos</a>
+    <a class="@(SoloConDeuda ? "primary-button" : "secondary-button")" href="@UrlFiltro(true)"
+       aria-current="@(SoloConDeuda ? "page" : null)">Con deuda</a>
+</nav>
+
 @if (SoloConDeuda)
 {
     <div class="origin-guidance context-filter" role="status">
         <span>Clientes con saldo pendiente mayor que cero</span>
-        <a class="inline-button" href="/clientes">Quitar filtro de deuda</a>
+        <a class="inline-button" href="@UrlFiltro(false)">Quitar filtro de deuda</a>
     </div>
 }
 
@@ -128,6 +135,13 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
 @code {
     [SupplyParameterFromQuery(Name = "saldo")]
     public string? SaldoFiltro { get; set; }
+    [SupplyParameterFromQuery(Name = "buscar")]
+    public string? BusquedaQuery { get; set; }
+    private string? QueryAnterior { get; set; }
+    private bool ParametrosCargados { get; set; }
+    private string UrlFiltro(bool deuda) => string.IsNullOrWhiteSpace(Termino)
+        ? deuda ? "/clientes?saldo=pendiente" : "/clientes"
+        : $"/clientes?buscar={Uri.EscapeDataString(Termino)}" + (deuda ? "&saldo=pendiente" : "");
     private bool SoloConDeuda => string.Equals(SaldoFiltro, "pendiente", StringComparison.OrdinalIgnoreCase);
     private IReadOnlyList<ClienteDto> AplicarFiltroSaldo(IReadOnlyList<ClienteDto> clientes) =>
         SoloConDeuda ? clientes.Where(x => x.Saldo > 0).ToArray() : clientes;
@@ -147,7 +161,14 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
         _ => null,
     };
 
-    protected override Task OnParametersSetAsync() => BuscarAsync();
+    protected override Task OnParametersSetAsync()
+    {
+        if (!ParametrosCargados || QueryAnterior != BusquedaQuery)
+            Termino = BusquedaQuery ?? string.Empty;
+        QueryAnterior = BusquedaQuery;
+        ParametrosCargados = true;
+        return BuscarAsync();
+    }
 
     private async Task CargarClientesAsync()
     {

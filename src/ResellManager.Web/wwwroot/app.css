@@ -3075,7 +3075,7 @@ textarea {
 
 .dashboard-action-grid > a {
   min-width: 0;
-  min-height: 3rem;
+  min-height: 5rem;
   padding: .75rem;
   text-align: center;
   white-space: normal;
