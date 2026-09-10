@@ -164,8 +164,8 @@
 
 ## Fase 5.7: pagos y abonos
 
-- [x] Seleccionar un cliente real y consultar su saldo mediante `IClienteService.ObtenerSaldoAsync`.
-- [x] Registrar pagos y abonos globales por cliente mediante `IPagoService.RegistrarAsync`.
+- [x] Buscar y seleccionar un cliente real por nombre completo/teléfono, conservando `?cliente=id`, y consultar su saldo mediante `IClienteService.ObtenerSaldoAsync`.
+- [x] Revisar saldo actual, abono y saldo previsto antes de registrar pagos globales mediante `IPagoService.RegistrarAsync`.
 - [x] Validar preventivamente monto positivo y no mayor al saldo, manteniendo al backend como autoridad.
 - [x] Usar los valores reales del enum `MetodoPago`.
 - [x] Consultar el historial ordenado mediante `IPagoService.ListarPorClienteAsync`.
@@ -184,8 +184,8 @@
 - [x] Mostrar valor y cantidad de inventario usando exclusivamente unidades `Disponible` y su costo real.
 - [x] Definir pedidos activos como `Pendiente + Confirmado`, excluyendo `Cancelado` y `Completado`.
 - [x] Mostrar Pendiente de entregar como conteo real de unidades `Vendida`, sin contar `Entregada`, en lugar de la tarjeta de pedidos activos.
-- [x] Añadir acciones rápidas: Registrar abono, Venta directa, Registrar pedido y Buscar cliente.
-- [x] Enlazar filtros contextuales de clientes con deuda, pedidos activos e inventario disponible/vendido, con opción visible para quitarlos.
+- [x] Añadir acciones rápidas: Registrar abono, Venta directa, Registrar pedido y Buscar cliente, con botones táctiles de 5rem.
+- [x] Enlazar filtros contextuales de clientes con deuda, pedidos activos e inventario disponible/vendido; Clientes ofrece Todos / Con deuda sin perder el criterio de búsqueda al alternar.
 - [x] Mostrar últimos pagos por fecha descendente e Id descendente, respetando el límite solicitado.
 - [x] Mostrar últimas ventas únicamente `Registrada`, por fecha descendente e Id descendente, con canal obtenido desde `Pedido`.
 - [x] Mostrar los cinco valores de `CanalVenta`, incluso en cero.
@@ -198,10 +198,11 @@
 
 ## Fase 5.8: compras, proveedores y comprobantes
 
-- [x] Buscar productos bajo demanda en Nueva compra por nombre, código de barras o código del sistema, y dar de alta con el formulario reutilizado sin abandonar la compra.
+- [x] Buscar productos bajo demanda en Nueva compra por nombre, código de barras o código del sistema; solo sin coincidencias ofrecer alta con el formulario reutilizado, autoseleccionando la línea original.
+- [x] Buscar proveedor por nombre/teléfono y crear/autoseleccionar inline, incluso el primer proveedor, conservando la compra.
 
 - [x] Listar compras por fecha descendente con tabla de escritorio y cards móviles.
-- [x] Registrar compras con proveedor y productos reales, múltiples detalles y total calculado por backend.
+- [x] Revisar y confirmar compras con proveedor/productos reales, múltiples detalles, costos, total y archivo opcional; Editar conserva el formulario y la persistencia continúa en backend.
 - [x] Generar `Compra.CodigoInterno` como `COM-<GUID>` sin captura manual.
 - [x] Mantener en `CompraService` la creación de detalles, unidades, costos, estados y fechas por origen.
 - [x] Mantener Catálogo completamente fuera de `UnidadInventario`.

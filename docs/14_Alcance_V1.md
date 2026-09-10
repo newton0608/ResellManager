@@ -155,3 +155,11 @@ que preserven relaciones e historial.
 Apartados se resuelven con Pedido + Reserva, no con otro módulo. Se corrigen presentación, navegación, códigos técnicos, errores de selección, IDs inválidos y doble submit sin cambiar las reglas existentes. Las migraciones de arranque son independientes del usuario inicial y el almacenamiento de comprobantes se valida fuera de `wwwroot`.
 
 La evidencia de pruebas, las rutas definitivas y cualquier validación visual pendiente están en [Fase 5.10 — Cierre V1](18_Fase510_CierreV1.md). El cierre técnico no equivale a despliegue productivo ni a validación multiusuario concurrente.
+
+### Ajustes finales de productividad V1
+
+- Compra permite buscar y crear Producto/Proveedor sin abandonar el flujo; el alta se ofrece tras una búsqueda sin resultados y se autoselecciona. Es posible iniciar sin proveedores y crear el primero. PRO- y código de barras manual/opcional no cambian.
+- Pagos busca Cliente por nombre completo o teléfono y conserva `?cliente=id`; no se agrega CodigoInterno a Cliente.
+- Clientes ofrece Todos / Con deuda (`saldo=pendiente`) combinado con búsqueda, conservada en `buscar` al alternar el filtro. Acciones rápidas mantiene rutas y grid, con botones de 5rem (80px con fuente base de 16px).
+- Compra, Pedido manual, Venta Directa, Pago/abono, recepción y entrega de inventario tienen revisión previa. Revisar/Editar no persiste; Confirmar utiliza los servicios actuales. Las altas simples y las confirmaciones de cancelación existentes no se duplican.
+- Sin migraciones, cambios de fórmulas, lector/cámara ni Informes V2. Ver decisiones 021–022 y evidencia de pruebas/aceptación pendiente en el cierre V1.

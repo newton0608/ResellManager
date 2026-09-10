@@ -517,3 +517,42 @@ Verificación técnica de Compra: build con 0 errores y 0 warnings; 294 pruebas 
 - `19_V2_Pendientes.md` permanece intacto; no se implementó cámara, lector, ecommerce ni otro alcance V2. La aceptación visual real queda pendiente: no se reintentó el navegador del entorno. Verificar manualmente Compra, Dashboard y filtros a 390 px y escritorio; las pruebas de render no demuestran apariencia visual.
 
 Verificación final de ambos ajustes (08/09/2026): `dotnet build ResellManager.sln` con 0 errores y 0 warnings; `dotnet test ResellManager.sln` con 306 aprobadas, 0 fallidas y 0 omitidas (286 anteriores + 8 de Compra + 12 de Dashboard/filtros). Las 8 pruebas JavaScript existentes también pasan. `git diff --check` correcto. Entrega separada en commits de productividad de compras y de acciones/métricas/filtros del Dashboard, sin merge.
+
+## 16. Ajustes finales derivados de validación manual
+
+### Sincronización y alcance
+
+Se partió de la rama `feature/ajustes-ux-movil-dashboard` limpia en `04e4421`. Tras fetch se incorporó por fast-forward `fdeea3e` (`docs: add business reports to V2 roadmap`), sin stash ni descarte de cambios. `19_V2_Pendientes.md` conserva íntegra la sección Informes del negocio en V2.2; no se duplicó ni implementó. Se mantienen PRO-, restricciones del pedido manual, flujo Venta Directa, cálculos, almacenamiento, seguridad y fixes responsive anteriores. No hay migración ni nuevo esquema.
+
+### Compra y búsqueda contextual
+
+- Proveedor se busca por nombre/teléfono usando `IProveedorService.BuscarAsync`, con 2 caracteres mínimos, debounce de 300 ms y hasta 12 resultados en SQL. No se carga la lista completa. Una coincidencia exacta de teléfono tiene prioridad.
+- Si una búsqueda válida queda sin resultados, aparece Agregar proveedor. El panel reutiliza `ProveedorForm` (también usado por Nuevo proveedor) y llama a `CrearAsync`. El callback asigna el DTO/ProveedorId a la compra sin reemplazar su modelo. Se puede crear el primer proveedor sin salir de Compra.
+- Producto mantiene su buscador/backend y alta con PRO- automático; se elimina el botón permanente de registro. Agregar producto aparece solo tras una búsqueda válida sin resultados, nunca mientras carga, ante error o con coincidencias. La referencia de la línea de origen sigue determinando la autoselección; otras líneas permanecen intactas.
+- Los paneles de alta están fuera del EditForm de compra. Se conservan fechas, origen, observaciones, cantidades, costos, detalles y archivo seleccionado; el resto del formulario queda deshabilitado durante el alta. Sin categorías se conserva el enlace en otra pestaña y la posibilidad de actualizar categorías al volver.
+- Total visual y Comprobante opcional quedan separados por 1.25rem (gap de 1rem más margen contextual de .25rem), sin alterar date inputs ni breakpoints.
+- Revisar compra muestra proveedor, origen, fechas, productos, cantidades, costos unitarios, subtotales, total y nombre del comprobante opcional. Revisar no abre el archivo ni llama al registro. Editar conserva el mismo formulario y archivo; Confirmar usa `IRegistroCompraConComprobanteService.RegistrarAsync` y el flujo existente. Guardando y el diálogo bloquean confirmaciones simultáneas.
+
+### Pagos, Clientes y Dashboard
+
+- Pagos reemplaza el select masivo por búsqueda de nombre completo/teléfono con la misma pauta incremental. Cliente no tiene CodigoInterno: se confirmó utilizar sus campos existentes, sin agregar columnas. `IClienteService.BuscarAsync` limita opcionalmente antes de obtener saldos; consultas normales sin límite siguen completas.
+- `?cliente=id` obtiene ese cliente por ID, sin listar todo el catálogo, y carga saldo/historial mediante los servicios existentes. IDs inválidos o inexistentes dejan un mensaje controlado y permiten buscar otro cliente. Seleccionar un resultado actualiza saldo/historial.
+- Revisar abono muestra cliente, saldo actual, monto, saldo previsto (`SaldoActual - Monto`), fecha, método y referencia. Editar no registra; Confirmar llama a PagoService y recarga saldo/historial desde backend. La estimación visual no sustituye la validación de saldo.
+- Clientes ofrece Todos / Con deuda; Saldo > 0 usa el valor entregado por ClienteService. La búsqueda se combina con el filtro y se conserva en `buscar` al alternar; quitar deuda no borra la búsqueda. Sin búsqueda, las rutas son `/clientes` y `/clientes?saldo=pendiente`.
+- Las cuatro acciones rápidas conservan texto, rutas y grid; su altura mínima pasa a 5rem (80px con fuente base de 16px). No se modifican las cuatro cards ni Ganancia total.
+
+### Confirmaciones de impacto
+
+Decisiones formales 021–022 en `11_DecisionesDeDiseño.md`. `ConfirmacionOperacion` usa un diálogo nativo, contenido por RenderFragment, Editar/Cancelar, Confirmar, errores controlados, foco contenido/restaurado y bloqueo mientras envía. Permite scroll vertical y contenido largo con wrap. No contiene reglas de un módulo.
+
+Además de Compra y Pago, se incorpora en Pedido manual (cliente, tipo/canal, detalles y total estimado) y Venta Directa (cliente, unidades/precios, total y saldo estimado; abonos por separado). Revisar no crea Pedido/Venta; Confirmar conserva servicios, códigos PED-VD-/VEN-VD-, Presencial y reintentos con pedido parcial.
+
+Inventario: revisión de recepción de una o varias unidades con fecha y conservación de reservas; revisión de entrega Vendida → Entregada con advertencia de su efecto en cancelación. En tránsito continúa directo. Cancelaciones de venta, pedido y reserva conservan las confirmaciones previas, sin duplicarlas. Altas/ediciones simples de Cliente, Producto, Categoría y Proveedor no reciben pasos extra. Un maestro guardado inline existe aunque después se abandone la compra; no se ofrece rollback de ese alta.
+
+### Evidencia y aceptación pendiente
+
+Regresiones con SQLite aislada por prueba: búsqueda de proveedor/cliente, prioridad y límites, cero proveedores y alta/autoselección, estado/archivo de compra preservados, CTA de Producto solo sin coincidencias, debounce/cancelación, revisión sin persistencia y confirmación única, query de Pagos, saldo previsto/recarga, filtros combinados, Pedido/Venta Directa e Inventario. Se adaptó la expectativa antigua de Pagos para su nuevo estado inicial sin listado completo, conservando la cobertura de navegación y estado vacío. Las pruebas de JS cubren apertura única, Escape durante envío y restauración de foco; se conservan las de reconexión.
+
+**Validación automática visual no disponible; requiere comprobación manual.** No se reintentó el navegador que fallaba en este entorno. Quedan por comprobar en iPhone (~390px) y escritorio: búsqueda/altas/autoselección de Compra y su espaciado, revisión/Editar/Confirmar, búsqueda y query de Pagos, Todos/Con deuda, altura de acciones, y los diálogos de Pedido, Venta Directa, recepción y entrega. Las pruebas de componentes/renderizado no acreditan apariencia visual, foco real ni ausencia de overflow en Safari.
+
+Verificación técnica final (09/09/2026): `dotnet build ResellManager.sln` correcto, 0 errores y 0 warnings; `dotnet test ResellManager.sln`: **332 aprobadas** (306 anteriores, adaptadas donde cambia la UX, + 26 nuevas), 0 fallidas y 0 omitidas. JavaScript: **11 aprobadas** (8 de reconexión + 3 del diálogo). `git diff --check` y revisión del stage correctos. Se utilizaron únicamente SQLite en memoria/hosts temporales aislados del arnés; no se tocaron datos reales. Entrega en commits separados de confirmaciones, Compra, Pagos, filtros/acciones y documentación, sin merge.

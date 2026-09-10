@@ -224,3 +224,23 @@ No se crea entidad `Apartado`, módulo duplicado ni una segunda reserva. El pedi
 La presentación usa `Q 1,234.56`, fechas visibles `dd/MM/yyyy` y etiquetas amigables por módulo. Los códigos útiles permanecen para trazabilidad; la usuaria navega por nombres y enlaces sin capturar IDs internos. Los controles de doble submit y las cargas secuenciales de servicios compartidos son correcciones de UI, no concurrencia fuerte V2.
 
 No se modifica el esquema en Fase 5.10. Las pruebas de cierre y las limitaciones de validación visual se registran en `18_Fase510_CierreV1.md`. Roles, administración de usuarios, concurrencia multiusuario, devoluciones y ecommerce siguen sin implementar.
+
+## 021 Confirmación previa para operaciones de impacto
+
+Se utiliza revisión previa cuando una operación afecta dinero, inventario, saldo, reservas/estado comercial o múltiples registros relacionados. El objetivo es comprobar la información final y reducir errores sin añadir confirmaciones a cada interacción.
+
+Patrón: Formulario → Revisar → Editar / Confirmar operación → persistencia backend. Revisar y Editar no persisten la operación; los datos permanecen en el modelo del formulario. La confirmación visual NO sustituye validaciones de dominio/Application ni constituye concurrencia fuerte o idempotencia entre sesiones.
+
+`ConfirmacionOperacion` comparte un diálogo nativo modal con título, contenido por módulo, foco inicial en Editar/Cancelar, Escape, restauración de foco, estado ocupado y botones bloqueados durante el envío. Cada página construye su resumen y conserva sus servicios existentes. El contenido largo tiene scroll vertical dentro del diálogo.
+
+Cobertura actual: Compra (incluido comprobante opcional), Pedido manual, Venta Directa, Pago/abono, recepción de mercancía y entrega de unidades vendidas. El paso a En tránsito sigue directo; las cancelaciones de venta, pedido y reserva conservan sus confirmaciones anteriores, sin duplicarlas. Las altas/ediciones simples de Cliente, Producto, Categoría y Proveedor no requieren un paso extra. Crear un maestro inline sí lo guarda inmediatamente; la Compra sigue sin persistirse hasta su propia confirmación.
+
+## 022 Búsqueda incremental en catálogos grandes
+
+Producto en Compra, Proveedor en Compra y Cliente en Pagos usan un solo campo, búsqueda bajo demanda a partir de 2 caracteres, debounce de 300 ms, cancelación de respuestas obsoletas y hasta 12 resultados limitados en el backend. Se utilizan botones de resultado accesibles con Tab/Enter y táctil, con estado anunciado; Escape oculta la lista. Cada consulta usa un scope independiente del circuito.
+
+Producto busca nombre, código de barras y código del sistema; Proveedor, nombre y teléfono; Cliente, nombre completo y teléfono. Cliente no posee CodigoInterno y no se inventa uno. La coincidencia exacta de teléfono/código tiene prioridad, con comparación de nombres mediante LOWER de SQLite (sin prometer normalización de acentos). Los listados normales conservan sus consultas sin límite.
+
+Solo una búsqueda válida sin coincidencias ofrece Agregar en los flujos de alta inline habilitados: Producto y Proveedor desde Compra. No se ofrece durante carga, error, búsqueda vacía ni si hay resultados. Se reutilizan los formularios y servicios; al guardar se autoselecciona el maestro, manteniendo los datos de Compra y la línea original de Producto. En Pagos no se agrega alta inline de Cliente. Los selects pequeños de enums/categorías siguen siendo apropiados.
+
+Producto conserva generación backend PRO- y código de barras manual/opcional. Las altas inline no prometen recuperación tras recargar la página o perder el circuito; el enlace de categorías se abre aparte y permite actualizar la lista sin descartar la compra. Lectores/cámara e Informes continúan en V2.
