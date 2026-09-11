@@ -426,7 +426,7 @@ public sealed class CatalogoModuloIntegracionTests : PruebaWebAislada
         public Task<IReadOnlyList<ProductoDto>> BuscarAsync(
             string termino,
             CancellationToken ct = default,
-            int? limite = null) =>
+            int? limite = null, int? categoriaId = null) =>
             Task.FromResult<IReadOnlyList<ProductoDto>>([producto]);
     }
 }

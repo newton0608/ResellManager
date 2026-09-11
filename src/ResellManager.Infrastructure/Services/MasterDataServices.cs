@@ -330,7 +330,8 @@ public sealed class ProductoService(ResellManagerDbContext db) : IProductoServic
     public async Task<IReadOnlyList<ProductoDto>> BuscarAsync(
         string termino,
         CancellationToken ct = default,
-        int? limite = null
+        int? limite = null,
+        int? categoriaId = null
     )
     {
         termino = termino.Trim();
@@ -340,6 +341,7 @@ public sealed class ProductoService(ResellManagerDbContext db) : IProductoServic
             || x.CodigoInterno.ToLower().Contains(terminoMinusculas)
             || (x.CodigoBarras != null && x.CodigoBarras.ToLower().Contains(terminoMinusculas))
         );
+        if (categoriaId.HasValue) productos = productos.Where(x => x.CategoriaId == categoriaId.Value);
         IQueryable<Producto> ordenados = productos
             .OrderByDescending(x => x.CodigoInterno.ToLower() == terminoMinusculas
                 || (x.CodigoBarras != null && x.CodigoBarras.ToLower() == terminoMinusculas))
@@ -401,16 +403,16 @@ public sealed class ProductoService(ResellManagerDbContext db) : IProductoServic
 
 public sealed class ProveedorService(ResellManagerDbContext db) : IProveedorService
 {
-    public async Task<IReadOnlyList<ProveedorDto>> BuscarAsync(string termino, CancellationToken ct = default, int limite = 12)
+    public async Task<IReadOnlyList<ProveedorDto>> BuscarAsync(string termino, CancellationToken ct = default, int? limite = 12)
     {
         var texto = termino.Trim().ToLowerInvariant();
-        return await db.Proveedores.AsNoTracking()
+        IQueryable<Proveedor> proveedores = db.Proveedores.AsNoTracking()
             .Where(x => x.Nombre.ToLower().Contains(texto)
                 || (x.Telefono != null && x.Telefono.Contains(texto)))
             .OrderByDescending(x => x.Telefono == texto)
-            .ThenBy(x => x.Nombre).ThenBy(x => x.Id)
-            .Take(Math.Clamp(limite, 1, 50))
-            .Select(x => Map(x)).ToListAsync(ct);
+            .ThenBy(x => x.Nombre).ThenBy(x => x.Id);
+        if (limite.HasValue) proveedores = proveedores.Take(Math.Clamp(limite.Value, 1, 50));
+        return await proveedores.Select(x => Map(x)).ToListAsync(ct);
     }
 
     public async Task<ServiceResult<ProveedorDto>> CrearAsync(

@@ -133,7 +133,7 @@ public sealed class CompraProductoFlujoTests
     {
         public ProductoDto Producto { get; } = new(1, "PRO-PRUEBA", null, "Camisa", null, null, null, null, null, 0, 1, "Ropa");
         public List<(string, int?)> Consultas { get; } = [];
-        public Task<IReadOnlyList<ProductoDto>> BuscarAsync(string termino, CancellationToken ct = default, int? limite = null)
+        public Task<IReadOnlyList<ProductoDto>> BuscarAsync(string termino, CancellationToken ct = default, int? limite = null, int? categoriaId = null)
         {
             Consultas.Add((termino, limite));
             return Task.FromResult<IReadOnlyList<ProductoDto>>([Producto]);

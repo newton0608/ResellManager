@@ -50,12 +50,12 @@ public interface IProductoService
     );
     Task<ServiceResult<ProductoDto>> ObtenerPorIdAsync(int id, CancellationToken ct = default);
     Task<IReadOnlyList<ProductoDto>> ListarAsync(CancellationToken ct = default);
-    Task<IReadOnlyList<ProductoDto>> BuscarAsync(string termino, CancellationToken ct = default, int? limite = null);
+    Task<IReadOnlyList<ProductoDto>> BuscarAsync(string termino, CancellationToken ct = default, int? limite = null, int? categoriaId = null);
 }
 
 public interface IProveedorService
 {
-    Task<IReadOnlyList<ProveedorDto>> BuscarAsync(string termino, CancellationToken ct = default, int limite = 12);
+    Task<IReadOnlyList<ProveedorDto>> BuscarAsync(string termino, CancellationToken ct = default, int? limite = 12);
     Task<ServiceResult<ProveedorDto>> CrearAsync(
         ProveedorInput input,
         CancellationToken ct = default
