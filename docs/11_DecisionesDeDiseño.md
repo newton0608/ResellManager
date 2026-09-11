@@ -244,3 +244,15 @@ Producto busca nombre, código de barras y código del sistema; Proveedor, nombr
 Solo una búsqueda válida sin coincidencias ofrece Agregar en los flujos de alta inline habilitados: Producto y Proveedor desde Compra. No se ofrece durante carga, error, búsqueda vacía ni si hay resultados. Se reutilizan los formularios y servicios; al guardar se autoselecciona el maestro, manteniendo los datos de Compra y la línea original de Producto. En Pagos no se agrega alta inline de Cliente. Los selects pequeños de enums/categorías siguen siendo apropiados.
 
 Producto conserva generación backend PRO- y código de barras manual/opcional. Las altas inline no prometen recuperación tras recargar la página o perder el circuito; el enlace de categorías se abre aparte y permite actualizar la lista sin descartar la compra. Lectores/cámara e Informes continúan en V2.
+
+## 023 Consulta de catálogos e historiales
+
+Los catálogos potencialmente grandes ofrecen búsqueda y filtros útiles, no selectores gigantes. Productos combina nombre/código del sistema/código de barras con Categoría; Proveedores reutiliza BuscarAsync por nombre/teléfono, sin el límite de 12 reservado al autocomplete. Las consultas se ejecutan en SQL y conservan el comportamiento de LOWER de SQLite, sin prometer normalización de acentos.
+
+Pedidos, Ventas, Compras y Pagos se ordenan por su fecha operativa descendente y luego Id descendente. Desde/Hasta son opcionales e inclusivos; un rango invertido o una fecha de URL inválida muestra un mensaje controlado. Pedidos y Ventas buscan por código; Compras por código o nombre de proveedor en un único término. Los filtros de historial se conservan en query string y Limpiar vuelve al historial completo (del cliente seleccionado en Pagos).
+
+Pedidos conserva Activos = Pendiente + Confirmado. Con entrega pendiente consulta pedidos con Venta registrada que tenga al menos una unidad física Vendida; no equivale a pedido activo ni cuenta Catálogo sin unidades. Ventas admite Registrada/Cancelada. El filtro de Pagos afecta únicamente su historial, nunca el cálculo de saldo actual ni el borrador del abono.
+
+Los encabezados mensuales en español son presentación, no entidades de dominio: HistorialMensual prepara una sola colección de grupos para tabla y tarjetas, sin meses vacíos. Cada módulo conserva su propio historial. El formulario Desde/Hasta/Aplicar/Limpiar es compartido y mobile-first, manteniendo el date picker nativo y sus límites de ancho.
+
+Objetivo: localizar operaciones entre cientos o miles de registros y mantener contexto temporal. No se incorporan Informes, analytics, paginación compleja ni nuevos identificadores; no hay cambios de esquema, fórmulas financieras o reglas de Venta Directa.
