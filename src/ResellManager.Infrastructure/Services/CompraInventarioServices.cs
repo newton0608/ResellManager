@@ -134,9 +134,18 @@ public sealed class CompraService(ResellManagerDbContext db) : ICompraService
             : ServiceResult<CompraDto>.Ok(Map(compra));
     }
 
-    public async Task<IReadOnlyList<CompraDto>> ListarAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<CompraDto>> ListarAsync(CancellationToken ct = default, FiltroHistorial? filtro = null)
     {
-        var compras = await CompraCompleta()
+        if (filtro is { RangoValido: false }) return [];
+        var consulta = CompraCompleta();
+        if (!string.IsNullOrWhiteSpace(filtro?.Termino))
+        {
+            var termino = filtro.Termino.Trim().ToLowerInvariant();
+            consulta = consulta.Where(x => x.CodigoInterno.ToLower().Contains(termino) || x.Proveedor.Nombre.ToLower().Contains(termino));
+        }
+        if (filtro?.Desde is { } desde) consulta = consulta.Where(x => x.FechaCompra >= desde);
+        if (filtro?.Hasta is { } hasta) consulta = consulta.Where(x => x.FechaCompra <= hasta);
+        var compras = await consulta
             .OrderByDescending(x => x.FechaCompra)
             .ThenByDescending(x => x.Id)
             .ToListAsync(ct);

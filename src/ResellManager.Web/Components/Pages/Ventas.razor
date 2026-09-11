@@ -1,6 +1,7 @@
 @page "/ventas"
 @rendermode InteractiveServer
 @inject IVentaService VentaService
+@inject NavigationManager Navigation
 @inject ILogger<Ventas> Logger
 
 <PageTitle>Ventas | ResellManager</PageTitle>
@@ -13,6 +14,17 @@
     </div>
     <a class="primary-button" href="/ventas/nueva">Nueva venta</a>
 </section>
+
+<FiltrosHistorial Id="filtros-ventas" Modelo="Filtros" Placeholder="Buscar por código de venta" Ocupado="Cargando" OnAplicar="AplicarFiltrosAsync" OnLimpiar="LimpiarFiltrosAsync">
+    <div class="form-field">
+        <label for="estado-historial">Estado</label>
+        <select id="estado-historial" @bind="Filtros.Estado" disabled="@Cargando">
+            <option value="">Todos</option>
+            <option value="registrada">Registrada</option>
+            <option value="cancelada">Cancelada</option>
+        </select>
+    </div>
+</FiltrosHistorial>
 
 @if (!string.IsNullOrWhiteSpace(ErrorMessage))
 {
@@ -33,7 +45,7 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage) && VentasRegistradas.Count == 0
 {
     <section class="empty-state" aria-labelledby="titulo-sin-ventas">
         <span class="empty-state-icon" aria-hidden="true"><NavIcon Name="cart" /></span>
-        <h2 id="titulo-sin-ventas">Aún no hay ventas</h2>
+        <h2 id="titulo-sin-ventas">@(Filtros.Activo ? "No se encontraron ventas con estos filtros" : "Aún no hay ventas")</h2>
         <p>Elige un pedido pendiente para registrar la primera venta.</p>
         <a class="primary-button" href="/ventas/nueva">Registrar venta</a>
     </section>
@@ -59,8 +71,11 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
                         <th scope="col" class="actions-cell">Acción</th>
                     </tr>
                 </thead>
+                @foreach (var grupo in Grupos)
+                {
                 <tbody>
-                    @foreach (var venta in VentasRegistradas)
+                    <tr class="history-month-row"><th scope="rowgroup" colspan="7">@grupo.Titulo</th></tr>
+                    @foreach (var venta in grupo.Registros)
                     {
                         <tr>
                             <td><span class="code-value">@venta.CodigoInterno</span></td>
@@ -73,11 +88,15 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
                         </tr>
                     }
                 </tbody>
+                }
             </table>
         </div>
 
         <div class="mobile-card-list sale-mobile-cards">
-            @foreach (var venta in VentasRegistradas)
+            @foreach (var grupo in Grupos)
+            {
+                <h3 class="history-month-title">@grupo.Titulo</h3>
+            @foreach (var venta in grupo.Registros)
             {
                 <article class="entity-card sale-card">
                     <div class="entity-card-heading">
@@ -97,24 +116,50 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
                     </div>
                 </article>
             }
+            }
         </div>
     </section>
 }
 
 @code {
+    [SupplyParameterFromQuery(Name = "buscar")] public string? BuscarConsulta { get; set; }
+    [SupplyParameterFromQuery(Name = "desde")] public string? DesdeConsulta { get; set; }
+    [SupplyParameterFromQuery(Name = "hasta")] public string? HastaConsulta { get; set; }
+    private FiltroHistorialModelo Filtros { get; } = new();
+    private string? ErrorConsulta { get; set; }
+    [SupplyParameterFromQuery(Name = "estado")] public string? EstadoConsulta { get; set; }
+    private ResellManager.Domain.Enums.EstadoVenta? EstadoFiltrado => Filtros.Estado switch { "registrada" => ResellManager.Domain.Enums.EstadoVenta.Registrada, "cancelada" => ResellManager.Domain.Enums.EstadoVenta.Cancelada, _ => null };
+    private IReadOnlyList<GrupoMensual<VentaDto>> Grupos { get; set; } = [];
+
     private IReadOnlyList<VentaDto> VentasRegistradas { get; set; } = [];
     private bool Cargando { get; set; } = true;
     private string? ErrorMessage { get; set; }
 
-    protected override Task OnInitializedAsync() => CargarAsync();
+    protected override Task OnParametersSetAsync()
+    {
+        ErrorConsulta = Filtros.Cargar(BuscarConsulta, DesdeConsulta, HastaConsulta, EstadoConsulta);
+        if (Filtros.Estado is not ("" or "registrada" or "cancelada")) ErrorConsulta = "El estado de venta no es válido. Selecciona una opción disponible.";
+        return CargarAsync();
+    }
+
+    private Task AplicarFiltrosAsync()
+    {
+        if (Cargando) return Task.CompletedTask;
+        ErrorConsulta = Filtros.Validar();
+        if (ErrorConsulta is not null) { ErrorMessage = ErrorConsulta; return Task.CompletedTask; }
+        return Filtros.NavegarAsync(Navigation, "/ventas", CargarAsync);
+    }
+    private Task LimpiarFiltrosAsync() { Filtros.Limpiar(); return AplicarFiltrosAsync(); }
 
     private async Task CargarAsync()
     {
+        ErrorMessage = ErrorConsulta ?? Filtros.Validar();
+        if (ErrorMessage is not null) { VentasRegistradas = []; Grupos = []; Cargando = false; return; }
         Cargando = true;
-        ErrorMessage = null;
         try
         {
-            VentasRegistradas = await VentaService.ListarAsync();
+            VentasRegistradas = await VentaService.ListarAsync(filtro: Filtros.ToInput(), estado: EstadoFiltrado);
+            Grupos = HistorialMensual.Agrupar(VentasRegistradas, x => x.Fecha, x => x.Id);
         }
         catch (Exception ex)
         {

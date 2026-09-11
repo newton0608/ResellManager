@@ -290,7 +290,7 @@ public sealed class Fase510CodigosTests
             Intentos.Add(input);
             return registrar(input, Intentos.Count);
         }
-        public Task<IReadOnlyList<PedidoDto>> ListarAsync(CancellationToken ct = default) => Task.FromResult<IReadOnlyList<PedidoDto>>([]);
+        public Task<IReadOnlyList<PedidoDto>> ListarAsync(CancellationToken ct = default, FiltroHistorial? filtro = null, bool soloActivos = false, bool conEntregaPendiente = false) => Task.FromResult<IReadOnlyList<PedidoDto>>([]);
         public Task<ServiceResult<PedidoDto>> ObtenerPorIdAsync(int id, CancellationToken ct = default) => throw new NotSupportedException();
         public Task<ServiceResult<PedidoDto>> AgregarDetalleAsync(int pedidoId, DetallePedidoInput input, CancellationToken ct = default) => throw new NotSupportedException();
         public Task<ServiceResult> CancelarAsync(int id, CancellationToken ct = default) => throw new NotSupportedException();
@@ -305,7 +305,7 @@ public sealed class Fase510CodigosTests
             return registrar(input, Intentos.Count);
         }
         public Task<ServiceResult<VentaDto>> ObtenerPorIdAsync(int id, CancellationToken ct = default) => throw new NotSupportedException();
-        public Task<IReadOnlyList<VentaDto>> ListarAsync(CancellationToken ct = default) => throw new NotSupportedException();
+        public Task<IReadOnlyList<VentaDto>> ListarAsync(CancellationToken ct = default, FiltroHistorial? filtro = null, EstadoVenta? estado = null) => throw new NotSupportedException();
         public Task<ServiceResult<decimal>> CalcularTotalAsync(int ventaId, CancellationToken ct = default) => throw new NotSupportedException();
         public Task<ServiceResult> CancelarAsync(int id, CancellationToken ct = default) => throw new NotSupportedException();
     }

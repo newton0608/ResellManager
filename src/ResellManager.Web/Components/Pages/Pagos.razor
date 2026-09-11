@@ -4,6 +4,7 @@
 @inject IPagoService PagoService
 @inject IClienteService ClienteService
 @inject ILogger<Pagos> Logger
+@inject NavigationManager Navigation
 
 <PageTitle>Pagos y abonos | ResellManager</PageTitle>
 
@@ -48,7 +49,7 @@ else
     }
 
     <section class="form-panel payment-customer-picker" aria-label="Buscar cliente para registrar abono">
-        <ClienteBuscador Seleccionado="ClienteSeleccionado" Deshabilitado="@(CargandoCliente || Registrando || RevisandoPago)"
+        <ClienteBuscador Seleccionado="ClienteSeleccionado" Deshabilitado="@(CargandoCliente || CargandoHistorial || Registrando || RevisandoPago)"
                          OnSeleccionado="SeleccionarClienteAsync" />
     </section>
 
@@ -116,7 +117,7 @@ else
                             </div>
                         </div>
                         <div class="form-actions">
-                            <button class="primary-button" type="submit" disabled="@(Registrando || SaldoActual.Value <= 0)">
+                            <button class="primary-button" type="submit" disabled="@(Registrando || CargandoHistorial || SaldoActual.Value <= 0)">
                                 @(Registrando ? "Registrando..." : "Revisar abono")
                             </button>
                         </div>
@@ -133,10 +134,22 @@ else
                     <h2 id="titulo-historial-pagos">Historial de pagos</h2>
                     <span>@Historial.Count @(Historial.Count == 1 ? "pago" : "pagos")</span>
                 </div>
-                @if (Historial.Count == 0)
+                <FiltrosHistorial Id="historial-pagos" Modelo="Filtros" MostrarBusqueda="false"
+                                  Ocupado="@(CargandoHistorial || CargandoCliente || Registrando || RevisandoPago)"
+                                  OnAplicar="AplicarFiltrosAsync" OnLimpiar="LimpiarFiltrosAsync" />
+                <p class="field-help">El filtro solo limita el historial. El saldo actual incluye todas las operaciones.</p>
+                @if (ErrorHistorial is not null)
+                {
+                    <p class="mensaje-error" role="alert">@ErrorHistorial</p>
+                }
+                else if (CargandoHistorial)
+                {
+                    <p role="status">Consultando historial...</p>
+                }
+                else if (Historial.Count == 0)
                 {
                     <div class="empty-state payment-history-empty">
-                        <h3>Aún no hay pagos</h3>
+                        <h3>@(Filtros.Activo ? "No hay pagos en este período" : "Aún no hay pagos")</h3>
                         <p>Los abonos registrados para este cliente aparecerán aquí.</p>
                     </div>
                 }
@@ -153,8 +166,11 @@ else
                                     <th scope="col">Observaciones</th>
                                 </tr>
                             </thead>
+                            @foreach (var grupo in Grupos)
+                            {
                             <tbody>
-                                @foreach (var pago in Historial)
+                                <tr class="history-month-row"><th scope="rowgroup" colspan="5">@grupo.Titulo</th></tr>
+                                @foreach (var pago in grupo.Registros)
                                 {
                                     <tr>
                                         <td>@pago.Fecha.ToString("dd/MM/yyyy")</td>
@@ -165,10 +181,14 @@ else
                                     </tr>
                                 }
                             </tbody>
+                            }
                         </table>
                     </div>
                     <div class="mobile-card-list payment-mobile-cards">
-                        @foreach (var pago in Historial)
+                        @foreach (var grupo in Grupos)
+                        {
+                        <h3 class="history-month-title">@grupo.Titulo</h3>
+                        @foreach (var pago in grupo.Registros)
                         {
                             <article class="entity-card payment-card">
                                 <div class="entity-card-heading">
@@ -183,6 +203,7 @@ else
                                     <div><dt>Observaciones</dt><dd>@(pago.Observaciones ?? "—")</dd></div>
                                 </dl>
                             </article>
+                        }
                         }
                     </div>
                 }
@@ -209,6 +230,13 @@ else
 }
 
 @code {
+    [SupplyParameterFromQuery(Name = "desde")] public string? DesdeConsulta { get; set; }
+    [SupplyParameterFromQuery(Name = "hasta")] public string? HastaConsulta { get; set; }
+    private FiltroHistorialModelo Filtros { get; } = new();
+    private IReadOnlyList<GrupoMensual<PagoDto>> Grupos { get; set; } = [];
+    private bool CargandoHistorial { get; set; }
+    private string? ErrorHistorial { get; set; }
+    private string? ErrorConsultaHistorial { get; set; }
     private PagoFormModel Modelo { get; set; } = new();
     private IReadOnlyList<PagoDto> Historial { get; set; } = [];
     private ClienteDto? ClienteSeleccionado { get; set; }
@@ -226,8 +254,47 @@ else
     [SupplyParameterFromQuery(Name = "cliente")]
     public string? ClienteDesdeQuery { get; set; }
 
-    protected override Task OnParametersSetAsync() =>
-        !Registrando && !RevisandoPago && (!ClientesCargados || QueryCargada != ClienteDesdeQuery) ? CargarClientesAsync() : Task.CompletedTask;
+    protected override Task OnParametersSetAsync()
+    {
+        if (Registrando || RevisandoPago) return Task.CompletedTask;
+        ErrorConsultaHistorial = Filtros.Cargar(null, DesdeConsulta, HastaConsulta);
+        if (ClientesCargados && ClienteSeleccionado?.Id.ToString() == ClienteDesdeQuery)
+        {
+            QueryCargada = ClienteDesdeQuery;
+            return CargarHistorialAsync();
+        }
+        return !ClientesCargados || QueryCargada != ClienteDesdeQuery ? CargarClientesAsync() : CargarHistorialAsync();
+    }
+
+    private Task AplicarFiltrosAsync()
+    {
+        if (CargandoCliente || CargandoHistorial || Registrando || RevisandoPago) return Task.CompletedTask;
+        ErrorConsultaHistorial = Filtros.Validar();
+        ErrorHistorial = ErrorConsultaHistorial;
+        if (ErrorHistorial is not null) return Task.CompletedTask;
+        return Filtros.NavegarAsync(Navigation, "/pagos", CargarHistorialAsync, ClienteSeleccionado?.Id);
+    }
+    private Task LimpiarFiltrosAsync() { Filtros.Limpiar(); return AplicarFiltrosAsync(); }
+
+    private async Task CargarHistorialAsync()
+    {
+        if (CargandoHistorial) return;
+        ErrorHistorial = ErrorConsultaHistorial ?? Filtros.Validar();
+        if (ClienteSeleccionado is null || ErrorHistorial is not null) { Historial = []; Grupos = []; return; }
+        CargandoHistorial = true;
+        try
+        {
+            Historial = await PagoService.ListarPorClienteAsync(ClienteSeleccionado.Id, filtro: Filtros.ToInput());
+            Grupos = HistorialMensual.Agrupar(Historial, x => x.Fecha, x => x.Id);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible filtrar el historial de pagos.");
+            ErrorHistorial = "No pudimos consultar el historial. Aplica los filtros para reintentar.";
+            Historial = []; Grupos = [];
+        }
+        finally { CargandoHistorial = false; }
+    }
 
     private async Task CargarClientesAsync()
     {
@@ -262,12 +329,13 @@ else
 
     private async Task SeleccionarClienteAsync(ClienteDto? cliente)
     {
-        if (Registrando || CargandoCliente || RevisandoPago)
+        if (Registrando || CargandoCliente || CargandoHistorial || RevisandoPago)
             return;
 
         ClienteSeleccionado = cliente;
         Modelo = new PagoFormModel { ClienteId = ClienteSeleccionado?.Id ?? 0 };
         Historial = [];
+        Grupos = [];
         SaldoActual = null;
         ErrorOperacion = null;
         MensajeExito = null;
@@ -279,7 +347,7 @@ else
 
     private async Task RecargarClienteAsync()
     {
-        if (ClienteSeleccionado is null || CargandoCliente)
+        if (ClienteSeleccionado is null || CargandoCliente || CargandoHistorial)
             return;
 
         CargandoCliente = true;
@@ -295,8 +363,8 @@ else
                 return;
             }
 
-            Historial = await PagoService.ListarPorClienteAsync(clienteId);
             SaldoActual = saldo.Value;
+            await CargarHistorialAsync();
         }
         catch (Exception ex)
         {
@@ -311,7 +379,7 @@ else
 
     private void RevisarPago()
     {
-        if (Registrando || CargandoCliente || ClienteSeleccionado is null || !SaldoActual.HasValue) return;
+        if (Registrando || CargandoCliente || CargandoHistorial || ClienteSeleccionado is null || !SaldoActual.HasValue) return;
         ErrorOperacion = ValidacionFormulario.PrimerError(Modelo);
         if (ErrorOperacion is null && Modelo.Monto > SaldoActual.Value)
             ErrorOperacion = $"El monto no puede superar el saldo actual de {ClientePresentacion.Moneda(SaldoActual.Value)}.";

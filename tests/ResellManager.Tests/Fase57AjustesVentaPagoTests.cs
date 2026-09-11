@@ -310,7 +310,7 @@ public sealed class VentaDirectaPedidoAutomaticoTests
             CancellationToken ct = default) =>
             throw new NotSupportedException();
 
-        public Task<IReadOnlyList<VentaDto>> ListarAsync(CancellationToken ct = default) =>
+        public Task<IReadOnlyList<VentaDto>> ListarAsync(CancellationToken ct = default, FiltroHistorial? filtro = null, EstadoVenta? estado = null) =>
             throw new NotSupportedException();
 
         public Task<ServiceResult<decimal>> CalcularTotalAsync(

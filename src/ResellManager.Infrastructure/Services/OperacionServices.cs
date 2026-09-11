@@ -84,11 +84,24 @@ public sealed class PedidoService(ResellManagerDbContext db) : IPedidoService
             : ServiceResult<PedidoDto>.Ok(x);
     }
 
-    public async Task<IReadOnlyList<PedidoDto>> ListarAsync(CancellationToken ct = default) =>
-        await Query(
-                db.Pedidos.OrderByDescending(x => x.Fecha).ThenByDescending(x => x.Id)
-            )
-            .ToListAsync(ct);
+    public async Task<IReadOnlyList<PedidoDto>> ListarAsync(CancellationToken ct = default,
+        FiltroHistorial? filtro = null, bool soloActivos = false, bool conEntregaPendiente = false)
+    {
+        if (filtro is { RangoValido: false }) return [];
+        var pedidos = db.Pedidos.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(filtro?.Termino))
+        {
+            var termino = filtro.Termino.Trim().ToLowerInvariant();
+            pedidos = pedidos.Where(x => x.CodigoInterno.ToLower().Contains(termino));
+        }
+        if (filtro?.Desde is { } desde) pedidos = pedidos.Where(x => x.Fecha >= desde);
+        if (filtro?.Hasta is { } hasta) pedidos = pedidos.Where(x => x.Fecha <= hasta);
+        if (soloActivos) pedidos = pedidos.Where(x => x.Estado == EstadoPedido.Pendiente || x.Estado == EstadoPedido.Confirmado);
+        if (conEntregaPendiente)
+            pedidos = pedidos.Where(x => x.Venta != null && x.Venta.Estado == EstadoVenta.Registrada
+                && x.Venta.Detalles.Any(d => d.UnidadInventario != null && d.UnidadInventario.Estado == EstadoUnidadInventario.Vendida));
+        return await Query(pedidos.OrderByDescending(x => x.Fecha).ThenByDescending(x => x.Id)).ToListAsync(ct);
+    }
 
     public async Task<ServiceResult> CancelarAsync(int id, CancellationToken ct = default)
     {
@@ -238,9 +251,19 @@ public sealed class VentaService(ResellManagerDbContext db) : IVentaService
             : ServiceResult<VentaDto>.Ok(Map(venta));
     }
 
-    public async Task<IReadOnlyList<VentaDto>> ListarAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<VentaDto>> ListarAsync(CancellationToken ct = default, FiltroHistorial? filtro = null, EstadoVenta? estado = null)
     {
-        var ventas = await VentaCompleta()
+        if (filtro is { RangoValido: false }) return [];
+        var consulta = VentaCompleta();
+        if (!string.IsNullOrWhiteSpace(filtro?.Termino))
+        {
+            var termino = filtro.Termino.Trim().ToLowerInvariant();
+            consulta = consulta.Where(x => x.CodigoInterno.ToLower().Contains(termino));
+        }
+        if (filtro?.Desde is { } desde) consulta = consulta.Where(x => x.Fecha >= desde);
+        if (filtro?.Hasta is { } hasta) consulta = consulta.Where(x => x.Fecha <= hasta);
+        if (estado.HasValue) consulta = consulta.Where(x => x.Estado == estado.Value);
+        var ventas = await consulta
             .OrderByDescending(x => x.Fecha)
             .ThenByDescending(x => x.Id)
             .ToListAsync(ct);
@@ -527,14 +550,16 @@ public sealed class PagoService(ResellManagerDbContext db) : IPagoService
 
     public async Task<IReadOnlyList<PagoDto>> ListarPorClienteAsync(
         int clienteId,
-        CancellationToken ct = default
-    ) =>
-        await Query(
-                db.Pagos.Where(x => x.ClienteId == clienteId)
-                    .OrderByDescending(x => x.Fecha)
-                    .ThenByDescending(x => x.Id)
-            )
-            .ToListAsync(ct);
+        CancellationToken ct = default,
+        FiltroHistorial? filtro = null
+    )
+    {
+        if (filtro is { RangoValido: false }) return [];
+        var pagos = db.Pagos.Where(x => x.ClienteId == clienteId);
+        if (filtro?.Desde is { } desde) pagos = pagos.Where(x => x.Fecha >= desde);
+        if (filtro?.Hasta is { } hasta) pagos = pagos.Where(x => x.Fecha <= hasta);
+        return await Query(pagos.OrderByDescending(x => x.Fecha).ThenByDescending(x => x.Id)).ToListAsync(ct);
+    }
 
     private async Task<decimal> ObtenerSaldoActualAsync(int clienteId, CancellationToken ct)
         => await SaldoConsultas.CalcularAsync(db, clienteId, ct);

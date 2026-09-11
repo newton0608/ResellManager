@@ -1,6 +1,7 @@
 @page "/compras"
 @rendermode InteractiveServer
 @inject ICompraService CompraService
+@inject NavigationManager Navigation
 @inject ILogger<Compras> Logger
 
 <PageTitle>Compras | ResellManager</PageTitle>
@@ -18,6 +19,10 @@
 {
     <div class="mensaje-exito" role="status">@MensajeExito</div>
 }
+
+<FiltrosHistorial Id="filtros-compras" Modelo="Filtros" Placeholder="Buscar por código o proveedor" Ocupado="Cargando" OnAplicar="AplicarFiltrosAsync" OnLimpiar="LimpiarFiltrosAsync">
+
+</FiltrosHistorial>
 
 @if (!string.IsNullOrWhiteSpace(ErrorMessage))
 {
@@ -38,7 +43,7 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage) && ComprasRegistradas.Count == 
 {
     <section class="empty-state" aria-labelledby="titulo-sin-compras">
         <span class="empty-state-icon" aria-hidden="true"><NavIcon Name="bag" /></span>
-        <h2 id="titulo-sin-compras">Aún no hay compras</h2>
+        <h2 id="titulo-sin-compras">@(Filtros.Activo ? "No se encontraron compras con estos filtros" : "Aún no hay compras")</h2>
         <p>Registra la primera compra con un proveedor y al menos un producto.</p>
         <a class="primary-button" href="/compras/nueva">Registrar compra</a>
     </section>
@@ -64,8 +69,11 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
                         <th scope="col" class="actions-cell">Acción</th>
                     </tr>
                 </thead>
+                @foreach (var grupo in Grupos)
+                {
                 <tbody>
-                    @foreach (var compra in ComprasRegistradas)
+                    <tr class="history-month-row"><th scope="rowgroup" colspan="7">@grupo.Titulo</th></tr>
+                    @foreach (var compra in grupo.Registros)
                     {
                         <tr>
                             <td><span class="code-value">@compra.CodigoInterno</span></td>
@@ -86,11 +94,15 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
                         </tr>
                     }
                 </tbody>
+                }
             </table>
         </div>
 
         <div class="mobile-card-list">
-            @foreach (var compra in ComprasRegistradas)
+            @foreach (var grupo in Grupos)
+            {
+                <h3 class="history-month-title">@grupo.Titulo</h3>
+            @foreach (var compra in grupo.Registros)
             {
                 <article class="entity-card purchase-card">
                     <div class="entity-card-heading">
@@ -116,11 +128,19 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
                     </div>
                 </article>
             }
+            }
         </div>
     </section>
 }
 
 @code {
+    [SupplyParameterFromQuery(Name = "buscar")] public string? BuscarConsulta { get; set; }
+    [SupplyParameterFromQuery(Name = "desde")] public string? DesdeConsulta { get; set; }
+    [SupplyParameterFromQuery(Name = "hasta")] public string? HastaConsulta { get; set; }
+    private FiltroHistorialModelo Filtros { get; } = new();
+    private string? ErrorConsulta { get; set; }
+    private IReadOnlyList<GrupoMensual<CompraDto>> Grupos { get; set; } = [];
+
     private IReadOnlyList<CompraDto> ComprasRegistradas { get; set; } = [];
     private bool Cargando { get; set; } = true;
     private string? ErrorMessage { get; set; }
@@ -131,15 +151,31 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
     private string? MensajeExito =>
         Mensaje == "compra-creada" ? "Compra registrada correctamente." : null;
 
-    protected override Task OnInitializedAsync() => CargarAsync();
+    protected override Task OnParametersSetAsync()
+    {
+        ErrorConsulta = Filtros.Cargar(BuscarConsulta, DesdeConsulta, HastaConsulta);
+
+        return CargarAsync();
+    }
+
+    private Task AplicarFiltrosAsync()
+    {
+        if (Cargando) return Task.CompletedTask;
+        ErrorConsulta = Filtros.Validar();
+        if (ErrorConsulta is not null) { ErrorMessage = ErrorConsulta; return Task.CompletedTask; }
+        return Filtros.NavegarAsync(Navigation, "/compras", CargarAsync);
+    }
+    private Task LimpiarFiltrosAsync() { Filtros.Limpiar(); return AplicarFiltrosAsync(); }
 
     private async Task CargarAsync()
     {
+        ErrorMessage = ErrorConsulta ?? Filtros.Validar();
+        if (ErrorMessage is not null) { ComprasRegistradas = []; Grupos = []; Cargando = false; return; }
         Cargando = true;
-        ErrorMessage = null;
         try
         {
-            ComprasRegistradas = await CompraService.ListarAsync();
+            ComprasRegistradas = await CompraService.ListarAsync(filtro: Filtros.ToInput());
+            Grupos = HistorialMensual.Agrupar(ComprasRegistradas, x => x.FechaCompra, x => x.Id);
         }
         catch (Exception ex)
         {

@@ -3384,6 +3384,24 @@ textarea {
   to { transform: rotate(360deg); }
 }
 
+.history-month-row th {
+  background: #eff6ff;
+  color: #1e3a8a;
+  text-align: left;
+  font-size: 1rem;
+  padding-block: .85rem;
+}
+
+.history-month-title {
+  grid-column: 1 / -1;
+  margin: .75rem 0 0;
+  padding-bottom: .4rem;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 1.05rem;
+  color: #1e3a8a;
+  overflow-wrap: anywhere;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .reconnect-spinner {
     animation: none;

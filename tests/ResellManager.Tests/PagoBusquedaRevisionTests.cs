@@ -129,7 +129,7 @@ public sealed class PagoBusquedaRevisionTests
             await Continuar.Task;
             return await servicio.RegistrarAsync(input, ct);
         }
-        public Task<IReadOnlyList<PagoDto>> ListarPorClienteAsync(int clienteId, CancellationToken ct = default) => servicio.ListarPorClienteAsync(clienteId, ct);
+        public Task<IReadOnlyList<PagoDto>> ListarPorClienteAsync(int clienteId, CancellationToken ct = default, FiltroHistorial? filtro = null) => servicio.ListarPorClienteAsync(clienteId, ct, filtro);
         public Task<ServiceResult<PagoDto>> ObtenerPorIdAsync(int id, CancellationToken ct = default) => servicio.ObtenerPorIdAsync(id, ct);
     }
 }
