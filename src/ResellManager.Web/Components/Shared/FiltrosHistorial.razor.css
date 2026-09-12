@@ -13,6 +13,7 @@
 }
 .history-filter-form > *, .history-filter-form ::deep .form-field { min-width: 0; max-width: 100%; }
 .search-actions { align-self: end; flex-wrap: wrap; }
+.history-filter-actions { margin-bottom: 1.25rem; }
 .search-actions button { min-height: 3rem; }
 @media (min-width: 48rem) {
     .history-filter-form { grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); }

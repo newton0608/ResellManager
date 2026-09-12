@@ -15,7 +15,7 @@
         <label for="@(Id + "-hasta")">Hasta</label>
         <input id="@(Id + "-hasta")" type="date" @bind="Modelo.Hasta" disabled="@Ocupado" />
     </div>
-    <div class="search-actions">
+    <div class="search-actions history-filter-actions">
         <button class="primary-button" type="submit" disabled="@Ocupado">Aplicar</button>
         <button class="secondary-button" type="button" disabled="@Ocupado" @onclick="OnLimpiar">Limpiar</button>
     </div>
