@@ -2,7 +2,7 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: .8rem;
-    margin-block: 1rem;
+    margin-block: 1.5rem;
     padding: 1rem;
     border: 1px solid var(--color-border);
     border-radius: .8rem;
