@@ -1,0 +1,41 @@
+@inject IServiceScopeFactory Scopes
+@inject ILogger<PendientesCliente> Logger
+<section class="form-panel" aria-labelledby="titulo-pendientes-cliente">
+    <h2 id="titulo-pendientes-cliente">Reservas y entregas pendientes</h2>
+    @if (Cargando) { <p role="status">Consultando unidades...</p> }
+    else if (Error is not null) { <p class="mensaje-error" role="alert">@Error</p><button class="secondary-button" @onclick="CargarAsync">Reintentar</button> }
+    else if (Unidades.Count == 0) { <p>No hay reservas ni entregas físicas pendientes.</p> }
+    else
+    {
+        @foreach (var unidad in Unidades)
+        {
+            <article class="order-line-editor">
+                <h3>@unidad.Producto</h3>
+                <p class="code-value">@unidad.CodigoUnidad</p>
+                <p>@InventarioPresentacion.Estado(unidad.Estado) · @(unidad.PendienteEntrega ? "Pendiente de entrega" : "Reservada")</p>
+                <a class="contact-link" href="/pedidos/@unidad.PedidoId">Ver pedido @unidad.CodigoPedido</a>
+            </article>
+        }
+    }
+</section>
+@code {
+    [Parameter] public int ClienteId { get; set; }
+    private int? Cargado;
+    private bool Cargando;
+    private string? Error;
+    private IReadOnlyList<PendienteClienteDto> Unidades = [];
+    protected override Task OnParametersSetAsync() => Cargado == ClienteId ? Task.CompletedTask : CargarAsync();
+    private async Task CargarAsync()
+    {
+        if (Cargando) return;
+        Cargando = true; Error = null;
+        try
+        {
+            await using var scope = Scopes.CreateAsyncScope();
+            Unidades = await scope.ServiceProvider.GetRequiredService<ISeleccionOperativaService>().PendientesClienteAsync(ClienteId);
+            Cargado = ClienteId;
+        }
+        catch (Exception ex) { Logger.LogError(ex, "No fue posible consultar pendientes del cliente."); Error = "No pudimos consultar las reservas y entregas. Intenta nuevamente."; }
+        finally { Cargando = false; }
+    }
+}

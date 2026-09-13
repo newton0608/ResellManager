@@ -39,6 +39,11 @@ else
         </div>
     </section>
 
+    <nav class="form-actions" aria-label="Operaciones del cliente">
+        <a class="primary-button" href="/pagos?cliente=@Id">Registrar abono</a>
+        <a class="secondary-button" href="/pedidos/nuevo?cliente=@Id">Nuevo pedido</a>
+        <a class="secondary-button" href="@($"/ventas/nueva?modo=directa&cliente={Id}")">Venta directa</a>
+    </nav>
     <section class="customer-summary" aria-label="Resumen del cliente">
         <article class="info-card balance-card">
             <p class="info-label">Saldo actual</p>
@@ -65,6 +70,7 @@ else
         </article>
     </section>
 
+    <PendientesCliente ClienteId="Id" />
     <section class="history-section" aria-labelledby="titulo-historial">
         <div class="section-heading">
             <div>

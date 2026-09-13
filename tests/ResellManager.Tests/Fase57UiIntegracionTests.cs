@@ -19,6 +19,29 @@ public sealed class IntegracionWebCollection { }
 public sealed class Fase57UiIntegracionTests : PruebaWebAislada
 {
     [Fact]
+    public async Task AccionesCliente_EnlacesPreseleccionanClienteEnPedidoYVentaDirecta()
+    {
+        var escenario = await CrearEscenarioFisicoAsync();
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ResellManagerDbContext>();
+        var pedido = await db.Pedidos.Include(x => x.Cliente).SingleAsync(x => x.Id == escenario.PedidoId);
+        using var cliente = CrearCliente();
+        await IniciarSesionAsync(cliente);
+        var detalle = WebUtility.HtmlDecode(await cliente.GetStringAsync($"/clientes/{pedido.ClienteId}"));
+        Assert.Contains($"/pagos?cliente={pedido.ClienteId}", detalle);
+        Assert.Contains($"/pedidos/nuevo?cliente={pedido.ClienteId}", detalle);
+        Assert.Contains($"/ventas/nueva?modo=directa&cliente={pedido.ClienteId}", detalle);
+        Assert.Contains("Reservas y entregas pendientes", detalle);
+        Assert.Contains(escenario.UnidadReservadaPropia, detalle);
+        foreach (var ruta in new[] { $"/pedidos/nuevo?cliente={pedido.ClienteId}", $"/ventas/nueva?modo=directa&cliente={pedido.ClienteId}" })
+        {
+            var html = WebUtility.HtmlDecode(await cliente.GetStringAsync(ruta));
+            Assert.Contains($"Seleccionado: {pedido.Cliente.Nombres}", html);
+            Assert.DoesNotContain("cliente del enlace no", html);
+        }
+    }
+
+    [Fact]
     public async Task RutasVentasYPagos_EstanProtegidasGlobalmente()
     {
         using var cliente = CrearCliente();
@@ -61,10 +84,17 @@ public sealed class Fase57UiIntegracionTests : PruebaWebAislada
         var contenido = WebUtility.HtmlDecode(await respuesta.Content.ReadAsStringAsync());
 
         Assert.Equal(HttpStatusCode.OK, respuesta.StatusCode);
-        Assert.Contains("Unidad de inventario", contenido);
+        Assert.Contains("Unidad física", contenido);
         Assert.Contains(escenario.UnidadReservadaPropia, contenido);
         Assert.Contains("reservada para este pedido", contenido);
-        Assert.Contains(escenario.UnidadLibre, contenido);
+        // El buscador consulta unidades libres bajo demanda, no las precarga en HTML.
+        using var scope = factory.Services.CreateScope();
+        var seleccion = new SeleccionOperativaService(scope.ServiceProvider.GetRequiredService<ResellManagerDbContext>());
+        var opciones = await seleccion.BuscarUnidadesAsync("", pedidoId: escenario.PedidoId);
+        Assert.Contains(opciones, x => x.CodigoInterno == escenario.UnidadLibre);
+        Assert.Equal(escenario.UnidadReservadaPropia, opciones[0].CodigoInterno);
+        Assert.DoesNotContain(opciones, x => x.CodigoInterno == escenario.UnidadReservadaAjena);
+        Assert.All(opciones, x => Assert.Equal(EstadoUnidadInventario.Disponible, x.Estado));
         Assert.DoesNotContain(escenario.UnidadReservadaAjena, contenido);
         Assert.DoesNotContain("Ingresa el ID", contenido, StringComparison.OrdinalIgnoreCase);
     }
@@ -81,14 +111,23 @@ public sealed class Fase57UiIntegracionTests : PruebaWebAislada
         Assert.Equal(HttpStatusCode.OK, respuesta.StatusCode);
         Assert.Contains("Venta directa con pedido automático", contenido);
         Assert.Contains("No existen ventas sin pedido", contenido);
-        Assert.Contains("Selecciona un cliente", contenido);
-        Assert.Contains(escenario.UnidadLibre, contenido);
+        Assert.Contains("Buscar por nombre completo o teléfono", contenido);
+        using var scope = factory.Services.CreateScope();
+        var seleccion = new SeleccionOperativaService(scope.ServiceProvider.GetRequiredService<ResellManagerDbContext>());
+        var opciones = await seleccion.BuscarUnidadesAsync("");
+        Assert.Contains(opciones, x => x.CodigoInterno == escenario.UnidadLibre);
+        Assert.DoesNotContain(opciones, x => x.CodigoInterno == escenario.UnidadReservadaPropia);
+        Assert.DoesNotContain(opciones, x => x.CodigoInterno == escenario.UnidadReservadaAjena);
+        Assert.All(opciones, x => {
+            Assert.Equal(EstadoUnidadInventario.Disponible, x.Estado);
+            Assert.Null(x.DetallePedidoReservaId);
+            Assert.True(x.ProductoId > 0);
+        });
         Assert.DoesNotContain(escenario.UnidadReservadaPropia, contenido);
         Assert.DoesNotContain(escenario.UnidadReservadaAjena, contenido);
-        Assert.Contains("Disponible", contenido);
-        Assert.Contains("Sin reserva", contenido);
-        Assert.Contains("direct-sale-desktop-table", contenido);
-        Assert.Contains("direct-sale-mobile-cards", contenido);
+        Assert.Contains("Buscar unidad, producto o código de barras", contenido);
+        Assert.Contains("Artículos agregados a la venta", contenido);
+        Assert.Contains("type=\"search\"", contenido);
         Assert.DoesNotContain("ProductoId", contenido, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("venta-directa-codigo", contenido, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("Código de venta", contenido, StringComparison.OrdinalIgnoreCase);
