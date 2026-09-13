@@ -205,6 +205,7 @@ public sealed class VentaDirectaPedidoAutomaticoTests
         Establecer(componente, "PedidoService", (IPedidoService)new PedidoService(test.Db));
         Establecer(componente, "VentaService", (IVentaService)ventas);
         Establecer(componente, "InventarioService", (IInventarioService)inventario);
+        Establecer(componente, "SeleccionService", new SeleccionOperativaService(test.Db));
         Establecer(componente, "Logger", NullLogger<VentaDirectaForm>.Instance);
         Establecer(
             componente,

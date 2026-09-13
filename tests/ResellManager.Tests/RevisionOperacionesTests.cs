@@ -53,11 +53,14 @@ public sealed class RevisionOperacionesTests
         Set(formulario, "PedidoService", new PedidoService(test.Db));
         Set(formulario, "VentaService", new VentaService(test.Db));
         Set(formulario, "InventarioService", new InventarioService(test.Db));
+        Set(formulario, "SeleccionService", new SeleccionOperativaService(test.Db));
         Set(formulario, "ClienteService", new ClienteService(test.Db));
         Set(formulario, "ProductoService", new ProductoService(test.Db));
         Set(formulario, "Logger", NullLogger<VentaDirectaForm>.Instance);
         Set(formulario, "Navigation", new Navegacion());
         await CallAsync(formulario, "CargarAsync");
+        Call(formulario, "ElegirCliente", (await new ClienteService(test.Db).ListarAsync()).Single());
+        await CallAsync(formulario, "AgregarUnidadAsync", (await new InventarioService(test.Db).ListarDisponiblesAsync()).Single());
         var modelo = Get<VentaDirectaFormModel>(formulario, "Modelo");
         modelo.ClienteId = test.Cliente.Id;
         var unidad = Get<List<UnidadVentaDirectaFormModel>>(formulario, "Unidades")[0];

@@ -134,6 +134,7 @@ public sealed class Fase510CodigosTests
         Establecer(formulario, "PedidoService", pedidos);
         Establecer(formulario, "VentaService", ventas);
         Establecer(formulario, "InventarioService", inventario);
+        Establecer(formulario, "SeleccionService", new SeleccionOperativaService(test.Db));
         Establecer(formulario, "Logger", NullLogger<VentaDirectaForm>.Instance);
         Establecer(formulario, "Navigation", new NavegacionPrueba());
         Establecer(formulario, "OcupadoChanged", EventCallback.Factory.Create<bool>(new object(), ocupacion.Add));

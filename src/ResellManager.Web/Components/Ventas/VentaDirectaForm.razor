@@ -4,6 +4,7 @@
 @inject IInventarioService InventarioService
 @inject IClienteService ClienteService
 @inject IProductoService ProductoService
+@inject ISeleccionOperativaService SeleccionService
 @inject NavigationManager Navigation
 @inject ILogger<VentaDirectaForm> Logger
 
@@ -36,24 +37,6 @@ else
         <span class="status-badge status-badge-neutral">Sin reserva intermedia</span>
     </section>
 
-    @if (Clientes.Count == 0)
-    {
-        <section class="empty-state">
-            <h2>No hay clientes registrados</h2>
-            <p>Registra un cliente antes de capturar la venta presencial.</p>
-            <a class="primary-button" href="/clientes/nuevo">Nuevo cliente</a>
-        </section>
-    }
-    else if (Unidades.Count == 0)
-    {
-        <section class="empty-state">
-            <h2>No hay unidades elegibles</h2>
-            <p>La venta directa solo admite unidades físicamente disponibles y sin reserva activa.</p>
-            <a class="secondary-button" href="/inventario">Ver inventario</a>
-        </section>
-    }
-    else
-    {
         <EditForm Model="Modelo" OnValidSubmit="RevisarVentaDirectaAsync" class="entity-form direct-sale-form">
             <DataAnnotationsValidator />
             <ValidationSummary class="validation-summary" />
@@ -80,17 +63,8 @@ else
             <section class="form-panel" aria-label="Datos generales de la venta directa">
                 <div class="form-grid">
                     <div class="form-field">
-                        <label for="venta-directa-cliente">Cliente <span aria-hidden="true">*</span></label>
-                        <InputSelect id="venta-directa-cliente"
-                                     @bind-Value="Modelo.ClienteId"
-                                     aria-required="true" aria-describedby="venta-directa-cliente-error"
-                                     disabled="@(Registrando || PedidoAutomaticoCreado is not null)">
-                            <option value="0">Selecciona un cliente</option>
-                            @foreach (var cliente in Clientes)
-                            {
-                                <option value="@cliente.Id">@ClientePresentacion.NombreCompleto(cliente)</option>
-                            }
-                        </InputSelect>
+                        <ClienteBuscador Id="venta-directa-cliente" Seleccionado="ClienteSeleccionado"
+                            Deshabilitado="@(Registrando || RevisandoVenta || PedidoAutomaticoCreado is not null)" OnSeleccionado="ElegirCliente" />
                         <ValidationMessage id="venta-directa-cliente-error" For="() => Modelo.ClienteId" />
                     </div>
                     <div class="form-field">
@@ -108,111 +82,29 @@ else
                 </div>
             </section>
 
-            <section class="data-panel direct-sale-units" aria-labelledby="titulo-unidades-directas">
-                <div class="data-panel-heading">
-                    <div>
-                        <h2 id="titulo-unidades-directas">Unidades físicas</h2>
-                        <p>Solo se muestran unidades disponibles y sin reserva. El producto se deriva del inventario.</p>
-                    </div>
-                    <span>@Seleccionadas.Count @(Seleccionadas.Count == 1 ? "seleccionada" : "seleccionadas")</span>
-                </div>
-
-                <div class="desktop-table direct-sale-desktop-table">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th scope="col">Elegir</th>
-                                <th scope="col">Unidad</th>
-                                <th scope="col">Producto</th>
-                                <th scope="col">Estado físico</th>
-                                <th scope="col">Reserva</th>
-                                <th scope="col">Precio final</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var detalle in Unidades)
-                            {
-                                <tr>
-                                    <td>
-                                        <input type="checkbox"
-                                               checked="@detalle.Seleccionada"
-                                               disabled="@(Registrando || PedidoAutomaticoCreado is not null)"
-                                               aria-label="Seleccionar unidad @detalle.Unidad.CodigoInterno"
-                                               @onchange="evento => CambiarSeleccion(detalle, evento.Value)" />
-                                    </td>
-                                    <td><strong class="code-value">@detalle.Unidad.CodigoInterno</strong></td>
-                                    <td>
-                                        <strong>@detalle.Unidad.Producto</strong>
-                                        <span class="table-secondary">@detalle.Unidad.CodigoProducto</span>
-                                    </td>
-                                    <td><span class="inventory-badge inventory-status-available">Disponible</span></td>
-                                    <td><span class="inventory-badge no-reservation-badge">Sin reserva</span></td>
-                                    <td>
-                                        @if (detalle.Seleccionada)
-                                        {
-                                            <div class="form-field direct-sale-price-field">
-                                                <label class="visually-hidden" for="precio-directo-@detalle.Unidad.Id">Precio final de @detalle.Unidad.CodigoInterno</label>
-                                                <input id="precio-directo-@detalle.Unidad.Id"
-                                                       type="number"
-                                                       min="0"
-                                                       step="0.01"
-                                                       required
-                                                       disabled="@(Registrando || PedidoAutomaticoCreado is not null)"
-                                                       @bind="detalle.PrecioFinal" />
-                                            </div>
-                                        }
-                                        else
-                                        {
-                                            <span class="table-secondary">Selecciona la unidad</span>
-                                        }
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="mobile-card-list direct-sale-mobile-cards">
-                    @foreach (var detalle in Unidades)
-                    {
-                        <article class="entity-card direct-sale-unit-card">
-                            <div class="entity-card-heading">
-                                <div>
-                                    <h3>@detalle.Unidad.Producto</h3>
-                                    <span class="table-secondary code-value">@detalle.Unidad.CodigoInterno</span>
-                                </div>
-                                <label class="direct-sale-check">
-                                    <input type="checkbox"
-                                           checked="@detalle.Seleccionada"
-                                           disabled="@(Registrando || PedidoAutomaticoCreado is not null)"
-                                           @onchange="evento => CambiarSeleccion(detalle, evento.Value)" />
-                                    Seleccionar
-                                </label>
-                            </div>
-                            <div class="inventory-badge-group">
-                                <span class="inventory-badge inventory-status-available">Disponible</span>
-                                <span class="inventory-badge no-reservation-badge">Sin reserva</span>
-                            </div>
-                            @if (detalle.Seleccionada)
-                            {
-                                <div class="form-field">
-                                    <label for="precio-directo-movil-@detalle.Unidad.Id">Precio final</label>
-                                    <input id="precio-directo-movil-@detalle.Unidad.Id"
-                                           type="number"
-                                           min="0"
-                                           step="0.01"
-                                           required
-                                           disabled="@(Registrando || PedidoAutomaticoCreado is not null)"
-                                           @bind="detalle.PrecioFinal" />
-                                </div>
-                            }
-                        </article>
-                    }
-                </div>
+            <section class="form-panel" aria-label="Buscar y agregar artículos">
+                <UnidadBuscador @key="RevisionBuscador" Id="directa-unidad" Excluir="@Unidades.Select(x => x.Unidad.Id).ToArray()"
+                    Deshabilitado="@(Registrando || RevisandoVenta || AgregandoUnidad || PedidoAutomaticoCreado is not null)" OnSeleccionado="AgregarUnidadAsync" />
+                <h2>Artículos agregados a la venta</h2>
+                @if (Unidades.Count == 0) { <p>Busca una unidad disponible y agrégala a la venta.</p> }
+                @foreach (var detalle in Unidades)
+                {
+                    <article class="order-line-editor" @key="detalle.Unidad.Id">
+                        <h3>@detalle.Unidad.Producto</h3>
+                        <p class="code-value">@detalle.Unidad.CodigoInterno</p>
+                        <div class="form-field">
+                            <label for="precio-directo-@detalle.Unidad.Id">Precio final</label>
+                            <input inputmode="decimal" data-select-once="true" id="precio-directo-@detalle.Unidad.Id" type="number" step="0.01" min="0" @bind="detalle.PrecioFinal"
+                                disabled="@(Registrando || RevisandoVenta || PedidoAutomaticoCreado is not null)" />
+                        </div>
+                        <button type="button" class="inline-button" disabled="@(Registrando || RevisandoVenta || PedidoAutomaticoCreado is not null)"
+                            @onclick="() => QuitarUnidad(detalle)">Quitar artículo</button>
+                    </article>
+                }
             </section>
 
             <div class="form-actions sale-submit-actions">
-                <button class="primary-button" type="submit" disabled="@(Registrando || Seleccionadas.Count == 0)">
+                <button class="primary-button" type="submit" disabled="@(Registrando || RevisandoVenta || AgregandoUnidad || Seleccionadas.Count == 0)">
                     @(Registrando
                         ? "Registrando..."
                         : PedidoAutomaticoCreado is null
@@ -222,7 +114,6 @@ else
                 <a class="secondary-button" href="/ventas">Cancelar</a>
             </div>
         </EditForm>
-    }
 }
 
 @if (RevisandoVenta)
@@ -251,7 +142,7 @@ else
     private bool RevisandoVenta { get; set; }
     private async Task RevisarVentaDirectaAsync()
     {
-        if (Registrando) return;
+        if (Registrando || AgregandoUnidad || RevisandoVenta) return;
         ErrorGuardado = ValidacionFormulario.PrimerError(Modelo) ?? Validar(Seleccionadas);
         if (ErrorGuardado is not null) return;
         RevisandoVenta = true;
@@ -281,7 +172,38 @@ else
     private IReadOnlyList<UnidadVentaDirectaFormModel> Seleccionadas =>
         Unidades.Where(x => x.Seleccionada).ToList();
 
-    protected override Task OnInitializedAsync() => CargarAsync();
+    [Parameter] public string? ClienteDesdeQuery { get; set; }
+    private string? ClienteQueryCargado;
+    private bool Inicializado;
+    private bool AgregandoUnidad;
+    private int RevisionBuscador;
+    private ClienteDto? ClienteSeleccionado { get; set; }
+    protected override Task OnParametersSetAsync() => !Registrando && !RevisandoVenta && PedidoAutomaticoCreado is null
+        && (!Inicializado || ClienteQueryCargado != ClienteDesdeQuery) ? CargarAsync() : Task.CompletedTask;
+    private void ElegirCliente(ClienteDto? cliente)
+    {
+        if (Registrando || RevisandoVenta || PedidoAutomaticoCreado is not null) return;
+        ClienteSeleccionado = cliente; Modelo.ClienteId = cliente?.Id ?? 0; Clientes = cliente is null ? [] : [cliente];
+        ErrorGuardado = null;
+    }
+    private async Task AgregarUnidadAsync(UnidadInventarioDto? unidad)
+    {
+        if (unidad is null || Registrando || RevisandoVenta || AgregandoUnidad || PedidoAutomaticoCreado is not null || Unidades.Any(x => x.Unidad.Id == unidad.Id)) return;
+        AgregandoUnidad = true;
+        try
+        {
+            var producto = await ProductoService.ObtenerPorIdAsync(unidad.ProductoId);
+            if (!producto.IsSuccess || producto.Value is null) { ErrorGuardado = "No pudimos cargar el producto. Vuelve a buscar la unidad."; return; }
+            Unidades.Add(new UnidadVentaDirectaFormModel { Unidad = unidad, Seleccionada = true, PrecioFinal = producto.Value.PrecioSugerido });
+            RevisionBuscador++;
+        }
+        catch (Exception ex) { Logger.LogError(ex, "No fue posible agregar la unidad a la venta."); ErrorGuardado = "No pudimos agregar la unidad. Intenta nuevamente."; }
+        finally { AgregandoUnidad = false; }
+    }
+    private void QuitarUnidad(UnidadVentaDirectaFormModel detalle)
+    {
+        if (!Registrando && !RevisandoVenta && PedidoAutomaticoCreado is null) Unidades.Remove(detalle);
+    }
 
     private async Task CargarAsync()
     {
@@ -290,22 +212,17 @@ else
         try
         {
             await OcupadoChanged.InvokeAsync(true);
-            // Las consultas comparten la sesión de datos del circuito.
-            Clientes = await ClienteService.ListarAsync();
-            var inventario = await InventarioService.ListarDisponiblesAsync();
-            var productos = (await ProductoService.ListarAsync()).ToDictionary(x => x.Id);
-            Unidades = inventario
-                .Where(VentaPresentacion.EsUnidadElegibleVentaDirecta)
-                .OrderBy(x => x.Producto)
-                .ThenBy(x => x.CodigoInterno)
-                .Select(x => new UnidadVentaDirectaFormModel
+            Inicializado = true; ClienteQueryCargado = ClienteDesdeQuery;
+            if (ClienteDesdeQuery is not null)
+            {
+                if (!int.TryParse(ClienteDesdeQuery, out var id) || id <= 0) { ElegirCliente(null); ErrorGuardado = "El cliente del enlace no es válido. Busca otro cliente."; }
+                else
                 {
-                    Unidad = x,
-                    PrecioFinal = productos.TryGetValue(x.ProductoId, out var producto)
-                        ? producto.PrecioSugerido
-                        : 0m,
-                })
-                .ToList();
+                    var cliente = await ClienteService.ObtenerPorIdAsync(id);
+                    ElegirCliente(cliente.IsSuccess ? cliente.Value : null);
+                    if (ClienteSeleccionado is null) ErrorGuardado = "El cliente del enlace no está disponible. Busca otro cliente.";
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -319,15 +236,9 @@ else
         }
     }
 
-    private void CambiarSeleccion(UnidadVentaDirectaFormModel detalle, object? valor)
-    {
-        if (!Registrando && PedidoAutomaticoCreado is null)
-            detalle.Seleccionada = valor is bool seleccionado && seleccionado;
-    }
-
     private async Task RegistrarVentaDirectaAsync()
     {
-        if (Registrando)
+        if (Registrando || AgregandoUnidad)
             return;
 
         var seleccionadas = Seleccionadas;
@@ -400,12 +311,7 @@ else
     private async Task<bool> SiguenElegiblesAsync(
         IReadOnlyCollection<UnidadVentaDirectaFormModel> seleccionadas)
     {
-        var actuales = await InventarioService.ListarDisponiblesAsync();
-        var idsElegibles = actuales
-            .Where(VentaPresentacion.EsUnidadElegibleVentaDirecta)
-            .Select(x => x.Id)
-            .ToHashSet();
-        if (seleccionadas.All(x => idsElegibles.Contains(x.Unidad.Id)))
+        if (await SeleccionService.UnidadesDirectasDisponiblesAsync(seleccionadas.Select(x => x.Unidad.Id).ToArray()))
             return true;
 
         ErrorGuardado = "Una o más unidades ya no están disponibles o recibieron una reserva. Actualiza la página antes de continuar.";
