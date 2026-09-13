@@ -576,3 +576,19 @@ Regresiones: categoría/búsqueda/limpiar, proveedores y límite del autocomplet
 **Validación automática visual no disponible; requiere comprobación manual.** No se reintentó el navegador que fallaba en este entorno. Pendiente en escritorio e iPhone ~390px: filtros combinados, Limpiar, fechas dentro de sus contenedores, encabezados mensuales y tipografía de acciones rápidas. El renderizado probado no acredita apariencia ni comportamiento de Safari.
 
 Verificación técnica (10/09/2026): build con 0 errores y 0 warnings; 358 pruebas .NET aprobadas (332 existentes + 26 nuevas), 0 fallidas y 0 omitidas; 11 pruebas JavaScript aprobadas. git diff --check correcto. El primer intento de build encontró la instancia local bloqueando DLL; se detuvo únicamente ese proceso y se repitió la compilación normal con éxito. Sin migraciones ni cambios a datos reales.
+
+## 18. Selección operativa y reservas al confirmar
+
+- Nuevo pedido y Venta Directa reutilizan ClienteBuscador por nombre completo/teléfono y admiten cliente=id. Cliente no tiene código interno. ProductoBuscador reemplaza el catálogo completo en los detalles nuevos y al agregar otro producto a un pedido existente.
+- Venta desde pedido busca código/cliente entre pedidos elegibles; las unidades se buscan por código de unidad, nombre/código del producto o código de barras. Las consultas limitan resultados a 12 y los buscadores esperan 300 ms y al menos dos caracteres. Las reservas propias disponibles se preseleccionan; las ajenas y unidades ya usadas se excluyen.
+- Venta Directa permite buscar/agregar varias unidades disponibles sin reserva, quitar artículos y editar precios antes de confirmar. Se conservan PED-VD, VEN-VD, canal Presencial, confirmaciones y protección de reintentos.
+- Nuevo pedido físico ofrece reserva explícita, no automática. El formulario guarda solo la intención y permite escoger unidades exactas hasta la cantidad solicitada. RegistroPedidoConReservasService revalida producto, disponibilidad y ausencia de reserva dentro de una transacción con contexto propio; crea pedido/detalles y reutiliza ReservarAsync. Un fallo revierte todo. Catálogo no ofrece ni admite reservas físicas. La reserva posterior desde PedidoDetalle sigue disponible.
+- ClienteDetalle enlaza a abonos, nuevo pedido y venta directa con el cliente preseleccionado; muestra reservas vigentes y unidades Vendida pendientes de entrega derivadas de las relaciones existentes. Entregada y reservas liberadas no aparecen.
+- Se conserva el arreglo manual que carga ResellManager.Web.styles.css y la separación manual de filtros. Los campos numéricos usan inputmode apropiado y selección del valor en el primer foco; form-feedback.js atiende errores nuevos fuera del viewport, evita repetir el foco y respeta movimiento reducido.
+- MesesDesplegables comparte apertura/cierre entre tabla y tarjetas: último mes abierto, anteriores cerrados; una nueva consulta reinicia la apertura. No modifica agrupación, consultas ni orden. El cuerpo del historial de Pagos tiene padding horizontal de 1.1rem; el saldo continúa independiente del filtro.
+
+Regresiones con SQLite en memoria y hosts temporales: elegibilidad/búsquedas, reservas duplicadas/ajenas/incompatibles, rollback real durante la segunda reserva, catálogo, pendientes físicos, selección y enlaces de cliente, varias unidades y reintentos. Las pruebas de JavaScript cubren foco inicial, edición posterior, errores nuevos/visibles/ocultos, diálogo y movimiento reducido.
+
+Validación visual pendiente en iPhone ~390px y escritorio: buscadores, reserva opcional, selección de varias unidades, estilos aislados, historial de Pagos, foco real, teclado numérico y ausencia de overflow. Las pruebas de renderizado y JavaScript no sustituyen esta comprobación.
+
+Fotos, tienda pública V2.4 y conteo físico V3 son únicamente planificación en docs/19 y docs/20; no se implementan ni generan migraciones.

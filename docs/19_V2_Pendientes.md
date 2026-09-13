@@ -2,11 +2,12 @@
 
 Este documento reúne decisiones funcionales y técnicas que quedan explícitamente fuera de V1 y se consideran para una V2 posterior.
 
-La intención es evitar que V2 se convierta en una sola entrega demasiado grande. Por ello se divide conceptualmente en tres bloques:
+La intención es evitar que V2 se convierta en una sola entrega demasiado grande. Por ello se divide conceptualmente en cuatro bloques:
 
 - **V2.1 — Productividad y experiencia de uso**.
 - **V2.2 — Operación del negocio**.
 - **V2.3 — Escalabilidad y multiusuario**.
+- **V2.4 — Canal público / tienda en línea**.
 
 El orden puede ajustarse después de observar el uso real de V1, pero esta división sirve como guía de planificación.
 
@@ -15,6 +16,19 @@ El orden puede ajustarse después de observar el uso real de V1, pero esta divis
 # V2.1 — Productividad y experiencia de uso
 
 Objetivo: reducir tiempo operativo y mejorar los flujos más frecuentes sin cambiar todavía la base del negocio.
+
+## Imágenes de productos
+
+Previsto para V2.1, no implementado en V1: permitir una foto principal y evaluar múltiples fotos por producto.
+
+- Mostrar imágenes en Producto e Inventario; evaluar su uso en Venta Directa y buscadores y reutilizarlas en la tienda pública V2.4.
+- Usar almacenamiento persistente; no guardar imágenes en la base de datos como blobs por defecto. Evaluar object storage para producción.
+- Generar miniaturas y aplicar compresión; definir formatos permitidos y tamaño máximo.
+- Permitir reemplazo y eliminación seguros, con limpieza de archivos sin referencias.
+- Mostrar un fallback cuando no exista imagen.
+- Validar contenido, permisos de acceso y privacidad; evitar exponer archivos no autorizados.
+
+Esta planificación no añade columnas, migraciones ni almacenamiento de imágenes a V1.
 
 ## Lectura de códigos de barras con la cámara
 
@@ -203,7 +217,7 @@ Clientes y productos con ventas, pedidos, pagos, compras u otros movimientos no 
 
 `CanalVenta.Web` existe conceptualmente, pero V1 no implementa ecommerce.
 
-Una tienda en línea o integración web futura debe evaluarse como expansión separada y no asumirse automáticamente como parte obligatoria de V2.2.
+La tienda pública básica se planifica como etapa final V2.4, separada de V2.2. Esta decisión sustituye la consideración anterior de tienda opcional fuera del compromiso de V2.
 
 ---
 
@@ -283,11 +297,30 @@ La finalidad es responder "qué parte del sistema está fallando o lenta", no "q
 
 ---
 
+# V2.4 — Canal público / tienda en línea
+
+Etapa final prevista de V2: ofrecer una tienda pública básica usando ResellManager como única fuente de verdad.
+
+Alcance inicial:
+
+- catálogo público, categorías, búsqueda y detalle de producto;
+- imagen del producto cuando exista, con fallback cuando no tenga;
+- disponibilidad derivada del inventario real, sin mantener inventario duplicado para la web;
+- carrito o selección de productos y captura de datos del cliente;
+- creación de una solicitud/pedido dentro de ResellManager reutilizando sus reglas y servicios actuales;
+- revalidación de disponibilidad al procesar la solicitud, sin asumir que consultar un producto equivale a reservarlo.
+
+No se requieren inicialmente pago en línea, cuentas completas de cliente, promociones complejas, integración WhatsApp ni logística avanzada. Pueden evaluarse después; no son requisitos de la tienda básica V2.4.
+
+Esta etapa es planificación: no crea rutas públicas ni cambia autenticación o reglas operativas en V1.
+
+---
+
 # Fuera de compromiso automático de V2
 
 Estas ideas siguen siendo posibles expansiones, pero no se consideran obligatorias para completar V2 salvo que el negocio las justifique:
 
-- tienda ecommerce completa;
+- ecommerce avanzado más allá de la tienda pública básica prevista en V2.4;
 - integración automática con WhatsApp;
 - integración automática con Facebook;
 - OCR;
