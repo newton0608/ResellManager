@@ -1,6 +1,6 @@
 @inject IServiceScopeFactory Scopes
 @inject ILogger<ReservaAlCrear> Logger
-<section class="origin-guidance" aria-label="Reserva opcional">
+<section class="origin-guidance reservation-prompt" aria-label="Reserva opcional">
     @if (Error is not null) { <p class="mensaje-error" role="alert">@Error</p> }
     else if (Disponibilidad is null) { <p role="status">Consultando unidades disponibles...</p> }
     else if (Disponibilidad.Cantidad > 0)
@@ -8,25 +8,29 @@
         <p>Hay @Disponibilidad.Cantidad unidades disponibles de este producto. ¿Quieres reservar para este pedido?</p>
         @if (!Aceptada)
         {
-            <div class="form-actions">
+            <div class="form-actions reservation-prompt-actions">
                 <button type="button" class="secondary-button" disabled="@Deshabilitado" @onclick="Aceptar">Reservar para este pedido</button>
                 <button type="button" class="inline-button" disabled="@Deshabilitado" @onclick="Continuar">Continuar sin reservar</button>
             </div>
         }
         else
         {
-            <UnidadBuscador @key="Revision" Id="@Id" ProductoId="ProductoId" Excluir="IdsExcluidos"
-                Deshabilitado="@(Deshabilitado || Seleccionadas.Count >= Cantidad)" OnSeleccionado="Agregar" />
+            <div class="reservation-prompt-picker">
+                <UnidadBuscador @key="Revision" Id="@Id" ProductoId="ProductoId" Excluir="IdsExcluidos"
+                    Deshabilitado="@(Deshabilitado || Seleccionadas.Count >= Cantidad)" OnSeleccionado="Agregar" />
+            </div>
             <p>Selecciona hasta @Cantidad unidades. No se reservarán hasta confirmar el pedido.</p>
             <ul>
                 @foreach (var unidad in Seleccionadas)
                 {
-                    <li>@unidad.CodigoInterno · costo @VentaPresentacion.Moneda(unidad.Costo)
+                    <li><span class="code-value">@unidad.CodigoInterno · costo @VentaPresentacion.Moneda(unidad.Costo)</span>
                         <button type="button" class="inline-button" disabled="@Deshabilitado" @onclick="() => Quitar(unidad)">Quitar</button></li>
                 }
             </ul>
             @if (Seleccionadas.Count > Cantidad) { <p class="mensaje-error" role="alert">Quita unidades: la selección supera la cantidad del detalle.</p> }
-            <button type="button" class="inline-button" disabled="@Deshabilitado" @onclick="Continuar">Continuar sin reservar</button>
+            <div class="form-actions reservation-prompt-actions">
+                <button type="button" class="inline-button" disabled="@Deshabilitado" @onclick="Continuar">Continuar sin reservar</button>
+            </div>
         }
     }
     else { <p>No hay unidades disponibles sin reserva. Puedes continuar sin reservar.</p> }
