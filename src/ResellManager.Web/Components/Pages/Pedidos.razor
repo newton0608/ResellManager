@@ -91,8 +91,8 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
                 @foreach (var grupo in Grupos)
                 {
                 <tbody>
-                    <tr class="history-month-row"><th scope="rowgroup" colspan="8">@grupo.Titulo</th></tr>
-                    @foreach (var pedido in grupo.Registros)
+                    <tr class="history-month-row"><th scope="rowgroup" colspan="8"><button class="history-month-toggle" type="button" aria-expanded="@Meses.Abierto(grupo.Anio, grupo.Mes)" @onclick="() => Meses.Alternar(grupo.Anio, grupo.Mes)"><span aria-hidden="true">@(Meses.Abierto(grupo.Anio, grupo.Mes) ? "▼" : "▶")</span> @grupo.Titulo</button></th></tr>
+                    @foreach (var pedido in Meses.Abierto(grupo.Anio, grupo.Mes) ? grupo.Registros : Array.Empty<PedidoDto>())
                     {
                         <tr>
                             <td>
@@ -116,8 +116,8 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
         <div class="mobile-card-list">
             @foreach (var grupo in Grupos)
             {
-                <h3 class="history-month-title">@grupo.Titulo</h3>
-            @foreach (var pedido in grupo.Registros)
+                <h3 class="history-month-title"><button class="history-month-toggle" type="button" aria-expanded="@Meses.Abierto(grupo.Anio, grupo.Mes)" @onclick="() => Meses.Alternar(grupo.Anio, grupo.Mes)"><span aria-hidden="true">@(Meses.Abierto(grupo.Anio, grupo.Mes) ? "▼" : "▶")</span> @grupo.Titulo</button></h3>
+            @foreach (var pedido in Meses.Abierto(grupo.Anio, grupo.Mes) ? grupo.Registros : Array.Empty<PedidoDto>())
             {
                 <article class="entity-card order-card">
                     <div class="entity-card-heading">
@@ -148,6 +148,7 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
     [SupplyParameterFromQuery(Name = "desde")] public string? DesdeConsulta { get; set; }
     [SupplyParameterFromQuery(Name = "hasta")] public string? HastaConsulta { get; set; }
     private FiltroHistorialModelo Filtros { get; } = new();
+    private MesesDesplegables Meses { get; } = new();
     private string? ErrorConsulta { get; set; }
     private IReadOnlyList<GrupoMensual<PedidoDto>> Grupos { get; set; } = [];
 
@@ -193,6 +194,7 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
         {
             PedidosEncontrados = await PedidoService.ListarAsync(filtro: Filtros.ToInput(), soloActivos: Filtros.Estado == "activos", conEntregaPendiente: Filtros.Estado == "entrega-pendiente");
             Grupos = HistorialMensual.Agrupar(PedidosEncontrados, x => x.Fecha, x => x.Id);
+            Meses.Reiniciar(Grupos);
 
         }
         catch (Exception ex)

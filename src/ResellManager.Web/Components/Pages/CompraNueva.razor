@@ -122,11 +122,11 @@
                                                   OnRegistrar="() => AbrirAlta(detalle)" />
                                 <div class="form-field">
                                     <label for="cantidad-compra-@numero">Cantidad <span aria-hidden="true">*</span></label>
-                                    <input id="cantidad-compra-@numero" type="number" min="1" step="1" @bind="detalle.Cantidad" />
+                                    <input inputmode="numeric" data-select-once="true" id="cantidad-compra-@numero" type="number" min="1" step="1" @bind="detalle.Cantidad" />
                                 </div>
                                 <div class="form-field">
                                     <label for="costo-compra-@numero">Costo unitario <span aria-hidden="true">*</span></label>
-                                    <input id="costo-compra-@numero" type="number" min="0" step="0.01" @bind="detalle.CostoUnitario" />
+                                    <input inputmode="decimal" data-select-once="true" id="costo-compra-@numero" type="number" min="0" step="0.01" @bind="detalle.CostoUnitario" />
                                 </div>
                                 <div class="purchase-line-subtotal">
                                     <span>Subtotal</span>

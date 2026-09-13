@@ -3385,6 +3385,28 @@ textarea {
   to { transform: rotate(360deg); }
 }
 
+.history-month-toggle {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  min-height: 2.75rem;
+  padding: .35rem 0;
+  text-align: left;
+  width: 100%;
+}
+
+.history-month-toggle:focus-visible {
+  outline: 2px solid var(--color-primary, #2563eb);
+  outline-offset: 2px;
+}
+
+.payment-history-body {
+  min-width: 0;
+  padding: 0 1.1rem 1.1rem;
+}
+
 .history-month-row th {
   background: #eff6ff;
   color: #1e3a8a;

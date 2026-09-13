@@ -74,8 +74,8 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
                 @foreach (var grupo in Grupos)
                 {
                 <tbody>
-                    <tr class="history-month-row"><th scope="rowgroup" colspan="7">@grupo.Titulo</th></tr>
-                    @foreach (var venta in grupo.Registros)
+                    <tr class="history-month-row"><th scope="rowgroup" colspan="7"><button class="history-month-toggle" type="button" aria-expanded="@Meses.Abierto(grupo.Anio, grupo.Mes)" @onclick="() => Meses.Alternar(grupo.Anio, grupo.Mes)"><span aria-hidden="true">@(Meses.Abierto(grupo.Anio, grupo.Mes) ? "▼" : "▶")</span> @grupo.Titulo</button></th></tr>
+                    @foreach (var venta in Meses.Abierto(grupo.Anio, grupo.Mes) ? grupo.Registros : Array.Empty<VentaDto>())
                     {
                         <tr>
                             <td><span class="code-value">@venta.CodigoInterno</span></td>
@@ -95,8 +95,8 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
         <div class="mobile-card-list sale-mobile-cards">
             @foreach (var grupo in Grupos)
             {
-                <h3 class="history-month-title">@grupo.Titulo</h3>
-            @foreach (var venta in grupo.Registros)
+                <h3 class="history-month-title"><button class="history-month-toggle" type="button" aria-expanded="@Meses.Abierto(grupo.Anio, grupo.Mes)" @onclick="() => Meses.Alternar(grupo.Anio, grupo.Mes)"><span aria-hidden="true">@(Meses.Abierto(grupo.Anio, grupo.Mes) ? "▼" : "▶")</span> @grupo.Titulo</button></h3>
+            @foreach (var venta in Meses.Abierto(grupo.Anio, grupo.Mes) ? grupo.Registros : Array.Empty<VentaDto>())
             {
                 <article class="entity-card sale-card">
                     <div class="entity-card-heading">
@@ -126,6 +126,7 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
     [SupplyParameterFromQuery(Name = "desde")] public string? DesdeConsulta { get; set; }
     [SupplyParameterFromQuery(Name = "hasta")] public string? HastaConsulta { get; set; }
     private FiltroHistorialModelo Filtros { get; } = new();
+    private MesesDesplegables Meses { get; } = new();
     private string? ErrorConsulta { get; set; }
     [SupplyParameterFromQuery(Name = "estado")] public string? EstadoConsulta { get; set; }
     private ResellManager.Domain.Enums.EstadoVenta? EstadoFiltrado => Filtros.Estado switch { "registrada" => ResellManager.Domain.Enums.EstadoVenta.Registrada, "cancelada" => ResellManager.Domain.Enums.EstadoVenta.Cancelada, _ => null };
@@ -160,6 +161,7 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
         {
             VentasRegistradas = await VentaService.ListarAsync(filtro: Filtros.ToInput(), estado: EstadoFiltrado);
             Grupos = HistorialMensual.Agrupar(VentasRegistradas, x => x.Fecha, x => x.Id);
+            Meses.Reiniciar(Grupos);
         }
         catch (Exception ex)
         {

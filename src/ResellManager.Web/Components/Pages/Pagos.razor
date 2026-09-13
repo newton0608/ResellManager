@@ -92,7 +92,7 @@ else
                             </div>
                             <div class="form-field">
                                 <label for="pago-monto">Monto <span aria-hidden="true">*</span></label>
-                                <InputNumber id="pago-monto" @bind-Value="Modelo.Monto" min="0.01" step="0.01" aria-describedby="pago-monto-error" />
+                                <InputNumber inputmode="decimal" data-select-once="true" id="pago-monto" @bind-Value="Modelo.Monto" min="0.01" step="0.01" aria-describedby="pago-monto-error" />
                                 <ValidationMessage id="pago-monto-error" For="() => Modelo.Monto" />
                                 <p class="field-help">Máximo disponible: @ClientePresentacion.Moneda(SaldoActual.Value)</p>
                             </div>
@@ -134,6 +134,7 @@ else
                     <h2 id="titulo-historial-pagos">Historial de pagos</h2>
                     <span>@Historial.Count @(Historial.Count == 1 ? "pago" : "pagos")</span>
                 </div>
+                <div class="payment-history-body">
                 <FiltrosHistorial Id="historial-pagos" Modelo="Filtros" MostrarBusqueda="false"
                                   Ocupado="@(CargandoHistorial || CargandoCliente || Registrando || RevisandoPago)"
                                   OnAplicar="AplicarFiltrosAsync" OnLimpiar="LimpiarFiltrosAsync" />
@@ -169,8 +170,8 @@ else
                             @foreach (var grupo in Grupos)
                             {
                             <tbody>
-                                <tr class="history-month-row"><th scope="rowgroup" colspan="5">@grupo.Titulo</th></tr>
-                                @foreach (var pago in grupo.Registros)
+                                <tr class="history-month-row"><th scope="rowgroup" colspan="5"><button class="history-month-toggle" type="button" aria-expanded="@Meses.Abierto(grupo.Anio, grupo.Mes)" @onclick="() => Meses.Alternar(grupo.Anio, grupo.Mes)"><span aria-hidden="true">@(Meses.Abierto(grupo.Anio, grupo.Mes) ? "▼" : "▶")</span> @grupo.Titulo</button></th></tr>
+                                @foreach (var pago in Meses.Abierto(grupo.Anio, grupo.Mes) ? grupo.Registros : Array.Empty<PagoDto>())
                                 {
                                     <tr>
                                         <td>@pago.Fecha.ToString("dd/MM/yyyy")</td>
@@ -187,8 +188,8 @@ else
                     <div class="mobile-card-list payment-mobile-cards">
                         @foreach (var grupo in Grupos)
                         {
-                        <h3 class="history-month-title">@grupo.Titulo</h3>
-                        @foreach (var pago in grupo.Registros)
+                        <h3 class="history-month-title"><button class="history-month-toggle" type="button" aria-expanded="@Meses.Abierto(grupo.Anio, grupo.Mes)" @onclick="() => Meses.Alternar(grupo.Anio, grupo.Mes)"><span aria-hidden="true">@(Meses.Abierto(grupo.Anio, grupo.Mes) ? "▼" : "▶")</span> @grupo.Titulo</button></h3>
+                        @foreach (var pago in Meses.Abierto(grupo.Anio, grupo.Mes) ? grupo.Registros : Array.Empty<PagoDto>())
                         {
                             <article class="entity-card payment-card">
                                 <div class="entity-card-heading">
@@ -207,6 +208,7 @@ else
                         }
                     </div>
                 }
+                </div>
             </section>
         </section>
     }
@@ -233,6 +235,7 @@ else
     [SupplyParameterFromQuery(Name = "desde")] public string? DesdeConsulta { get; set; }
     [SupplyParameterFromQuery(Name = "hasta")] public string? HastaConsulta { get; set; }
     private FiltroHistorialModelo Filtros { get; } = new();
+    private MesesDesplegables Meses { get; } = new();
     private IReadOnlyList<GrupoMensual<PagoDto>> Grupos { get; set; } = [];
     private bool CargandoHistorial { get; set; }
     private string? ErrorHistorial { get; set; }
@@ -286,6 +289,7 @@ else
         {
             Historial = await PagoService.ListarPorClienteAsync(ClienteSeleccionado.Id, filtro: Filtros.ToInput());
             Grupos = HistorialMensual.Agrupar(Historial, x => x.Fecha, x => x.Id);
+            Meses.Reiniciar(Grupos);
         }
         catch (Exception ex)
         {
