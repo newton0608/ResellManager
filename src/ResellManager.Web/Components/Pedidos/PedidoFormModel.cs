@@ -45,6 +45,8 @@ public sealed class PedidoFormModel : IValidatableObject
 
 public sealed class DetallePedidoFormModel
 {
+    public ProductoDto? ProductoSeleccionado { get; set; }
+    public List<UnidadInventarioDto> Reservas { get; } = [];
     public int ProductoId { get; set; }
     public int Cantidad { get; set; } = 1;
     public decimal PrecioUnitario { get; set; }

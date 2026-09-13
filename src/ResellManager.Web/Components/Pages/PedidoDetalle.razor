@@ -215,23 +215,15 @@ else
                 <p>Agrega un producto adicional. Los productos ya registrados se conservan.</p>
                 <div class="order-line-grid">
                     <div class="form-field order-product-field">
-                        <label for="nuevo-detalle-producto">Producto</label>
-                        <select id="nuevo-detalle-producto" value="@NuevoDetalle.ProductoId"
-                                @onchange="evento => SeleccionarProductoNuevo(evento.Value?.ToString())">
-                            <option value="0">Selecciona un producto</option>
-                            @foreach (var producto in Productos)
-                            {
-                                <option value="@producto.Id">@producto.CodigoInterno · @producto.Nombre</option>
-                            }
-                        </select>
+                        <ProductoBuscador Id="nuevo-detalle-producto" Seleccionado="NuevoDetalle.ProductoSeleccionado" Deshabilitado="Procesando" OnSeleccionado="ElegirProductoNuevo" />
                     </div>
                     <div class="form-field">
                         <label for="nuevo-detalle-cantidad">Cantidad</label>
-                        <input id="nuevo-detalle-cantidad" type="number" min="1" step="1" @bind="NuevoDetalle.Cantidad" />
+                        <input inputmode="numeric" data-select-once="true" id="nuevo-detalle-cantidad" type="number" min="1" step="1" @bind="NuevoDetalle.Cantidad" />
                     </div>
                     <div class="form-field">
                         <label for="nuevo-detalle-precio">Precio unitario</label>
-                        <input id="nuevo-detalle-precio" type="number" min="0" step="0.01" @bind="NuevoDetalle.PrecioUnitario" />
+                        <input inputmode="decimal" data-select-once="true" id="nuevo-detalle-precio" type="number" min="0" step="0.01" @bind="NuevoDetalle.PrecioUnitario" />
                     </div>
                     <div class="form-field order-line-note">
                         <label for="nuevo-detalle-observaciones">Observaciones</label>
@@ -311,7 +303,7 @@ else
                 VentaVinculada = venta.Value;
             }
 
-            Productos = await ProductoService.ListarAsync();
+            // El producto adicional se consulta bajo demanda.
             Unidades = Pedido.TipoPedido == TipoPedido.Catalogo
                 ? []
                 : await InventarioService.ListarAsync();
@@ -352,12 +344,11 @@ else
     private void SeleccionarUnidad(int detalleId, string? valor) =>
         UnidadesSeleccionadas[detalleId] = int.TryParse(valor, out var unidadId) ? unidadId : 0;
 
-    private void SeleccionarProductoNuevo(string? valor)
+    private void ElegirProductoNuevo(ProductoDto? producto)
     {
-        NuevoDetalle.ProductoId = int.TryParse(valor, out var productoId) ? productoId : 0;
-        var producto = Productos.FirstOrDefault(x => x.Id == NuevoDetalle.ProductoId);
-        if (producto is not null)
-            NuevoDetalle.PrecioUnitario = producto.PrecioSugerido;
+        if (Procesando) return;
+        NuevoDetalle.ProductoSeleccionado = producto; NuevoDetalle.ProductoId = producto?.Id ?? 0;
+        if (producto is not null) { NuevoDetalle.PrecioUnitario = producto.PrecioSugerido; Productos = [producto]; }
     }
 
     private async Task AgregarDetalleAsync()

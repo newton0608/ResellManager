@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @using ResellManager.Domain.Enums
 @inject IPedidoService PedidoService
+@inject IRegistroPedidoConReservasService RegistroPedido
 @inject IClienteService ClienteService
 @inject IProductoService ProductoService
 @inject NavigationManager Navigation
@@ -13,7 +14,7 @@
     <div>
         <p class="eyebrow">Pedidos</p>
         <h1 id="titulo-nuevo-pedido">Nuevo pedido</h1>
-        <p class="page-lead">Registra el acuerdo con el cliente. Las reservas físicas se asignan después desde el detalle.</p>
+        <p class="page-lead">Registra el acuerdo y elige opcionalmente unidades para reservar al confirmar.</p>
     </div>
 </section>
 
@@ -37,23 +38,6 @@ else if (!string.IsNullOrWhiteSpace(ErrorCarga))
 }
 else
 {
-    @if (Clientes.Count == 0 || Productos.Count == 0)
-    {
-        <div class="mensaje-error catalog-warning" role="alert">
-            <span>Para crear un pedido necesitas al menos un cliente y un producto registrados.</span>
-            <div class="heading-actions">
-                @if (Clientes.Count == 0)
-                {
-                    <a class="inline-button" href="/clientes/nuevo">Registrar cliente</a>
-                }
-                @if (Productos.Count == 0)
-                {
-                    <a class="inline-button" href="/productos/nuevo">Registrar producto</a>
-                }
-            </div>
-        </div>
-    }
-
     <section class="form-panel order-form-panel" aria-label="Formulario de pedido">
         <EditForm Model="Modelo" OnValidSubmit="RevisarPedido" class="entity-form">
             <DataAnnotationsValidator />
@@ -73,7 +57,7 @@ else
 
                 <div class="form-field">
                     <label for="pedido-tipo">Tipo de pedido <span aria-hidden="true">*</span></label>
-                    <InputSelect id="pedido-tipo" @bind-Value="Modelo.TipoPedido" disabled="@Guardando">
+                    <InputSelect id="pedido-tipo" @bind-Value="Modelo.TipoPedido" @bind-Value:after="CambiarTipo" disabled="@Guardando">
                         @foreach (var tipo in PedidoFormModel.TiposManuales)
                         {
                             <option value="@tipo">@PedidoPresentacion.Tipo(tipo)</option>
@@ -93,14 +77,7 @@ else
                 </div>
 
                 <div class="form-field">
-                    <label for="pedido-cliente">Cliente <span aria-hidden="true">*</span></label>
-                    <InputSelect id="pedido-cliente" @bind-Value="Modelo.ClienteId" disabled="@Guardando" aria-required="true" aria-describedby="pedido-cliente-error">
-                        <option value="0">Selecciona un cliente</option>
-                        @foreach (var cliente in Clientes)
-                        {
-                            <option value="@cliente.Id">@NombreCliente(cliente)</option>
-                        }
-                    </InputSelect>
+                    <ClienteBuscador Id="pedido-cliente" Seleccionado="ClienteSeleccionado" Deshabilitado="@(Guardando || RevisandoPedido)" OnSeleccionado="SeleccionarCliente" />
                     <ValidationMessage id="pedido-cliente-error" For="() => Modelo.ClienteId" />
                 </div>
 
@@ -125,7 +102,7 @@ else
                     {
                         var detalle = Modelo.Detalles[index];
                         var numero = index + 1;
-                        <article class="order-line-editor">
+                        <article class="order-line-editor" @key="detalle">
                             <div class="order-line-heading">
                                 <h3>Detalle @numero</h3>
                                 <button class="table-action button-link" type="button"
@@ -135,29 +112,27 @@ else
                             </div>
                             <div class="order-line-grid">
                                 <div class="form-field order-product-field">
-                                    <label for="producto-@numero">Producto <span aria-hidden="true">*</span></label>
-                                    <select id="producto-@numero" value="@detalle.ProductoId" disabled="@Guardando" aria-required="true"
-                                            @onchange="evento => SeleccionarProducto(detalle, evento.Value?.ToString())">
-                                        <option value="0">Selecciona un producto</option>
-                                        @foreach (var producto in Productos)
-                                        {
-                                            <option value="@producto.Id">@producto.CodigoInterno · @producto.Nombre</option>
-                                        }
-                                    </select>
+                                    <ProductoBuscador Id="@($"producto-{numero}")" Seleccionado="detalle.ProductoSeleccionado" Deshabilitado="@(Guardando || RevisandoPedido)" OnSeleccionado="producto => ElegirProducto(detalle, producto)" />
                                 </div>
                                 <div class="form-field">
                                     <label for="cantidad-@numero">Cantidad <span aria-hidden="true">*</span></label>
-                                    <input id="cantidad-@numero" type="number" min="1" step="1" required disabled="@Guardando" @bind="detalle.Cantidad" />
+                                    <input inputmode="numeric" data-select-once="true" id="cantidad-@numero" type="number" min="1" step="1" required disabled="@Guardando" @bind="detalle.Cantidad" />
                                 </div>
                                 <div class="form-field">
                                     <label for="precio-@numero">Precio unitario <span aria-hidden="true">*</span></label>
-                                    <input id="precio-@numero" type="number" min="0" step="0.01" required disabled="@Guardando" @bind="detalle.PrecioUnitario" />
+                                    <input inputmode="decimal" data-select-once="true" id="precio-@numero" type="number" min="0" step="0.01" required disabled="@Guardando" @bind="detalle.PrecioUnitario" />
                                 </div>
                                 <div class="form-field order-line-note">
                                     <label for="observaciones-@numero">Observaciones</label>
                                     <input id="observaciones-@numero" type="text" maxlength="500" disabled="@Guardando" @bind="detalle.Observaciones" />
                                 </div>
                             </div>
+                            @if (Modelo.TipoPedido != TipoPedido.Catalogo && detalle.ProductoId > 0)
+                            {
+                                <ReservaAlCrear @key="detalle.ProductoId" Id="@($"reserva-{numero}")" ProductoId="detalle.ProductoId" Cantidad="detalle.Cantidad"
+                                    Seleccionadas="detalle.Reservas" Deshabilitado="@(Guardando || RevisandoPedido)"
+                                    OtrasUnidades="@Modelo.Detalles.Where(x => x != detalle).SelectMany(x => x.Reservas).Select(x => x.Id).ToArray()" />
+                            }
                         </article>
                     }
                 </div>
@@ -167,7 +142,7 @@ else
 
             <div class="form-actions">
                 <button class="primary-button" type="submit"
-                        disabled="@(Guardando || Clientes.Count == 0 || Productos.Count == 0)">
+                        disabled="@(Guardando || RevisandoPedido)">
                     @(Guardando ? "Guardando..." : "Revisar pedido")
                 </button>
                 <a class="secondary-button" href="/pedidos">Cancelar</a>
@@ -191,7 +166,8 @@ else
             }
         </ul>
         <p><strong>Total estimado: @PedidoPresentacion.Moneda(Modelo.Detalles.Sum(x => x.Cantidad * x.PrecioUnitario))</strong></p>
-        <p>Las reservas se asignan después desde el detalle del pedido.</p>
+        <p>Unidades a reservar al confirmar: @Modelo.Detalles.Sum(x => x.Reservas.Count)</p>
+        <ul>@foreach (var unidad in Modelo.Detalles.SelectMany(x => x.Reservas)) { <li>@unidad.Producto · @unidad.CodigoInterno</li> }</ul>
     </ConfirmacionOperacion>
 }
 
@@ -214,7 +190,27 @@ else
     private string? ErrorCarga { get; set; }
     private string? ErrorGuardado { get; set; }
 
-    protected override Task OnInitializedAsync() => CargarAsync();
+    [SupplyParameterFromQuery(Name = "cliente")] public string? ClienteDesdeQuery { get; set; }
+    private string? ClienteQueryCargado;
+    private bool Inicializado;
+    private ClienteDto? ClienteSeleccionado { get; set; }
+    protected override Task OnParametersSetAsync() => !Guardando && !RevisandoPedido && (!Inicializado || ClienteQueryCargado != ClienteDesdeQuery) ? CargarAsync() : Task.CompletedTask;
+    private void SeleccionarCliente(ClienteDto? cliente)
+    {
+        if (Guardando || RevisandoPedido) return;
+        ClienteSeleccionado = cliente; Modelo.ClienteId = cliente?.Id ?? 0;
+        Clientes = cliente is null ? [] : [cliente]; ErrorGuardado = null;
+    }
+    private void ElegirProducto(DetallePedidoFormModel detalle, ProductoDto? producto)
+    {
+        if (Guardando || RevisandoPedido) return;
+        detalle.ProductoSeleccionado = producto; detalle.ProductoId = producto?.Id ?? 0; detalle.Reservas.Clear();
+        if (producto is not null) { detalle.PrecioUnitario = producto.PrecioSugerido; Productos = Productos.Where(x => x.Id != producto.Id).Append(producto).ToArray(); }
+    }
+    private void CambiarTipo()
+    {
+        if (Modelo.TipoPedido == TipoPedido.Catalogo) foreach (var detalle in Modelo.Detalles) detalle.Reservas.Clear();
+    }
 
     private async Task CargarAsync()
     {
@@ -222,9 +218,17 @@ else
         ErrorCarga = null;
         try
         {
-            // Los servicios comparten la sesión de datos del circuito.
-            Clientes = await ClienteService.ListarAsync();
-            Productos = await ProductoService.ListarAsync();
+            Inicializado = true; ClienteQueryCargado = ClienteDesdeQuery;
+            if (ClienteDesdeQuery is not null)
+            {
+                if (!int.TryParse(ClienteDesdeQuery, out var id) || id <= 0) { SeleccionarCliente(null); ErrorGuardado = "El cliente del enlace no es válido. Busca otro cliente."; }
+                else
+                {
+                    var cliente = await ClienteService.ObtenerPorIdAsync(id);
+                    SeleccionarCliente(cliente.IsSuccess ? cliente.Value : null);
+                    if (ClienteSeleccionado is null) ErrorGuardado = "El cliente del enlace no está disponible. Busca otro cliente.";
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -239,28 +243,14 @@ else
 
     private void AgregarFila()
     {
-        if (!Guardando)
+        if (!Guardando && !RevisandoPedido)
             Modelo.Detalles.Add(new DetallePedidoFormModel());
     }
 
     private void QuitarFila(DetallePedidoFormModel detalle)
     {
-        if (!Guardando && Modelo.Detalles.Count > 1)
+        if (!Guardando && !RevisandoPedido && Modelo.Detalles.Count > 1)
             Modelo.Detalles.Remove(detalle);
-    }
-
-    private void SeleccionarProducto(DetallePedidoFormModel detalle, string? valor)
-    {
-        if (Guardando)
-            return;
-
-        if (!int.TryParse(valor, out var productoId))
-            productoId = 0;
-
-        detalle.ProductoId = productoId;
-        var producto = Productos.FirstOrDefault(x => x.Id == productoId);
-        if (producto is not null)
-            detalle.PrecioUnitario = producto.PrecioSugerido;
     }
 
     private async Task GuardarAsync()
@@ -275,7 +265,10 @@ else
         Guardando = true;
         try
         {
-            var resultado = await PedidoService.CrearManualAsync(Modelo.ToInput(CodigoPedido));
+            var reservas = Modelo.Detalles.Select((x, i) => new ReservaPedidoInput(i, x.Reservas.Select(u => u.Id).ToArray())).Where(x => x.Unidades.Count > 0).ToArray();
+            var resultado = reservas.Length == 0
+                ? await PedidoService.CrearManualAsync(Modelo.ToInput(CodigoPedido))
+                : await RegistroPedido.RegistrarAsync(Modelo.ToInput(CodigoPedido), reservas);
             if (!resultado.IsSuccess || resultado.Value is null)
             {
                 ErrorGuardado = resultado.ErrorMessage ?? "No fue posible crear el pedido.";
@@ -300,6 +293,8 @@ else
     {
         if (Modelo.ValidarTipoManual() is { } errorTipo)
             return errorTipo;
+        if (Modelo.Detalles.Any(x => x.Reservas.Count > x.Cantidad)) return "Quita unidades reservadas: superan la cantidad solicitada.";
+        if (Modelo.TipoPedido == TipoPedido.Catalogo && Modelo.Detalles.Any(x => x.Reservas.Count > 0)) return "Catálogo no admite reservas físicas.";
         if (Modelo.Detalles.Count == 0)
             return "Agrega al menos un detalle al pedido.";
         if (Modelo.Detalles.Any(x => !Productos.Any(p => p.Id == x.ProductoId)))

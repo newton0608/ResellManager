@@ -1,0 +1,72 @@
+@inject IServiceScopeFactory Scopes
+@inject ILogger<ReservaAlCrear> Logger
+<section class="origin-guidance" aria-label="Reserva opcional">
+    @if (Error is not null) { <p class="mensaje-error" role="alert">@Error</p> }
+    else if (Disponibilidad is null) { <p role="status">Consultando unidades disponibles...</p> }
+    else if (Disponibilidad.Cantidad > 0)
+    {
+        <p>Hay @Disponibilidad.Cantidad unidades disponibles de este producto. ¿Quieres reservar para este pedido?</p>
+        @if (!Aceptada)
+        {
+            <div class="form-actions">
+                <button type="button" class="secondary-button" disabled="@Deshabilitado" @onclick="Aceptar">Reservar para este pedido</button>
+                <button type="button" class="inline-button" disabled="@Deshabilitado" @onclick="Continuar">Continuar sin reservar</button>
+            </div>
+        }
+        else
+        {
+            <UnidadBuscador @key="Revision" Id="@Id" ProductoId="ProductoId" Excluir="IdsExcluidos"
+                Deshabilitado="@(Deshabilitado || Seleccionadas.Count >= Cantidad)" OnSeleccionado="Agregar" />
+            <p>Selecciona hasta @Cantidad unidades. No se reservarán hasta confirmar el pedido.</p>
+            <ul>
+                @foreach (var unidad in Seleccionadas)
+                {
+                    <li>@unidad.CodigoInterno · costo @VentaPresentacion.Moneda(unidad.Costo)
+                        <button type="button" class="inline-button" disabled="@Deshabilitado" @onclick="() => Quitar(unidad)">Quitar</button></li>
+                }
+            </ul>
+            @if (Seleccionadas.Count > Cantidad) { <p class="mensaje-error" role="alert">Quita unidades: la selección supera la cantidad del detalle.</p> }
+            <button type="button" class="inline-button" disabled="@Deshabilitado" @onclick="Continuar">Continuar sin reservar</button>
+        }
+    }
+    else { <p>No hay unidades disponibles sin reserva. Puedes continuar sin reservar.</p> }
+</section>
+@code {
+    [Parameter] public string Id { get; set; } = string.Empty;
+    [Parameter] public int ProductoId { get; set; }
+    [Parameter] public int Cantidad { get; set; }
+    [Parameter] public bool Deshabilitado { get; set; }
+    [Parameter] public List<UnidadInventarioDto> Seleccionadas { get; set; } = [];
+    [Parameter] public IReadOnlyCollection<int> OtrasUnidades { get; set; } = [];
+    private IReadOnlyCollection<int> IdsExcluidos => OtrasUnidades.Concat(Seleccionadas.Select(x => x.Id)).ToArray();
+    private DisponibilidadReservaDto? Disponibilidad;
+    private string? Error;
+    private int Cargado;
+    private bool Aceptada;
+    private int Revision;
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Cargado == ProductoId) return;
+        Cargado = ProductoId;
+        Aceptada = Seleccionadas.Count > 0;
+        try
+        {
+            await using var scope = Scopes.CreateAsyncScope();
+            Disponibilidad = await scope.ServiceProvider.GetRequiredService<ISeleccionOperativaService>().DisponibilidadAsync(ProductoId);
+        }
+        catch (Exception ex) { Logger.LogError(ex, "No se pudo consultar disponibilidad para reserva."); Error = "No pudimos consultar el inventario; puedes continuar sin reserva o volver a seleccionar el producto."; }
+    }
+    private void Aceptar()
+    {
+        if (Deshabilitado) return;
+        Aceptada = true;
+        if (Disponibilidad?.Unica is { } unica && !IdsExcluidos.Contains(unica.Id)) Agregar(unica);
+    }
+    private void Agregar(UnidadInventarioDto? unidad)
+    {
+        if (Deshabilitado || unidad is null || Seleccionadas.Count >= Cantidad || IdsExcluidos.Contains(unidad.Id)) return;
+        Seleccionadas.Add(unidad); Revision++;
+    }
+    private void Quitar(UnidadInventarioDto unidad) { if (!Deshabilitado) Seleccionadas.Remove(unidad); }
+    private void Continuar() { if (!Deshabilitado) { Seleccionadas.Clear(); Aceptada = false; } }
+}

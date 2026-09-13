@@ -323,8 +323,9 @@ public sealed class PedidosUiIntegracionTests : PruebaWebAislada
 
         var contenido = WebUtility.HtmlDecode(await cliente.GetStringAsync("/pedidos/nuevo"));
 
-        Assert.Contains("Selecciona un cliente", contenido);
-        Assert.Contains("Selecciona un producto", contenido);
+        Assert.Contains("Buscar por nombre completo o teléfono", contenido);
+        Assert.Contains("Buscar por nombre, código de barras o código del sistema", contenido);
+        Assert.Contains("type=\"search\"", contenido);
         Assert.Contains("Precio unitario", contenido);
         Assert.Contains("Canal de venta", contenido);
         Assert.Contains("Presencial", contenido);

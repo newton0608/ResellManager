@@ -1,0 +1,31 @@
+@inject IServiceScopeFactory Scopes
+<BuscadorEntidad TItem="UnidadInventarioDto" Id="@Id" Etiqueta="Unidad física"
+    Placeholder="Buscar unidad, producto o código de barras" Seleccionado="Seleccionado"
+    TextoSeleccionado="@(Seleccionado is null ? null : Seleccionado.Producto + " · " + Seleccionado.CodigoInterno)"
+    Deshabilitado="Deshabilitado" Buscar="BuscarAsync" OnSeleccionado="ElegirAsync">
+    <Resultado Context="unidad">
+        <strong>@unidad.Producto · @unidad.CodigoInterno</strong>
+        <span>Costo @VentaPresentacion.Moneda(unidad.Costo) @(unidad.PedidoReservaId.HasValue ? "· Reservada para este pedido" : "· Sin reserva")</span>
+    </Resultado>
+</BuscadorEntidad>
+@if (Seleccionado?.PedidoReservaId is not null)
+{
+    <p class="field-help">Unidad reservada para este pedido.</p>
+}
+@code {
+    [Parameter, EditorRequired] public string Id { get; set; } = string.Empty;
+    [Parameter] public UnidadInventarioDto? Seleccionado { get; set; }
+    [Parameter] public int? ProductoId { get; set; }
+    [Parameter] public int? PedidoId { get; set; }
+    [Parameter] public IReadOnlyCollection<int> Excluir { get; set; } = [];
+    [Parameter] public bool Deshabilitado { get; set; }
+    [Parameter] public EventCallback<UnidadInventarioDto?> OnSeleccionado { get; set; }
+    private Task ElegirAsync(UnidadInventarioDto? unidad) => unidad is not null && Excluir.Contains(unidad.Id)
+        ? Task.CompletedTask : OnSeleccionado.InvokeAsync(unidad);
+    private async Task<IReadOnlyList<UnidadInventarioDto>> BuscarAsync(string termino, CancellationToken ct)
+    {
+        await using var scope = Scopes.CreateAsyncScope();
+        return await scope.ServiceProvider.GetRequiredService<ISeleccionOperativaService>()
+            .BuscarUnidadesAsync(termino, ProductoId, PedidoId, Excluir, ct: ct);
+    }
+}

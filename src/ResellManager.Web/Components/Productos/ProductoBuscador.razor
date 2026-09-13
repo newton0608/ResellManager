@@ -53,7 +53,7 @@
             <p class="field-help">Se muestran hasta @Limite resultados. Precisa la búsqueda si no encuentras el producto.</p>
         }
     }
-    @if (MostrarResultados && Resultados.Count == 0 && Error is null)
+    @if (MostrarResultados && Resultados.Count == 0 && Error is null && OnRegistrar.HasDelegate)
     {
         <button class="inline-button" type="button" disabled="@Deshabilitado" @onclick="RegistrarAsync">Agregar producto</button>
     }

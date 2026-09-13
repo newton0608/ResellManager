@@ -1,6 +1,6 @@
 @inject IServiceScopeFactory ScopeFactory
 
-<BuscadorEntidad TItem="ClienteDto" Id="pago-cliente" Etiqueta="Cliente"
+<BuscadorEntidad TItem="ClienteDto" Id="@Id" Etiqueta="Cliente"
                  Placeholder="Buscar por nombre completo o teléfono"
                  SinResultados="No se encontraron clientes. Puedes registrar uno desde Clientes."
                  Seleccionado="Seleccionado" TextoSeleccionado="@(Seleccionado is null ? null : ClientePresentacion.NombreCompleto(Seleccionado))"
@@ -12,6 +12,7 @@
 </BuscadorEntidad>
 
 @code {
+    [Parameter] public string Id { get; set; } = "pago-cliente";
     [Parameter] public ClienteDto? Seleccionado { get; set; }
     [Parameter] public bool Deshabilitado { get; set; }
     [Parameter] public EventCallback<ClienteDto?> OnSeleccionado { get; set; }
