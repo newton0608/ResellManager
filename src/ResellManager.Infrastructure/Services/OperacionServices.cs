@@ -146,7 +146,7 @@ public sealed class PedidoService(ResellManagerDbContext db) : IPedidoService
             Observaciones = x.Observaciones?.Trim(),
         };
 
-    private static IQueryable<PedidoDto> Query(IQueryable<Pedido> source) =>
+    internal static IQueryable<PedidoDto> Query(IQueryable<Pedido> source) =>
         source.AsNoTracking()
             .Select(x => new PedidoDto(
                 x.Id,

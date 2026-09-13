@@ -434,7 +434,7 @@ public sealed class InventarioService(ResellManagerDbContext db) : IInventarioSe
         return ServiceResult<UnidadInventarioDto>.Ok(result);
     }
 
-    private static IQueryable<UnidadInventarioDto> Query(IQueryable<UnidadInventario> source) =>
+    internal static IQueryable<UnidadInventarioDto> Query(IQueryable<UnidadInventario> source) =>
         source
             .AsNoTracking()
             .Select(x => new UnidadInventarioDto(
