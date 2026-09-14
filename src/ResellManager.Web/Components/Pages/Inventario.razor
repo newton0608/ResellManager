@@ -61,6 +61,8 @@
     </div>
 }
 
+<RecepcionCompras OnRecibido="RecargarDespuesDeOperacionAsync" />
+
 @if (Cargando)
 {
     <div class="loading-state" role="status" aria-live="polite">
@@ -82,26 +84,6 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage) && Unidades.Count == 0)
 }
 else if (string.IsNullOrWhiteSpace(ErrorMessage))
 {
-    @if (Unidades.Any(InventarioPresentacion.PuedeRecibirse))
-    {
-        <section class="inventory-reception" aria-labelledby="titulo-recepcion">
-            <div>
-                <p class="eyebrow">Ingreso físico</p>
-                <h2 id="titulo-recepcion">Recepción de mercancía</h2>
-                <p>Selecciona unidades compradas o en tránsito. La recepción las marcará como disponibles sin alterar su reserva.</p>
-            </div>
-            <div class="reception-controls">
-                <div class="form-field">
-                    <label for="fecha-recepcion">Fecha de recepción</label>
-                    <input id="fecha-recepcion" type="date" @bind="FechaRecepcion" />
-                </div>
-                <button class="primary-button" type="button" disabled="@(Ocupado || UnidadesSeleccionadas.Count == 0)"
-                        @onclick="RevisarRecepcion">
-                    @(ProcesandoRecepcion ? "Procesando..." : $"Recibir ({UnidadesSeleccionadas.Count})")
-                </button>
-            </div>
-        </section>
-    }
 
     <section class="data-panel" aria-labelledby="titulo-listado-inventario">
         <div class="data-panel-heading">
@@ -154,14 +136,6 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
                                 <span class="table-secondary">Costo @InventarioPresentacion.Moneda(unidad.Costo)</span>
                             </td>
                             <td class="actions-cell inventory-actions-cell">
-                                @if (InventarioPresentacion.PuedeRecibirse(unidad))
-                                {
-                                    <label class="reception-check">
-                                        <input type="checkbox" checked="@UnidadesSeleccionadas.Contains(unidad.Id)"
-                                               disabled="@Ocupado" @onchange="e => SeleccionarUnidad(unidad.Id, e.Value)" />
-                                        Recibir
-                                    </label>
-                                }
                                 @if (siguienteEstado.HasValue)
                                 {
                                     <button class="table-action button-link" type="button" disabled="@Ocupado"
@@ -210,17 +184,9 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
                         <div><dt>Origen</dt><dd>@InventarioPresentacion.Origen(unidad.OrigenCompra)</dd></div>
                         <div><dt>Costo de unidad</dt><dd>@InventarioPresentacion.Moneda(unidad.Costo)</dd></div>
                     </dl>
-                    @if (InventarioPresentacion.PuedeRecibirse(unidad) || siguienteEstado.HasValue)
+                    @if (siguienteEstado.HasValue)
                     {
                         <div class="entity-card-actions inventory-card-actions">
-                            @if (InventarioPresentacion.PuedeRecibirse(unidad))
-                            {
-                                <label class="reception-check mobile-reception-check">
-                                    <input type="checkbox" checked="@UnidadesSeleccionadas.Contains(unidad.Id)"
-                                           disabled="@Ocupado" @onchange="e => SeleccionarUnidad(unidad.Id, e.Value)" />
-                                    Seleccionar para recepción
-                                </label>
-                            }
                             @if (siguienteEstado.HasValue)
                             {
                                 <button class="secondary-button" type="button" disabled="@Ocupado"
@@ -236,39 +202,18 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
     </section>
 }
 
-@if (RevisandoRecepcion || UnidadEntrega is not null)
+@if (UnidadEntrega is not null)
 {
-    <ConfirmacionOperacion Titulo="@(RevisandoRecepcion ? "Confirmar recepción" : "Confirmar entrega")"
-                           TextoConfirmar="@(RevisandoRecepcion ? "Recibir mercancía" : "Confirmar entrega")"
-                           TextoEditar="Cancelar" Ocupado="Ocupado" Error="@ErrorMessage"
-                           OnEditar="CerrarRevisionInventario" OnConfirmar="ConfirmarInventarioAsync">
-        @if (RevisandoRecepcion)
-        {
-            <p>@UnidadesSeleccionadas.Count unidades pasarán a Disponible con fecha @FechaRecepcion.ToString("dd/MM/yyyy"). Sus reservas se conservan.</p>
-            <ul>
-                @foreach (var unidad in Unidades.Where(x => UnidadesSeleccionadas.Contains(x.Id)))
-                {
-                    <li>@unidad.Producto · @unidad.CodigoInterno</li>
-                }
-            </ul>
-        }
-        else if (UnidadEntrega is not null)
-        {
-            <p>@UnidadEntrega.Producto · @UnidadEntrega.CodigoInterno</p>
-            <p>La unidad pasará de Vendida a Entregada. Después no podrá cancelarse la venta por el flujo normal.</p>
-        }
+    <ConfirmacionOperacion Titulo="Confirmar entrega" TextoConfirmar="Confirmar entrega"
+        TextoEditar="Cancelar" Ocupado="Ocupado" Error="@ErrorMessage"
+        OnEditar="CerrarRevisionInventario" OnConfirmar="ConfirmarInventarioAsync">
+        <p>@UnidadEntrega.Producto · @UnidadEntrega.CodigoInterno</p>
+        <p>La unidad pasará de Vendida a Entregada. Después no podrá cancelarse la venta por el flujo normal.</p>
     </ConfirmacionOperacion>
 }
 
 @code {
-    private bool RevisandoRecepcion { get; set; }
     private UnidadInventarioDto? UnidadEntrega { get; set; }
-    private void RevisarRecepcion()
-    {
-        if (Ocupado || UnidadesSeleccionadas.Count == 0) return;
-        ErrorMessage = null;
-        RevisandoRecepcion = true;
-    }
     private Task RevisarCambioAsync(UnidadInventarioDto unidad, EstadoUnidadInventario estado)
     {
         if (Ocupado) return Task.CompletedTask;
@@ -280,32 +225,27 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
     private void CerrarRevisionInventario()
     {
         if (Ocupado) return;
-        RevisandoRecepcion = false;
         UnidadEntrega = null;
     }
     private async Task ConfirmarInventarioAsync()
     {
         if (Ocupado) return;
-        if (RevisandoRecepcion) await RegistrarRecepcionAsync();
-        else if (UnidadEntrega is not null) await CambiarEstadoAsync(UnidadEntrega, EstadoUnidadInventario.Entregada);
+        if (UnidadEntrega is not null) await CambiarEstadoAsync(UnidadEntrega, EstadoUnidadInventario.Entregada);
         if (ErrorMessage is null) CerrarRevisionInventario();
     }
     [SupplyParameterFromQuery(Name = "estado")]
     public string? EstadoConsulta { get; set; }
     private IReadOnlyList<UnidadInventarioDto> Unidades { get; set; } = [];
-    private HashSet<int> UnidadesSeleccionadas { get; } = [];
     private string Termino { get; set; } = string.Empty;
     private EstadoUnidadInventario? EstadoFiltro { get; set; }
-    private DateOnly FechaRecepcion { get; set; } = DateOnly.FromDateTime(DateTime.Today);
     private bool BusquedaActiva { get; set; }
     private bool Cargando { get; set; } = true;
-    private bool ProcesandoRecepcion { get; set; }
     private int? UnidadProcesandoId { get; set; }
     private string? ErrorMessage { get; set; }
     private string? MensajeExito { get; set; }
 
     private bool FiltrosActivos => !string.IsNullOrWhiteSpace(Termino) || EstadoFiltro.HasValue;
-    private bool Ocupado => Cargando || ProcesandoRecepcion || UnidadProcesandoId.HasValue;
+    private bool Ocupado => Cargando || UnidadProcesandoId.HasValue;
 
     protected override Task OnParametersSetAsync()
     {
@@ -323,7 +263,6 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
         try
         {
             Unidades = await InventarioService.ListarAsync();
-            SincronizarSeleccion();
         }
         catch (Exception ex)
         {
@@ -352,7 +291,6 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
         try
         {
             Unidades = await InventarioService.BuscarAsync(Termino, EstadoFiltro);
-            SincronizarSeleccion();
         }
         catch (Exception ex)
         {
@@ -380,51 +318,6 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
 
     private Task RecargarAsync() => BusquedaActiva ? BuscarAsync() : CargarInventarioAsync();
 
-    private void SeleccionarUnidad(int id, object? valor)
-    {
-        if (valor is true)
-            UnidadesSeleccionadas.Add(id);
-        else
-            UnidadesSeleccionadas.Remove(id);
-    }
-
-    private async Task RegistrarRecepcionAsync()
-    {
-        if (Ocupado || UnidadesSeleccionadas.Count == 0)
-            return;
-
-        ProcesandoRecepcion = true;
-        ErrorMessage = null;
-        MensajeExito = null;
-
-        try
-        {
-            var cantidad = UnidadesSeleccionadas.Count;
-            var resultado = await InventarioService.RegistrarRecepcionAsync(
-                new RecepcionMercanciaInput(FechaRecepcion, UnidadesSeleccionadas.ToArray()));
-
-            if (!resultado.IsSuccess)
-            {
-                ErrorMessage = resultado.ErrorMessage ?? "No fue posible registrar la recepción.";
-                return;
-            }
-
-            UnidadesSeleccionadas.Clear();
-            MensajeExito = cantidad == 1
-                ? "La unidad fue recibida y ahora está disponible."
-                : $"Las {cantidad} unidades fueron recibidas y ahora están disponibles.";
-            await RecargarDespuesDeOperacionAsync();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "No fue posible registrar la recepción de mercancía.");
-            ErrorMessage = "No pudimos registrar la recepción. Intenta nuevamente.";
-        }
-        finally
-        {
-            ProcesandoRecepcion = false;
-        }
-    }
 
     private async Task CambiarEstadoAsync(UnidadInventarioDto unidad, EstadoUnidadInventario estado)
     {
@@ -468,9 +361,4 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
         MensajeExito = mensaje;
     }
 
-    private void SincronizarSeleccion()
-    {
-        var seleccionables = Unidades.Where(InventarioPresentacion.PuedeRecibirse).Select(x => x.Id).ToHashSet();
-        UnidadesSeleccionadas.RemoveWhere(id => !seleccionables.Contains(id));
-    }
 }

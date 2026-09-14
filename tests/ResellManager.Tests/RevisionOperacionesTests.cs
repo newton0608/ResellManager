@@ -90,27 +90,27 @@ public sealed class RevisionOperacionesTests
     {
         await using var test = await TestDatabase.CreateAsync();
         var unidad = await test.CrearUnidadImportadaAsync("COM-INV-REV");
-        if (entrega) { unidad.Estado = EstadoUnidadInventario.Vendida; await test.Db.SaveChangesAsync(); }
+        if (!entrega)
+        {
+            await CierreV1OperativoTests.VerificarConfirmacionRecepcion(test, unidad);
+            return;
+        }
+        unidad.Estado = EstadoUnidadInventario.Vendida;
+        await test.Db.SaveChangesAsync();
         var estadoInicial = unidad.Estado;
         var pagina = new Inventario();
         Set(pagina, "InventarioService", new InventarioService(test.Db));
         Set(pagina, "Logger", NullLogger<Inventario>.Instance);
         await CallAsync(pagina, "CargarInventarioAsync");
         var dto = Assert.Single(Get<IReadOnlyList<UnidadInventarioDto>>(pagina, "Unidades"));
-        if (entrega) await CallAsync(pagina, "RevisarCambioAsync", dto, EstadoUnidadInventario.Entregada);
-        else
-        {
-            Get<HashSet<int>>(pagina, "UnidadesSeleccionadas").Add(unidad.Id);
-            Call(pagina, "RevisarRecepcion");
-        }
+        await CallAsync(pagina, "RevisarCambioAsync", dto, EstadoUnidadInventario.Entregada);
         Assert.Equal(estadoInicial, unidad.Estado);
         Call(pagina, "CerrarRevisionInventario");
         await CallAsync(pagina, "ConfirmarInventarioAsync");
         Assert.Equal(estadoInicial, unidad.Estado);
-        if (entrega) await CallAsync(pagina, "RevisarCambioAsync", dto, EstadoUnidadInventario.Entregada);
-        else Call(pagina, "RevisarRecepcion");
+        await CallAsync(pagina, "RevisarCambioAsync", dto, EstadoUnidadInventario.Entregada);
         await CallAsync(pagina, "ConfirmarInventarioAsync");
-        Assert.Equal(entrega ? EstadoUnidadInventario.Entregada : EstadoUnidadInventario.Disponible, unidad.Estado);
+        Assert.Equal(EstadoUnidadInventario.Entregada, unidad.Estado);
     }
 
     [Fact]
