@@ -10,8 +10,7 @@
     box-sizing: border-box;
 }
 
-.reservation-prompt > *,
-.reservation-prompt-picker ::deep .form-field {
+.reservation-prompt > * {
     min-width: 0;
     max-width: 100%;
     overflow-wrap: normal;
@@ -21,11 +20,15 @@
 .reservation-prompt p { margin: 0; }
 
 .reservation-prompt-actions {
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
     align-items: stretch;
 }
 
 .reservation-prompt button {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
     white-space: normal;
     overflow-wrap: normal;
     word-break: normal;
@@ -53,7 +56,7 @@
 
 @media (min-width: 48rem) {
     .reservation-prompt-actions {
-        flex-direction: row;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         align-items: center;
     }
 

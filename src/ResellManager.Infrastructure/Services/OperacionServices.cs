@@ -233,6 +233,13 @@ public sealed class VentaService(ResellManagerDbContext db) : IVentaService
             }
         }
 
+        // Completar el pedido libera también reservas sustituidas, sin alterar su estado físico.
+        var reservasRestantes = await db.UnidadesInventario
+            .Where(x => x.DetallePedidoReserva != null && x.DetallePedidoReserva.PedidoId == pedido.Id)
+            .ToListAsync(ct);
+        foreach (var unidad in reservasRestantes)
+            unidad.DetallePedidoReservaId = null;
+
         pedido.Estado = EstadoPedido.Completado;
         db.Ventas.Add(venta);
         await db.SaveChangesAsync(ct);

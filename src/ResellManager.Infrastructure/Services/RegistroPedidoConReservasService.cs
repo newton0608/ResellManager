@@ -28,7 +28,9 @@ public sealed class RegistroPedidoConReservasService(IServiceScopeFactory scopes
         await using var tx = await db.Database.BeginTransactionAsync(ct);
         var unidades = await db.UnidadesInventario.AsNoTracking().Where(x => ids.Contains(x.Id)).ToListAsync(ct);
         if (unidades.Count != ids.Length || reservas.Any(r => r.Unidades.Any(id => !unidades.Any(u => u.Id == id
-            && u.ProductoId == detalles[r.IndiceDetalle].ProductoId && u.Estado == EstadoUnidadInventario.Disponible && u.DetallePedidoReservaId == null))))
+            && u.ProductoId == detalles[r.IndiceDetalle].ProductoId
+            && u.Estado is EstadoUnidadInventario.Comprada or EstadoUnidadInventario.EnTransito or EstadoUnidadInventario.Disponible
+            && u.DetallePedidoReservaId == null))))
             return ServiceResult<PedidoDto>.Failure("Una unidad elegida ya no está disponible o recibió otra reserva. Edita la selección; no se creó el pedido.");
 
         var pedidos = scope.ServiceProvider.GetRequiredService<IPedidoService>();

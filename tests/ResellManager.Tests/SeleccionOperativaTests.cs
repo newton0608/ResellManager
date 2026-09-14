@@ -116,6 +116,7 @@ public sealed class SeleccionOperativaTests
     [InlineData("cantidad")]
     [InlineData("catalogo")]
     [InlineData("vendida")]
+    [InlineData("entregada")]
     [InlineData("ajena")]
     [InlineData("producto")]
     [InlineData("inexistente")]
@@ -130,6 +131,7 @@ public sealed class SeleccionOperativaTests
         if (caso == "cantidad") reservas = [new(0, [unidad.Id, dos.Id])];
         if (caso == "catalogo") input = input with { TipoPedido = TipoPedido.Catalogo };
         if (caso == "vendida") unidad.Estado = EstadoUnidadInventario.Vendida;
+        if (caso == "entregada") unidad.Estado = EstadoUnidadInventario.Entregada;
         if (caso == "producto") unidad.ProductoId = (await test.CrearProductoAsync("OTRO")).Id;
         if (caso == "inexistente") reservas = [new(0, [int.MaxValue])];
         if (caso == "ajena")

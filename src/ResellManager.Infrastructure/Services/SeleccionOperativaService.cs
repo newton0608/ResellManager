@@ -38,9 +38,17 @@ public sealed class SeleccionOperativaService(ResellManagerDbContext db) : ISele
             .ThenByDescending(x => x.CodigoInterno.ToLower() == texto).ThenBy(x => x.CodigoInterno).Take(12)).ToListAsync(ct);
     }
 
+    private IQueryable<UnidadInventario> Reservables(int productoId) => db.UnidadesInventario.AsNoTracking()
+        .Where(x => x.ProductoId == productoId && x.DetallePedidoReservaId == null
+            && (x.Estado == EstadoUnidadInventario.Comprada || x.Estado == EstadoUnidadInventario.EnTransito
+                || x.Estado == EstadoUnidadInventario.Disponible));
+
+    public async Task<IReadOnlyList<UnidadInventarioDto>> ListarReservablesAsync(int productoId, CancellationToken ct = default) =>
+        await InventarioService.Query(Reservables(productoId).OrderBy(x => x.CodigoInterno)).ToListAsync(ct);
+
     public async Task<DisponibilidadReservaDto> DisponibilidadAsync(int productoId, CancellationToken ct = default)
     {
-        var consulta = Elegibles(productoId, null);
+        var consulta = Reservables(productoId);
         var cantidad = await consulta.CountAsync(ct);
         return new(cantidad, cantidad == 1 ? await InventarioService.Query(consulta).SingleAsync(ct) : null);
     }
@@ -53,6 +61,7 @@ public sealed class SeleccionOperativaService(ResellManagerDbContext db) : ISele
         var reservas = await db.UnidadesInventario.AsNoTracking()
             .Where(x => x.DetallePedidoReserva != null && x.DetallePedidoReserva.Pedido.ClienteId == clienteId
                 && x.DetallePedidoReserva.Pedido.Estado != EstadoPedido.Cancelado
+                && x.DetallePedidoReserva.Pedido.Estado != EstadoPedido.Completado
                 && x.Estado != EstadoUnidadInventario.Entregada && x.Estado != EstadoUnidadInventario.Vendida)
             .Select(x => new PendienteClienteDto(x.Id, x.CodigoInterno, x.Producto.Nombre, x.DetallePedidoReserva!.PedidoId,
                 x.DetallePedidoReserva.Pedido.CodigoInterno, x.Estado, false)).ToListAsync(ct);
