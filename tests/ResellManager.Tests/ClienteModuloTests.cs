@@ -97,7 +97,7 @@ public sealed class ClienteModuloIntegracionTests : PruebaWebAislada
     }
 
     [Fact]
-    public async Task ListadoYDetalle_MuestranSaldosEHistorialProvistosPorIClienteService()
+    public async Task ListadoYDetalle_MuestranSaldoCompletoYActividadMensualSinCargarHistorialCompleto()
     {
         var servicio = new ClienteServiceFalso();
         using var aplicacion = factory.WithWebHostBuilder(builder =>
@@ -106,6 +106,8 @@ public sealed class ClienteModuloIntegracionTests : PruebaWebAislada
             {
                 services.RemoveAll<IClienteService>();
                 services.AddSingleton<IClienteService>(servicio);
+                services.RemoveAll<IActividadClienteService>();
+                services.AddSingleton<IActividadClienteService>(servicio);
             });
         });
         using var cliente = CrearCliente(aplicacion);
@@ -122,7 +124,11 @@ public sealed class ClienteModuloIntegracionTests : PruebaWebAislada
         Assert.Contains("Pagos y abonos", detalle);
         Assert.Contains("Q 125.00", detalle);
         Assert.True(servicio.ObtenerSaldoFueInvocado);
-        Assert.True(servicio.ObtenerHistorialFueInvocado);
+        Assert.False(servicio.ObtenerHistorialFueInvocado);
+        Assert.Equal(1, servicio.ConsultasVentas);
+        Assert.Equal(1, servicio.ConsultasPagos);
+        Assert.Contains("Agosto 2026", detalle);
+        Assert.Contains("Cargar julio 2026", detalle);
     }
 
     private static HttpClient CrearCliente(WebApplicationFactory<Program> aplicacion) =>
@@ -161,13 +167,33 @@ public sealed class ClienteModuloIntegracionTests : PruebaWebAislada
         return WebUtility.HtmlDecode(valor.Groups[1].Value);
     }
 
-    private sealed class ClienteServiceFalso : IClienteService
+    private sealed class ClienteServiceFalso : IClienteService, IActividadClienteService
     {
         private readonly ClienteDto cliente =
             new(7, "Cliente", "Prueba", "5555-0707", "Ciudad de Guatemala", "Observación", 987.65m);
 
         public bool ObtenerSaldoFueInvocado { get; private set; }
         public bool ObtenerHistorialFueInvocado { get; private set; }
+        public int ConsultasVentas { get; private set; }
+        public int ConsultasPagos { get; private set; }
+
+        public Task<PaginaMes<VentaDto>> VentasAsync(int clienteId, DateOnly? mes = null, CancellationToken ct = default)
+        {
+            Assert.Equal(cliente.Id, clienteId);
+            Assert.Null(mes);
+            ConsultasVentas++;
+            return Task.FromResult(new PaginaMes<VentaDto>(new(2026, 8, 1),
+                [new(10, "VEN-SERVICIO", new(2026, 8, 20), EstadoVenta.Registrada, "Venta desde el servicio", 20, cliente.Id, "Cliente Prueba", 500m, [])], new(2026, 7, 1)));
+        }
+
+        public Task<PaginaMes<PagoDto>> PagosAsync(int clienteId, DateOnly? mes = null, CancellationToken ct = default)
+        {
+            Assert.Equal(cliente.Id, clienteId);
+            Assert.Null(mes);
+            ConsultasPagos++;
+            return Task.FromResult(new PaginaMes<PagoDto>(new(2026, 8, 1),
+                [new(11, cliente.Id, "Cliente Prueba", new(2026, 8, 21), 125m, MetodoPago.Efectivo, "REF-SERVICIO", "Abono desde el servicio")], null));
+        }
 
         public Task<ServiceResult<ClienteDto>> CrearAsync(
             ClienteInput input,

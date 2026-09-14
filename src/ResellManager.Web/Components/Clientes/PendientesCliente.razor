@@ -1,11 +1,11 @@
 @inject IServiceScopeFactory Scopes
 @inject ILogger<PendientesCliente> Logger
 <section class="form-panel" aria-labelledby="titulo-pendientes-cliente">
-    <h2 id="titulo-pendientes-cliente">Reservas y entregas pendientes</h2>
+    <h2 id="titulo-pendientes-cliente"><button type="button" class="history-month-toggle" aria-expanded="@Abierta" @onclick="() => Abierta = !Abierta"><span aria-hidden="true">@(Abierta ? "▼" : "▶")</span> Reservas y entregas pendientes (@Unidades.Count)</button></h2>
     @if (Cargando) { <p role="status">Consultando unidades...</p> }
     else if (Error is not null) { <p class="mensaje-error" role="alert">@Error</p><button class="secondary-button" @onclick="CargarAsync">Reintentar</button> }
-    else if (Unidades.Count == 0) { <p>No hay reservas ni entregas físicas pendientes.</p> }
-    else
+    else if (Abierta && Unidades.Count == 0) { <p>No hay reservas ni entregas físicas pendientes.</p> }
+    else if (Abierta)
     {
         @foreach (var unidad in Unidades)
         {
@@ -22,6 +22,7 @@
     [Parameter] public int ClienteId { get; set; }
     private int? Cargado;
     private bool Cargando;
+    private bool Abierta;
     private string? Error;
     private IReadOnlyList<PendienteClienteDto> Unidades = [];
     protected override Task OnParametersSetAsync() => Cargado == ClienteId ? Task.CompletedTask : CargarAsync();
@@ -33,6 +34,7 @@
         {
             await using var scope = Scopes.CreateAsyncScope();
             Unidades = await scope.ServiceProvider.GetRequiredService<ISeleccionOperativaService>().PendientesClienteAsync(ClienteId);
+            Abierta = Unidades.Count > 0;
             Cargado = ClienteId;
         }
         catch (Exception ex) { Logger.LogError(ex, "No fue posible consultar pendientes del cliente."); Error = "No pudimos consultar las reservas y entregas. Intenta nuevamente."; }
