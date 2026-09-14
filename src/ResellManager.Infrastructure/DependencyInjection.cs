@@ -38,6 +38,8 @@ public static class DependencyInjection
             .AddDefaultTokenProviders();
 
         services.AddScoped<IClienteService, ClienteService>();
+        services.AddScoped<IActividadClienteService, ActividadClienteService>();
+        services.AddScoped<IRecepcionCompraService, RecepcionCompraService>();
         services.AddScoped<ICategoriaService, CategoriaService>();
         services.AddScoped<IProductoService, ProductoService>();
         services.AddScoped<IProveedorService, ProveedorService>();

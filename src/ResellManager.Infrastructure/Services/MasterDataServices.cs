@@ -150,7 +150,7 @@ public sealed class ClienteService(ResellManagerDbContext db) : IClienteService
         );
     }
 
-    private static VentaDto MapVenta(Venta x) =>
+    internal static VentaDto MapVenta(Venta x) =>
         new(
             x.Id,
             x.CodigoInterno,

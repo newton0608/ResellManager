@@ -278,6 +278,10 @@ public sealed class InventarioService(ResellManagerDbContext db) : IInventarioSe
             return ServiceResult<IReadOnlyList<UnidadInventarioDto>>.Failure(
                 "Una o más unidades de inventario no existen."
             );
+        if (unidades.Select(x => x.DetalleCompra.CompraId).Distinct().Count() != 1)
+            return ServiceResult<IReadOnlyList<UnidadInventarioDto>>.Failure(
+                "Confirma la recepción de una sola compra a la vez."
+            );
         if (unidades.Any(x => x.DetalleCompra.Compra.Origen == OrigenCompra.Catalogo))
             return ServiceResult<IReadOnlyList<UnidadInventarioDto>>.Failure(
                 "Las compras de catálogo no generan unidades para recepción."
