@@ -59,7 +59,7 @@ Motivo:
 La fecha de compra y la fecha real de ingreso al inventario pueden ser distintas, especialmente en importaciones.
 
 Resultado:
-Se debe implementar un caso de uso para registrar recepción de mercancía y mover unidades compradas o en tránsito a disponibles.
+El caso de uso implementado registra fecha de ingreso y mueve unidades `Comprada` o `EnTransito` a `Disponible`, conservando las reservas vigentes. La operación se agrupa por Compra y Proveedor y admite recepción parcial: cada confirmación recibe solo las unidades seleccionadas de una misma Compra, nunca mezcla compras. Las no recibidas conservan su estado físico. Se revalidan los estados en backend antes de persistir.
 
 ## 008 Las ventas canceladas conservan historial.
 
@@ -255,4 +255,19 @@ Pedidos conserva Activos = Pendiente + Confirmado. Con entrega pendiente consult
 
 Los encabezados mensuales en español son presentación, no entidades de dominio: HistorialMensual prepara una sola colección de grupos para tabla y tarjetas, sin meses vacíos. Cada módulo conserva su propio historial. El formulario Desde/Hasta/Aplicar/Limpiar es compartido y mobile-first, manteniendo el date picker nativo y sus límites de ancho.
 
+ClienteDetalle consulta Ventas y Pagos incrementalmente e independientemente: carga mediante SQL un mes con actividad a la vez, comenzando por el más reciente de cada sección. `Cargar <mes año>` agrega el siguiente mes anterior con actividad, conservando los cargados y el orden fecha/Id descendente; no trae años completos para filtrar en memoria. El saldo actual considera toda la historia relevante. Pendientes se consulta por separado, sin límite de fecha: incluye reservas vigentes y unidades Vendida no entregadas; excluye reservas de pedidos Cancelado/Completado.
+
 Objetivo: localizar operaciones entre cientos o miles de registros y mantener contexto temporal. No se incorporan Informes, analytics, paginación compleja ni nuevos identificadores; no hay cambios de esquema, fórmulas financieras o reglas de Venta Directa.
+
+## 024 Un pedido completado no conserva reservas activas
+
+Motivo:
+Evitar unidades bloqueadas o «reservas fantasma» cuando una venta usa una unidad distinta de la previamente reservada.
+
+Resultado:
+
+- La venta sigue permitiendo sustituir la unidad reservada por otra del mismo producto, `Disponible` y sin reserva ajena, respetando las cantidades del pedido.
+- Al completar el pedido se liberan todas las reservas de todos sus detalles, incluidas las sobrantes o sustituidas. Pedido `Completado` implica cero reservas activas.
+- Solo las unidades incluidas en la venta pasan a `Vendida`; las restantes pierden únicamente `DetallePedidoReservaId` y conservan su estado físico (`Comprada`, `EnTransito` o `Disponible`).
+- La liberación, el registro de la venta y la finalización del pedido ocurren en la misma transacción; un fallo no confirma cambios parciales.
+- La consulta de pendientes del cliente excluye reservas de pedidos `Completado` y `Cancelado`, incluso si encuentra asociaciones históricas inconsistentes. Esto no implica una migración ni una limpieza retroactiva de datos.

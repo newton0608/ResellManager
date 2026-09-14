@@ -5,6 +5,7 @@
 - Registrar pagos al contado.
 - Registrar pedidos.
 - Registrar ventas completas a partir de un pedido.
+- Un pedido `Completado` no conserva reservas activas: registrar su venta completa libera todas las reservas restantes en la misma transacción, incluidas las sustituidas/no utilizadas, conservando el estado físico de esas unidades.
 - Una venta registrada no debe permitir agregar artículos posteriormente; una compra posterior del cliente debe registrarse como otro pedido y otra venta.
 - La edición futura de una venta, si se implementa, debe respetar la inmutabilidad de sus artículos y los invariantes de inventario, pagos e historial.
 - Cancelar una venta únicamente cuando no existan unidades entregadas y la operación no produzca saldo negativo por pagos ya registrados.
@@ -12,7 +13,7 @@
 - Cancelar reservas sin modificar el estado físico de la unidad.
 - Consultar unidades con reserva activa.
 - Un pedido de catálogo no debe reservar ni requerir unidades físicas de inventario.
-- Registrar recepción de mercancía.
+- Registrar recepción parcial de mercancía, conservando las reservas vigentes; cada confirmación incluye únicamente unidades de una misma compra.
 - Registrar compras locales.
 - Registrar compras de importación, catálogo y envíos del hijo según su flujo correspondiente.
 - Registrar clientes.

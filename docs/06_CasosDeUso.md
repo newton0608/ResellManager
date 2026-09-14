@@ -5,7 +5,7 @@
 - Registrar cliente.
 - Buscar cliente.
 - Consultar saldo.
-- Consultar historial de ventas y pagos.
+- Consultar ventas y pagos por meses de actividad incrementales e independientes, manteniendo el saldo global y las pendientes actuales sin límite temporal.
 
 ## Productos e inventario
 
@@ -15,7 +15,7 @@
 - Consultar unidades disponibles.
 - Buscar unidades.
 - Cambiar estado físico mediante las transiciones permitidas.
-- Registrar recepción de mercancía.
+- Registrar recepción parcial de una compra, sin mezclar compras ni alterar reservas vigentes.
 - Registrar entrega de una unidad vendida.
 
 ## Reservas y apartados
@@ -42,6 +42,8 @@
 
 - Registrar pedido.
 - Registrar venta completa desde un pedido.
+- Sustituir una unidad reservada por otra compatible disponible, sin reserva ajena.
+- Completar la venta liberando todas las reservas sobrantes o sustituidas del pedido, sin modificar el estado físico de las unidades no vendidas.
 - Validar correspondencia exacta de productos y cantidades entre pedido y venta.
 - Registrar venta de catálogo sin `UnidadInventario`.
 - Cancelar venta antes de entrega cuando no produzca saldo negativo.

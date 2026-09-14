@@ -16,11 +16,13 @@
 
 ✅ Unidades de inventario físicas.
 
-✅ Recepción de mercancía.
+✅ Recepción parcial agrupada por Compra y Proveedor: cada confirmación recibe solo unidades seleccionadas de una misma Compra, sin mezclar compras, y conserva las reservas. Las no recibidas permanecen Comprada/EnTransito.
 
 ✅ Estados físicos controlados de inventario.
 
 ✅ Reservas/apartados separadas del estado físico.
+
+✅ Reserva explícita al crear pedido mediante unidades del producto Comprada, EnTransito o Disponible, sin reserva ajena. Tras aceptar, la única opción puede autoseleccionarse; con varias se elige hasta la cantidad solicitada y se permite continuar sin reservar. Pedido + detalles + reservas se persisten únicamente al confirmar, en una transacción con revalidación. Catálogo no reserva inventario físico.
 
 ✅ Pedidos.
 
@@ -33,6 +35,8 @@ detalle. No se duplica en `Venta`; los pedidos históricos se migran a `Otro` y 
 `Presencial` automáticamente.
 
 ✅ Ventas completas asociadas a pedidos.
+
+✅ Al completar una venta se liberan todas las reservas del pedido en la misma transacción, incluidas las sustituidas/no utilizadas, conservando el estado físico de las unidades no vendidas. Un pedido Completado termina sin reservas activas.
 
 ✅ Venta presencial directa mediante creación automática de un `Pedido` de tipo `VentaDirecta`
 con código `PED-VD-<GUID>` y una `Venta` con código `VEN-VD-<GUID>`. Ambos códigos técnicos se generan
@@ -75,6 +79,8 @@ Los enlaces contextuales admiten `/clientes?saldo=pendiente` (Saldo > 0 provisto
 ✅ Módulo Blazor de clientes implementado en Fase 5.3: listado, búsqueda, registro, edición,
 detalle, consulta del saldo calculado por el backend e historial de ventas y pagos/abonos,
 con presentación responsive.
+
+✅ ClienteDetalle separa pendientes actuales (sin límite de antigüedad, excluyendo reservas de pedidos Cancelado/Completado) de Ventas y Pagos. Ambas secciones cargan meses con actividad bajo demanda, independientemente y mediante SQL; el saldo global no depende de los meses mostrados.
 
 ✅ Módulos Blazor de productos y categorías implementados en Fase 5.4: listado de ambos,
 búsqueda de productos, registro, edición y detalle de producto, selección de categorías reales,
@@ -142,7 +148,7 @@ que preserven relaciones e historial.
 
 ❌ Roles/permisos y administración de usuarios.
 
-❌ PostgreSQL, despliegue productivo y CI/CD complejo en esta fase de cierre.
+❌ PostgreSQL y CI/CD complejo. El despliegue productivo no se ejecutó como parte del cierre funcional: su preparación es el siguiente paso operativo V1, sujeto al [runbook de preparación](21_Despliegue_V1.md), sin declarar producción existente.
 
 ❌ Exportación y notificaciones.
 

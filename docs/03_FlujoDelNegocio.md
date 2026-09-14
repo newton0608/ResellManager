@@ -6,7 +6,7 @@
 2. Las unidades físicas se crean en estado `Comprada` y sin `FechaIngreso`.
 3. Opcionalmente pueden pasar a `EnTransito`.
 4. Una unidad puede quedar reservada para un pedido no catálogo mientras está `Comprada` o `EnTransito`.
-5. Al recibir la mercancía se registra `FechaIngreso` y la unidad pasa a `Disponible`, conservando cualquier reserva.
+5. La recepción se organiza por Compra y Proveedor. Cada confirmación recibe solo las unidades seleccionadas de una misma Compra: registra `FechaIngreso` y las pasa a `Disponible`, conservando reservas vigentes. Puede ser parcial; las no recibidas permanecen `Comprada`/`EnTransito`.
 6. Una venta válida cambia la unidad a `Vendida`.
 7. La entrega cambia la unidad de `Vendida` a `Entregada`.
 
@@ -31,10 +31,13 @@
 
 1. La intención del cliente se registra en `Pedido` y `DetallePedido`.
 2. Una unidad física existente puede asociarse al `DetallePedido` mediante una reserva.
+   Al crear el pedido, la selección explícita se limita a unidades del producto `Comprada`, `EnTransito` o `Disponible`, sin reserva ajena. Tras aceptar reservar, una única unidad elegible puede autoseleccionarse; si hay varias, se eligen hasta la cantidad solicitada. Es posible continuar sin reservar. La intención solo se persiste al confirmar, junto con pedido y detalles en una transacción con revalidación.
 3. La reserva no modifica el estado físico de la unidad.
 4. Un pedido `Catalogo` no puede reservar unidades físicas.
 5. Cancelar la reserva o el pedido libera la asociación sin alterar el estado físico.
 6. Una unidad reservada solo puede venderse para el pedido al que pertenece la reserva.
+7. Si la unidad reservada A aún está `Comprada` o `EnTransito`, la venta puede usar otra unidad B compatible `Disponible`, sin reserva ajena. Al registrar la venta completa, B pasa a `Vendida` y A pierde únicamente su reserva, conservando su estado físico previo. Lo mismo aplica a una reserva `Disponible` sustituida.
+8. En la misma transacción de venta se liberan todas las reservas de los detalles, no solo las de unidades vendidas, y se completa el pedido. Un pedido `Completado` termina sin reservas activas; las unidades no utilizadas no se cancelan ni eliminan.
 
 ## 5. Cobros
 

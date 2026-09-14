@@ -80,7 +80,8 @@
 - [x] Buscar cliente por los criterios soportados por `IClienteService`.
 - [x] Consultar detalle de cliente.
 
-- [x] Ver historial de ventas y pagos/abonos.
+- [x] Consultar Ventas y Pagos/abonos del cliente mediante carga mensual SQL incremental e independiente, conservando el saldo global.
+- [x] Separar pendientes actuales sin límite de antigüedad; excluir reservas de pedidos Cancelado/Completado.
 
 - [x] Consultar saldo calculado por el backend.
 
@@ -103,7 +104,7 @@
 - [x] Buscar y filtrar unidades por estado físico mediante el backend.
 - [x] Mostrar producto, identificación de unidad, compra/origen, ingreso y costo real de la unidad.
 - [x] Presentar el estado físico y la reserva comercial como conceptos separados.
-- [x] Registrar recepción de unidades compradas o en tránsito sin alterar reservas existentes.
+- [x] Registrar recepción parcial de unidades compradas o en tránsito, agrupada por Compra y Proveedor, sin alterar reservas existentes ni mezclar compras en una confirmación.
 - [x] Exponer únicamente las transiciones manuales `Comprada → EnTransito` y `Vendida → Entregada`.
 - [x] Integrar creación de unidades mediante la UI de compras; Inventario no crea unidades directamente y `CompraService` conserva la autoridad.
 - [x] Integrar creación y cancelación de reservas en la UI de pedidos; Inventario continúa como consulta del estado físico y la reserva.
@@ -142,7 +143,7 @@
 - [x] Mantener la regla de que toda venta tiene `PedidoId`; no existen ventas libres ni ventas sin pedido.
 - [x] Construir exactamente un detalle de venta por cada unidad solicitada en el pedido, sin venta parcial.
 - [x] Para venta física, seleccionar únicamente unidades `Disponible`, compatibles y sin reserva ajena, priorizando reservas del mismo pedido.
-- [x] Mantener la transición `Disponible → Vendida`, liberación de reserva y finalización del pedido exclusivamente en `VentaService`.
+- [x] Mantener en la misma transacción de `VentaService` la transición `Disponible → Vendida`, liberación de TODAS las reservas del pedido y su finalización. Las reservas sobrantes/sustituidas se liberan sin alterar el estado físico de unidades no vendidas; Pedido Completado implica cero reservas activas.
 - [x] Para catálogo, capturar manualmente `CostoUnitario` y `PrecioFinal` sin usar `UnidadInventario`.
 - [x] Cancelar ventas registradas mediante `IVentaService.CancelarAsync`, sin duplicar reglas de unidades, pedido o saldo en Blazor.
 - [x] Proteger registro y cancelación contra doble submit en UI.
