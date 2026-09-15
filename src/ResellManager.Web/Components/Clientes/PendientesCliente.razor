@@ -34,7 +34,7 @@
         {
             await using var scope = Scopes.CreateAsyncScope();
             Unidades = await scope.ServiceProvider.GetRequiredService<ISeleccionOperativaService>().PendientesClienteAsync(ClienteId);
-            Abierta = Unidades.Count > 0;
+            if (Cargado != ClienteId) Abierta = false;
             Cargado = ClienteId;
         }
         catch (Exception ex) { Logger.LogError(ex, "No fue posible consultar pendientes del cliente."); Error = "No pudimos consultar las reservas y entregas. Intenta nuevamente."; }

@@ -210,7 +210,17 @@ public sealed class CompraService(ResellManagerDbContext db) : ICompraService
                 ))
                 .ToList(),
             x.Comprobante?.RutaDocumento
-        );
+        )
+        {
+            Recepcion = x.Origen == OrigenCompra.Importacion
+                ? new ResumenRecepcionCompraDto(
+                    x.Detalles.Sum(d => d.UnidadesInventario.Count),
+                    x.Detalles.Sum(d => d.UnidadesInventario.Count(u => u.FechaIngreso.HasValue && u.Estado != EstadoUnidadInventario.Perdida)),
+                    x.Detalles.Sum(d => d.UnidadesInventario.Count(u => u.Estado == EstadoUnidadInventario.Comprada)),
+                    x.Detalles.Sum(d => d.UnidadesInventario.Count(u => u.Estado == EstadoUnidadInventario.EnTransito)),
+                    x.Detalles.Sum(d => d.UnidadesInventario.Count(u => u.Estado == EstadoUnidadInventario.Perdida)))
+                : null,
+        };
 }
 
 public sealed class InventarioService(ResellManagerDbContext db) : IInventarioService
@@ -298,6 +308,10 @@ public sealed class InventarioService(ResellManagerDbContext db) : IInventarioSe
             return ServiceResult<IReadOnlyList<UnidadInventarioDto>>.Failure(
                 "Una o más unidades ya están disponibles."
             );
+        if (unidades.Any(x => x.Estado == EstadoUnidadInventario.Perdida))
+            return ServiceResult<IReadOnlyList<UnidadInventarioDto>>.Failure(
+                "Una unidad perdida no puede recibirse."
+            );
 
         foreach (var unidad in unidades)
         {
@@ -351,6 +365,8 @@ public sealed class InventarioService(ResellManagerDbContext db) : IInventarioSe
             return ServiceResult<UnidadInventarioDto>.Failure(
                 "Una unidad vendida o entregada no puede reservarse."
             );
+        if (unidad.Estado == EstadoUnidadInventario.Perdida)
+            return ServiceResult<UnidadInventarioDto>.Failure("Una unidad perdida no puede reservarse.");
         if (
             unidad.DetallePedidoReservaId.HasValue
             && unidad.DetallePedidoReservaId.Value != detallePedidoId
@@ -418,7 +434,9 @@ public sealed class InventarioService(ResellManagerDbContext db) : IInventarioSe
             (unidad.Estado == EstadoUnidadInventario.Comprada
                 && estado == EstadoUnidadInventario.EnTransito)
             || (unidad.Estado == EstadoUnidadInventario.Vendida
-                && estado == EstadoUnidadInventario.Entregada);
+                && estado == EstadoUnidadInventario.Entregada)
+            || (unidad.Estado is EstadoUnidadInventario.Comprada or EstadoUnidadInventario.EnTransito
+                && estado == EstadoUnidadInventario.Perdida);
 
         if (!transicionManualValida)
         {
@@ -433,6 +451,8 @@ public sealed class InventarioService(ResellManagerDbContext db) : IInventarioSe
         }
 
         unidad.Estado = estado;
+        if (estado == EstadoUnidadInventario.Perdida)
+            unidad.DetallePedidoReservaId = null;
         await db.SaveChangesAsync(ct);
         var result = await Query(db.UnidadesInventario.Where(x => x.Id == id)).SingleAsync(ct);
         return ServiceResult<UnidadInventarioDto>.Ok(result);

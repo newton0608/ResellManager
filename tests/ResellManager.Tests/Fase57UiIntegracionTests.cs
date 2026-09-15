@@ -32,7 +32,9 @@ public sealed class Fase57UiIntegracionTests : PruebaWebAislada
         Assert.Contains($"/pedidos/nuevo?cliente={pedido.ClienteId}", detalle);
         Assert.Contains($"/ventas/nueva?modo=directa&cliente={pedido.ClienteId}", detalle);
         Assert.Contains("Reservas y entregas pendientes", detalle);
-        Assert.Contains(escenario.UnidadReservadaPropia, detalle);
+        Assert.DoesNotContain(escenario.UnidadReservadaPropia, detalle);
+        Assert.Contains(escenario.UnidadReservadaPropia,
+            (await new SeleccionOperativaService(db).PendientesClienteAsync(pedido.ClienteId)).Select(x => x.CodigoUnidad));
         foreach (var ruta in new[] { $"/pedidos/nuevo?cliente={pedido.ClienteId}", $"/ventas/nueva?modo=directa&cliente={pedido.ClienteId}" })
         {
             var html = WebUtility.HtmlDecode(await cliente.GetStringAsync(ruta));

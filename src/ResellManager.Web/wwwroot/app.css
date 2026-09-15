@@ -2123,6 +2123,12 @@ textarea {
   color: #6d28d9;
 }
 
+.inventory-status-lost {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
 .inventory-status-neutral,
 .no-reservation-badge {
   background: #f8fafc;

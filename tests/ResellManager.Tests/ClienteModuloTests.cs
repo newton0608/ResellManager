@@ -119,16 +119,16 @@ public sealed class ClienteModuloIntegracionTests : PruebaWebAislada
         Assert.Contains("Cliente Prueba", listado);
         Assert.Contains("Q 987.65", listado);
         Assert.Contains("Q 1,250.00", detalle);
-        Assert.Contains("VEN-SERVICIO", detalle);
-        Assert.Contains("Q 500.00", detalle);
+        Assert.DoesNotContain("VEN-SERVICIO", detalle);
+        Assert.DoesNotContain("Q 500.00", detalle);
         Assert.Contains("Pagos y abonos", detalle);
-        Assert.Contains("Q 125.00", detalle);
+        Assert.DoesNotContain("Q 125.00", detalle);
         Assert.True(servicio.ObtenerSaldoFueInvocado);
         Assert.False(servicio.ObtenerHistorialFueInvocado);
         Assert.Equal(1, servicio.ConsultasVentas);
         Assert.Equal(1, servicio.ConsultasPagos);
-        Assert.Contains("Agosto 2026", detalle);
-        Assert.Contains("Cargar julio 2026", detalle);
+        Assert.DoesNotContain("Agosto 2026", detalle);
+        Assert.DoesNotContain("Cargar julio 2026", detalle);
     }
 
     private static HttpClient CrearCliente(WebApplicationFactory<Program> aplicacion) =>

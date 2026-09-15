@@ -33,7 +33,7 @@
     private readonly List<PaginaMes<T>> Meses = [];
     private DateOnly? Anterior;
     private int? Cargado;
-    private bool Abierta = true;
+    private bool Abierta = false;
     private bool Cargando;
     private string? Error;
     private static string NombreMes(DateOnly mes) => System.Globalization.CultureInfo.GetCultureInfo("es-GT")
@@ -41,7 +41,7 @@
     protected override async Task OnParametersSetAsync()
     {
         if (Cargado == ClienteId) return;
-        Cargado = ClienteId; Meses.Clear(); Anterior = null; Abierta = true;
+        Cargado = ClienteId; Meses.Clear(); Anterior = null; Abierta = false;
         await CargarAsync();
     }
     private async Task CargarAsync()

@@ -51,6 +51,11 @@
     private string? Error;
     private string? Exito;
     protected override Task OnInitializedAsync() => CargarAsync();
+    public async Task RefrescarAsync()
+    {
+        await CargarAsync();
+        StateHasChanged();
+    }
     private async Task CargarAsync()
     {
         Cargando = true; Error = null;

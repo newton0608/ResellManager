@@ -62,7 +62,8 @@ public sealed class SeleccionOperativaService(ResellManagerDbContext db) : ISele
             .Where(x => x.DetallePedidoReserva != null && x.DetallePedidoReserva.Pedido.ClienteId == clienteId
                 && x.DetallePedidoReserva.Pedido.Estado != EstadoPedido.Cancelado
                 && x.DetallePedidoReserva.Pedido.Estado != EstadoPedido.Completado
-                && x.Estado != EstadoUnidadInventario.Entregada && x.Estado != EstadoUnidadInventario.Vendida)
+                && x.Estado != EstadoUnidadInventario.Entregada && x.Estado != EstadoUnidadInventario.Vendida
+                && x.Estado != EstadoUnidadInventario.Perdida)
             .Select(x => new PendienteClienteDto(x.Id, x.CodigoInterno, x.Producto.Nombre, x.DetallePedidoReserva!.PedidoId,
                 x.DetallePedidoReserva.Pedido.CodigoInterno, x.Estado, false)).ToListAsync(ct);
         var entregas = await db.DetallesVenta.AsNoTracking()

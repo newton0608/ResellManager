@@ -332,7 +332,7 @@ else
     private IReadOnlyList<UnidadInventarioDto> OpcionesPara(DetallePedidoDto detalle) =>
         Unidades.Where(x =>
                 x.ProductoId == detalle.ProductoId
-                && x.Estado is not EstadoUnidadInventario.Vendida and not EstadoUnidadInventario.Entregada
+                && x.Estado is not EstadoUnidadInventario.Vendida and not EstadoUnidadInventario.Entregada and not EstadoUnidadInventario.Perdida
                 && !x.DetallePedidoReservaId.HasValue)
             .OrderBy(x => x.Estado)
             .ThenBy(x => x.CodigoInterno)
