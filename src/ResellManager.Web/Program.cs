@@ -6,6 +6,7 @@ using ResellManager.Infrastructure;
 using ResellManager.Infrastructure.Storage;
 using ResellManager.Web.Components;
 using ResellManager.Web.Identity;
+using ResellManager.Web.Hosting;
 using ResellManager.Web.Inicializacion;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +19,8 @@ builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme)
     .AddIdentityCookies();
 
 builder.Services.AddAuthorization();
+
+builder.Services.AddProductionHosting(builder.Configuration);
 
 builder.Services.AddSingleton(TimeProvider.System);
 
@@ -53,7 +56,9 @@ builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.HttpOnly = true;
     options.Cookie.SameSite = SameSiteMode.Lax;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.Cookie.SecurePolicy = builder.Environment.IsProduction()
+        ? CookieSecurePolicy.Always
+        : CookieSecurePolicy.SameAsRequest;
     options.ExpireTimeSpan = TimeSpan.FromHours(8);
     options.LoginPath = "/login";
     options.AccessDeniedPath = "/login";
@@ -64,8 +69,12 @@ var app = builder.Build();
 
 // Validar la configuración definitiva del host antes de abrir SQLite o crear usuarios.
 _ = app.Services.GetRequiredService<IOptions<AlmacenamientoComprobantesOptions>>().Value;
+_ = app.Services.GetRequiredService<IOptions<ForwardedHeadersOptions>>().Value;
+_ = app.Services.GetRequiredService<IOptions<Microsoft.AspNetCore.DataProtection.KeyManagement.KeyManagementOptions>>().Value;
 await app.InicializarBaseDatosAsync();
 await app.CrearUsuarioInicialSiEstaConfiguradoAsync();
+
+app.UseForwardedHeaders();
 
 if (!app.Environment.IsDevelopment())
 {
@@ -92,6 +101,8 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();
+
+app.MapGet("/health", () => Results.Text("OK")).AllowAnonymous();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

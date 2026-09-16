@@ -1,0 +1,62 @@
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      private:
+        ipv4_address: 172.29.213.2
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  resellmanager:
+    image: resellmanager:v1
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    expose:
+      - "8080"
+    env_file:
+      - .env
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "8080"
+      ASPNETCORE_HTTPS_PORT: "443"
+      ReverseProxy__KnownProxy: 172.29.213.2
+      AllowedHosts: ${AllowedHosts:?Configure AllowedHosts in .env}
+      ConnectionStrings__ResellManager: ${ConnectionStrings__ResellManager:?Configure SQLite in .env}
+      AlmacenamientoComprobantes__DirectorioBase: ${AlmacenamientoComprobantes__DirectorioBase:?Configure receipt storage in .env}
+      DataProtection__KeysPath: ${DataProtection__KeysPath:?Configure persistent keys in .env}
+    volumes:
+      - /srv/resellmanager/database:/app/data/database
+      - /srv/resellmanager/comprobantes:/app/data/comprobantes
+      - /srv/resellmanager/dataprotection:/app/data/dataprotection
+    networks:
+      - private
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  private:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.29.213.0/28
+
+volumes:
+  caddy_data:
+  caddy_config:

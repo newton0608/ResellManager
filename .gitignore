@@ -435,3 +435,9 @@ FodyWeavers.xsd
 
 # Private purchase receipt storage
 **/App_Data/
+
+# Deployment environment variants and local bind data
+.env.*
+data/
+*.sqlite
+*.sqlite-*
