@@ -121,7 +121,7 @@ El runtime copia solo el resultado de publish Release, usa ASP.NET Core .NET 8 s
 y ejecuta como el usuario app (UID/GID 1654 de la imagen .NET 8). El proyecto ya incluye
 SkiaSharp.NativeAssets.Linux.NoDependencies; no se cambian dependencias ni reglas de comprobantes.
 La prueba real de procesamiento de imágenes en Linux continúa siendo un requisito previo al go-live.
-Registrar el digest de las imágenes .NET y Caddy utilizadas para poder reproducir/recuperar la versión.
+Compose fija Caddy en `caddy:2.11.4-alpine`, sin actualización automática. Registrar además el digest de las imágenes .NET y Caddy utilizadas y conservar las imágenes para rollback.
 
 Compose usa la subred 172.29.213.0/28 y reserva 172.29.213.2 para Caddy.
 Antes de crearla, comprobar rutas del host, VPN y redes Docker:
@@ -145,10 +145,10 @@ este Compose confía solo en la IP de Caddy. Se sustituyen las entradas implíci
 se limita a un salto y únicamente se procesan X-Forwarded-For y X-Forwarded-Proto.
 No configurar ASPNETCORE_FORWARDEDHEADERS_ENABLED ni mecanismos alternativos que amplíen esa confianza.
 
-Crear los bind mounts con permisos para el usuario del contenedor (verificar UID si se cambia la imagen):
+Usar los directorios existentes del VPS bajo `/opt/resellmanager/data/`; no crear otra estructura bajo `/srv`. Deben permitir lectura/escritura al UID/GID del usuario `app` de la imagen (1654:1654 actualmente; verificar si cambia la imagen), incluidos los archivos ya existentes. Comprobar o ajustar los directorios sin borrar su contenido:
 
 ```bash
-sudo install -d -m 0700 -o 1654 -g 1654 /srv/resellmanager/database /srv/resellmanager/comprobantes /srv/resellmanager/dataprotection
+sudo install -d -m 0700 -o 1654 -g 1654 /opt/resellmanager/data/database /opt/resellmanager/data/comprobantes /opt/resellmanager/data/dataprotection
 umask 077
 touch .env
 chmod 600 .env
@@ -188,9 +188,27 @@ docker compose ps
 
 /health devuelve únicamente OK cuando el host terminó su arranque; no expone configuración ni datos,
 ni comprueba disponibilidad continua de SQLite/disco. No se agrega un framework ni sondeo automático.
-Caddy conserva /data y /config en volúmenes nombrados y monta Caddyfile read-only; administra TLS
+Caddy conserva /data y /config en los volúmenes nombrados caddy_data y caddy_config (no utiliza la carpeta preexistente /opt/resellmanager/data/caddy) y monta Caddyfile read-only; administra TLS
 automáticamente y reverse_proxy admite WebSockets. Verificar SignalR, reconexión, login y antiforgery
 en el VPS real. Nunca usar docker compose down -v durante una actualización.
+
+## Hardening de la superficie web
+
+Solo `POST /account/login` usa la política nativa `Login`: ventana fija de un minuto,
+10 solicitudes por IP de cliente, sin cola y HTTP 429 al agotarse. Lee `RemoteIpAddress`
+tras Forwarded Headers; no confía en XFF de proxies desconocidos. Los contadores son locales
+al proceso y se reinician al recrearlo. Identity conserva su lockout por cuenta.
+No hay limiter global ni límites para SignalR, archivos estáticos o /health.
+
+Orden relevante: Forwarded Headers → headers (OnStarting) → exception handler/HSTS en Production
+→ redirección HTTPS → estáticos/páginas de estado → routing → rate limiter → autenticación
+→ autorización → antiforgery → endpoints. El limiter va después de routing porque la política
+se selecciona por endpoint, y siempre después de procesar la IP del proxy confiable.
+
+Headers básicos: X-Content-Type-Options=nosniff, Referrer-Policy=no-referrer, X-Frame-Options=DENY
+y CSP frame-ancestors 'none'. La CSP global se añade solo si no existe otra: comprobantes conserva
+sandbox. No se restringen scripts ni estilos. Validar estos controles detrás de Caddy en el VPS;
+esto no completa el go-live.
 
 ## Verificaciones de esta preparación
 

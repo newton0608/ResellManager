@@ -4,7 +4,7 @@
 
 Este documento mantiene una lista de controles de seguridad y operación para ResellManager. No sustituye pruebas, auditorías ni el [runbook de despliegue V1](21_Despliegue_V1.md). Debe actualizarse cuando cambie la arquitectura (multiusuario, API pública, tienda, pagos, correo, IA, PostgreSQL, etc.).
 
-Referencia revisada para esta primera versión: rama `chore/v1-production-deploy`, paquete de hosting `f78d4bb` más este documento.
+Referencia: rama `chore/v1-production-deploy`, paquete de hosting y hardening acotado del login, headers, versión de Caddy y bind mounts. Implementado en código no significa validado en el VPS ni go-live completo.
 
 ## Leyenda
 
@@ -39,7 +39,7 @@ Referencia revisada para esta primera versión: rama `chore/v1-production-deploy
 | 19 | Pagos fallan cerrados | ⚪ / 🔵 | No hay pasarela online en V1. Futuro: webhook autenticado, idempotencia, verificación server-side y nunca marcar pagado ante estado dudoso. |
 | 20 | IA no ejecuta acciones destructivas sin permiso | ⚪ / 🔵 | No hay agentes IA en V1. Si se integran, requerir autorización explícita, límites y auditoría para acciones destructivas/financieras. |
 | 21 | CORS restringido y nada expuesto accidentalmente | ✅ / 🟡 | V1 no habilita CORS general. Solo Caddy publica 80/443; ResellManager usa `expose:8080` en la red Docker y SQLite no se publica. Verificarlo desde fuera del VPS. |
-| 22 | Cabeceras de seguridad y HSTS | 🟡 | HSTS existe en Production y comprobantes usan `nosniff` + CSP `sandbox`. Revisar cabeceras globales (`X-Content-Type-Options`, `Referrer-Policy`, anti-framing/CSP) sin romper Blazor. |
+| 22 | Cabeceras de seguridad y HSTS | ✅ / 🟡 | Headers globales implementados mediante OnStarting: `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `X-Frame-Options: DENY` y CSP `frame-ancestors 'none'` solo si no existe otra CSP. Comprobantes conserva `sandbox`; no se restringen scripts/estilos de Blazor. HSTS sigue en Production. Pendiente validación real en VPS. |
 | 23 | Errores sin información sensible | ✅ / 🟡 | Production usa exception handler y mensajes operativos genéricos. Revisar que logs públicos/respuestas nunca incluyan rutas, secretos, SQL o stack traces. |
 | 24 | Logs y alertas accionables | 🟡 | Se usa `ILogger` y Docker rota `json-file`. Falta decidir formato estructurado/correlación, retención, destino y alertas mínimas. |
 | 25 | Restauración del backup probada | 🔴 | Requisito de salida. Debe restaurarse realmente SQLite + comprobantes + Data Protection en un entorno aislado y comprobar login y operaciones esenciales. |
@@ -61,20 +61,21 @@ Estado: 🟡 endurecimiento posterior al primer despliegue.
 
 Sentry, Rollbar, Bugsnag u otra plataforma son opciones futuras; no son requisito técnico para arrancar una única instancia privada. Antes de conectarlas revisar privacidad, datos enviados y redacción de información sensible.
 
-Estado: 🔵 / 🟡 según crecimiento y criticidad del negocio.
+Estado: 🔵 futuro, incluido monitoreo externo/Sentry; no se incorpora en este cambio.
 
 ### Rate limiting
 
-No aplicar una política global ciega sobre todo Blazor/SignalR. Proteger las superficies abusables de forma específica:
+Implementado exclusivamente en `POST /account/login` con la política nativa `Login` de ASP.NET Core:
 
-- `/account/login` — prioridad V1.
-- Recuperación de contraseña futura.
-- Registro/tienda pública futura.
-- Uploads y endpoints costosos si se exponen públicamente.
+- Partición por `HttpContext.Connection.RemoteIpAddress` después de Forwarded Headers, normalizando IPv4/IPv4-mapped.
+- Ventana fija de un minuto, 10 solicitudes por IP, `QueueLimit = 0`, respuesta HTTP 429 al excederse.
+- Sin limiter global: no limita SignalR/Blazor, estáticos ni `/health`.
+- `UseRateLimiter` después de `UseRouting` para seleccionar la política del endpoint y después de `UseForwardedHeaders` para usar la IP real solo desde el proxy confiable. Proxies desconocidos no pueden elegir su contador con XFF.
+- Conserva el lockout por cuenta de Identity y `lockoutOnFailure=true`; no revela si existe la cuenta.
+- Contadores en memoria por proceso; se reinician al recrear el contenedor. Usuarios que comparten una IP comparten el límite.
 
-El lockout de Identity protege cuentas concretas, pero no sustituye por completo un límite por origen para el endpoint de login.
-
-Estado: 🟡 pendiente V1 para login.
+Estado: ✅ implementado y probado localmente; 🟡 validación real detrás de Caddy en el VPS pendiente.
+Recuperación de contraseña, registro/tienda y otras superficies futuras requerirán su propia evaluación.
 
 ### Health checks
 
@@ -124,11 +125,14 @@ Estado: ✅ política definida; procedimientos concretos se agregan cuando exist
 - `.dockerignore` excluye `.env`, secretos, bases locales, App_Data, llaves y artefactos innecesarios.
 - `/health` no devuelve configuración ni datos.
 - Logs Docker tienen rotación básica configurada.
+- Login tiene rate limiting nativo por IP y headers básicos globales sin una CSP completa.
+- Caddy está fijado en `caddy:2.11.4-alpine`, sin latest ni auto-update; registrar además el digest utilizado.
+- Bind mounts de la app alineados con `/opt/resellmanager/data/database`, `/opt/resellmanager/data/comprobantes` y `/opt/resellmanager/data/dataprotection`; usuario no-root conservado y Caddy mantiene sus volúmenes nombrados.
 
 ### Pendientes antes de operación real
 
-1. **Rate limit del login** por origen, sin afectar SignalR/Blazor globalmente.
-2. **Cabeceras globales de seguridad** compatibles con Blazor; probar CSP antes de endurecerla.
+1. **Validar rate limit implementado en el VPS**: 10 solicitudes por IP/minuto, siguiente solicitud 429 y contadores independientes detrás del proxy confiable; SignalR y health continúan disponibles.
+2. **Validar headers implementados detrás de Caddy** en páginas/estáticos y comprobar que los comprobantes conservan CSP sandbox, sin romper Blazor.
 3. **Restauración real del backup** y ensayo de rollback.
 4. **Prueba Linux real** de SkiaSharp/comprobantes dentro del contenedor.
 5. **Verificar permisos de bind mounts** con UID/GID del usuario `app` de la imagen.
@@ -136,9 +140,9 @@ Estado: ✅ política definida; procedimientos concretos se agregan cuando exist
 7. **Verificar desde Internet** que `8080` y SQLite no son accesibles.
 8. **Retirar `UsuarioInicial__Correo` y `UsuarioInicial__Contrasena`** inmediatamente después del bootstrap y recrear el contenedor.
 9. **Auditar paquetes NuGet directos/transitivos** y runtime antes del go-live; `net8.0` requiere plan de migración por fin de soporte el 10/11/2026.
-10. **Reproducibilidad de imágenes**: registrar digest de las imágenes usadas y conservar la imagen desplegada/anterior para rollback.
+10. **Reproducibilidad de imágenes**: Caddy está fijado en `2.11.4-alpine`; registrar además los digests de las imágenes usadas y conservar la desplegada/anterior para el ensayo real de rollback pendiente.
 11. **Data Protection en reposo**: las keys persistidas en filesystem no quedan cifradas automáticamente por esa configuración; proteger permisos, disco y backups y evaluar protección adicional si aumenta el riesgo.
-12. **Transición del VPS actual**: el Compose versionado usa `/srv/resellmanager/...` y volúmenes nombrados para Caddy; antes de levantarlo reconciliarlo con los directorios/volúmenes ya creados en el VPS y detener el Caddy de prueba para evitar conflicto de puertos.
+12. **Transición del VPS actual**: Compose ya usa `/opt/resellmanager/data/*` para la app y volúmenes nombrados para Caddy. Verificar escritura de los directorios/archivos por el UID/GID de `app` (1654:1654 en la imagen actual); no crear otra estructura en `/srv`. La carpeta existente `data/caddy` no sustituye los volúmenes nombrados. Detener el Caddy de prueba antes de levantar Compose para evitar conflicto de puertos.
 
 ## Futuro V2 / tienda / multiusuario
 

@@ -1,3 +1,4 @@
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.Extensions.Options;
@@ -21,6 +22,21 @@ builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme)
 builder.Services.AddAuthorization();
 
 builder.Services.AddProductionHosting(builder.Configuration);
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("Login", context => RateLimitPartition.GetFixedWindowLimiter(
+        // Normalizar IPv4/IPv4-mapped; solo usar la IP resuelta por Forwarded Headers.
+        context.Connection.RemoteIpAddress?.MapToIPv6().ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 10,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+            AutoReplenishment = true
+        }));
+});
 
 builder.Services.AddSingleton(TimeProvider.System);
 
@@ -75,6 +91,19 @@ await app.InicializarBaseDatosAsync();
 await app.CrearUsuarioInicialSiEstaConfiguradoAsync();
 
 app.UseForwardedHeaders();
+app.Use(async (context, next) =>
+{
+    context.Response.OnStarting(() =>
+    {
+        context.Response.Headers.XContentTypeOptions = "nosniff";
+        context.Response.Headers["Referrer-Policy"] = "no-referrer";
+        context.Response.Headers.XFrameOptions = "DENY";
+        // Conservar políticas específicas, como CSP sandbox en comprobantes.
+        context.Response.Headers.TryAdd("Content-Security-Policy", "frame-ancestors 'none'");
+        return Task.CompletedTask;
+    });
+    await next();
+});
 
 if (!app.Environment.IsDevelopment())
 {
@@ -98,6 +127,7 @@ app.Use(async (contexto, siguiente) =>
     }
 });
 app.UseRouting();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();
@@ -126,7 +156,7 @@ app.MapPost("/account/login", async (
     return resultado.Succeeded
         ? Results.LocalRedirect("/")
         : Results.LocalRedirect("/login?error=credenciales");
-}).AllowAnonymous();
+}).AllowAnonymous().RequireRateLimiting("Login");
 
 app.MapPost("/account/logout", async (
     [Microsoft.AspNetCore.Mvc.FromForm] string confirmacion,

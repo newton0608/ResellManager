@@ -1,6 +1,6 @@
 services:
   caddy:
-    image: caddy:2-alpine
+    image: caddy:2.11.4-alpine
     restart: unless-stopped
     ports:
       - "80:80"
@@ -39,9 +39,9 @@ services:
       AlmacenamientoComprobantes__DirectorioBase: ${AlmacenamientoComprobantes__DirectorioBase:?Configure receipt storage in .env}
       DataProtection__KeysPath: ${DataProtection__KeysPath:?Configure persistent keys in .env}
     volumes:
-      - /srv/resellmanager/database:/app/data/database
-      - /srv/resellmanager/comprobantes:/app/data/comprobantes
-      - /srv/resellmanager/dataprotection:/app/data/dataprotection
+      - /opt/resellmanager/data/database:/app/data/database
+      - /opt/resellmanager/data/comprobantes:/app/data/comprobantes
+      - /opt/resellmanager/data/dataprotection:/app/data/dataprotection
     networks:
       - private
     logging:

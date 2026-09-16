@@ -224,6 +224,8 @@ public sealed class AutenticacionIntegracionTests : PruebaWebAislada
         Assert.Equal("application/pdf", respuesta.Content.Headers.ContentType?.MediaType);
         Assert.Equal("nosniff", respuesta.Headers.GetValues("X-Content-Type-Options").Single());
         Assert.Equal("sandbox", respuesta.Headers.GetValues("Content-Security-Policy").Single());
+        Assert.Equal("no-referrer", respuesta.Headers.GetValues("Referrer-Policy").Single());
+        Assert.Equal("DENY", respuesta.Headers.GetValues("X-Frame-Options").Single());
         Assert.Equal(pdf, contenido);
     }
 
