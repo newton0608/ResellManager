@@ -3,6 +3,7 @@
 @using ResellManager.Domain.Enums
 @inject IInventarioService InventarioService
 @inject ILogger<Inventario> Logger
+@inject NavigationManager Navigation
 
 <PageTitle>Inventario | ResellManager</PageTitle>
 
@@ -44,6 +45,14 @@
     </div>
 </form>
 
+@if (EstadoFiltro.HasValue)
+{
+    <div class="origin-guidance context-filter" role="status">
+        <span>Estado físico: @InventarioPresentacion.Estado(EstadoFiltro.Value)</span>
+        <button class="inline-button" type="button" disabled="@Ocupado" @onclick="LimpiarFiltrosAsync">Quitar filtro de estado</button>
+    </div>
+}
+
 @if (!string.IsNullOrWhiteSpace(ErrorMessage))
 {
     <div class="mensaje-error alert-with-action" role="alert">
@@ -51,6 +60,8 @@
         <button class="inline-button" type="button" disabled="@Ocupado" @onclick="RecargarAsync">Reintentar</button>
     </div>
 }
+
+<RecepcionCompras @ref="Recepcion" OnRecibido="RecargarDespuesDeOperacionAsync" />
 
 @if (Cargando)
 {
@@ -73,26 +84,6 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage) && Unidades.Count == 0)
 }
 else if (string.IsNullOrWhiteSpace(ErrorMessage))
 {
-    @if (Unidades.Any(InventarioPresentacion.PuedeRecibirse))
-    {
-        <section class="inventory-reception" aria-labelledby="titulo-recepcion">
-            <div>
-                <p class="eyebrow">Ingreso físico</p>
-                <h2 id="titulo-recepcion">Recepción de mercancía</h2>
-                <p>Selecciona unidades compradas o en tránsito. La recepción las marcará como disponibles sin alterar su reserva.</p>
-            </div>
-            <div class="reception-controls">
-                <div class="form-field">
-                    <label for="fecha-recepcion">Fecha de recepción</label>
-                    <input id="fecha-recepcion" type="date" @bind="FechaRecepcion" />
-                </div>
-                <button class="primary-button" type="button" disabled="@(Ocupado || UnidadesSeleccionadas.Count == 0)"
-                        @onclick="RegistrarRecepcionAsync">
-                    @(ProcesandoRecepcion ? "Procesando..." : $"Recibir ({UnidadesSeleccionadas.Count})")
-                </button>
-            </div>
-        </section>
-    }
 
     <section class="data-panel" aria-labelledby="titulo-listado-inventario">
         <div class="data-panel-heading">
@@ -139,24 +130,21 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
                                     <span class="inventory-badge no-reservation-badge">Sin reserva</span>
                                 }
                             </td>
-                            <td>@(unidad.FechaIngreso?.ToString("dd/MM/yyyy") ?? "Pendiente")</td>
+                            <td>@(unidad.FechaIngreso?.ToString("dd/MM/yyyy") ?? (unidad.Estado == EstadoUnidadInventario.Perdida ? "Sin ingreso" : "Pendiente"))</td>
                             <td>
                                 <span>@InventarioPresentacion.Origen(unidad.OrigenCompra)</span>
                                 <span class="table-secondary">Costo @InventarioPresentacion.Moneda(unidad.Costo)</span>
                             </td>
                             <td class="actions-cell inventory-actions-cell">
-                                @if (InventarioPresentacion.PuedeRecibirse(unidad))
+                                @if (InventarioPresentacion.PuedeMarcarPerdida(unidad))
                                 {
-                                    <label class="reception-check">
-                                        <input type="checkbox" checked="@UnidadesSeleccionadas.Contains(unidad.Id)"
-                                               disabled="@Ocupado" @onchange="e => SeleccionarUnidad(unidad.Id, e.Value)" />
-                                        Recibir
-                                    </label>
+                                    <button class="table-action button-link" type="button" disabled="@Ocupado"
+                                            @onclick="() => RevisarPerdida(unidad)">Marcar perdida</button>
                                 }
                                 @if (siguienteEstado.HasValue)
                                 {
                                     <button class="table-action button-link" type="button" disabled="@Ocupado"
-                                            @onclick="() => CambiarEstadoAsync(unidad, siguienteEstado.Value)">
+                                            @onclick="() => RevisarCambioAsync(unidad, siguienteEstado.Value)">
                                         @(UnidadProcesandoId == unidad.Id ? "Procesando..." : InventarioPresentacion.AccionEstado(siguienteEstado.Value))
                                     </button>
                                 }
@@ -197,25 +185,22 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
                                 <span>Sin reserva</span>
                             }
                         </dd></div>
-                        <div><dt>Ingreso</dt><dd>@(unidad.FechaIngreso?.ToString("dd/MM/yyyy") ?? "Pendiente")</dd></div>
+                        <div><dt>Ingreso</dt><dd>@(unidad.FechaIngreso?.ToString("dd/MM/yyyy") ?? (unidad.Estado == EstadoUnidadInventario.Perdida ? "Sin ingreso" : "Pendiente"))</dd></div>
                         <div><dt>Origen</dt><dd>@InventarioPresentacion.Origen(unidad.OrigenCompra)</dd></div>
                         <div><dt>Costo de unidad</dt><dd>@InventarioPresentacion.Moneda(unidad.Costo)</dd></div>
                     </dl>
-                    @if (InventarioPresentacion.PuedeRecibirse(unidad) || siguienteEstado.HasValue)
+                    @if (siguienteEstado.HasValue || InventarioPresentacion.PuedeMarcarPerdida(unidad))
                     {
                         <div class="entity-card-actions inventory-card-actions">
-                            @if (InventarioPresentacion.PuedeRecibirse(unidad))
+                            @if (InventarioPresentacion.PuedeMarcarPerdida(unidad))
                             {
-                                <label class="reception-check mobile-reception-check">
-                                    <input type="checkbox" checked="@UnidadesSeleccionadas.Contains(unidad.Id)"
-                                           disabled="@Ocupado" @onchange="e => SeleccionarUnidad(unidad.Id, e.Value)" />
-                                    Seleccionar para recepción
-                                </label>
+                                <button class="secondary-button" type="button" disabled="@Ocupado"
+                                        @onclick="() => RevisarPerdida(unidad)">Marcar perdida</button>
                             }
                             @if (siguienteEstado.HasValue)
                             {
                                 <button class="secondary-button" type="button" disabled="@Ocupado"
-                                        @onclick="() => CambiarEstadoAsync(unidad, siguienteEstado.Value)">
+                                        @onclick="() => RevisarCambioAsync(unidad, siguienteEstado.Value)">
                                     @(UnidadProcesandoId == unidad.Id ? "Procesando..." : InventarioPresentacion.AccionEstado(siguienteEstado.Value))
                                 </button>
                             }
@@ -227,23 +212,86 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
     </section>
 }
 
+@if (UnidadEntrega is not null)
+{
+    <ConfirmacionOperacion Titulo="Confirmar entrega" TextoConfirmar="Confirmar entrega"
+        TextoEditar="Cancelar" Ocupado="Ocupado" Error="@ErrorMessage"
+        OnEditar="CerrarRevisionInventario" OnConfirmar="ConfirmarInventarioAsync">
+        <p>@UnidadEntrega.Producto · @UnidadEntrega.CodigoInterno</p>
+        <p>La unidad pasará de Vendida a Entregada. Después no podrá cancelarse la venta por el flujo normal.</p>
+    </ConfirmacionOperacion>
+}
+
+@if (UnidadPerdida is not null)
+{
+    <ConfirmacionOperacion Titulo="Marcar unidad perdida" TextoConfirmar="Marcar perdida"
+        TextoEditar="Cancelar" Ocupado="Ocupado" Error="@ErrorMessage"
+        OnEditar="CerrarPerdida" OnConfirmar="ConfirmarPerdidaAsync">
+        <p>@UnidadPerdida.Producto · @UnidadPerdida.CodigoInterno</p>
+        <p>La unidad quedará Perdida y no podrá recibirse, reservarse ni venderse. Esta acción no puede revertirse en esta versión. La compra y su costo se conservan.</p>
+        @if (UnidadPerdida.DetallePedidoReservaId.HasValue)
+        {
+            <p>Se liberará su reserva. El pedido se conserva, con esa unidad pendiente de reservar; no se cancelará ni cambiará su cantidad.</p>
+        }
+    </ConfirmacionOperacion>
+}
+
 @code {
+    private RecepcionCompras? Recepcion;
+    private UnidadInventarioDto? UnidadPerdida { get; set; }
+    private void RevisarPerdida(UnidadInventarioDto unidad)
+    {
+        if (Ocupado || UnidadEntrega is not null || UnidadPerdida is not null || !InventarioPresentacion.PuedeMarcarPerdida(unidad)) return;
+        ErrorMessage = null;
+        UnidadPerdida = unidad;
+    }
+    private void CerrarPerdida() { if (!Ocupado) UnidadPerdida = null; }
+    private async Task ConfirmarPerdidaAsync()
+    {
+        if (Ocupado || UnidadPerdida is null) return;
+        await CambiarEstadoAsync(UnidadPerdida, EstadoUnidadInventario.Perdida);
+        if (ErrorMessage is null) CerrarPerdida();
+    }
+    private UnidadInventarioDto? UnidadEntrega { get; set; }
+    private Task RevisarCambioAsync(UnidadInventarioDto unidad, EstadoUnidadInventario estado)
+    {
+        if (Ocupado) return Task.CompletedTask;
+        if (estado != EstadoUnidadInventario.Entregada) return CambiarEstadoAsync(unidad, estado);
+        ErrorMessage = null;
+        UnidadEntrega = unidad;
+        return Task.CompletedTask;
+    }
+    private void CerrarRevisionInventario()
+    {
+        if (Ocupado) return;
+        UnidadEntrega = null;
+    }
+    private async Task ConfirmarInventarioAsync()
+    {
+        if (Ocupado) return;
+        if (UnidadEntrega is not null) await CambiarEstadoAsync(UnidadEntrega, EstadoUnidadInventario.Entregada);
+        if (ErrorMessage is null) CerrarRevisionInventario();
+    }
+    [SupplyParameterFromQuery(Name = "estado")]
+    public string? EstadoConsulta { get; set; }
     private IReadOnlyList<UnidadInventarioDto> Unidades { get; set; } = [];
-    private HashSet<int> UnidadesSeleccionadas { get; } = [];
     private string Termino { get; set; } = string.Empty;
     private EstadoUnidadInventario? EstadoFiltro { get; set; }
-    private DateOnly FechaRecepcion { get; set; } = DateOnly.FromDateTime(DateTime.Today);
     private bool BusquedaActiva { get; set; }
     private bool Cargando { get; set; } = true;
-    private bool ProcesandoRecepcion { get; set; }
     private int? UnidadProcesandoId { get; set; }
     private string? ErrorMessage { get; set; }
     private string? MensajeExito { get; set; }
 
     private bool FiltrosActivos => !string.IsNullOrWhiteSpace(Termino) || EstadoFiltro.HasValue;
-    private bool Ocupado => Cargando || ProcesandoRecepcion || UnidadProcesandoId.HasValue;
+    private bool Ocupado => Cargando || UnidadProcesandoId.HasValue;
 
-    protected override Task OnInitializedAsync() => CargarInventarioAsync();
+    protected override Task OnParametersSetAsync()
+    {
+        EstadoFiltro = Enum.TryParse<EstadoUnidadInventario>(EstadoConsulta, true, out var estado)
+            && Enum.IsDefined(estado) ? estado : null;
+        return BuscarAsync();
+    }
 
     private async Task CargarInventarioAsync()
     {
@@ -254,7 +302,6 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
         try
         {
             Unidades = await InventarioService.ListarAsync();
-            SincronizarSeleccion();
         }
         catch (Exception ex)
         {
@@ -283,7 +330,6 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
         try
         {
             Unidades = await InventarioService.BuscarAsync(Termino, EstadoFiltro);
-            SincronizarSeleccion();
         }
         catch (Exception ex)
         {
@@ -301,60 +347,22 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
         Termino = string.Empty;
         EstadoFiltro = null;
         MensajeExito = null;
+        if (!string.IsNullOrWhiteSpace(EstadoConsulta))
+        {
+            Navigation.NavigateTo("/inventario");
+            return;
+        }
         await CargarInventarioAsync();
     }
 
     private Task RecargarAsync() => BusquedaActiva ? BuscarAsync() : CargarInventarioAsync();
 
-    private void SeleccionarUnidad(int id, object? valor)
-    {
-        if (valor is true)
-            UnidadesSeleccionadas.Add(id);
-        else
-            UnidadesSeleccionadas.Remove(id);
-    }
-
-    private async Task RegistrarRecepcionAsync()
-    {
-        if (Ocupado || UnidadesSeleccionadas.Count == 0)
-            return;
-
-        ProcesandoRecepcion = true;
-        ErrorMessage = null;
-        MensajeExito = null;
-
-        try
-        {
-            var cantidad = UnidadesSeleccionadas.Count;
-            var resultado = await InventarioService.RegistrarRecepcionAsync(
-                new RecepcionMercanciaInput(FechaRecepcion, UnidadesSeleccionadas.ToArray()));
-
-            if (!resultado.IsSuccess)
-            {
-                ErrorMessage = resultado.ErrorMessage ?? "No fue posible registrar la recepción.";
-                return;
-            }
-
-            UnidadesSeleccionadas.Clear();
-            MensajeExito = cantidad == 1
-                ? "La unidad fue recibida y ahora está disponible."
-                : $"Las {cantidad} unidades fueron recibidas y ahora están disponibles.";
-            await RecargarDespuesDeOperacionAsync();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "No fue posible registrar la recepción de mercancía.");
-            ErrorMessage = "No pudimos registrar la recepción. Intenta nuevamente.";
-        }
-        finally
-        {
-            ProcesandoRecepcion = false;
-        }
-    }
 
     private async Task CambiarEstadoAsync(UnidadInventarioDto unidad, EstadoUnidadInventario estado)
     {
-        if (Ocupado || InventarioPresentacion.SiguienteEstadoManual(unidad) != estado)
+        if (Ocupado || (estado == EstadoUnidadInventario.Perdida
+            ? !InventarioPresentacion.PuedeMarcarPerdida(unidad)
+            : InventarioPresentacion.SiguienteEstadoManual(unidad) != estado))
             return;
 
         UnidadProcesandoId = unidad.Id;
@@ -371,6 +379,8 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
             }
 
             MensajeExito = $"La unidad {unidad.CodigoInterno} ahora está {InventarioPresentacion.Estado(estado).ToLowerInvariant()}.";
+            if (estado == EstadoUnidadInventario.Perdida && Recepcion is not null)
+                await Recepcion.RefrescarAsync();
             await RecargarDespuesDeOperacionAsync();
         }
         catch (Exception ex)
@@ -394,9 +404,4 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
         MensajeExito = mensaje;
     }
 
-    private void SincronizarSeleccion()
-    {
-        var seleccionables = Unidades.Where(InventarioPresentacion.PuedeRecibirse).Select(x => x.Id).ToHashSet();
-        UnidadesSeleccionadas.RemoveWhere(id => !seleccionables.Contains(id));
-    }
 }

@@ -1,0 +1,60 @@
+@typeparam T
+@inject ILogger<ActividadMensual<T>> Logger
+<section class="history-panel">
+    <h3><button type="button" class="history-month-toggle" aria-expanded="@Abierta" @onclick="() => Abierta = !Abierta"><span aria-hidden="true">@(Abierta ? "▼" : "▶")</span> @Titulo</button></h3>
+    @if (Abierta)
+    {
+        @foreach (var mes in Meses)
+        {
+            <h4>@NombreMes(mes.Mes!.Value)</h4>
+            <div class="timeline-list">
+                @foreach (var registro in mes.Registros) { @Registro(registro) }
+            </div>
+        }
+        @if (Cargando) { <p role="status">Cargando actividad...</p> }
+        else if (Error is not null)
+        {
+            <p class="mensaje-error" role="alert">@Error</p>
+            <button class="secondary-button" @onclick="CargarAsync">Reintentar</button>
+        }
+        else if (Meses.Count == 0) { <p class="compact-empty">@Vacio</p> }
+        @if (!Cargando && Error is null && Anterior is { } anterior)
+        {
+            <button class="secondary-button" @onclick="CargarAsync">Cargar @NombreMes(anterior).ToLowerInvariant()</button>
+        }
+    }
+</section>
+@code {
+    [Parameter] public int ClienteId { get; set; }
+    [Parameter] public string Titulo { get; set; } = "";
+    [Parameter] public string Vacio { get; set; } = "";
+    [Parameter, EditorRequired] public Func<int, DateOnly?, Task<PaginaMes<T>>> Consultar { get; set; } = null!;
+    [Parameter, EditorRequired] public RenderFragment<T> Registro { get; set; } = null!;
+    private readonly List<PaginaMes<T>> Meses = [];
+    private DateOnly? Anterior;
+    private int? Cargado;
+    private bool Abierta = false;
+    private bool Cargando;
+    private string? Error;
+    private static string NombreMes(DateOnly mes) => System.Globalization.CultureInfo.GetCultureInfo("es-GT")
+        .TextInfo.ToTitleCase(mes.ToString("MMMM yyyy", System.Globalization.CultureInfo.GetCultureInfo("es-GT")));
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Cargado == ClienteId) return;
+        Cargado = ClienteId; Meses.Clear(); Anterior = null; Abierta = false;
+        await CargarAsync();
+    }
+    private async Task CargarAsync()
+    {
+        if (Cargando || (Meses.Count > 0 && Anterior is null)) return;
+        Cargando = true; Error = null;
+        try
+        {
+            var pagina = await Consultar(ClienteId, Anterior);
+            if (pagina.Mes.HasValue) Meses.Add(pagina);
+            Anterior = pagina.MesAnterior;
+        }
+        catch (Exception ex) { Logger.LogError(ex, "No se pudo cargar un mes de actividad del cliente."); Error = "No pudimos cargar este mes. Intenta nuevamente."; }
+        finally { Cargando = false; }
+    }
+}

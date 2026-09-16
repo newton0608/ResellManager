@@ -19,6 +19,18 @@
     <div class="mensaje-exito" role="status">@MensajeExito</div>
 }
 
+<form class="search-panel" @onsubmit="CargarAsync" @onsubmit:preventDefault>
+    <div class="search-field">
+        <label for="buscar-proveedor">Buscar proveedor</label>
+        <input id="buscar-proveedor" type="search" placeholder="Nombre o teléfono"
+               @bind="Termino" @bind:event="oninput" disabled="@Cargando" />
+    </div>
+    <div class="search-actions">
+        <button class="primary-button" type="submit" disabled="@Cargando">Buscar</button>
+        <button class="secondary-button" type="button" disabled="@Cargando" @onclick="LimpiarAsync">Limpiar</button>
+    </div>
+</form>
+
 @if (!string.IsNullOrWhiteSpace(ErrorMessage))
 {
     <div class="mensaje-error alert-with-action" role="alert">
@@ -38,8 +50,8 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage) && ProveedoresRegistrados.Count
 {
     <section class="empty-state" aria-labelledby="titulo-sin-proveedores">
         <span class="empty-state-icon" aria-hidden="true"><NavIcon Name="truck" /></span>
-        <h2 id="titulo-sin-proveedores">Aún no hay proveedores</h2>
-        <p>Registra el primer proveedor para asociarlo con una compra.</p>
+        <h2 id="titulo-sin-proveedores">@(BusquedaActiva ? "No se encontraron proveedores" : "Aún no hay proveedores")</h2>
+        <p>@(BusquedaActiva ? "Prueba otro nombre o teléfono, o limpia la búsqueda." : "Registra el primer proveedor para asociarlo con una compra.")</p>
         <a class="primary-button" href="/proveedores/nuevo">Registrar proveedor</a>
     </section>
 }
@@ -97,6 +109,9 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
 
 @code {
     private IReadOnlyList<ProveedorDto> ProveedoresRegistrados { get; set; } = [];
+    private string Termino { get; set; } = string.Empty;
+    private bool BusquedaActiva { get; set; }
+    private Task LimpiarAsync() { Termino = string.Empty; return CargarAsync(); }
     private bool Cargando { get; set; } = true;
     private string? ErrorMessage { get; set; }
 
@@ -112,9 +127,12 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
     {
         Cargando = true;
         ErrorMessage = null;
+        BusquedaActiva = !string.IsNullOrWhiteSpace(Termino);
         try
         {
-            ProveedoresRegistrados = await ProveedorService.ListarAsync();
+            ProveedoresRegistrados = BusquedaActiva
+                ? await ProveedorService.BuscarAsync(Termino, limite: null)
+                : await ProveedorService.ListarAsync();
         }
         catch (Exception ex)
         {

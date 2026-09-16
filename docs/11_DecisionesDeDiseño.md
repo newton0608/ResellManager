@@ -59,7 +59,7 @@ Motivo:
 La fecha de compra y la fecha real de ingreso al inventario pueden ser distintas, especialmente en importaciones.
 
 Resultado:
-Se debe implementar un caso de uso para registrar recepción de mercancía y mover unidades compradas o en tránsito a disponibles.
+El caso de uso implementado registra fecha de ingreso y mueve unidades `Comprada` o `EnTransito` a `Disponible`, conservando las reservas vigentes. La operación se agrupa por Compra y Proveedor y admite recepción parcial: cada confirmación recibe solo las unidades seleccionadas de una misma Compra, nunca mezcla compras. Las no recibidas conservan su estado físico. Se revalidan los estados en backend antes de persistir.
 
 ## 008 Las ventas canceladas conservan historial.
 
@@ -209,7 +209,11 @@ Pedido normal usa `PED-<GUID>` y Venta desde pedido `VEN-<GUID>`, creados una so
 
 Compra conserva `COM-<GUID>`; comprobantes `CMP-<GUID>.<extensión>` y unidades el código determinista de compra + número de detalle + número de unidad. No cambian las validaciones ni índices únicos del backend.
 
-`Producto.CodigoInterno` se mantiene manual: el servicio de búsqueda y los selectores lo usan como referencia reconocible de producto. No hay evidencia para clasificarlo como un mero identificador técnico ni para afirmar que siempre lo aporta un proveedor. Automatizarlo solo por uniformidad eliminaría una referencia útil. Código de barras, número de documento, referencia de pago y código de país siguen siendo datos externos manuales. Clasificación completa en `15_CodigosYCanalesVenta.md`.
+Decisión vigente tras validación manual V1 (sustituye la captura manual anterior): `Producto.CodigoInterno` es un identificador técnico automático `PRO-<GUID>`. ProductoService lo genera al crear, mediante el helper común y GUID N hexadecimal en mayúsculas. No se captura ni modifica al editar; los códigos históricos se conservan exactamente, sin regeneración ni normalización. Sigue disponible para búsqueda y trazabilidad. `ProductoInput` ya no acepta este campo. No cambia el esquema ni su índice único.
+
+`Producto.CodigoBarras` continúa externo, manual y opcional. Número de documento, referencia de pago y código de país siguen siendo datos externos manuales. Clasificación completa en `15_CodigosYCanalesVenta.md`.
+
+`TipoPedido.VentaDirecta` permanece en el dominio y conserva su valor persistido, pero está reservado al pedido automático del flujo Venta Directa (CanalVenta.Presencial). Nuevo pedido manual solo admite Importacion, Catalogo y Apartado; selector, modelo y `PedidoService.CrearManualAsync` comparten la lista `TiposPedidoManual.Permitidos`.
 
 ## 019 Apartado está resuelto por Pedido + Reserva
 
@@ -220,3 +224,50 @@ No se crea entidad `Apartado`, módulo duplicado ni una segunda reserva. El pedi
 La presentación usa `Q 1,234.56`, fechas visibles `dd/MM/yyyy` y etiquetas amigables por módulo. Los códigos útiles permanecen para trazabilidad; la usuaria navega por nombres y enlaces sin capturar IDs internos. Los controles de doble submit y las cargas secuenciales de servicios compartidos son correcciones de UI, no concurrencia fuerte V2.
 
 No se modifica el esquema en Fase 5.10. Las pruebas de cierre y las limitaciones de validación visual se registran en `18_Fase510_CierreV1.md`. Roles, administración de usuarios, concurrencia multiusuario, devoluciones y ecommerce siguen sin implementar.
+
+## 021 Confirmación previa para operaciones de impacto
+
+Se utiliza revisión previa cuando una operación afecta dinero, inventario, saldo, reservas/estado comercial o múltiples registros relacionados. El objetivo es comprobar la información final y reducir errores sin añadir confirmaciones a cada interacción.
+
+Patrón: Formulario → Revisar → Editar / Confirmar operación → persistencia backend. Revisar y Editar no persisten la operación; los datos permanecen en el modelo del formulario. La confirmación visual NO sustituye validaciones de dominio/Application ni constituye concurrencia fuerte o idempotencia entre sesiones.
+
+`ConfirmacionOperacion` comparte un diálogo nativo modal con título, contenido por módulo, foco inicial en Editar/Cancelar, Escape, restauración de foco, estado ocupado y botones bloqueados durante el envío. Cada página construye su resumen y conserva sus servicios existentes. El contenido largo tiene scroll vertical dentro del diálogo.
+
+Cobertura actual: Compra (incluido comprobante opcional), Pedido manual, Venta Directa, Pago/abono, recepción de mercancía y entrega de unidades vendidas. El paso a En tránsito sigue directo; las cancelaciones de venta, pedido y reserva conservan sus confirmaciones anteriores, sin duplicarlas. Las altas/ediciones simples de Cliente, Producto, Categoría y Proveedor no requieren un paso extra. Crear un maestro inline sí lo guarda inmediatamente; la Compra sigue sin persistirse hasta su propia confirmación.
+
+## 022 Búsqueda incremental en catálogos grandes
+
+Producto en Compra, Proveedor en Compra y Cliente en Pagos usan un solo campo, búsqueda bajo demanda a partir de 2 caracteres, debounce de 300 ms, cancelación de respuestas obsoletas y hasta 12 resultados limitados en el backend. Se utilizan botones de resultado accesibles con Tab/Enter y táctil, con estado anunciado; Escape oculta la lista. Cada consulta usa un scope independiente del circuito.
+
+Producto busca nombre, código de barras y código del sistema; Proveedor, nombre y teléfono; Cliente, nombre completo y teléfono. Cliente no posee CodigoInterno y no se inventa uno. La coincidencia exacta de teléfono/código tiene prioridad, con comparación de nombres mediante LOWER de SQLite (sin prometer normalización de acentos). Los listados normales conservan sus consultas sin límite.
+
+Solo una búsqueda válida sin coincidencias ofrece Agregar en los flujos de alta inline habilitados: Producto y Proveedor desde Compra. No se ofrece durante carga, error, búsqueda vacía ni si hay resultados. Se reutilizan los formularios y servicios; al guardar se autoselecciona el maestro, manteniendo los datos de Compra y la línea original de Producto. En Pagos no se agrega alta inline de Cliente. Los selects pequeños de enums/categorías siguen siendo apropiados.
+
+Producto conserva generación backend PRO- y código de barras manual/opcional. Las altas inline no prometen recuperación tras recargar la página o perder el circuito; el enlace de categorías se abre aparte y permite actualizar la lista sin descartar la compra. Lectores/cámara e Informes continúan en V2.
+
+## 023 Consulta de catálogos e historiales
+
+Los catálogos potencialmente grandes ofrecen búsqueda y filtros útiles, no selectores gigantes. Productos combina nombre/código del sistema/código de barras con Categoría; Proveedores reutiliza BuscarAsync por nombre/teléfono, sin el límite de 12 reservado al autocomplete. Las consultas se ejecutan en SQL y conservan el comportamiento de LOWER de SQLite, sin prometer normalización de acentos.
+
+Pedidos, Ventas, Compras y Pagos se ordenan por su fecha operativa descendente y luego Id descendente. Desde/Hasta son opcionales e inclusivos; un rango invertido o una fecha de URL inválida muestra un mensaje controlado. Pedidos y Ventas buscan por código; Compras por código o nombre de proveedor en un único término. Los filtros de historial se conservan en query string y Limpiar vuelve al historial completo (del cliente seleccionado en Pagos).
+
+Pedidos conserva Activos = Pendiente + Confirmado. Con entrega pendiente consulta pedidos con Venta registrada que tenga al menos una unidad física Vendida; no equivale a pedido activo ni cuenta Catálogo sin unidades. Ventas admite Registrada/Cancelada. El filtro de Pagos afecta únicamente su historial, nunca el cálculo de saldo actual ni el borrador del abono.
+
+Los encabezados mensuales en español son presentación, no entidades de dominio: HistorialMensual prepara una sola colección de grupos para tabla y tarjetas, sin meses vacíos. Cada módulo conserva su propio historial. El formulario Desde/Hasta/Aplicar/Limpiar es compartido y mobile-first, manteniendo el date picker nativo y sus límites de ancho.
+
+ClienteDetalle consulta Ventas y Pagos incrementalmente e independientemente: carga mediante SQL un mes con actividad a la vez, comenzando por el más reciente de cada sección. `Cargar <mes año>` agrega el siguiente mes anterior con actividad, conservando los cargados y el orden fecha/Id descendente; no trae años completos para filtrar en memoria. El saldo actual considera toda la historia relevante. Pendientes se consulta por separado, sin límite de fecha: incluye reservas vigentes y unidades Vendida no entregadas; excluye reservas de pedidos Cancelado/Completado.
+
+Objetivo: localizar operaciones entre cientos o miles de registros y mantener contexto temporal. No se incorporan Informes, analytics, paginación compleja ni nuevos identificadores; no hay cambios de esquema, fórmulas financieras o reglas de Venta Directa.
+
+## 024 Un pedido completado no conserva reservas activas
+
+Motivo:
+Evitar unidades bloqueadas o «reservas fantasma» cuando una venta usa una unidad distinta de la previamente reservada.
+
+Resultado:
+
+- La venta sigue permitiendo sustituir la unidad reservada por otra del mismo producto, `Disponible` y sin reserva ajena, respetando las cantidades del pedido.
+- Al completar el pedido se liberan todas las reservas de todos sus detalles, incluidas las sobrantes o sustituidas. Pedido `Completado` implica cero reservas activas.
+- Solo las unidades incluidas en la venta pasan a `Vendida`; las restantes pierden únicamente `DetallePedidoReservaId` y conservan su estado físico (`Comprada`, `EnTransito` o `Disponible`).
+- La liberación, el registro de la venta y la finalización del pedido ocurren en la misma transacción; un fallo no confirma cambios parciales.
+- La consulta de pendientes del cliente excluye reservas de pedidos `Completado` y `Cancelado`, incluso si encuentra asociaciones históricas inconsistentes. Esto no implica una migración ni una limpieza retroactiva de datos.

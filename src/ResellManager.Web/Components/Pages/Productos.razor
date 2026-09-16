@@ -1,6 +1,7 @@
 @page "/productos"
 @rendermode InteractiveServer
 @inject IProductoService ProductoService
+@inject ICategoriaService CategoriaService
 @inject ILogger<Productos> Logger
 
 <PageTitle>Productos | ResellManager</PageTitle>
@@ -25,9 +26,19 @@
         <input id="buscar-producto" type="search" placeholder="Nombre, código interno o código de barras"
                @bind="Termino" @bind:event="oninput" />
     </div>
+    <div class="form-field">
+        <label for="categoria-productos">Categoría</label>
+        <select id="categoria-productos" @bind="CategoriaId" disabled="@Cargando">
+            <option value="">Todas las categorías</option>
+            @foreach (var categoria in Categorias)
+            {
+                <option value="@categoria.Id">@categoria.Nombre</option>
+            }
+        </select>
+    </div>
     <div class="search-actions">
         <button class="primary-button" type="submit" disabled="@Cargando">Buscar</button>
-        @if (!string.IsNullOrWhiteSpace(Termino) || BusquedaActiva)
+        @if (!string.IsNullOrWhiteSpace(Termino) || BusquedaActiva || CategoriaId.HasValue)
         {
             <button class="secondary-button" type="button" disabled="@Cargando" @onclick="LimpiarBusquedaAsync">Limpiar</button>
         }
@@ -133,6 +144,8 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
 
 @code {
     private IReadOnlyList<ProductoDto> ProductosEncontrados { get; set; } = [];
+    private IReadOnlyList<CategoriaDto> Categorias { get; set; } = [];
+    private int? CategoriaId { get; set; }
     private string Termino { get; set; } = string.Empty;
     private bool BusquedaActiva { get; set; }
     private bool Cargando { get; set; } = true;
@@ -154,11 +167,14 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
     {
         Cargando = true;
         ErrorMessage = null;
-        BusquedaActiva = false;
+        BusquedaActiva = !string.IsNullOrWhiteSpace(Termino) || CategoriaId.HasValue;
 
         try
         {
-            ProductosEncontrados = await ProductoService.ListarAsync();
+            Categorias = await CategoriaService.ListarAsync();
+            ProductosEncontrados = BusquedaActiva
+                ? await ProductoService.BuscarAsync(Termino, categoriaId: CategoriaId)
+                : await ProductoService.ListarAsync();
         }
         catch (Exception ex)
         {
@@ -173,7 +189,7 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
 
     private async Task BuscarAsync()
     {
-        if (string.IsNullOrWhiteSpace(Termino))
+        if (string.IsNullOrWhiteSpace(Termino) && !CategoriaId.HasValue)
         {
             await CargarProductosAsync();
             return;
@@ -185,7 +201,7 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
 
         try
         {
-            ProductosEncontrados = await ProductoService.BuscarAsync(Termino);
+            ProductosEncontrados = await ProductoService.BuscarAsync(Termino, categoriaId: CategoriaId);
         }
         catch (Exception ex)
         {
@@ -201,6 +217,7 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
     private async Task LimpiarBusquedaAsync()
     {
         Termino = string.Empty;
+        CategoriaId = null;
         await CargarProductosAsync();
     }
 }

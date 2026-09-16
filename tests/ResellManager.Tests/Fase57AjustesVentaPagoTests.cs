@@ -205,6 +205,7 @@ public sealed class VentaDirectaPedidoAutomaticoTests
         Establecer(componente, "PedidoService", (IPedidoService)new PedidoService(test.Db));
         Establecer(componente, "VentaService", (IVentaService)ventas);
         Establecer(componente, "InventarioService", (IInventarioService)inventario);
+        Establecer(componente, "SeleccionService", new SeleccionOperativaService(test.Db));
         Establecer(componente, "Logger", NullLogger<VentaDirectaForm>.Instance);
         Establecer(
             componente,
@@ -310,7 +311,7 @@ public sealed class VentaDirectaPedidoAutomaticoTests
             CancellationToken ct = default) =>
             throw new NotSupportedException();
 
-        public Task<IReadOnlyList<VentaDto>> ListarAsync(CancellationToken ct = default) =>
+        public Task<IReadOnlyList<VentaDto>> ListarAsync(CancellationToken ct = default, FiltroHistorial? filtro = null, EstadoVenta? estado = null) =>
             throw new NotSupportedException();
 
         public Task<ServiceResult<decimal>> CalcularTotalAsync(

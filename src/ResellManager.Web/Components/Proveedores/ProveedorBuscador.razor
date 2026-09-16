@@ -1,0 +1,24 @@
+@using Microsoft.Extensions.DependencyInjection
+@inject IServiceScopeFactory ScopeFactory
+
+<BuscadorEntidad TItem="ProveedorDto" Id="compra-proveedor" Etiqueta="Proveedor"
+                 Placeholder="Buscar proveedor..." SinResultados="No se encontró el proveedor."
+                 TextoAgregar="Agregar proveedor" Seleccionado="Seleccionado" TextoSeleccionado="@Seleccionado?.Nombre"
+                 Deshabilitado="Deshabilitado" Buscar="BuscarAsync" OnSeleccionado="OnSeleccionado" OnAgregar="OnAgregar">
+    <Resultado Context="proveedor">
+        <strong>@proveedor.Nombre</strong>
+        @if (!string.IsNullOrWhiteSpace(proveedor.Telefono)) { <span>@proveedor.Telefono</span> }
+    </Resultado>
+</BuscadorEntidad>
+
+@code {
+    [Parameter] public ProveedorDto? Seleccionado { get; set; }
+    [Parameter] public bool Deshabilitado { get; set; }
+    [Parameter] public EventCallback<ProveedorDto?> OnSeleccionado { get; set; }
+    [Parameter] public EventCallback OnAgregar { get; set; }
+    private async Task<IReadOnlyList<ProveedorDto>> BuscarAsync(string termino, CancellationToken ct)
+    {
+        await using var scope = ScopeFactory.CreateAsyncScope();
+        return await scope.ServiceProvider.GetRequiredService<IProveedorService>().BuscarAsync(termino, ct, 12);
+    }
+}

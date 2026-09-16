@@ -41,7 +41,15 @@ En V1 un pedido sigue operativo mientras su estado sea `Pendiente` o `Confirmado
 PedidosActivos = Pendiente + Confirmado
 ```
 
-`Cancelado` y `Completado` son terminales para esta tarjeta y no se cuentan.
+`Cancelado` y `Completado` son terminales y no se cuentan. El dato continúa en DashboardDto/Service y se utiliza como definición de `/pedidos?estado=activos`; tras la validación manual ya no ocupa una tarjeta principal.
+
+### Pendiente de entregar
+
+```text
+PendientesEntrega = COUNT UnidadInventario WHERE Estado == Vendida
+```
+
+Es una métrica física consultada en DashboardService, independiente de PedidosActivos. No incluye Comprada, EnTransito, Disponible ni Entregada. Al registrar entrega deja de contarse; no hay cambios de esquema.
 
 ## Actividad reciente
 
@@ -104,7 +112,7 @@ controlado en vez de inventar un costo.
 
 La UI inicia con el primer día del mes actual y la fecha actual y ejecuta una primera consulta para
 ese rango. Después, las fechas pueden modificarse sin recalcular en cada cambio; el nuevo periodo se
-consulta al presionar **Consultar utilidad**. Un error de utilidad no elimina ni reemplaza el resto
+consulta al presionar **Consultar** dentro de **Ganancia total**. Un error de utilidad no elimina ni reemplaza el resto
 del Dashboard.
 
 ## Consultas y errores
@@ -114,6 +122,22 @@ mismo `DbContext`; no utiliza `Task.WhenAll`. Los fallos inesperados se registra
 muestra mensajes controlados y permite reintentar la carga general.
 
 ## Presentación V1
+
+Orden vigente tras validación manual: Inicio, Resumen con cuatro cards (Total por cobrar, Unidades disponibles, Pendiente de entregar, Inventario al costo), Acciones rápidas, Ganancia total, Ventas por canal, Últimos pagos y Últimas ventas.
+
+Acciones rápidas sustituye el CTA individual; usa dos columnas con tracks encogibles y una columna únicamente hasta 21rem. Venta directa conserva énfasis azul. No se modifican la disposición mobile-first ni los fixes de ancho de las fechas de Ganancia.
+
+| Acceso | Ruta |
+| --- | --- |
+| Registrar abono | `/pagos` (formulario existente de pago global) |
+| Venta directa | `/ventas/nueva?modo=directa` |
+| Registrar pedido | `/pedidos/nuevo` |
+| Buscar cliente | `/clientes` |
+| Total por cobrar | `/clientes?saldo=pendiente` |
+| Unidades disponibles / Inventario al costo | `/inventario?estado=disponible` |
+| Pendiente de entregar | `/inventario?estado=vendida` |
+
+Clientes filtra los DTOs ya calculados por ClienteService con Saldo > 0, tanto al listar como al buscar; no reproduce la fórmula. Pedidos filtra Pendiente y Confirmado, con acceso a activos desde el listado. Inventario reutiliza BuscarAsync con estado tipado. Las páginas procesan query strings en OnParametersSetAsync para que navegar o quitar el filtro en el mismo componente actualice la lista; valores desconocidos no producen excepciones y dejan el listado sin ese filtro. Los filtros activos son visibles y removibles.
 
 El Dashboard usa cards para métricas, una tabla sencilla para canales y tablas/cards responsive para
 actividad reciente. Cuando no existen datos muestra valores cero, **Sin pagos recientes** o

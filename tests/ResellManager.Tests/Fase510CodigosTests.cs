@@ -134,6 +134,7 @@ public sealed class Fase510CodigosTests
         Establecer(formulario, "PedidoService", pedidos);
         Establecer(formulario, "VentaService", ventas);
         Establecer(formulario, "InventarioService", inventario);
+        Establecer(formulario, "SeleccionService", new SeleccionOperativaService(test.Db));
         Establecer(formulario, "Logger", NullLogger<VentaDirectaForm>.Instance);
         Establecer(formulario, "Navigation", new NavegacionPrueba());
         Establecer(formulario, "OcupadoChanged", EventCallback.Factory.Create<bool>(new object(), ocupacion.Add));
@@ -161,6 +162,8 @@ public sealed class Fase510CodigosTests
 
         Assert.Matches("^PED-VD-[A-F0-9]{32}$", codigoPedido);
         Assert.Matches("^VEN-VD-[A-F0-9]{32}$", codigoVenta);
+        Assert.Equal(TipoPedido.VentaDirecta, pedidoCreado.TipoPedido);
+        Assert.Equal(CanalVenta.Presencial, pedidoCreado.CanalVenta);
         Assert.Equal(2, pedidos.Intentos.Count);
         Assert.All(pedidos.Intentos, input => Assert.Equal(codigoPedido, input.CodigoInterno));
         Assert.Equal(2, ventas.Intentos.Count);
@@ -281,12 +284,14 @@ public sealed class Fase510CodigosTests
     private sealed class PedidoRegistradoService(Func<PedidoInput, int, Task<ServiceResult<PedidoDto>>> registrar) : IPedidoService
     {
         public List<PedidoInput> Intentos { get; } = [];
+        public Task<ServiceResult<PedidoDto>> CrearManualAsync(PedidoInput input, CancellationToken ct = default) =>
+            CrearAsync(input, ct);
         public Task<ServiceResult<PedidoDto>> CrearAsync(PedidoInput input, CancellationToken ct = default)
         {
             Intentos.Add(input);
             return registrar(input, Intentos.Count);
         }
-        public Task<IReadOnlyList<PedidoDto>> ListarAsync(CancellationToken ct = default) => Task.FromResult<IReadOnlyList<PedidoDto>>([]);
+        public Task<IReadOnlyList<PedidoDto>> ListarAsync(CancellationToken ct = default, FiltroHistorial? filtro = null, bool soloActivos = false, bool conEntregaPendiente = false) => Task.FromResult<IReadOnlyList<PedidoDto>>([]);
         public Task<ServiceResult<PedidoDto>> ObtenerPorIdAsync(int id, CancellationToken ct = default) => throw new NotSupportedException();
         public Task<ServiceResult<PedidoDto>> AgregarDetalleAsync(int pedidoId, DetallePedidoInput input, CancellationToken ct = default) => throw new NotSupportedException();
         public Task<ServiceResult> CancelarAsync(int id, CancellationToken ct = default) => throw new NotSupportedException();
@@ -301,7 +306,7 @@ public sealed class Fase510CodigosTests
             return registrar(input, Intentos.Count);
         }
         public Task<ServiceResult<VentaDto>> ObtenerPorIdAsync(int id, CancellationToken ct = default) => throw new NotSupportedException();
-        public Task<IReadOnlyList<VentaDto>> ListarAsync(CancellationToken ct = default) => throw new NotSupportedException();
+        public Task<IReadOnlyList<VentaDto>> ListarAsync(CancellationToken ct = default, FiltroHistorial? filtro = null, EstadoVenta? estado = null) => throw new NotSupportedException();
         public Task<ServiceResult<decimal>> CalcularTotalAsync(int ventaId, CancellationToken ct = default) => throw new NotSupportedException();
         public Task<ServiceResult> CancelarAsync(int id, CancellationToken ct = default) => throw new NotSupportedException();
     }

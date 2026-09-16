@@ -1,6 +1,8 @@
 @page "/pedidos"
 @rendermode InteractiveServer
+@using ResellManager.Domain.Enums
 @inject IPedidoService PedidoService
+@inject NavigationManager Navigation
 @inject ILogger<Pedidos> Logger
 
 <PageTitle>Pedidos | ResellManager</PageTitle>
@@ -11,13 +13,34 @@
         <h1 id="titulo-pedidos">Pedidos</h1>
         <p class="page-lead">Consulta pedidos, apartados y sus reservas sin registrar ventas.</p>
     </div>
-    <a class="primary-button" href="/pedidos/nuevo">Nuevo pedido</a>
+    <div class="heading-actions">
+        <a class="primary-button" href="/pedidos/nuevo">Nuevo pedido</a>
+    </div>
 </section>
+
+@if (SoloActivos)
+{
+    <div class="origin-guidance context-filter" role="status">
+        <span>Pedidos activos: pendientes y confirmados</span>
+        <a class="inline-button" href="@UrlEstado("")">Quitar filtro de estado</a>
+    </div>
+}
 
 @if (!string.IsNullOrWhiteSpace(MensajeExito))
 {
     <div class="mensaje-exito" role="status">@MensajeExito</div>
 }
+
+<FiltrosHistorial Id="filtros-pedidos" Modelo="Filtros" Placeholder="Buscar por código de pedido" Ocupado="Cargando" OnAplicar="AplicarFiltrosAsync" OnLimpiar="LimpiarFiltrosAsync">
+    <div class="form-field">
+        <label for="estado-historial">Estado / entrega</label>
+        <select id="estado-historial" @bind="Filtros.Estado" disabled="@Cargando">
+            <option value="">Todos</option>
+            <option value="activos">Activos</option>
+            <option value="entrega-pendiente">Con entrega pendiente</option>
+        </select>
+    </div>
+</FiltrosHistorial>
 
 @if (!string.IsNullOrWhiteSpace(ErrorMessage))
 {
@@ -38,8 +61,8 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage) && PedidosEncontrados.Count == 
 {
     <section class="empty-state" aria-labelledby="titulo-sin-pedidos">
         <span class="empty-state-icon" aria-hidden="true"><NavIcon Name="clipboard" /></span>
-        <h2 id="titulo-sin-pedidos">Aún no hay pedidos</h2>
-        <p>Crea el primer pedido con un cliente y al menos un producto.</p>
+        <h2 id="titulo-sin-pedidos">@(Filtros.Activo ? "No se encontraron pedidos con estos filtros" : "Aún no hay pedidos")</h2>
+        <p>@(SoloActivos ? "Puedes quitar el filtro para consultar el historial completo." : "Crea el primer pedido con un cliente y al menos un producto.")</p>
         <a class="primary-button" href="/pedidos/nuevo">Crear pedido</a>
     </section>
 }
@@ -65,8 +88,11 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
                         <th scope="col" class="actions-cell">Acciones</th>
                     </tr>
                 </thead>
+                @foreach (var grupo in Grupos)
+                {
                 <tbody>
-                    @foreach (var pedido in PedidosEncontrados)
+                    <tr class="history-month-row"><th scope="rowgroup" colspan="8"><button class="history-month-toggle" type="button" aria-expanded="@Meses.Abierto(grupo.Anio, grupo.Mes)" @onclick="() => Meses.Alternar(grupo.Anio, grupo.Mes)"><span aria-hidden="true">@(Meses.Abierto(grupo.Anio, grupo.Mes) ? "▼" : "▶")</span> @grupo.Titulo</button></th></tr>
+                    @foreach (var pedido in Meses.Abierto(grupo.Anio, grupo.Mes) ? grupo.Registros : Array.Empty<PedidoDto>())
                     {
                         <tr>
                             <td>
@@ -83,11 +109,15 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
                         </tr>
                     }
                 </tbody>
+                }
             </table>
         </div>
 
         <div class="mobile-card-list">
-            @foreach (var pedido in PedidosEncontrados)
+            @foreach (var grupo in Grupos)
+            {
+                <h3 class="history-month-title"><button class="history-month-toggle" type="button" aria-expanded="@Meses.Abierto(grupo.Anio, grupo.Mes)" @onclick="() => Meses.Alternar(grupo.Anio, grupo.Mes)"><span aria-hidden="true">@(Meses.Abierto(grupo.Anio, grupo.Mes) ? "▼" : "▶")</span> @grupo.Titulo</button></h3>
+            @foreach (var pedido in Meses.Abierto(grupo.Anio, grupo.Mes) ? grupo.Registros : Array.Empty<PedidoDto>())
             {
                 <article class="entity-card order-card">
                     <div class="entity-card-heading">
@@ -108,11 +138,24 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
                     </div>
                 </article>
             }
+            }
         </div>
     </section>
 }
 
 @code {
+    [SupplyParameterFromQuery(Name = "buscar")] public string? BuscarConsulta { get; set; }
+    [SupplyParameterFromQuery(Name = "desde")] public string? DesdeConsulta { get; set; }
+    [SupplyParameterFromQuery(Name = "hasta")] public string? HastaConsulta { get; set; }
+    private FiltroHistorialModelo Filtros { get; } = new();
+    private MesesDesplegables Meses { get; } = new();
+    private string? ErrorConsulta { get; set; }
+    private IReadOnlyList<GrupoMensual<PedidoDto>> Grupos { get; set; } = [];
+
+    [SupplyParameterFromQuery(Name = "estado")]
+    public string? EstadoConsulta { get; set; }
+    private string UrlEstado(string estado) => new FiltroHistorialModelo { Termino = Filtros.Termino, Desde = Filtros.Desde, Hasta = Filtros.Hasta, Estado = estado }.Url("/pedidos");
+    private bool SoloActivos => string.Equals(EstadoConsulta, "activos", StringComparison.OrdinalIgnoreCase);
     private IReadOnlyList<PedidoDto> PedidosEncontrados { get; set; } = [];
     private bool Cargando { get; set; } = true;
     private string? ErrorMessage { get; set; }
@@ -126,15 +169,33 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
         _ => null,
     };
 
-    protected override Task OnInitializedAsync() => CargarAsync();
+    protected override Task OnParametersSetAsync()
+    {
+        ErrorConsulta = Filtros.Cargar(BuscarConsulta, DesdeConsulta, HastaConsulta, EstadoConsulta);
+        if (Filtros.Estado is not ("" or "activos" or "entrega-pendiente")) ErrorConsulta = "El filtro de pedidos no es válido. Selecciona una opción disponible.";
+        return CargarAsync();
+    }
+
+    private Task AplicarFiltrosAsync()
+    {
+        if (Cargando) return Task.CompletedTask;
+        ErrorConsulta = Filtros.Validar();
+        if (ErrorConsulta is not null) { ErrorMessage = ErrorConsulta; return Task.CompletedTask; }
+        return Filtros.NavegarAsync(Navigation, "/pedidos", CargarAsync);
+    }
+    private Task LimpiarFiltrosAsync() { Filtros.Limpiar(); return AplicarFiltrosAsync(); }
 
     private async Task CargarAsync()
     {
+        ErrorMessage = ErrorConsulta ?? Filtros.Validar();
+        if (ErrorMessage is not null) { PedidosEncontrados = []; Grupos = []; Cargando = false; return; }
         Cargando = true;
-        ErrorMessage = null;
         try
         {
-            PedidosEncontrados = await PedidoService.ListarAsync();
+            PedidosEncontrados = await PedidoService.ListarAsync(filtro: Filtros.ToInput(), soloActivos: Filtros.Estado == "activos", conEntregaPendiente: Filtros.Estado == "entrega-pendiente");
+            Grupos = HistorialMensual.Agrupar(PedidosEncontrados, x => x.Fecha, x => x.Id);
+            Meses.Reiniciar(Grupos);
+
         }
         catch (Exception ex)
         {

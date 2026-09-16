@@ -1,0 +1,67 @@
+/* La guía compartida es una fila flex; este formulario apila su contenido. */
+.reservation-prompt {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    gap: .75rem;
+    margin-top: 1.25rem;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.reservation-prompt > * {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: normal;
+    word-break: normal;
+}
+
+.reservation-prompt p { margin: 0; }
+
+.reservation-prompt-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+}
+
+.reservation-prompt button {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    white-space: normal;
+    overflow-wrap: normal;
+    word-break: normal;
+    justify-content: center;
+}
+
+.reservation-prompt ul {
+    margin: 0;
+    padding-left: 1.25rem;
+}
+
+.reservation-prompt li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: .35rem;
+    margin-block: .35rem;
+    min-width: 0;
+}
+
+/* Solo los identificadores largos necesitan partirse sin espacios. */
+.reservation-prompt .code-value {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+@media (min-width: 48rem) {
+    .reservation-prompt-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: center;
+    }
+
+    .reservation-prompt li {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+    }
+}

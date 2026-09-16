@@ -6,5 +6,6 @@ public enum EstadoUnidadInventario
     EnTransito,
     Disponible,
     Vendida,
-    Entregada
+    Entregada,
+    Perdida
 }

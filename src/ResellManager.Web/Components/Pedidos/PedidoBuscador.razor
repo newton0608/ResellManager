@@ -1,0 +1,17 @@
+@inject IServiceScopeFactory Scopes
+<BuscadorEntidad TItem="PedidoDto" Id="venta-pedido" Etiqueta="Pedido"
+    Placeholder="Buscar por código de pedido o nombre del cliente" Seleccionado="Seleccionado"
+    TextoSeleccionado="@(Seleccionado is null ? null : Seleccionado.CodigoInterno + " · " + Seleccionado.Cliente)"
+    Deshabilitado="Deshabilitado" Buscar="BuscarAsync" OnSeleccionado="OnSeleccionado">
+    <Resultado Context="pedido"><strong>@pedido.CodigoInterno</strong><span>@pedido.Cliente</span></Resultado>
+</BuscadorEntidad>
+@code {
+    [Parameter] public PedidoDto? Seleccionado { get; set; }
+    [Parameter] public bool Deshabilitado { get; set; }
+    [Parameter] public EventCallback<PedidoDto?> OnSeleccionado { get; set; }
+    private async Task<IReadOnlyList<PedidoDto>> BuscarAsync(string termino, CancellationToken ct)
+    {
+        await using var scope = Scopes.CreateAsyncScope();
+        return await scope.ServiceProvider.GetRequiredService<ISeleccionOperativaService>().BuscarPedidosAsync(termino, ct);
+    }
+}

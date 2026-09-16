@@ -26,10 +26,11 @@
 - Una unidad `Vendida` o `Entregada` no puede reservarse.
 - La unidad y el detalle reservado deben corresponder al mismo producto.
 - Una unidad reservada no puede venderse para un pedido distinto.
-- Una unidad reservada puede venderse para el pedido de su reserva; registrar esa venta consume la asociación de reserva.
+- Una unidad reservada `Disponible` puede venderse para el pedido de su reserva; registrar esa venta consume la asociación de reserva. La liberación final de todas las reservas se rige por la invariante de Pedidos y ventas descrita abajo.
 - Cancelar una reserva elimina la asociación y conserva el estado físico.
 - Cancelar un pedido libera sus asociaciones de reserva y no cambia estados físicos.
 - Al recibir una unidad reservada se registra `FechaIngreso`, pasa de `Comprada` o `EnTransito` a `Disponible` y conserva la reserva.
+- Al crear un pedido físico, reservar es opcional y explícito: se seleccionan unidades elegibles del producto hasta la cantidad solicitada. Tras aceptar, una única opción puede autoseleccionarse; con varias se eligen las unidades exactas. Nada se reserva persistentemente antes de confirmar: pedido, detalles y reservas se guardan juntos de forma transaccional, revalidando elegibilidad.
 - Si aún no existe una unidad física, la intención del apartado vive en `Pedido`/`DetallePedido`; la unidad puede asociarse después.
 
 ## Clientes y pagos
@@ -38,16 +39,19 @@
 - Un pago pertenece globalmente al cliente, nunca a una venta.
 - Un pago debe ser mayor que cero y no puede superar la deuda actual.
 - El saldo no se almacena: se calcula como la suma de `PrecioFinal` de ventas `Registrada` menos la suma de pagos.
+- Limitar por mes la actividad mostrada no limita el saldo. Las pendientes actuales no se filtran por antigüedad y excluyen reservas pertenecientes a pedidos `Cancelado` o `Completado`, además de unidades ya entregadas.
 
 ## Pedidos y ventas
 
-- Toda venta se origina en un único pedido. Una venta presencial puede generar su pedido técnico automáticamente en una futura UI.
+- Toda venta se origina en un único pedido. El flujo vigente de Venta Directa genera su pedido técnico automáticamente.
 - Un pedido cancelado no puede convertirse en venta.
 - Los detalles del pedido agrupan la cantidad solicitada por `ProductoId`.
 - Los detalles de la venta representan unidades individuales y no tienen campo cantidad.
 - Al registrar una venta, las cantidades vendidas deben coincidir exactamente por producto con las cantidades del pedido.
 - En inventario físico, el producto vendido se deriva de cada `UnidadInventario`; en catálogo se usa `DetalleVenta.ProductoId`.
 - Solo una venta completa cambia el pedido a `Completado`.
+- Invariante: un pedido `Completado` no puede conservar reservas activas. Registrar su venta completa libera TODAS las reservas de sus detalles, no únicamente las de unidades efectivamente vendidas, dentro de la misma transacción que registra la venta y completa el pedido.
+- Puede sustituirse una unidad reservada A por otra B del mismo producto, `Disponible` y sin reserva ajena: B pasa a `Vendida` y queda sin reserva; A pierde únicamente `DetallePedidoReservaId` y conserva exactamente su estado físico previo (`Comprada`, `EnTransito` o `Disponible`). Las unidades no utilizadas no se borran ni cancelan. Si la transacción falla, no se confirma una liberación parcial.
 - Una venta se registra como transacción completa y no admite agregar artículos posteriormente.
 - Una compra posterior del mismo cliente requiere otro pedido y otra venta.
 - Una venta `Registrada` cuenta para el saldo; una venta `Cancelada` no cuenta.
@@ -77,6 +81,7 @@
 - Una importación genera unidades compradas, todavía no disponibles.
 - `FechaCompra` y `FechaIngreso` pueden ser distintas.
 - La recepción registra la fecha real de ingreso y cambia `Comprada`/`EnTransito` a `Disponible`.
+- La recepción se opera por Compra y Proveedor y puede ser parcial. Una confirmación solo incluye unidades de una misma Compra; las no seleccionadas conservan su estado `Comprada`/`EnTransito` y las reservas vigentes se conservan también en las recibidas.
 - Recibir una unidad ya `Disponible`, `Vendida` o `Entregada` se rechaza.
 - La recepción no crea unidades nuevas.
 

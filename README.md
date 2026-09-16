@@ -8,6 +8,8 @@ ResellManager V1 implementa autenticación privada, clientes, productos/categor�
 
 Consulta el [alcance V1](docs/14_Alcance_V1.md), las [decisiones](docs/11_DecisionesDeDiseño.md) y el [informe de cierre y validación](docs/18_Fase510_CierreV1.md).
 
+La preparación de producción sigue el [runbook de despliegue V1](docs/21_Despliegue_V1.md). Es un plan previo al go-live, no evidencia de una instalación productiva ni de una release 1.0.0 publicada.
+
 ## Estructura
 
 ```text

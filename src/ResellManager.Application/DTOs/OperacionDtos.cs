@@ -133,5 +133,6 @@ public sealed record DashboardDto(
     int PedidosActivos,
     IReadOnlyCollection<PagoDto> UltimosPagos,
     IReadOnlyCollection<VentaRecienteDashboardDto> UltimasVentas,
-    IReadOnlyCollection<ResumenCanalVentaDto> Canales
+    IReadOnlyCollection<ResumenCanalVentaDto> Canales,
+    int PendientesEntrega = 0
 );

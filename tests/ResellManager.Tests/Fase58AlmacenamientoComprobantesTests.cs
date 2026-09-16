@@ -608,7 +608,7 @@ public sealed class Fase58AlmacenamientoComprobantesTests
             CancellationToken ct = default
         ) => throw new NotSupportedException();
 
-        public Task<IReadOnlyList<CompraDto>> ListarAsync(CancellationToken ct = default) =>
+        public Task<IReadOnlyList<CompraDto>> ListarAsync(CancellationToken ct = default, FiltroHistorial? filtro = null) =>
             throw new NotSupportedException();
 
         public Task<ServiceResult<ComprobanteCompraDto>> ObtenerComprobanteAsync(
@@ -689,7 +689,7 @@ public sealed class Fase58AlmacenamientoComprobantesTests
             throw new InvalidOperationException("Excepción simulada después del commit.");
         }
 
-        public Task<IReadOnlyList<CompraDto>> ListarAsync(CancellationToken ct = default) =>
+        public Task<IReadOnlyList<CompraDto>> ListarAsync(CancellationToken ct = default, FiltroHistorial? filtro = null) =>
             Task.FromResult<IReadOnlyList<CompraDto>>(compra is null ? [] : [compra]);
 
         public Task<ServiceResult<CompraDto>> ObtenerPorIdAsync(

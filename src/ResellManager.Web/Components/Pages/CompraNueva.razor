@@ -2,8 +2,6 @@
 @rendermode InteractiveServer
 @using ResellManager.Domain.Enums
 @inject IRegistroCompraConComprobanteService RegistroCompraService
-@inject IProveedorService ProveedorService
-@inject IProductoService ProductoService
 @inject NavigationManager Navigation
 @inject ILogger<CompraNueva> Logger
 
@@ -17,46 +15,22 @@
     </div>
 </section>
 
-@if (Cargando)
-{
-    <div class="loading-state" role="status" aria-live="polite">
-        <span class="spinner" aria-hidden="true"></span>
-        Cargando proveedores y productos...
-    </div>
-}
-else if (!string.IsNullOrWhiteSpace(ErrorCarga))
-{
-    <section class="error-state" role="alert">
-        <h2>No fue posible abrir el formulario</h2>
-        <p>@ErrorCarga</p>
-        <div class="form-actions">
-            <button class="primary-button" type="button" @onclick="CargarAsync">Reintentar</button>
-            <a class="secondary-button" href="/compras">Volver a compras</a>
-        </div>
-    </section>
-}
-else
-{
-    @if (Proveedores.Count == 0 || Productos.Count == 0)
+    @if (AltaProveedor)
     {
-        <div class="mensaje-error catalog-warning" role="alert">
-            <span>Para registrar una compra necesitas al menos un proveedor y un producto.</span>
-            <div class="heading-actions">
-                @if (Proveedores.Count == 0)
-                {
-                    <a class="inline-button" href="/proveedores/nuevo">Registrar proveedor</a>
-                }
-                @if (Productos.Count == 0)
-                {
-                    <a class="inline-button" href="/productos/nuevo">Registrar producto</a>
-                }
-            </div>
-        </div>
+        <ProveedorAltaPanel OnCreado="ProveedorCreado" OnCancelar="CerrarAltaProveedor" />
     }
-
+    @if (DetalleAlta is not null)
+    {
+        <ProductoAltaPanel OnCreado="ProductoCreado" OnCancelar="CerrarAlta" />
+    }
+    @if (ConfirmacionProducto is not null)
+    {
+        <p class="mensaje-exito" role="status">@ConfirmacionProducto</p>
+    }
     <section class="form-panel purchase-form-panel" aria-label="Formulario de compra">
-        <EditForm Model="Modelo" OnValidSubmit="GuardarAsync" class="entity-form">
+        <EditForm Model="Modelo" OnValidSubmit="RevisarCompra" class="entity-form">
             <DataAnnotationsValidator />
+            <fieldset class="purchase-fields" disabled="@(Guardando || AltaAbierta)">
 
             @if (!string.IsNullOrWhiteSpace(ErrorGuardado))
             {
@@ -82,16 +56,9 @@ else
                 </div>
 
                 <div class="form-field">
-                    <label for="compra-proveedor">Proveedor <span aria-hidden="true">*</span></label>
-                    <InputSelect id="compra-proveedor" @bind-Value="Modelo.ProveedorId">
-                        <option value="0">Selecciona un proveedor</option>
-                        @foreach (var proveedor in Proveedores)
-                        {
-                            <option value="@proveedor.Id">@proveedor.Nombre</option>
-                        }
-                    </InputSelect>
+                    <ProveedorBuscador Seleccionado="ProveedorSeleccionado" Deshabilitado="@(Guardando || AltaAbierta)"
+                                       OnSeleccionado="SeleccionarProveedor" OnAgregar="AbrirAltaProveedor" />
                     <ValidationMessage For="() => Modelo.ProveedorId" />
-                    <a class="field-help field-help-link" href="/proveedores/nuevo">¿Necesitas otro proveedor?</a>
                 </div>
 
                 @if (RequiereFechaIngreso)
@@ -112,7 +79,7 @@ else
 
             @if (Modelo.Origen == OrigenCompra.Importacion)
             {
-                <div class="origin-guidance">
+                <div class="origin-guidance purchase-import-guidance">
                     <strong>Importación</strong>
                     <span>Las unidades se crean como Compradas, sin fecha de ingreso. La recepción se registra después en Inventario.</span>
                 </div>
@@ -148,23 +115,18 @@ else
                                         @onclick="() => QuitarFila(detalle)">Quitar</button>
                             </div>
                             <div class="purchase-line-grid">
-                                <div class="form-field purchase-product-field">
-                                    <label for="producto-compra-@numero">Producto <span aria-hidden="true">*</span></label>
-                                    <select id="producto-compra-@numero" @bind="detalle.ProductoId">
-                                        <option value="0">Selecciona un producto</option>
-                                        @foreach (var producto in Productos)
-                                        {
-                                            <option value="@producto.Id">@producto.CodigoInterno · @producto.Nombre</option>
-                                        }
-                                    </select>
-                                </div>
+                                <ProductoBuscador Id="@($"producto-compra-{numero}")"
+                                                  Seleccionado="detalle.ProductoSeleccionado"
+                                                  Deshabilitado="@(Guardando || AltaAbierta)"
+                                                  OnSeleccionado="producto => SeleccionarProducto(detalle, producto)"
+                                                  OnRegistrar="() => AbrirAlta(detalle)" />
                                 <div class="form-field">
                                     <label for="cantidad-compra-@numero">Cantidad <span aria-hidden="true">*</span></label>
-                                    <input id="cantidad-compra-@numero" type="number" min="1" step="1" @bind="detalle.Cantidad" />
+                                    <input inputmode="numeric" data-select-once="true" id="cantidad-compra-@numero" type="number" min="1" step="1" @bind="detalle.Cantidad" />
                                 </div>
                                 <div class="form-field">
                                     <label for="costo-compra-@numero">Costo unitario <span aria-hidden="true">*</span></label>
-                                    <input id="costo-compra-@numero" type="number" min="0" step="0.01" @bind="detalle.CostoUnitario" />
+                                    <input inputmode="decimal" data-select-once="true" id="costo-compra-@numero" type="number" min="0" step="0.01" @bind="detalle.CostoUnitario" />
                                 </div>
                                 <div class="purchase-line-subtotal">
                                     <span>Subtotal</span>
@@ -243,51 +205,86 @@ else
 
             <div class="form-actions purchase-submit-actions">
                 <button class="primary-button" type="submit"
-                        disabled="@(Guardando || Proveedores.Count == 0 || Productos.Count == 0)">
-                    @(Guardando ? "Registrando y procesando..." : "Registrar compra")
+                        disabled="@(Guardando || AltaAbierta)">
+                    @(Guardando ? "Registrando y procesando..." : "Revisar compra")
                 </button>
                 <a class="secondary-button" href="/compras">Cancelar</a>
             </div>
+            </fieldset>
         </EditForm>
     </section>
+
+@if (RevisandoCompra)
+{
+    <ConfirmacionOperacion Titulo="Revisar compra" TextoConfirmar="Confirmar compra" Ocupado="Guardando"
+                           Error="@ErrorGuardado" OnEditar="EditarCompra" OnConfirmar="ConfirmarCompraAsync">
+        <dl>
+            <dt>Proveedor</dt><dd>@ProveedorSeleccionado?.Nombre</dd>
+            <dt>Origen</dt><dd>@CompraPresentacion.Origen(Modelo.Origen)</dd>
+            <dt>Fecha de compra</dt><dd>@Modelo.FechaCompra.ToString("dd/MM/yyyy")</dd>
+            <dt>Fecha de ingreso</dt><dd>@(Modelo.FechaIngreso?.ToString("dd/MM/yyyy") ?? "Pendiente / no aplica")</dd>
+        </dl>
+        <ul>
+            @foreach (var detalle in Modelo.Detalles)
+            {
+                <li><strong>@detalle.ProductoSeleccionado?.Nombre</strong>: @detalle.Cantidad × @CompraPresentacion.Moneda(detalle.CostoUnitario) = @CompraPresentacion.Moneda(detalle.Subtotal)</li>
+            }
+        </ul>
+        <p><strong>Total: @CompraPresentacion.Moneda(Modelo.TotalVisual)</strong></p>
+        <p>Comprobante: @(Modelo.AdjuntarComprobante ? ArchivoSeleccionado?.Name : "Sin archivo adjunto")</p>
+        <p>La compra y sus unidades se registrarán únicamente al confirmar.</p>
+    </ConfirmacionOperacion>
 }
 
 @code {
     private readonly string CodigoInterno = CodigosInternos.CrearCodigoCompra();
     private CompraFormModel Modelo { get; } = new();
-    private IReadOnlyList<ProveedorDto> Proveedores { get; set; } = [];
-    private IReadOnlyList<ProductoDto> Productos { get; set; } = [];
+    private ProveedorDto? ProveedorSeleccionado { get; set; }
+    private bool AltaProveedor { get; set; }
+    private bool AltaAbierta => AltaProveedor || DetalleAlta is not null;
+    private bool RevisandoCompra { get; set; }
+    private DetalleCompraFormModel? DetalleAlta { get; set; }
+    private string? ConfirmacionProducto { get; set; }
     private IBrowserFile? ArchivoSeleccionado { get; set; }
-    private bool Cargando { get; set; } = true;
     private bool Guardando { get; set; }
-    private string? ErrorCarga { get; set; }
     private string? ErrorGuardado { get; set; }
     private string? ErrorArchivo { get; set; }
 
     private bool RequiereFechaIngreso =>
         Modelo.Origen is OrigenCompra.CompraLocal or OrigenCompra.EnvioHermano;
 
-    protected override Task OnInitializedAsync() => CargarAsync();
-
-    private async Task CargarAsync()
+    private void SeleccionarProveedor(ProveedorDto? proveedor)
     {
-        Cargando = true;
-        ErrorCarga = null;
-        try
-        {
-            Proveedores = await ProveedorService.ListarAsync();
-            Productos = await ProductoService.ListarAsync();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "No fue posible cargar proveedores y productos para la compra.");
-            ErrorCarga = "Ocurrió un problema al cargar los datos. Intenta nuevamente.";
-        }
-        finally
-        {
-            Cargando = false;
-        }
+        if (Guardando) return;
+        ProveedorSeleccionado = proveedor;
+        Modelo.ProveedorId = proveedor?.Id ?? 0;
     }
+
+    private void AbrirAltaProveedor()
+    {
+        if (Guardando || AltaAbierta) return;
+        ConfirmacionProducto = null;
+        AltaProveedor = true;
+    }
+
+    private void CerrarAltaProveedor() => AltaProveedor = false;
+
+    private void ProveedorCreado(ProveedorDto proveedor)
+    {
+        SeleccionarProveedor(proveedor);
+        ConfirmacionProducto = $"Proveedor {proveedor.Nombre} registrado y seleccionado.";
+        CerrarAltaProveedor();
+    }
+
+    private void RevisarCompra()
+    {
+        if (Guardando || AltaAbierta) return;
+        ErrorGuardado = ValidacionFormulario.PrimerError(Modelo) ?? ValidarFormulario();
+        RevisandoCompra = ErrorGuardado is null;
+    }
+
+    private void EditarCompra() { if (!Guardando) RevisandoCompra = false; }
+    private Task ConfirmarCompraAsync() => RevisandoCompra && !Guardando ? GuardarAsync() : Task.CompletedTask;
 
     private void CambiarOrigen(ChangeEventArgs evento)
     {
@@ -305,6 +302,30 @@ else
     {
         if (!Guardando)
             Modelo.Detalles.Add(new DetalleCompraFormModel());
+    }
+
+    private void SeleccionarProducto(DetalleCompraFormModel detalle, ProductoDto? producto)
+    {
+        if (Guardando || !Modelo.Detalles.Contains(detalle)) return;
+        detalle.ProductoSeleccionado = producto;
+        detalle.ProductoId = producto?.Id ?? 0;
+    }
+
+    private void AbrirAlta(DetalleCompraFormModel detalle)
+    {
+        if (Guardando || AltaAbierta || !Modelo.Detalles.Contains(detalle)) return;
+        ConfirmacionProducto = null;
+        DetalleAlta = detalle;
+    }
+
+    private void CerrarAlta() => DetalleAlta = null;
+
+    private void ProductoCreado(ProductoDto producto)
+    {
+        if (DetalleAlta is null) return;
+        SeleccionarProducto(DetalleAlta, producto);
+        ConfirmacionProducto = $"Producto {producto.Nombre} registrado y seleccionado. Continúa con cantidad y costo unitario.";
+        CerrarAlta();
     }
 
     private void QuitarFila(DetalleCompraFormModel detalle)
@@ -329,7 +350,7 @@ else
 
     private async Task GuardarAsync()
     {
-        if (Guardando)
+        if (Guardando || AltaAbierta)
             return;
 
         ErrorGuardado = ValidarFormulario();
@@ -373,6 +394,7 @@ else
                 return;
             }
 
+            RevisandoCompra = false;
             Navigation.NavigateTo($"/compras/{resultado.Value.Id}?mensaje=compra-creada");
         }
         catch (Exception ex)
@@ -390,11 +412,11 @@ else
 
     private string? ValidarFormulario()
     {
-        if (!Proveedores.Any(x => x.Id == Modelo.ProveedorId))
+        if (ProveedorSeleccionado is null || ProveedorSeleccionado.Id != Modelo.ProveedorId)
             return "Selecciona un proveedor válido.";
         if (Modelo.Detalles.Count == 0)
             return "Agrega al menos un detalle a la compra.";
-        if (Modelo.Detalles.Any(x => !Productos.Any(p => p.Id == x.ProductoId)))
+        if (Modelo.Detalles.Any(x => x.ProductoId <= 0))
             return "Selecciona un producto válido en cada detalle.";
         if (Modelo.Detalles.Any(x => x.Cantidad <= 0))
             return "La cantidad de cada detalle debe ser mayor que cero.";

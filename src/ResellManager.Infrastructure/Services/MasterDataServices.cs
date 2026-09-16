@@ -73,20 +73,23 @@ public sealed class ClienteService(ResellManagerDbContext db) : IClienteService
 
     public async Task<IReadOnlyList<ClienteDto>> BuscarAsync(
         string termino,
-        CancellationToken ct = default
+        CancellationToken ct = default,
+        int? limite = null
     )
     {
-        termino = termino.Trim();
-        var clientes = await db
+        termino = termino.Trim().ToLowerInvariant();
+        var consulta = db
             .Clientes.AsNoTracking()
             .Where(x =>
-                x.Nombres.Contains(termino)
-                || (x.Apellidos != null && x.Apellidos.Contains(termino))
+                (x.Nombres + " " + (x.Apellidos ?? "")).ToLower().Contains(termino)
                 || x.Telefono.Contains(termino)
             )
-            .OrderBy(x => x.Nombres)
+            .OrderByDescending(x => x.Telefono == termino)
+            .ThenBy(x => x.Nombres)
             .ThenBy(x => x.Apellidos)
-            .ToListAsync(ct);
+            .ThenBy(x => x.Id).AsQueryable();
+        if (limite.HasValue) consulta = consulta.Take(Math.Clamp(limite.Value, 1, 50));
+        var clientes = await consulta.ToListAsync(ct);
         return await MapConSaldosAsync(clientes, ct);
     }
 
@@ -147,7 +150,7 @@ public sealed class ClienteService(ResellManagerDbContext db) : IClienteService
         );
     }
 
-    private static VentaDto MapVenta(Venta x) =>
+    internal static VentaDto MapVenta(Venta x) =>
         new(
             x.Id,
             x.CodigoInterno,
@@ -283,10 +286,10 @@ public sealed class ProductoService(ResellManagerDbContext db) : IProductoServic
         CancellationToken ct = default
     )
     {
-        var error = await Validar(input, null, ct);
+        var x = new Producto { CodigoInterno = CodigosInternos.CrearCodigoProducto() };
+        var error = await Validar(input, x.CodigoInterno, null, ct);
         if (error is not null)
             return ServiceResult<ProductoDto>.Failure(error);
-        var x = new Producto();
         Apply(x, input);
         db.Productos.Add(x);
         await db.SaveChangesAsync(ct);
@@ -302,7 +305,7 @@ public sealed class ProductoService(ResellManagerDbContext db) : IProductoServic
         var x = await db.Productos.FindAsync([id], ct);
         if (x is null)
             return ServiceResult<ProductoDto>.Failure("Producto no encontrado.");
-        var error = await Validar(input, id, ct);
+        var error = await Validar(input, x.CodigoInterno, id, ct);
         if (error is not null)
             return ServiceResult<ProductoDto>.Failure(error);
         Apply(x, input);
@@ -326,29 +329,39 @@ public sealed class ProductoService(ResellManagerDbContext db) : IProductoServic
 
     public async Task<IReadOnlyList<ProductoDto>> BuscarAsync(
         string termino,
-        CancellationToken ct = default
+        CancellationToken ct = default,
+        int? limite = null,
+        int? categoriaId = null
     )
     {
         termino = termino.Trim();
+        var terminoMinusculas = termino.ToLowerInvariant();
         var productos = db.Productos.Where(x =>
-            x.Nombre.Contains(termino)
-            || x.CodigoInterno.Contains(termino)
-            || (x.CodigoBarras != null && x.CodigoBarras.Contains(termino))
+            x.Nombre.ToLower().Contains(terminoMinusculas)
+            || x.CodigoInterno.ToLower().Contains(terminoMinusculas)
+            || (x.CodigoBarras != null && x.CodigoBarras.ToLower().Contains(terminoMinusculas))
         );
-        return await Query(productos.OrderBy(x => x.Nombre)).ToListAsync(ct);
+        if (categoriaId.HasValue) productos = productos.Where(x => x.CategoriaId == categoriaId.Value);
+        IQueryable<Producto> ordenados = productos
+            .OrderByDescending(x => x.CodigoInterno.ToLower() == terminoMinusculas
+                || (x.CodigoBarras != null && x.CodigoBarras.ToLower() == terminoMinusculas))
+            .ThenBy(x => x.Nombre).ThenBy(x => x.Id);
+        if (limite.HasValue)
+            ordenados = ordenados.Take(Math.Clamp(limite.Value, 1, 50));
+        return await Query(ordenados).ToListAsync(ct);
     }
 
-    private async Task<string?> Validar(ProductoInput x, int? id, CancellationToken ct)
+    private async Task<string?> Validar(ProductoInput x, string codigoInterno, int? id, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(x.CodigoInterno) || string.IsNullOrWhiteSpace(x.Nombre))
-            return "Código interno y nombre son obligatorios.";
+        if (string.IsNullOrWhiteSpace(x.Nombre))
+            return "El nombre es obligatorio.";
         if (x.PrecioSugerido < 0)
             return "El precio sugerido no puede ser negativo.";
         if (!await db.Categorias.AnyAsync(c => c.Id == x.CategoriaId, ct))
             return "Categoría no encontrada.";
         if (
             await db.Productos.AnyAsync(
-                p => p.CodigoInterno == x.CodigoInterno.Trim() && p.Id != id,
+                p => p.CodigoInterno == codigoInterno && p.Id != id,
                 ct
             )
         )
@@ -358,7 +371,6 @@ public sealed class ProductoService(ResellManagerDbContext db) : IProductoServic
 
     private static void Apply(Producto x, ProductoInput i)
     {
-        x.CodigoInterno = i.CodigoInterno.Trim();
         x.CodigoBarras = i.CodigoBarras?.Trim();
         x.Nombre = i.Nombre.Trim();
         x.Descripcion = i.Descripcion?.Trim();
@@ -391,6 +403,18 @@ public sealed class ProductoService(ResellManagerDbContext db) : IProductoServic
 
 public sealed class ProveedorService(ResellManagerDbContext db) : IProveedorService
 {
+    public async Task<IReadOnlyList<ProveedorDto>> BuscarAsync(string termino, CancellationToken ct = default, int? limite = 12)
+    {
+        var texto = termino.Trim().ToLowerInvariant();
+        IQueryable<Proveedor> proveedores = db.Proveedores.AsNoTracking()
+            .Where(x => x.Nombre.ToLower().Contains(texto)
+                || (x.Telefono != null && x.Telefono.Contains(texto)))
+            .OrderByDescending(x => x.Telefono == texto)
+            .ThenBy(x => x.Nombre).ThenBy(x => x.Id);
+        if (limite.HasValue) proveedores = proveedores.Take(Math.Clamp(limite.Value, 1, 50));
+        return await proveedores.Select(x => Map(x)).ToListAsync(ct);
+    }
+
     public async Task<ServiceResult<ProveedorDto>> CrearAsync(
         ProveedorInput input,
         CancellationToken ct = default

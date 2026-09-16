@@ -46,7 +46,17 @@ public sealed record CompraDto(
     string Proveedor,
     IReadOnlyCollection<DetalleCompraDto> Detalles,
     string? RutaComprobante
-);
+)
+{
+    public ResumenRecepcionCompraDto? Recepcion { get; init; }
+}
+
+public sealed record ResumenRecepcionCompraDto(
+    int Total, int Recibidas, int Compradas, int EnTransito, int Perdidas
+)
+{
+    public int Pendientes => Compradas + EnTransito;
+}
 
 public sealed record ComprobanteCompraDto(
     int Id,

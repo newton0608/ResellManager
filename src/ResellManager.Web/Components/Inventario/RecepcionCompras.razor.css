@@ -1,0 +1,8 @@
+.reception-by-purchase { display: grid; gap: 1rem; margin-block: 1.25rem; min-width: 0; }
+.reception-by-purchase > *, .form-panel > * { min-width: 0; max-width: 100%; }
+.reception-by-purchase p, .reception-by-purchase h3 { margin: 0 0 .75rem; }
+.reception-units { list-style: none; padding: 0; }
+.reception-units label { display: flex; align-items: start; gap: .6rem; padding-block: .65rem; overflow-wrap: anywhere; }
+.reception-units input { flex: 0 0 auto; width: 1.25rem; height: 1.25rem; }
+.form-panel > .primary-button { margin-top: 1rem; width: 100%; }
+@media (min-width: 48rem) { .form-panel > .primary-button { width: auto; } }

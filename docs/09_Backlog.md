@@ -80,7 +80,8 @@
 - [x] Buscar cliente por los criterios soportados por `IClienteService`.
 - [x] Consultar detalle de cliente.
 
-- [x] Ver historial de ventas y pagos/abonos.
+- [x] Consultar Ventas y Pagos/abonos del cliente mediante carga mensual SQL incremental e independiente, conservando el saldo global.
+- [x] Separar pendientes actuales sin límite de antigüedad; excluir reservas de pedidos Cancelado/Completado.
 
 - [x] Consultar saldo calculado por el backend.
 
@@ -103,7 +104,7 @@
 - [x] Buscar y filtrar unidades por estado físico mediante el backend.
 - [x] Mostrar producto, identificación de unidad, compra/origen, ingreso y costo real de la unidad.
 - [x] Presentar el estado físico y la reserva comercial como conceptos separados.
-- [x] Registrar recepción de unidades compradas o en tránsito sin alterar reservas existentes.
+- [x] Registrar recepción parcial de unidades compradas o en tránsito, agrupada por Compra y Proveedor, sin alterar reservas existentes ni mezclar compras en una confirmación.
 - [x] Exponer únicamente las transiciones manuales `Comprada → EnTransito` y `Vendida → Entregada`.
 - [x] Integrar creación de unidades mediante la UI de compras; Inventario no crea unidades directamente y `CompraService` conserva la autoridad.
 - [x] Integrar creación y cancelación de reservas en la UI de pedidos; Inventario continúa como consulta del estado físico y la reserva.
@@ -142,13 +143,14 @@
 - [x] Mantener la regla de que toda venta tiene `PedidoId`; no existen ventas libres ni ventas sin pedido.
 - [x] Construir exactamente un detalle de venta por cada unidad solicitada en el pedido, sin venta parcial.
 - [x] Para venta física, seleccionar únicamente unidades `Disponible`, compatibles y sin reserva ajena, priorizando reservas del mismo pedido.
-- [x] Mantener la transición `Disponible → Vendida`, liberación de reserva y finalización del pedido exclusivamente en `VentaService`.
+- [x] Mantener en la misma transacción de `VentaService` la transición `Disponible → Vendida`, liberación de TODAS las reservas del pedido y su finalización. Las reservas sobrantes/sustituidas se liberan sin alterar el estado físico de unidades no vendidas; Pedido Completado implica cero reservas activas.
 - [x] Para catálogo, capturar manualmente `CostoUnitario` y `PrecioFinal` sin usar `UnidadInventario`.
 - [x] Cancelar ventas registradas mediante `IVentaService.CancelarAsync`, sin duplicar reglas de unidades, pedido o saldo en Blazor.
 - [x] Proteger registro y cancelación contra doble submit en UI.
 - [x] Mantener las ventas canceladas en modo de consulta.
 - [ ] V2: endurecer concurrencia de saldo por cliente e inventario físico sin bloqueo global.
-- [x] Auditar todos los códigos internos: Pedido y Venta normales automáticos; Producto manual por su uso comercial/búsqueda; Compra, comprobante y unidades ya automáticos. Ver `15_CodigosYCanalesVenta.md`.
+- [x] Auditar todos los códigos internos: Pedido y Venta normales automáticos; Producto también automático en backend como `PRO-<GUID>` tras validación manual V1, conservando códigos históricos; Compra, comprobante y unidades ya automáticos. Ver `15_CodigosYCanalesVenta.md`.
+- [x] Restringir Nuevo pedido manual a Importación, Catálogo y Apartado en selector y contrato del servicio. VentaDirecta permanece reservada a su flujo específico.
 - [x] Diseñar e implementar `CanalVenta` como concepto separado de `TipoPedido`, persistido en `Pedido`.
 - [x] Asignar `CanalVenta.Presencial` automáticamente al pedido de Venta Directa, sin selector adicional.
 - [x] Migrar pedidos históricos a `CanalVenta.Otro` sin inferir su origen.
@@ -163,8 +165,8 @@
 
 ## Fase 5.7: pagos y abonos
 
-- [x] Seleccionar un cliente real y consultar su saldo mediante `IClienteService.ObtenerSaldoAsync`.
-- [x] Registrar pagos y abonos globales por cliente mediante `IPagoService.RegistrarAsync`.
+- [x] Buscar y seleccionar un cliente real por nombre completo/teléfono, conservando `?cliente=id`, y consultar su saldo mediante `IClienteService.ObtenerSaldoAsync`.
+- [x] Revisar saldo actual, abono y saldo previsto antes de registrar pagos globales mediante `IPagoService.RegistrarAsync`.
 - [x] Validar preventivamente monto positivo y no mayor al saldo, manteniendo al backend como autoridad.
 - [x] Usar los valores reales del enum `MetodoPago`.
 - [x] Consultar el historial ordenado mediante `IPagoService.ListarPorClienteAsync`.
@@ -182,6 +184,9 @@
 - [x] Mostrar total adeudado como ventas `Registrada` menos pagos, sin ocultar saldos negativos inconsistentes.
 - [x] Mostrar valor y cantidad de inventario usando exclusivamente unidades `Disponible` y su costo real.
 - [x] Definir pedidos activos como `Pendiente + Confirmado`, excluyendo `Cancelado` y `Completado`.
+- [x] Mostrar Pendiente de entregar como conteo real de unidades `Vendida`, sin contar `Entregada`, en lugar de la tarjeta de pedidos activos.
+- [x] Añadir acciones rápidas: Registrar abono, Venta directa, Registrar pedido y Buscar cliente, con botones táctiles de 5rem.
+- [x] Enlazar filtros contextuales de clientes con deuda, pedidos activos e inventario disponible/vendido; Clientes ofrece Todos / Con deuda sin perder el criterio de búsqueda al alternar.
 - [x] Mostrar últimos pagos por fecha descendente e Id descendente, respetando el límite solicitado.
 - [x] Mostrar últimas ventas únicamente `Registrada`, por fecha descendente e Id descendente, con canal obtenido desde `Pedido`.
 - [x] Mostrar los cinco valores de `CanalVenta`, incluso en cero.
@@ -194,8 +199,11 @@
 
 ## Fase 5.8: compras, proveedores y comprobantes
 
+- [x] Buscar productos bajo demanda en Nueva compra por nombre, código de barras o código del sistema; solo sin coincidencias ofrecer alta con el formulario reutilizado, autoseleccionando la línea original.
+- [x] Buscar proveedor por nombre/teléfono y crear/autoseleccionar inline, incluso el primer proveedor, conservando la compra.
+
 - [x] Listar compras por fecha descendente con tabla de escritorio y cards móviles.
-- [x] Registrar compras con proveedor y productos reales, múltiples detalles y total calculado por backend.
+- [x] Revisar y confirmar compras con proveedor/productos reales, múltiples detalles, costos, total y archivo opcional; Editar conserva el formulario y la persistencia continúa en backend.
 - [x] Generar `Compra.CodigoInterno` como `COM-<GUID>` sin captura manual.
 - [x] Mantener en `CompraService` la creación de detalles, unidades, costos, estados y fechas por origen.
 - [x] Mantener Catálogo completamente fuera de `UnidadInventario`.

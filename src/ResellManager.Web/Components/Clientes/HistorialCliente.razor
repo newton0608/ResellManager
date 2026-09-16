@@ -1,0 +1,49 @@
+@inject IServiceScopeFactory Scopes
+<div class="history-grid">
+    <ActividadMensual T="VentaDto" ClienteId="ClienteId" Titulo="Ventas" Vacio="No hay ventas registradas para este cliente." Consultar="VentasAsync">
+        <Registro Context="venta">
+            <article class="timeline-item">
+                <div class="timeline-heading">
+                    <div><a class="contact-link code-value" href="/ventas/@venta.Id">@venta.CodigoInterno</a>
+                        <time datetime="@venta.Fecha.ToString("yyyy-MM-dd")">@venta.Fecha.ToString("dd/MM/yyyy")</time></div>
+                    <span class="status-badge @VentaPresentacion.ClaseEstado(venta.Estado)">@VentaPresentacion.Estado(venta.Estado)</span>
+                </div>
+                <p class="transaction-amount">@ClientePresentacion.Moneda(venta.Total)</p>
+                @if (!string.IsNullOrWhiteSpace(venta.Observaciones)) { <p class="transaction-note">@venta.Observaciones</p> }
+                <ul class="transaction-details">
+                    @foreach (var detalle in venta.Detalles)
+                    {
+                        <li><span>@detalle.Producto@(string.IsNullOrWhiteSpace(detalle.CodigoUnidad) ? "" : $" · {detalle.CodigoUnidad}")</span>
+                            <strong>@ClientePresentacion.Moneda(detalle.PrecioFinal)</strong></li>
+                    }
+                </ul>
+            </article>
+        </Registro>
+    </ActividadMensual>
+    <ActividadMensual T="PagoDto" ClienteId="ClienteId" Titulo="Pagos y abonos" Vacio="No hay pagos o abonos registrados para este cliente." Consultar="PagosAsync">
+        <Registro Context="pago">
+            <article class="timeline-item payment-item">
+                <div class="timeline-heading">
+                    <div><strong>Pago recibido</strong><time datetime="@pago.Fecha.ToString("yyyy-MM-dd")">@pago.Fecha.ToString("dd/MM/yyyy")</time></div>
+                    <span class="status-badge status-badge-payment">@PagoPresentacion.Metodo(pago.MetodoPago)</span>
+                </div>
+                <p class="transaction-amount payment-amount">@ClientePresentacion.Moneda(pago.Monto)</p>
+                @if (!string.IsNullOrWhiteSpace(pago.Referencia)) { <p class="transaction-meta"><span>Referencia:</span> @pago.Referencia</p> }
+                @if (!string.IsNullOrWhiteSpace(pago.Observaciones)) { <p class="transaction-note">@pago.Observaciones</p> }
+            </article>
+        </Registro>
+    </ActividadMensual>
+</div>
+@code {
+    [Parameter] public int ClienteId { get; set; }
+    private async Task<PaginaMes<VentaDto>> VentasAsync(int cliente, DateOnly? mes)
+    {
+        await using var scope = Scopes.CreateAsyncScope();
+        return await scope.ServiceProvider.GetRequiredService<IActividadClienteService>().VentasAsync(cliente, mes);
+    }
+    private async Task<PaginaMes<PagoDto>> PagosAsync(int cliente, DateOnly? mes)
+    {
+        await using var scope = Scopes.CreateAsyncScope();
+        return await scope.ServiceProvider.GetRequiredService<IActividadClienteService>().PagosAsync(cliente, mes);
+    }
+}

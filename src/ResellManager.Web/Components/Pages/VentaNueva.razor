@@ -4,6 +4,7 @@
 @inject IVentaService VentaService
 @inject IPedidoService PedidoService
 @inject IInventarioService InventarioService
+@inject ISeleccionOperativaService SeleccionService
 @inject NavigationManager Navigation
 @inject ILogger<VentaNueva> Logger
 
@@ -69,14 +70,7 @@ else
             </div>
         </div>
         <div class="form-field">
-            <label for="venta-pedido">Pedido <span aria-hidden="true">*</span></label>
-            <select id="venta-pedido" value="@PedidoSeleccionadoId" @onchange="CambiarPedidoAsync" disabled="@OperacionEnCurso" aria-required="true">
-                <option value="0">Selecciona un pedido</option>
-                @foreach (var pedido in PedidosElegibles)
-                {
-                    <option value="@pedido.Id">@pedido.CodigoInterno · @pedido.Cliente · @PedidoPresentacion.Tipo(pedido.TipoPedido)</option>
-                }
-            </select>
+            <PedidoBuscador Seleccionado="PedidoSeleccionado" Deshabilitado="OperacionEnCurso" OnSeleccionado="pedido => SeleccionarPedidoAsync(pedido?.Id ?? 0)" />
         </div>
     </section>
 
@@ -85,16 +79,7 @@ else
         <div class="mensaje-error" role="alert">@ErrorGuardado</div>
     }
 
-    @if (PedidosElegibles.Count == 0)
-    {
-        <section class="empty-state sale-empty-orders" aria-labelledby="titulo-sin-pedidos">
-            <span class="empty-state-icon" aria-hidden="true"><NavIcon Name="clipboard" /></span>
-            <h2 id="titulo-sin-pedidos">No hay pedidos elegibles</h2>
-            <p>Crea un pedido o revisa que no esté cancelado y que aún no tenga venta.</p>
-            <a class="primary-button" href="/pedidos/nuevo">Nuevo pedido</a>
-        </section>
-    }
-    else if (CargandoPedido)
+    @if (CargandoPedido)
     {
         <div class="loading-state" role="status" aria-live="polite">
             <span class="spinner" aria-hidden="true"></span>
@@ -168,35 +153,22 @@ else
                                 {
                                     <div class="form-field">
                                         <label for="costo-@detalle.DetallePedidoId-@detalle.Numero">Costo unitario <span aria-hidden="true">*</span></label>
-                                        <input id="costo-@detalle.DetallePedidoId-@detalle.Numero" type="number" min="0" step="0.01" required disabled="@Registrando" @bind="detalle.CostoUnitario" />
+                                        <input inputmode="decimal" data-select-once="true" id="costo-@detalle.DetallePedidoId-@detalle.Numero" type="number" min="0" step="0.01" required disabled="@Registrando" @bind="detalle.CostoUnitario" />
                                         <p class="field-help">Este costo queda registrado para calcular la utilidad; no se calculan comisiones.</p>
                                     </div>
                                 }
                                 else
                                 {
-                                    var opciones = OpcionesPara(detalle);
-                                    <div class="form-field sale-unit-field">
-                                        <label for="unidad-@detalle.DetallePedidoId-@detalle.Numero">Unidad de inventario <span aria-hidden="true">*</span></label>
-                                        <select id="unidad-@detalle.DetallePedidoId-@detalle.Numero"
-                                                disabled="@Registrando" required
-                                                value="@(detalle.UnidadInventarioId?.ToString() ?? string.Empty)"
-                                                @onchange="evento => SeleccionarUnidad(detalle, evento.Value?.ToString())">
-                                            <option value="">Selecciona una unidad disponible</option>
-                                            @foreach (var unidad in opciones)
-                                            {
-                                                <option value="@unidad.Id">@unidad.CodigoInterno · costo @VentaPresentacion.Moneda(unidad.Costo)@(unidad.PedidoReservaId == PedidoSeleccionado.Id ? " · reservada para este pedido" : string.Empty)</option>
-                                            }
-                                        </select>
-                                        @if (opciones.Count == 0)
-                                        {
-                                            <p class="field-help sale-unit-warning">No hay unidades disponibles compatibles para este renglón.</p>
-                                        }
-                                    </div>
+                                    <UnidadBuscador Id="@($"unidad-{detalle.DetallePedidoId}-{detalle.Numero}")"
+                                        Seleccionado="@UnidadesDisponibles.FirstOrDefault(x => x.Id == detalle.UnidadInventarioId)"
+                                        ProductoId="detalle.ProductoId" PedidoId="PedidoSeleccionado.Id" Deshabilitado="Registrando"
+                                        Excluir="@Detalles.Where(x => x != detalle && x.UnidadInventarioId.HasValue).Select(x => x.UnidadInventarioId!.Value).ToArray()"
+                                        OnSeleccionado="unidad => ElegirUnidad(detalle, unidad)" />
                                 }
 
                                 <div class="form-field">
                                     <label for="precio-@detalle.DetallePedidoId-@detalle.Numero">Precio final <span aria-hidden="true">*</span></label>
-                                    <input id="precio-@detalle.DetallePedidoId-@detalle.Numero" type="number" min="0" step="0.01" required disabled="@Registrando" @bind="detalle.PrecioFinal" />
+                                    <input inputmode="decimal" data-select-once="true" id="precio-@detalle.DetallePedidoId-@detalle.Numero" type="number" min="0" step="0.01" required disabled="@Registrando" @bind="detalle.PrecioFinal" />
                                     <p class="field-help">Precio real editable; no modifica el precio sugerido.</p>
                                 </div>
                                 <div class="form-field sale-line-note">
@@ -222,7 +194,7 @@ else
 <div hidden="@(ModoActual != ModoVenta.VentaDirecta)">
     @if (DirectaInicializada)
     {
-        <VentaDirectaForm OcupadoChanged="CambiarOcupacionDirecta" />
+        <VentaDirectaForm OcupadoChanged="CambiarOcupacionDirecta" ClienteDesdeQuery="@ClienteDesdeQuery" />
     }
 </div>
 
@@ -261,6 +233,7 @@ else
     public string? PedidoDesdeQuery { get; set; }
     [SupplyParameterFromQuery(Name = "modo")]
     public string? ModoDesdeQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "cliente")] public string? ClienteDesdeQuery { get; set; }
 
 
     private bool EsCatalogo => PedidoSeleccionado?.TipoPedido == TipoPedido.Catalogo;
@@ -285,12 +258,7 @@ else
         ErrorCarga = null;
         try
         {
-            var pedidos = await PedidoService.ListarAsync();
-            PedidosElegibles = pedidos
-                .Where(x => x.Estado != EstadoPedido.Cancelado && x.VentaId is null)
-                .OrderByDescending(x => x.Fecha)
-                .ThenByDescending(x => x.Id)
-                .ToList();
+            // El buscador consulta pedidos elegibles bajo demanda.
 
             if (PedidoDesdeQuery is not null)
             {
@@ -311,12 +279,6 @@ else
         }
     }
 
-    private async Task CambiarPedidoAsync(ChangeEventArgs evento)
-    {
-        var pedidoId = int.TryParse(evento.Value?.ToString(), out var id) ? id : 0;
-        await SeleccionarPedidoAsync(pedidoId);
-    }
-
     private async Task SeleccionarPedidoAsync(int pedidoId)
     {
         if (Registrando || CargandoPedido || DirectaOcupada)
@@ -332,19 +294,13 @@ else
         if (pedidoId == 0)
             return;
 
-        if (!PedidosElegibles.Any(x => x.Id == pedidoId))
-        {
-            ErrorGuardado = "El pedido seleccionado ya no es elegible para venta.";
-            return;
-        }
-
         CargandoPedido = true;
         try
         {
             var resultado = await PedidoService.ObtenerPorIdAsync(pedidoId);
             if (!resultado.IsSuccess || resultado.Value is null)
             {
-                ErrorGuardado = resultado.ErrorMessage ?? "No fue posible cargar el pedido.";
+                ErrorGuardado = "El pedido seleccionado ya no es elegible para venta.";
                 return;
             }
             if (resultado.Value.Estado == EstadoPedido.Cancelado || resultado.Value.VentaId.HasValue)
@@ -355,7 +311,16 @@ else
 
             PedidoSeleccionado = resultado.Value;
             if (!EsCatalogo)
-                UnidadesDisponibles = await InventarioService.ListarDisponiblesAsync();
+            {
+                var reservadas = new List<UnidadInventarioDto>();
+                IReadOnlyList<UnidadInventarioDto> lote;
+                do
+                {
+                    lote = await SeleccionService.BuscarUnidadesAsync("", pedidoId: pedidoId, excluir: reservadas.Select(x => x.Id).ToArray(), soloReservadas: true);
+                    reservadas.AddRange(lote);
+                } while (lote.Count == 12);
+                UnidadesDisponibles = reservadas;
+            }
             ConstruirDetallesExactos();
         }
         catch (Exception ex)
@@ -425,6 +390,17 @@ else
             .OrderByDescending(x => x.PedidoReservaId == PedidoSeleccionado.Id)
             .ThenBy(x => x.CodigoInterno)
             .ToList();
+    }
+
+    private void ElegirUnidad(DetalleVentaFormModel detalle, UnidadInventarioDto? unidad)
+    {
+        if (Registrando) return;
+        if (unidad is not null)
+        {
+            if (unidad.ProductoId != detalle.ProductoId || Detalles.Any(x => x != detalle && x.UnidadInventarioId == unidad.Id)) return;
+            UnidadesDisponibles = UnidadesDisponibles.Where(x => x.Id != unidad.Id).Append(unidad).ToArray();
+        }
+        detalle.UnidadInventarioId = unidad?.Id;
     }
 
     private void SeleccionarUnidad(DetalleVentaFormModel detalle, string? valor)

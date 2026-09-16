@@ -134,9 +134,18 @@ public sealed class CompraService(ResellManagerDbContext db) : ICompraService
             : ServiceResult<CompraDto>.Ok(Map(compra));
     }
 
-    public async Task<IReadOnlyList<CompraDto>> ListarAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<CompraDto>> ListarAsync(CancellationToken ct = default, FiltroHistorial? filtro = null)
     {
-        var compras = await CompraCompleta()
+        if (filtro is { RangoValido: false }) return [];
+        var consulta = CompraCompleta();
+        if (!string.IsNullOrWhiteSpace(filtro?.Termino))
+        {
+            var termino = filtro.Termino.Trim().ToLowerInvariant();
+            consulta = consulta.Where(x => x.CodigoInterno.ToLower().Contains(termino) || x.Proveedor.Nombre.ToLower().Contains(termino));
+        }
+        if (filtro?.Desde is { } desde) consulta = consulta.Where(x => x.FechaCompra >= desde);
+        if (filtro?.Hasta is { } hasta) consulta = consulta.Where(x => x.FechaCompra <= hasta);
+        var compras = await consulta
             .OrderByDescending(x => x.FechaCompra)
             .ThenByDescending(x => x.Id)
             .ToListAsync(ct);
@@ -201,7 +210,17 @@ public sealed class CompraService(ResellManagerDbContext db) : ICompraService
                 ))
                 .ToList(),
             x.Comprobante?.RutaDocumento
-        );
+        )
+        {
+            Recepcion = x.Origen == OrigenCompra.Importacion
+                ? new ResumenRecepcionCompraDto(
+                    x.Detalles.Sum(d => d.UnidadesInventario.Count),
+                    x.Detalles.Sum(d => d.UnidadesInventario.Count(u => u.FechaIngreso.HasValue && u.Estado != EstadoUnidadInventario.Perdida)),
+                    x.Detalles.Sum(d => d.UnidadesInventario.Count(u => u.Estado == EstadoUnidadInventario.Comprada)),
+                    x.Detalles.Sum(d => d.UnidadesInventario.Count(u => u.Estado == EstadoUnidadInventario.EnTransito)),
+                    x.Detalles.Sum(d => d.UnidadesInventario.Count(u => u.Estado == EstadoUnidadInventario.Perdida)))
+                : null,
+        };
 }
 
 public sealed class InventarioService(ResellManagerDbContext db) : IInventarioService
@@ -269,6 +288,10 @@ public sealed class InventarioService(ResellManagerDbContext db) : IInventarioSe
             return ServiceResult<IReadOnlyList<UnidadInventarioDto>>.Failure(
                 "Una o más unidades de inventario no existen."
             );
+        if (unidades.Select(x => x.DetalleCompra.CompraId).Distinct().Count() != 1)
+            return ServiceResult<IReadOnlyList<UnidadInventarioDto>>.Failure(
+                "Confirma la recepción de una sola compra a la vez."
+            );
         if (unidades.Any(x => x.DetalleCompra.Compra.Origen == OrigenCompra.Catalogo))
             return ServiceResult<IReadOnlyList<UnidadInventarioDto>>.Failure(
                 "Las compras de catálogo no generan unidades para recepción."
@@ -284,6 +307,10 @@ public sealed class InventarioService(ResellManagerDbContext db) : IInventarioSe
         if (unidades.Any(x => x.Estado == EstadoUnidadInventario.Disponible))
             return ServiceResult<IReadOnlyList<UnidadInventarioDto>>.Failure(
                 "Una o más unidades ya están disponibles."
+            );
+        if (unidades.Any(x => x.Estado == EstadoUnidadInventario.Perdida))
+            return ServiceResult<IReadOnlyList<UnidadInventarioDto>>.Failure(
+                "Una unidad perdida no puede recibirse."
             );
 
         foreach (var unidad in unidades)
@@ -338,6 +365,8 @@ public sealed class InventarioService(ResellManagerDbContext db) : IInventarioSe
             return ServiceResult<UnidadInventarioDto>.Failure(
                 "Una unidad vendida o entregada no puede reservarse."
             );
+        if (unidad.Estado == EstadoUnidadInventario.Perdida)
+            return ServiceResult<UnidadInventarioDto>.Failure("Una unidad perdida no puede reservarse.");
         if (
             unidad.DetallePedidoReservaId.HasValue
             && unidad.DetallePedidoReservaId.Value != detallePedidoId
@@ -405,7 +434,9 @@ public sealed class InventarioService(ResellManagerDbContext db) : IInventarioSe
             (unidad.Estado == EstadoUnidadInventario.Comprada
                 && estado == EstadoUnidadInventario.EnTransito)
             || (unidad.Estado == EstadoUnidadInventario.Vendida
-                && estado == EstadoUnidadInventario.Entregada);
+                && estado == EstadoUnidadInventario.Entregada)
+            || (unidad.Estado is EstadoUnidadInventario.Comprada or EstadoUnidadInventario.EnTransito
+                && estado == EstadoUnidadInventario.Perdida);
 
         if (!transicionManualValida)
         {
@@ -420,12 +451,14 @@ public sealed class InventarioService(ResellManagerDbContext db) : IInventarioSe
         }
 
         unidad.Estado = estado;
+        if (estado == EstadoUnidadInventario.Perdida)
+            unidad.DetallePedidoReservaId = null;
         await db.SaveChangesAsync(ct);
         var result = await Query(db.UnidadesInventario.Where(x => x.Id == id)).SingleAsync(ct);
         return ServiceResult<UnidadInventarioDto>.Ok(result);
     }
 
-    private static IQueryable<UnidadInventarioDto> Query(IQueryable<UnidadInventario> source) =>
+    internal static IQueryable<UnidadInventarioDto> Query(IQueryable<UnidadInventario> source) =>
         source
             .AsNoTracking()
             .Select(x => new UnidadInventarioDto(

@@ -1,0 +1,158 @@
+@using ResellManager.Domain.Enums
+@inject IServiceScopeFactory Scopes
+@inject ILogger<RecepcionCompras> Logger
+<section class="reception-by-purchase" aria-labelledby="titulo-recepcion">
+    <h2 id="titulo-recepcion">Recepción de mercancía</h2>
+    <p>Marca lo que llegó de cada compra. Las unidades no seleccionadas y las reservas se conservan.</p>
+    @if (Error is not null && Revision is null && UnidadPerdida is null) { <p class="mensaje-error" role="alert">@Error</p><button class="secondary-button" @onclick="CargarAsync">Reintentar</button> }
+    @if (Cargando) { <p role="status">Consultando compras pendientes...</p> }
+    @if (Exito is not null) { <p role="status">@Exito</p> }
+    @foreach (var grupo in Grupos)
+    {
+        <section class="form-panel" @key="grupo.Compra.CompraId">
+            <h3><button type="button" class="history-month-toggle" aria-expanded="@grupo.Abierta" @onclick="() => grupo.Abierta = !grupo.Abierta">@grupo.Compra.CodigoCompra · @grupo.Compra.Unidades.Count pendientes</button></h3>
+            @if (grupo.Abierta)
+            {
+                <p>Proveedor: @grupo.Compra.Proveedor</p>
+                <p>@InventarioPresentacion.Origen(grupo.Compra.Origen)</p>
+                <ul class="reception-units">
+                    @foreach (var unidad in grupo.Compra.Unidades)
+                    {
+                        <li><label><input type="checkbox" checked="@grupo.Seleccionadas.Contains(unidad.Id)" disabled="@(Procesando || Revision is not null || UnidadPerdida is not null)"
+                            @onchange="e => Seleccionar(grupo, unidad.Id, e.Value)" />
+                            @unidad.Producto · @unidad.CodigoInterno · @InventarioPresentacion.Estado(unidad.Estado)</label>
+                            @if (InventarioPresentacion.PuedeMarcarPerdida(unidad))
+                            {
+                                <button type="button" class="table-action button-link" disabled="@(Procesando || Revision is not null || UnidadPerdida is not null)"
+                                    @onclick="() => RevisarPerdida(unidad)">Marcar perdida</button>
+                            }
+                        </li>
+                    }
+                </ul>
+                <div class="form-field">
+                    <label for="recepcion-fecha-@grupo.Compra.CompraId">Fecha de recepción</label>
+                    <input id="recepcion-fecha-@grupo.Compra.CompraId" type="date" @bind="grupo.Fecha" disabled="@(Procesando || Revision is not null || UnidadPerdida is not null)" />
+                </div>
+                <button class="primary-button" type="button" disabled="@(Procesando || Revision is not null || UnidadPerdida is not null || grupo.Seleccionadas.Count == 0)"
+                    @onclick="() => Revisar(grupo)">Confirmar recepción (@grupo.Seleccionadas.Count)</button>
+            }
+        </section>
+    }
+    @if (!Cargando && Error is null && Grupos.Count == 0) { <p>No hay compras pendientes de recepción.</p> }
+</section>
+@if (Revision is not null)
+{
+    <ConfirmacionOperacion Titulo="Confirmar recepción" TextoConfirmar="Recibir mercancía" TextoEditar="Cancelar"
+        Ocupado="Procesando" Error="@Error" OnEditar="Cerrar" OnConfirmar="ConfirmarAsync">
+        <p>Compra @Revision.Compra.CodigoCompra · @Revision.Compra.Proveedor</p>
+        <p>@Revision.Seleccionadas.Count unidades pasarán a Disponible el @Revision.Fecha.ToString("dd/MM/yyyy"). Sus reservas se conservan.</p>
+        <ul>@foreach(var unidad in Revision.Compra.Unidades.Where(x => Revision.Seleccionadas.Contains(x.Id))) { <li>@unidad.Producto · @unidad.CodigoInterno</li> }</ul>
+    </ConfirmacionOperacion>
+}
+@if (UnidadPerdida is not null)
+{
+    <ConfirmacionOperacion Titulo="Marcar unidad perdida" TextoConfirmar="Marcar perdida" TextoEditar="Cancelar"
+        Ocupado="Procesando" Error="@Error" OnEditar="CerrarPerdida" OnConfirmar="ConfirmarPerdidaAsync">
+        <p>@UnidadPerdida.Producto · @UnidadPerdida.CodigoInterno</p>
+        <p>La unidad quedará marcada como Perdida y dejará de estar pendiente de recepción. La compra y su costo se conservarán. Esta acción no puede revertirse en esta versión.</p>
+        @if (UnidadPerdida.DetallePedidoReservaId.HasValue)
+        {
+            <p>Esta unidad tiene una reserva activa. Al marcarla como perdida se liberará la reserva. El pedido se conservará y quedará nuevamente pendiente de asignar esa unidad.</p>
+        }
+    </ConfirmacionOperacion>
+}
+@code {
+    private UnidadInventarioDto? UnidadPerdida;
+    private void RevisarPerdida(UnidadInventarioDto unidad)
+    {
+        if (Procesando || Revision is not null || UnidadPerdida is not null || !InventarioPresentacion.PuedeMarcarPerdida(unidad)
+            || !Grupos.Any(g => g.Compra.Unidades.Any(x => x.Id == unidad.Id))) return;
+        Error = null; UnidadPerdida = unidad;
+    }
+    private void CerrarPerdida() { if (!Procesando) { UnidadPerdida = null; Error = null; } }
+    private async Task ConfirmarPerdidaAsync()
+    {
+        if (Procesando || UnidadPerdida is null) return;
+        Procesando = true; Error = null; Exito = null;
+        try
+        {
+            await using var scope = Scopes.CreateAsyncScope();
+            var result = await scope.ServiceProvider.GetRequiredService<IInventarioService>()
+                .CambiarEstadoAsync(UnidadPerdida.Id, EstadoUnidadInventario.Perdida);
+            if (!result.IsSuccess) { Error = result.ErrorMessage; return; }
+            foreach (var grupo in Grupos) grupo.Seleccionadas.Remove(UnidadPerdida.Id);
+            UnidadPerdida = null;
+            Exito = "Unidad marcada como perdida. La compra y su costo se conservaron.";
+            await CargarAsync();
+            await OnRecibido.InvokeAsync();
+        }
+        catch (Exception ex) { Logger.LogError(ex, "No se pudo marcar la unidad perdida."); Error = "No pudimos marcar la unidad perdida. Revisa su estado e intenta nuevamente."; }
+        finally { Procesando = false; }
+    }
+    [Parameter] public EventCallback OnRecibido { get; set; }
+    private List<GrupoRecepcion> Grupos = [];
+    private GrupoRecepcion? Revision;
+    private bool Cargando;
+    private bool Procesando;
+    private string? Error;
+    private string? Exito;
+    protected override Task OnInitializedAsync() => CargarAsync();
+    public async Task RefrescarAsync()
+    {
+        await CargarAsync();
+        StateHasChanged();
+    }
+    private async Task CargarAsync()
+    {
+        Cargando = true; Error = null;
+        try
+        {
+            await using var scope = Scopes.CreateAsyncScope();
+            var compras = await scope.ServiceProvider.GetRequiredService<IRecepcionCompraService>().PendientesAsync();
+            Grupos = compras.Select(compra => {
+                var grupo = Grupos.FirstOrDefault(x => x.Compra.CompraId == compra.CompraId) ?? new GrupoRecepcion { Abierta = Grupos.Count == 0 };
+                grupo.Compra = compra;
+                grupo.Seleccionadas.RemoveWhere(id => !compra.Unidades.Any(x => x.Id == id));
+                return grupo;
+            }).ToList();
+        }
+        catch (Exception ex) { Logger.LogError(ex, "No se pudo consultar recepción por compra."); Error = "No pudimos cargar las compras pendientes."; }
+        finally { Cargando = false; }
+    }
+    private void Seleccionar(GrupoRecepcion grupo, int id, object? valor)
+    {
+        if (Procesando || Revision is not null || UnidadPerdida is not null || !grupo.Compra.Unidades.Any(x => x.Id == id)) return;
+        if (valor is true) grupo.Seleccionadas.Add(id); else grupo.Seleccionadas.Remove(id);
+    }
+    private void Revisar(GrupoRecepcion grupo)
+    {
+        if (Procesando || Revision is not null || UnidadPerdida is not null || grupo.Seleccionadas.Count == 0) return;
+        Error = null; Revision = grupo;
+    }
+    private void Cerrar() { if (!Procesando) { Revision = null; Error = null; } }
+    private async Task ConfirmarAsync()
+    {
+        if (Procesando || Revision is null) return;
+        Procesando = true; Error = null; Exito = null;
+        try
+        {
+            await using var scope = Scopes.CreateAsyncScope();
+            var result = await scope.ServiceProvider.GetRequiredService<IInventarioService>()
+                .RegistrarRecepcionAsync(new(Revision.Fecha, Revision.Seleccionadas.ToArray()));
+            if (!result.IsSuccess) { Error = result.ErrorMessage; return; }
+            Revision.Seleccionadas.Clear(); Revision = null;
+            Exito = "Recepción registrada. Las reservas se conservaron.";
+            await CargarAsync();
+            await OnRecibido.InvokeAsync();
+        }
+        catch (Exception ex) { Logger.LogError(ex, "No se pudo confirmar recepción."); Error = "No pudimos confirmar la recepción. Revisa las unidades e intenta nuevamente."; }
+        finally { Procesando = false; }
+    }
+    private sealed class GrupoRecepcion
+    {
+        public RecepcionCompraDto Compra { get; set; } = null!;
+        public HashSet<int> Seleccionadas { get; } = [];
+        public DateOnly Fecha { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+        public bool Abierta { get; set; }
+    }
+}

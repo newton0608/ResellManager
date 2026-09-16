@@ -63,14 +63,19 @@ else if (Compra is not null)
         </article>
     </section>
 
-    @if (Compra.Origen == OrigenCompra.Importacion)
+    @if (Compra.Origen == OrigenCompra.Importacion && Compra.Recepcion is { } recepcion)
     {
         <div class="purchase-reception-note">
             <div>
-                <strong>Recepción pendiente</strong>
-                <p>Las unidades permanecen compradas hasta registrar su ingreso desde Inventario.</p>
+                <strong>@CompraPresentacion.EstadoRecepcion(recepcion)</strong>
+                <p>@recepcion.Recibidas de @recepcion.Total unidades recibidas</p>
+                <p>Recibidas: @recepcion.Recibidas · En tránsito: @recepcion.EnTransito · Compradas: @recepcion.Compradas</p>
+                <p>Perdidas: @recepcion.Perdidas · Pendientes: @recepcion.Pendientes</p>
             </div>
-            <a class="secondary-button" href="/inventario">Ir a recepción</a>
+            @if (recepcion.Pendientes > 0)
+            {
+                <a class="secondary-button" href="/inventario">Ir a recepción</a>
+            }
         </div>
     }
 

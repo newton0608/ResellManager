@@ -14,7 +14,7 @@ public interface IClienteService
     );
     Task<ServiceResult<ClienteDto>> ObtenerPorIdAsync(int id, CancellationToken ct = default);
     Task<IReadOnlyList<ClienteDto>> ListarAsync(CancellationToken ct = default);
-    Task<IReadOnlyList<ClienteDto>> BuscarAsync(string termino, CancellationToken ct = default);
+    Task<IReadOnlyList<ClienteDto>> BuscarAsync(string termino, CancellationToken ct = default, int? limite = null);
     Task<ServiceResult<decimal>> ObtenerSaldoAsync(int clienteId, CancellationToken ct = default);
     Task<ServiceResult<ClienteHistorialDto>> ObtenerHistorialAsync(
         int clienteId,
@@ -50,11 +50,12 @@ public interface IProductoService
     );
     Task<ServiceResult<ProductoDto>> ObtenerPorIdAsync(int id, CancellationToken ct = default);
     Task<IReadOnlyList<ProductoDto>> ListarAsync(CancellationToken ct = default);
-    Task<IReadOnlyList<ProductoDto>> BuscarAsync(string termino, CancellationToken ct = default);
+    Task<IReadOnlyList<ProductoDto>> BuscarAsync(string termino, CancellationToken ct = default, int? limite = null, int? categoriaId = null);
 }
 
 public interface IProveedorService
 {
+    Task<IReadOnlyList<ProveedorDto>> BuscarAsync(string termino, CancellationToken ct = default, int? limite = 12);
     Task<ServiceResult<ProveedorDto>> CrearAsync(
         ProveedorInput input,
         CancellationToken ct = default
@@ -75,7 +76,7 @@ public interface ICompraService
         CancellationToken ct = default
     );
     Task<ServiceResult<CompraDto>> ObtenerPorIdAsync(int id, CancellationToken ct = default);
-    Task<IReadOnlyList<CompraDto>> ListarAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<CompraDto>> ListarAsync(CancellationToken ct = default, FiltroHistorial? filtro = null);
     Task<ServiceResult<ComprobanteCompraDto>> ObtenerComprobanteAsync(
         int compraId,
         CancellationToken ct = default
@@ -144,6 +145,7 @@ public interface IInventarioService
 
 public interface IPedidoService
 {
+    Task<ServiceResult<PedidoDto>> CrearManualAsync(PedidoInput input, CancellationToken ct = default);
     Task<ServiceResult<PedidoDto>> CrearAsync(PedidoInput input, CancellationToken ct = default);
     Task<ServiceResult<PedidoDto>> AgregarDetalleAsync(
         int pedidoId,
@@ -151,7 +153,7 @@ public interface IPedidoService
         CancellationToken ct = default
     );
     Task<ServiceResult<PedidoDto>> ObtenerPorIdAsync(int id, CancellationToken ct = default);
-    Task<IReadOnlyList<PedidoDto>> ListarAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<PedidoDto>> ListarAsync(CancellationToken ct = default, FiltroHistorial? filtro = null, bool soloActivos = false, bool conEntregaPendiente = false);
     Task<ServiceResult> CancelarAsync(int id, CancellationToken ct = default);
 }
 
@@ -162,7 +164,7 @@ public interface IVentaService
         CancellationToken ct = default
     );
     Task<ServiceResult<VentaDto>> ObtenerPorIdAsync(int id, CancellationToken ct = default);
-    Task<IReadOnlyList<VentaDto>> ListarAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<VentaDto>> ListarAsync(CancellationToken ct = default, FiltroHistorial? filtro = null, EstadoVenta? estado = null);
     Task<ServiceResult<decimal>> CalcularTotalAsync(int ventaId, CancellationToken ct = default);
     Task<ServiceResult> CancelarAsync(int id, CancellationToken ct = default);
 }
@@ -173,7 +175,8 @@ public interface IPagoService
     Task<ServiceResult<PagoDto>> ObtenerPorIdAsync(int id, CancellationToken ct = default);
     Task<IReadOnlyList<PagoDto>> ListarPorClienteAsync(
         int clienteId,
-        CancellationToken ct = default
+        CancellationToken ct = default,
+        FiltroHistorial? filtro = null
     );
 }
 

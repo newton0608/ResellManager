@@ -6,6 +6,8 @@
 
 ✅ Productos y categorías.
 
+✅ Nueva compra permite buscar productos por nombre, CodigoBarras o CodigoInterno en un solo textbox, y registrar un producto en un panel sin perder la compra. El producto creado queda seleccionado; PRO- sigue generado en backend. Código de barras manual/opcional; cámara y lector siguen en V2.
+
 ✅ Proveedores.
 
 ✅ Compras y comprobantes de compra.
@@ -14,21 +16,27 @@
 
 ✅ Unidades de inventario físicas.
 
-✅ Recepción de mercancía.
+✅ Recepción parcial agrupada por Compra y Proveedor: cada confirmación recibe solo unidades seleccionadas de una misma Compra, sin mezclar compras, y conserva las reservas. Las no recibidas permanecen Comprada/EnTransito.
 
 ✅ Estados físicos controlados de inventario.
 
 ✅ Reservas/apartados separadas del estado físico.
 
+✅ Reserva explícita al crear pedido mediante unidades del producto Comprada, EnTransito o Disponible, sin reserva ajena. Tras aceptar, la única opción puede autoseleccionarse; con varias se elige hasta la cantidad solicitada y se permite continuar sin reservar. Pedido + detalles + reservas se persisten únicamente al confirmar, en una transacción con revalidación. Catálogo no reserva inventario físico.
+
 ✅ Pedidos.
 
-✅ Pedido normal con código automático `PED-<GUID>` y Venta desde pedido con `VEN-<GUID>`, estables durante los reintentos del formulario. `Producto.CodigoInterno` se conserva manual como referencia comercial y de búsqueda.
+✅ Pedido normal con código automático `PED-<GUID>` y Venta desde pedido con `VEN-<GUID>`, estables durante los reintentos del formulario. Producto nuevo recibe `PRO-<GUID>` generado en backend, sin captura manual; editar no modifica el código y conserva exactamente los históricos. Las búsquedas existentes se mantienen.
+
+✅ Nuevo pedido manual solo permite Importación, Catálogo y Apartado, con validación también en el servicio. `TipoPedido.VentaDirecta` permanece en dominio, reservado al flujo específico Venta Directa que genera su Pedido automáticamente con CanalVenta.Presencial.
 
 ✅ `CanalVenta` requerido en `Pedido`, separado de `TipoPedido`, visible en creación, listado y
 detalle. No se duplica en `Venta`; los pedidos históricos se migran a `Otro` y Venta Directa usa
 `Presencial` automáticamente.
 
 ✅ Ventas completas asociadas a pedidos.
+
+✅ Al completar una venta se liberan todas las reservas del pedido en la misma transacción, incluidas las sustituidas/no utilizadas, conservando el estado físico de las unidades no vendidas. Un pedido Completado termina sin reservas activas.
 
 ✅ Venta presencial directa mediante creación automática de un `Pedido` de tipo `VentaDirecta`
 con código `PED-VD-<GUID>` y una `Venta` con código `VEN-VD-<GUID>`. Ambos códigos técnicos se generan
@@ -43,7 +51,7 @@ sin captura de la usuaria; toda venta conserva un `PedidoId` y no existe venta s
 ✅ Cancelación protegida de ventas antes de entrega.
 
 ✅ Dashboard de negocio real en `/`, protegido por autenticación, con total adeudado, valor y unidades
-de inventario disponible, pedidos activos, utilidad por periodo, métricas tipadas por canal, últimos
+de inventario disponible, pendientes de entrega, utilidad por periodo, métricas tipadas por canal, últimos
 pagos y últimas ventas.
 
 Las definiciones V1 del Dashboard son explícitas: deuda = ventas `Registrada` menos pagos; inventario
@@ -51,6 +59,10 @@ disponible = suma de `UnidadInventario.Costo` y conteo donde el estado es `Dispo
 = `Pendiente + Confirmado`; ventas recientes = solo `Registrada`; pedidos por canal = todos excepto
 `Cancelado`; ventas y monto por canal = solo `Registrada`, con monto de `DetalleVenta.PrecioFinal`.
 La utilidad usa `DetalleVenta.PrecioFinal - DetalleVenta.CostoUnitario` en un rango inclusivo.
+
+Pendiente de entregar cuenta únicamente unidades físicas `Vendida`; no se deriva de pedidos activos. `DashboardDto.PedidosActivos` se conserva con su definición original aunque ya no ocupa una tarjeta principal. Acciones rápidas: Registrar abono (`/pagos`), Venta directa (`/ventas/nueva?modo=directa`), Registrar pedido (`/pedidos/nuevo`) y Buscar cliente (`/clientes`).
+
+Los enlaces contextuales admiten `/clientes?saldo=pendiente` (Saldo > 0 provisto por backend), `/pedidos?estado=activos` (Pendiente + Confirmado) y `/inventario?estado=disponible` o `estado=vendida`. Sin query se conservan todos los registros; cada filtro tiene una forma visible de quitarse. No se recalcula saldo en Razor.
 
 ✅ `Producto.PrecioSugerido` como referencia editable al vender.
 
@@ -67,6 +79,8 @@ La utilidad usa `DetalleVenta.PrecioFinal - DetalleVenta.CostoUnitario` en un ra
 ✅ Módulo Blazor de clientes implementado en Fase 5.3: listado, búsqueda, registro, edición,
 detalle, consulta del saldo calculado por el backend e historial de ventas y pagos/abonos,
 con presentación responsive.
+
+✅ ClienteDetalle separa pendientes actuales (sin límite de antigüedad, excluyendo reservas de pedidos Cancelado/Completado) de Ventas y Pagos. Ambas secciones cargan meses con actividad bajo demanda, independientemente y mediante SQL; el saldo global no depende de los meses mostrados.
 
 ✅ Módulos Blazor de productos y categorías implementados en Fase 5.4: listado de ambos,
 búsqueda de productos, registro, edición y detalle de producto, selección de categorías reales,
@@ -134,7 +148,7 @@ que preserven relaciones e historial.
 
 ❌ Roles/permisos y administración de usuarios.
 
-❌ PostgreSQL, despliegue productivo y CI/CD complejo en esta fase de cierre.
+❌ PostgreSQL y CI/CD complejo. El despliegue productivo no se ejecutó como parte del cierre funcional: su preparación es el siguiente paso operativo V1, sujeto al [runbook de preparación](21_Despliegue_V1.md), sin declarar producción existente.
 
 ❌ Exportación y notificaciones.
 
@@ -147,3 +161,12 @@ que preserven relaciones e historial.
 Apartados se resuelven con Pedido + Reserva, no con otro módulo. Se corrigen presentación, navegación, códigos técnicos, errores de selección, IDs inválidos y doble submit sin cambiar las reglas existentes. Las migraciones de arranque son independientes del usuario inicial y el almacenamiento de comprobantes se valida fuera de `wwwroot`.
 
 La evidencia de pruebas, las rutas definitivas y cualquier validación visual pendiente están en [Fase 5.10 — Cierre V1](18_Fase510_CierreV1.md). El cierre técnico no equivale a despliegue productivo ni a validación multiusuario concurrente.
+
+### Ajustes finales de productividad V1
+
+- Compra permite buscar y crear Producto/Proveedor sin abandonar el flujo; el alta se ofrece tras una búsqueda sin resultados y se autoselecciona. Es posible iniciar sin proveedores y crear el primero. PRO- y código de barras manual/opcional no cambian.
+- Pagos busca Cliente por nombre completo o teléfono y conserva `?cliente=id`; no se agrega CodigoInterno a Cliente.
+- Clientes ofrece Todos / Con deuda (`saldo=pendiente`) combinado con búsqueda, conservada en `buscar` al alternar el filtro. Acciones rápidas mantiene rutas y grid, con botones de 5rem (80px con fuente base de 16px).
+- Compra, Pedido manual, Venta Directa, Pago/abono, recepción y entrega de inventario tienen revisión previa. Revisar/Editar no persiste; Confirmar utiliza los servicios actuales. Las altas simples y las confirmaciones de cancelación existentes no se duplican.
+- Sin migraciones, cambios de fórmulas, lector/cámara ni Informes V2. Ver decisiones 021–022 y evidencia de pruebas/aceptación pendiente en el cierre V1.
+- Consulta de catálogos e historiales (decisión 023): Categoría combinable en Productos; búsqueda de Proveedores; códigos, estados y fechas en historiales operativos, con orden descendente y meses en español. Pedidos ofrece entrega pendiente física real; Pagos filtra solo el historial sin alterar saldo. Los filtros operativos son compartibles mediante URL. Acciones rápidas conserva 5rem de altura y aumenta el texto a 1.05rem.

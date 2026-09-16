@@ -9,7 +9,7 @@ public sealed class ProductoPrecioTests
     public async Task Producto_GuardaPrecioSugerido()
     {
         await using var test = await TestDatabase.CreateAsync();
-        var input = CrearInput(test, 275m, "PROD-PRECIO");
+        var input = CrearInput(test, 275m);
 
         var result = await new ProductoService(test.Db).CrearAsync(input);
 
@@ -21,7 +21,7 @@ public sealed class ProductoPrecioTests
     public async Task Producto_RechazaPrecioSugeridoNegativo()
     {
         await using var test = await TestDatabase.CreateAsync();
-        var input = CrearInput(test, -1m, "PROD-NEGATIVO");
+        var input = CrearInput(test, -1m);
 
         var result = await new ProductoService(test.Db).CrearAsync(input);
 
@@ -33,9 +33,8 @@ public sealed class ProductoPrecioTests
         );
     }
 
-    private static ProductoInput CrearInput(TestDatabase test, decimal precio, string codigo) =>
+    private static ProductoInput CrearInput(TestDatabase test, decimal precio) =>
         new(
-            codigo,
             null,
             "Producto con precio",
             null,

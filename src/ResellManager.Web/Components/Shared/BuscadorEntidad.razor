@@ -1,0 +1,117 @@
+@typeparam TItem where TItem : class
+@implements IDisposable
+@inject ILogger<BuscadorEntidad<TItem>> Logger
+
+<div class="form-field">
+    <label for="@Id">@Etiqueta</label>
+    <input id="@Id" type="search" value="@Texto" @oninput="CambiarTextoAsync" @onkeydown="Tecla"
+           placeholder="@Placeholder" autocomplete="off" disabled="@Deshabilitado" aria-describedby="@(Id + "-estado")" />
+    <p id="@(Id + "-estado")" class="field-help" role="status" aria-live="polite">
+        @(Seleccionado is not null ? $"Seleccionado: {TextoSeleccionado}" : Buscando ? "Buscando..." :
+            Error ?? (MostrarResultados ? Resultados.Count == 0 ? SinResultados : "Selecciona un resultado." : "Escribe al menos 2 caracteres."))
+    </p>
+    @if (MostrarResultados)
+    {
+        <ul class="lookup-results" aria-label="@($"Resultados de {Etiqueta}")">
+            @foreach (var item in Resultados)
+            {
+                <li><button class="lookup-result" type="button" disabled="@Deshabilitado" @onclick="() => SeleccionarAsync(item)">@Resultado(item)</button></li>
+            }
+        </ul>
+        @if (Resultados.Count == 12)
+        {
+            <p class="field-help">Se muestran hasta 12 resultados. Precisa la búsqueda si es necesario.</p>
+        }
+        @if (Resultados.Count == 0 && Error is null && OnAgregar.HasDelegate)
+        {
+            <button class="inline-button" type="button" disabled="@Deshabilitado" @onclick="AgregarAsync">@TextoAgregar</button>
+        }
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Id { get; set; } = string.Empty;
+    [Parameter] public string Etiqueta { get; set; } = string.Empty;
+    [Parameter] public string Placeholder { get; set; } = string.Empty;
+    [Parameter] public string SinResultados { get; set; } = "No se encontraron resultados.";
+    [Parameter] public string TextoAgregar { get; set; } = "Agregar";
+    [Parameter] public TItem? Seleccionado { get; set; }
+    [Parameter] public string? TextoSeleccionado { get; set; }
+    [Parameter] public bool Deshabilitado { get; set; }
+    [Parameter, EditorRequired] public Func<string, CancellationToken, Task<IReadOnlyList<TItem>>> Buscar { get; set; } = null!;
+    [Parameter, EditorRequired] public RenderFragment<TItem> Resultado { get; set; } = null!;
+    [Parameter] public EventCallback<TItem?> OnSeleccionado { get; set; }
+    [Parameter] public EventCallback OnAgregar { get; set; }
+    private string Texto = string.Empty;
+    private TItem? Anterior;
+    private IReadOnlyList<TItem> Resultados = [];
+    private bool Buscando;
+    private bool MostrarResultados;
+    private string? Error;
+    private CancellationTokenSource? Busqueda;
+
+    protected override void OnParametersSet()
+    {
+        if (!Equals(Anterior, Seleccionado))
+        {
+            Cancelar();
+            Anterior = Seleccionado;
+            Texto = TextoSeleccionado ?? string.Empty;
+        }
+        if (Deshabilitado) Cancelar();
+    }
+
+    private async Task CambiarTextoAsync(ChangeEventArgs evento)
+    {
+        if (Deshabilitado) return;
+        Cancelar();
+        Texto = evento.Value?.ToString() ?? string.Empty;
+        Anterior = null;
+        await OnSeleccionado.InvokeAsync(null);
+        if (Texto.Trim().Length < 2) return;
+        using var cancelacion = new CancellationTokenSource();
+        Busqueda = cancelacion;
+        Buscando = true;
+        var termino = Texto.Trim();
+        try
+        {
+            await Task.Delay(300, cancelacion.Token);
+            var encontrados = await Buscar(termino, cancelacion.Token);
+            if (cancelacion.IsCancellationRequested) return;
+            Resultados = encontrados;
+            MostrarResultados = true;
+        }
+        catch (OperationCanceledException) when (cancelacion.IsCancellationRequested) { }
+        catch (Exception ex)
+        {
+            if (!cancelacion.IsCancellationRequested)
+            {
+                Logger.LogError(ex, "No fue posible buscar en el catálogo.");
+                Error = "No pudimos buscar. Modifica el texto para reintentar.";
+            }
+        }
+        finally
+        {
+            if (ReferenceEquals(Busqueda, cancelacion)) { Busqueda = null; Buscando = false; }
+        }
+    }
+    private async Task SeleccionarAsync(TItem item)
+    {
+        if (Deshabilitado) return;
+        Cancelar();
+        await OnSeleccionado.InvokeAsync(item);
+    }
+    private Task AgregarAsync()
+    {
+        if (Deshabilitado || !MostrarResultados || Resultados.Count != 0 || Error is not null) return Task.CompletedTask;
+        Cancelar();
+        return OnAgregar.InvokeAsync();
+    }
+    private void Tecla(KeyboardEventArgs e) { if (e.Key == "Escape") Cancelar(); }
+    private void Cancelar()
+    {
+        Busqueda?.Cancel(); Busqueda = null;
+        Resultados = []; MostrarResultados = false; Buscando = false; Error = null;
+    }
+    public void Dispose() => Cancelar();
+}

@@ -300,7 +300,8 @@ public sealed class AutenticacionIntegracionTests : PruebaWebAislada
         var contenido = WebUtility.HtmlDecode(await respuesta.Content.ReadAsStringAsync());
 
         Assert.Equal(HttpStatusCode.OK, respuesta.StatusCode);
-        Assert.Contains("Resumen del negocio", contenido);
+        Assert.Contains("id=\"titulo-dashboard\">Inicio", contenido);
+        Assert.Contains("Ganancia total", contenido);
         Assert.Contains(codigoVenta, contenido);
         Assert.Contains(nombreCliente, contenido);
         Assert.Contains("Q 321.45", contenido);

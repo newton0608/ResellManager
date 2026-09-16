@@ -1,0 +1,22 @@
+.purchase-fields {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 1rem;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.purchase-import-guidance {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+}
+.purchase-import-guidance > * { min-width: 0; overflow-wrap: normal; }
+@media (min-width: 48rem) {
+    .purchase-import-guidance { grid-template-columns: auto minmax(0, 1fr); }
+}
+
+.purchase-lines-editor + .receipt-upload-panel {
+    margin-top: .25rem; /* Se suma al gap de 1rem del formulario. */
+}

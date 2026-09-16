@@ -15,6 +15,7 @@ public static class InventarioPresentacion
             EstadoUnidadInventario.Disponible => "Disponible",
             EstadoUnidadInventario.Vendida => "Vendida",
             EstadoUnidadInventario.Entregada => "Entregada",
+            EstadoUnidadInventario.Perdida => "Perdida",
             _ => "Estado no disponible",
         };
 
@@ -26,6 +27,7 @@ public static class InventarioPresentacion
             EstadoUnidadInventario.Disponible => "inventory-status-available",
             EstadoUnidadInventario.Vendida => "inventory-status-sold",
             EstadoUnidadInventario.Entregada => "inventory-status-delivered",
+            EstadoUnidadInventario.Perdida => "inventory-status-lost",
             _ => "inventory-status-neutral",
         };
 
@@ -33,6 +35,9 @@ public static class InventarioPresentacion
         unidad.DetallePedidoReservaId.HasValue;
 
     public static bool PuedeRecibirse(UnidadInventarioDto unidad) =>
+        unidad.Estado is EstadoUnidadInventario.Comprada or EstadoUnidadInventario.EnTransito;
+
+    public static bool PuedeMarcarPerdida(UnidadInventarioDto unidad) =>
         unidad.Estado is EstadoUnidadInventario.Comprada or EstadoUnidadInventario.EnTransito;
 
     public static EstadoUnidadInventario? SiguienteEstadoManual(UnidadInventarioDto unidad) =>

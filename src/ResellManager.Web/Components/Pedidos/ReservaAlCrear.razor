@@ -1,0 +1,94 @@
+@inject IServiceScopeFactory Scopes
+@inject ILogger<ReservaAlCrear> Logger
+<section class="origin-guidance reservation-prompt" aria-label="Reserva opcional">
+    @if (Error is not null)
+    {
+        <p class="mensaje-error" role="alert">@Error</p>
+        <button type="button" class="secondary-button" disabled="@(Deshabilitado || Cargando)" @onclick="CargarAsync">Reintentar consulta</button>
+    }
+    @if (Cargando) { <p role="status">Consultando unidades para reservar...</p> }
+    else if (!Aceptada)
+    {
+        <p>Hay @Opciones.Count unidades compatibles sin reserva. Puedes reservar mercancía comprada, en tránsito o disponible.</p>
+        <div class="form-actions reservation-prompt-actions">
+            <button type="button" class="secondary-button" disabled="@(Deshabilitado || Opciones.Count == 0)" @onclick="AceptarAsync">Reservar para este pedido</button>
+            <button type="button" class="inline-button" disabled="@Deshabilitado" @onclick="Continuar">Continuar sin reservar</button>
+        </div>
+    }
+    else
+    {
+        <div class="form-field">
+            <label for="@Id">Unidad para reservar</label>
+            <select id="@Id" value="" disabled="@(Deshabilitado || Seleccionadas.Count >= Cantidad || Opciones.Count == 0)" @onchange="Elegir">
+                <option value="">Selecciona una unidad</option>
+                @foreach (var unidad in Opciones)
+                {
+                    <option value="@unidad.Id">@unidad.CodigoInterno · @InventarioPresentacion.Estado(unidad.Estado) · @VentaPresentacion.Moneda(unidad.Costo)</option>
+                }
+            </select>
+        </div>
+        <p>Selecciona hasta @Cantidad unidades. No se reservarán hasta confirmar el pedido.</p>
+        <ul>
+            @foreach (var unidad in Seleccionadas)
+            {
+                <li><span class="code-value">@unidad.CodigoInterno · @InventarioPresentacion.Estado(unidad.Estado) · @VentaPresentacion.Moneda(unidad.Costo)</span>
+                    <button type="button" class="inline-button" disabled="@Deshabilitado" @onclick="() => Quitar(unidad)">Quitar</button></li>
+            }
+        </ul>
+        @if (Seleccionadas.Count > Cantidad) { <p class="mensaje-error" role="alert">Quita unidades: la selección supera la cantidad del detalle.</p> }
+        <div class="form-actions reservation-prompt-actions">
+            <button type="button" class="inline-button" disabled="@Deshabilitado" @onclick="Continuar">Continuar sin reservar</button>
+        </div>
+    }
+</section>
+@code {
+    [Parameter] public string Id { get; set; } = string.Empty;
+    [Parameter] public int ProductoId { get; set; }
+    [Parameter] public int Cantidad { get; set; }
+    [Parameter] public bool Deshabilitado { get; set; }
+    [Parameter] public List<UnidadInventarioDto> Seleccionadas { get; set; } = [];
+    [Parameter] public IReadOnlyCollection<int> OtrasUnidades { get; set; } = [];
+    private IReadOnlyList<UnidadInventarioDto> Unidades = [];
+    private IReadOnlyList<UnidadInventarioDto> Opciones => Unidades.Where(x => !OtrasUnidades.Contains(x.Id) && !Seleccionadas.Any(s => s.Id == x.Id)).ToArray();
+    private string? Error;
+    private int Cargado;
+    private bool Aceptada;
+    private bool Cargando;
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Cargado == ProductoId) return;
+        Cargado = ProductoId;
+        Aceptada = Seleccionadas.Count > 0;
+        await CargarAsync();
+    }
+    private async Task CargarAsync()
+    {
+        Cargando = true; Error = null;
+        try
+        {
+            await using var scope = Scopes.CreateAsyncScope();
+            Unidades = await scope.ServiceProvider.GetRequiredService<ISeleccionOperativaService>().ListarReservablesAsync(ProductoId);
+        }
+        catch (Exception ex) { Logger.LogError(ex, "No se pudo consultar disponibilidad para reserva."); Error = "No pudimos consultar las unidades. Puedes continuar sin reserva o volver a intentarlo."; }
+        finally { Cargando = false; }
+    }
+    private async Task AceptarAsync()
+    {
+        if (Deshabilitado || Cargando) return;
+        await CargarAsync();
+        if (Error is not null || Deshabilitado) return;
+        Aceptada = true;
+        if (Opciones.Count == 1) Agregar(Opciones[0]);
+    }
+    private void Elegir(ChangeEventArgs evento)
+    {
+        if (int.TryParse(evento.Value?.ToString(), out var id)) Agregar(Opciones.FirstOrDefault(x => x.Id == id));
+    }
+    private void Agregar(UnidadInventarioDto? unidad)
+    {
+        if (Deshabilitado || unidad is null || Seleccionadas.Count >= Cantidad || !Opciones.Any(x => x.Id == unidad.Id)) return;
+        Seleccionadas.Add(unidad);
+    }
+    private void Quitar(UnidadInventarioDto unidad) { if (!Deshabilitado) Seleccionadas.Remove(unidad); }
+    private void Continuar() { if (!Deshabilitado) { Seleccionadas.Clear(); Aceptada = false; } }
+}
