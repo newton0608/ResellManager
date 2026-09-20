@@ -1,0 +1,9 @@
+[Unit]
+Description=ResellManager V1 backup
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/resellmanager/backup.sh
