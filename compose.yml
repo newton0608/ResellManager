@@ -43,7 +43,8 @@ services:
       - /opt/resellmanager/data/comprobantes:/app/data/comprobantes
       - /opt/resellmanager/data/dataprotection:/app/data/dataprotection
     networks:
-      - private
+      private:
+        ipv4_address: 172.29.213.3
     logging:
       driver: json-file
       options:
