@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily ResellManager V1 backup
+
+[Timer]
+OnCalendar=*-*-* 03:30:00 America/Guatemala
+Persistent=true
+RandomizedDelaySec=10m
+Unit=resellmanager-backup.service
+
+[Install]
+WantedBy=timers.target

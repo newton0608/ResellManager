@@ -54,3 +54,7 @@ La aplicación usa SQLite con la cadena `Data Source=resellmanager.db`, configur
 Para crear la primera cuenta, configura `UsuarioInicial:Correo` y `UsuarioInicial:Contrasena` mediante User Secrets o variables de entorno, siguiendo la decisión 016. Retira esas credenciales de configuración después; la cuenta existente no se modifica. No hay autorregistro ni contraseñas predeterminadas de producción.
 
 Los comprobantes se guardan en `App_Data` por defecto, fuera de `wwwroot`. `AlmacenamientoComprobantes__DirectorioBase` permite una carpeta privada distinta; respalda esa carpeta junto con SQLite. La ruta `/comprobantes/{compraId}` exige sesión autenticada. El informe de cierre incluye la preparación operativa pendiente; este repositorio no despliega a producción automáticamente.
+
+Para construir y ejecutar la imagen .NET 8 con Caddy, consulta el
+[runbook de despliegue V1](docs/21_Despliegue_V1.md#construcción-y-arranque-en-ubuntu).
+Incluye permisos de volúmenes, configuración externa y verificaciones pendientes antes del go-live.

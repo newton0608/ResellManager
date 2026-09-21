@@ -1,0 +1,3 @@
+app.resellmanager.tech {
+    reverse_proxy resellmanager:8080
+}

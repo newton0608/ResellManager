@@ -83,13 +83,13 @@ else
             </section>
 
             <section class="form-panel" aria-label="Buscar y agregar artículos">
-                <UnidadBuscador @key="RevisionBuscador" Id="directa-unidad" Excluir="@Unidades.Select(x => x.Unidad.Id).ToArray()"
+                <UnidadBuscador @key="@($"buscador-{RevisionBuscador}")" Id="directa-unidad" Excluir="@Unidades.Select(x => x.Unidad.Id).ToArray()"
                     Deshabilitado="@(Registrando || RevisandoVenta || AgregandoUnidad || PedidoAutomaticoCreado is not null)" OnSeleccionado="AgregarUnidadAsync" />
                 <h2>Artículos agregados a la venta</h2>
                 @if (Unidades.Count == 0) { <p>Busca una unidad disponible y agrégala a la venta.</p> }
                 @foreach (var detalle in Unidades)
                 {
-                    <article class="order-line-editor" @key="detalle.Unidad.Id">
+                    <article class="order-line-editor" @key="@($"unidad-{detalle.Unidad.Id}")">
                         <h3>@detalle.Unidad.Producto</h3>
                         <p class="code-value">@detalle.Unidad.CodigoInterno</p>
                         <div class="form-field">

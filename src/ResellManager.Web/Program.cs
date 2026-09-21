@@ -1,3 +1,4 @@
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.Extensions.Options;
@@ -6,6 +7,7 @@ using ResellManager.Infrastructure;
 using ResellManager.Infrastructure.Storage;
 using ResellManager.Web.Components;
 using ResellManager.Web.Identity;
+using ResellManager.Web.Hosting;
 using ResellManager.Web.Inicializacion;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +20,23 @@ builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme)
     .AddIdentityCookies();
 
 builder.Services.AddAuthorization();
+
+builder.Services.AddProductionHosting(builder.Configuration);
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("Login", context => RateLimitPartition.GetFixedWindowLimiter(
+        // Normalizar IPv4/IPv4-mapped; solo usar la IP resuelta por Forwarded Headers.
+        context.Connection.RemoteIpAddress?.MapToIPv6().ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 10,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+            AutoReplenishment = true
+        }));
+});
 
 builder.Services.AddSingleton(TimeProvider.System);
 
@@ -53,7 +72,9 @@ builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.HttpOnly = true;
     options.Cookie.SameSite = SameSiteMode.Lax;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.Cookie.SecurePolicy = builder.Environment.IsProduction()
+        ? CookieSecurePolicy.Always
+        : CookieSecurePolicy.SameAsRequest;
     options.ExpireTimeSpan = TimeSpan.FromHours(8);
     options.LoginPath = "/login";
     options.AccessDeniedPath = "/login";
@@ -64,8 +85,25 @@ var app = builder.Build();
 
 // Validar la configuración definitiva del host antes de abrir SQLite o crear usuarios.
 _ = app.Services.GetRequiredService<IOptions<AlmacenamientoComprobantesOptions>>().Value;
+_ = app.Services.GetRequiredService<IOptions<ForwardedHeadersOptions>>().Value;
+_ = app.Services.GetRequiredService<IOptions<Microsoft.AspNetCore.DataProtection.KeyManagement.KeyManagementOptions>>().Value;
 await app.InicializarBaseDatosAsync();
 await app.CrearUsuarioInicialSiEstaConfiguradoAsync();
+
+app.UseForwardedHeaders();
+app.Use(async (context, next) =>
+{
+    context.Response.OnStarting(() =>
+    {
+        context.Response.Headers.XContentTypeOptions = "nosniff";
+        context.Response.Headers["Referrer-Policy"] = "no-referrer";
+        context.Response.Headers.XFrameOptions = "DENY";
+        // Conservar políticas específicas, como CSP sandbox en comprobantes.
+        context.Response.Headers.TryAdd("Content-Security-Policy", "frame-ancestors 'none'");
+        return Task.CompletedTask;
+    });
+    await next();
+});
 
 if (!app.Environment.IsDevelopment())
 {
@@ -89,9 +127,12 @@ app.Use(async (contexto, siguiente) =>
     }
 });
 app.UseRouting();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();
+
+app.MapGet("/health", () => Results.Text("OK")).AllowAnonymous();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
@@ -115,7 +156,7 @@ app.MapPost("/account/login", async (
     return resultado.Succeeded
         ? Results.LocalRedirect("/")
         : Results.LocalRedirect("/login?error=credenciales");
-}).AllowAnonymous();
+}).AllowAnonymous().RequireRateLimiting("Login");
 
 app.MapPost("/account/logout", async (
     [Microsoft.AspNetCore.Mvc.FromForm] string confirmacion,
