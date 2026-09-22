@@ -134,7 +134,7 @@
             <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="e13" edge="1" parent="1" source="UnidadInventario" style="endArrow=block;html=1;rounded=1;strokeColor=#374151;strokeWidth=1.4;fontSize=11;fontColor=#000000;edgeStyle=orthogonalEdgeStyle;labelBackgroundColor=#FFFFFF;" target="DetalleVenta" value="1 a 0..1">
+        <mxCell id="e13" edge="1" parent="1" source="UnidadInventario" style="endArrow=block;html=1;rounded=1;strokeColor=#374151;strokeWidth=1.4;fontSize=11;fontColor=#000000;edgeStyle=orthogonalEdgeStyle;labelBackgroundColor=#FFFFFF;" target="DetalleVenta" value="0..1 Unidad ↔ 0..N Detalles">
           <mxGeometry relative="1" x="0.0011" as="geometry">
             <mxPoint as="offset" />
           </mxGeometry>
@@ -145,6 +145,9 @@
               <mxPoint x="120" y="953" />
             </Array>
           </mxGeometry>
+        </mxCell>
+        <mxCell id="note_historial_venta" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#fff7ed;strokeColor=#f59e0b;fontSize=12;align=left;verticalAlign=top;spacing=10;" value="&lt;b&gt;Historial de ventas&lt;/b&gt;&lt;br&gt;Una unidad admite 0..N detalles históricos si las ventas anteriores fueron canceladas.&lt;br&gt;Solo puede participar en una venta Registrada a la vez. La reventa utiliza otro Pedido." vertex="1">
+          <mxGeometry height="125" width="335" x="950" y="880" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
