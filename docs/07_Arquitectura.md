@@ -9,7 +9,7 @@ Referencias actuales entre proyectos (`A → B` significa que A referencia B):
 
 `Domain` no depende de `Infrastructure`. Estas referencias describen dependencias de proyectos, no una secuencia de ejecución.
 
-El [diagrama de arquitectura](diagrams/08_Arquitectura.drawio) conserva una representación pendiente de sincronización en la fase de diagramas. Para las dependencias vigentes, usar esta descripción y los archivos de proyecto.
+El [diagrama de arquitectura](diagrams/08_Arquitectura.drawio) está sincronizado con las dependencias vigentes descritas aquí y en los archivos de proyecto.
 
 
 

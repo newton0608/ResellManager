@@ -5,7 +5,7 @@ Este documento describe el modelo lógico de base de datos de ResellManager V1.
 El diagrama se encuentra en:
 `docs/diagrams/09_BaseDeDatos.drawio`
 
-El DER y el diagrama de clases están pendientes de sincronización en la fase de diagramas. Sus atributos y cardinalidades antiguos no sustituyen los contratos vigentes descritos aquí y en la configuración EF.
+El DER y el diagrama de clases están sincronizados con los contratos vigentes descritos aquí y en la configuración EF.
 
 ## Notas generales
 
