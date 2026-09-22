@@ -4,12 +4,16 @@
 
 Este documento mantiene una lista de controles de seguridad y operación para ResellManager. No sustituye pruebas, auditorías ni el [runbook de despliegue V1](21_Despliegue_V1.md). Debe actualizarse cuando cambie la arquitectura (multiusuario, API pública, tienda, pagos, correo, IA, PostgreSQL, etc.).
 
-Referencia: rama `chore/v1-production-deploy`, paquete de hosting y hardening acotado del login, headers, versión de Caddy y bind mounts. Implementado en código no significa validado en el VPS ni go-live completo.
+Referencia histórica del paquete: rama `chore/v1-production-deploy`, hosting y hardening del login, headers, versión de Caddy y bind mounts, incorporados en `v1.0.1`. Implementado en código no significa validado en el VPS.
+
+Estado operativo confirmado por el responsable del proyecto para la sincronización del 21/09/2026: ResellManager está en producción; funcionan dominio/HTTPS y cuentas Identity separadas; se probaron cliente, compra y venta directa. Backup manual y restore real fueron realizados y verificados. El timer systemd está instalado, activo y ya ejecutó correctamente al menos una vez, con retención automática. Las copias siguen en el mismo VPS; copia automática externa y validación completa del rollback de aplicación están pendientes.
+
+Existen `v1.0.0 → 3f2d264` y `v1.0.1 → 97da64e`, pero no prueban qué imagen exacta está desplegada. Estar en producción, usar HTTPS o haber probado restore no certifica todos los controles de esta lista. Las cuentas separadas no implican roles/permisos finos ni concurrencia fuerte.
 
 ## Leyenda
 
-- ✅ **Cubierto**: existe un control equivalente en la arquitectura actual.
-- 🟡 **Pendiente V1 / endurecimiento**: aplica al despliegue actual y conviene cerrarlo antes o inmediatamente después del go-live.
+- ✅ **Cubierto**: existe un control equivalente en la arquitectura actual; cada fila distingue implementación de confirmación operativa. No es una certificación global del VPS.
+- 🟡 **Pendiente V1 / endurecimiento**: aplica a la instalación productiva actual; requiere completar el control o incorporar/verificar su evidencia operativa.
 - 🔴 **Requisito de salida**: no debe considerarse operación real protegida sin comprobarlo.
 - 🔵 **Futuro**: aplica cuando exista la funcionalidad indicada.
 - ⚪ **No aplica hoy**: la arquitectura actual no expone esa superficie.
@@ -25,7 +29,7 @@ Referencia: rama `chore/v1-production-deploy`, paquete de hosting y hardening ac
 | 5 | Claves públicas pueden exponerse; secretos jamás | ✅ | Secretos solo en servidor/configuración privada. Nunca incluir credenciales, tokens privados, claves de firma o bootstrap en repo, imagen, JS o logs. |
 | 6 | Lo que llega a la app cliente no es secreto | ✅ | Cualquier HTML/JS/CSS/configuración enviada al navegador se considera pública. Blazor Server reduce código cliente, pero no cambia esta regla. |
 | 7 | Ante una clave filtrada: rotar/revocar antes de purgar | ✅ | Una credencial filtrada se considera comprometida. Primero revocar/rotar; luego limpiar historial, logs o artefactos si procede. |
-| 8 | Endpoint privado comprueba identidad y permiso | ✅ / 🟡 | V1 usa Identity, rutas autorizadas y endpoint de comprobantes protegido. Roles/permisos finos quedan para multiusuario. |
+| 8 | Endpoint privado comprueba identidad y permiso | ✅ / 🟡 | V1 usa Identity, rutas autorizadas y endpoint de comprobantes protegido. Las cuentas actuales son separadas; roles/permisos finos y administración de usuarios desde la app siguen pendientes. |
 | 9 | Tokens sensibles fuera de `localStorage` | ✅ | V1 no usa JWT de sesión en `localStorage`; Identity usa cookie HttpOnly. |
 | 10 | Contraseñas correctamente hasheadas/delegadas | ✅ | ASP.NET Core Identity gestiona hashing. La política vigente exige longitud y complejidad y usa lockout por intentos fallidos. |
 | 11 | Segundo factor disponible | 🔵 | Añadir 2FA como endurecimiento de cuentas administrativas, prioritario antes de ampliar usuarios o exposición. |
@@ -42,9 +46,17 @@ Referencia: rama `chore/v1-production-deploy`, paquete de hosting y hardening ac
 | 22 | Cabeceras de seguridad y HSTS | ✅ / 🟡 | Headers globales implementados mediante OnStarting: `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `X-Frame-Options: DENY` y CSP `frame-ancestors 'none'` solo si no existe otra CSP. Comprobantes conserva `sandbox`; no se restringen scripts/estilos de Blazor. HSTS sigue en Production. Pendiente validación real en VPS. |
 | 23 | Errores sin información sensible | ✅ / 🟡 | Production usa exception handler y mensajes operativos genéricos. Revisar que logs públicos/respuestas nunca incluyan rutas, secretos, SQL o stack traces. |
 | 24 | Logs y alertas accionables | 🟡 | Se usa `ILogger` y Docker rota `json-file`. Falta decidir formato estructurado/correlación, retención, destino y alertas mínimas. |
-| 25 | Restauración del backup probada | 🔴 | Requisito de salida. Debe restaurarse realmente SQLite + comprobantes + Data Protection en un entorno aislado y comprobar login y operaciones esenciales. |
+| 25 | Restauración del backup probada | ✅ / 🟡 | Restore real realizado y verificado según confirmación operativa del responsable. Falta incorporar el registro detallado y alcance de comprobaciones; no se certifican todos los controles ni el rollback de aplicación. Véase el runbook. |
 
 ## Operación y observabilidad
+
+### Backups y recuperación
+
+El [runbook operativo](21_Despliegue_V1.md#respaldo-y-restauración) documenta `scripts/backup-v1.sh`, su copia `/opt/resellmanager/backup.sh` y el servicio/timer systemd instalados. El timer está activo y ya ejecutó correctamente; backup manual y restore real también están probados según confirmación operativa.
+
+La retención automática conserva la unión de 7 copias más recientes, una por cada una de las 4 semanas ISO más recientes disponibles y una por cada uno de los 3 meses más recientes disponibles; no implica exactamente 14 archivos. Actualmente las copias permanecen en el mismo VPS y todavía no existe copia automática externa a Raspberry/otro equipo.
+
+El paquete contiene `database`, `comprobantes` y `dataprotection`. SHA-256 comprueba integridad, no cifra; `/health` comprueba liveness después del reinicio, no una recuperación completa. Mantener como pendientes copia externa, política de recuperación/alertas y validación completa del rollback de aplicación. La evidencia de restore no certifica por sí sola permisos, descifrado de claves, todos los datos y operaciones o reconstrucción íntegra del VPS.
 
 ### Logs estructurados
 
@@ -87,7 +99,7 @@ Estado: ✅ liveness mínima; 🔵 readiness avanzada.
 
 ### Rollback
 
-Antes de datos reales debe existir una ruta de retorno reproducible:
+La instalación productiva aún necesita validar completamente una ruta de retorno de versión reproducible, distinta del restore de datos ya probado:
 
 - Identificar commit/tag e imagen desplegada.
 - Conservar la imagen anterior o poder reconstruirla exactamente.
@@ -97,7 +109,7 @@ Antes de datos reales debe existir una ruta de retorno reproducible:
 
 Blue/green no es necesario para V1 con una instancia y SQLite; primero priorizar un rollback simple y probado.
 
-Estado: 🔴 ensayo operativo pendiente.
+Estado: 🔴 validación completa del rollback de versión de aplicación pendiente. El restore real probado no cierra este control.
 
 ### Rotación de secretos
 
@@ -129,20 +141,21 @@ Estado: ✅ política definida; procedimientos concretos se agregan cuando exist
 - Caddy está fijado en `caddy:2.11.4-alpine`, sin latest ni auto-update; registrar además el digest utilizado.
 - Bind mounts de la app alineados con `/opt/resellmanager/data/database`, `/opt/resellmanager/data/comprobantes` y `/opt/resellmanager/data/dataprotection`; usuario no-root conservado y Caddy mantiene sus volúmenes nombrados.
 
-### Pendientes antes de operación real
+### Verificaciones pendientes en producción
 
 1. **Validar rate limit implementado en el VPS**: 10 solicitudes por IP/minuto, siguiente solicitud 429 y contadores independientes detrás del proxy confiable; SignalR y health continúan disponibles.
 2. **Validar headers implementados detrás de Caddy** en páginas/estáticos y comprobar que los comprobantes conservan CSP sandbox, sin romper Blazor.
-3. **Restauración real del backup** y ensayo de rollback.
+3. **Completar evidencia detallada del restore ya probado** y **ensayar el rollback completo de versión de aplicación**, que sigue pendiente.
 4. **Prueba Linux real** de SkiaSharp/comprobantes dentro del contenedor.
 5. **Verificar permisos de bind mounts** con UID/GID del usuario `app` de la imagen.
 6. **Validar red Docker elegida** y que la IP real de Caddy coincide con `ReverseProxy__KnownProxy`.
 7. **Verificar desde Internet** que `8080` y SQLite no son accesibles.
 8. **Retirar `UsuarioInicial__Correo` y `UsuarioInicial__Contrasena`** inmediatamente después del bootstrap y recrear el contenedor.
-9. **Auditar paquetes NuGet directos/transitivos** y runtime antes del go-live; `net8.0` requiere plan de migración por fin de soporte el 10/11/2026.
+9. **Auditar paquetes NuGet directos/transitivos** y runtime de la instalación y de cada actualización; `net8.0` requiere plan de migración por fin de soporte el 10/11/2026.
 10. **Reproducibilidad de imágenes**: Caddy está fijado en `2.11.4-alpine`; registrar además los digests de las imágenes usadas y conservar la desplegada/anterior para el ensayo real de rollback pendiente.
 11. **Data Protection en reposo**: las keys persistidas en filesystem no quedan cifradas automáticamente por esa configuración; proteger permisos, disco y backups y evaluar protección adicional si aumenta el riesgo.
-12. **Transición del VPS actual**: Compose ya usa `/opt/resellmanager/data/*` para la app y volúmenes nombrados para Caddy. Verificar escritura de los directorios/archivos por el UID/GID de `app` (1654:1654 en la imagen actual); no crear otra estructura en `/srv`. La carpeta existente `data/caddy` no sustituye los volúmenes nombrados. Detener el Caddy de prueba antes de levantar Compose para evitar conflicto de puertos.
+12. **Persistencia y recreaciones**: Compose usa `/opt/resellmanager/data/*` para la app y volúmenes nombrados para Caddy. Verificar escritura de los directorios/archivos por el UID/GID de `app` (1654:1654 en la imagen de referencia); no crear otra estructura en `/srv`. La carpeta `data/caddy` no sustituye los volúmenes nombrados. La indicación original de detener un Caddy de prueba correspondía a la transición inicial; no describe el estado productivo actual.
+13. **Copia automática externa**: pendiente hacia Raspberry/otro equipo; comprobar acceso y recuperación cuando se implemente, sin considerar las copias locales como protección frente a pérdida completa del VPS.
 
 ## Futuro V2 / tienda / multiusuario
 
