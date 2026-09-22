@@ -4,15 +4,15 @@ Este documento define las convenciones utilizadas durante el desarrollo del proy
 
 ## Idioma
 
-- El código fuente estará escrito en español.
+- Los conceptos y entidades del dominio se nombran principalmente en español.
 - La documentación del proyecto estará escrita en español.
-- Los nombres de clases, interfaces, métodos, propiedades, variables, enumeraciones y tablas seguirán nombres en español.
+- Los nombres del dominio mantienen el vocabulario del negocio; nombres propios del framework y conceptos técnicos como `Service`, `Dto`, `DbContext` o `Async` pueden permanecer en inglés.
 - Los comentarios en el código deberán escribirse en inglés únicamente cuando sean necesarios; se priorizará un código autoexplicativo.
 - Los textos visibles para el usuario (botones, mensajes, etiquetas, etc.) estarán en español en la primera versión del sistema.
 
 ## General
 
-- Todo el código estará escrito en inglés.
+- Aplicar la convención de idioma anterior de forma consistente; no traducir nombres del framework ni renombrar código existente por esta sincronización documental.
 - La documentación estará escrita en español.
 - Los nombres deben ser descriptivos.
 - Evitar abreviaturas innecesarias.
@@ -23,7 +23,7 @@ Este documento define las convenciones utilizadas durante el desarrollo del proy
 ## Clases
 
 - Utilizar PascalCase.
-- Nombrar las clases en singular.
+- Nombrar las clases de entidad en singular.
 
 Ejemplos:
 
@@ -111,6 +111,9 @@ EnTransito
 Disponible
 Vendida
 Entregada
+Perdida
+
+`EnvioHermano` es el identificador persistido de `OrigenCompra`; «Envío del hijo» es su etiqueta comercial. No se cambia el enum para hacerlo coincidir con la etiqueta.
 
 Las reservas se nombran mediante DetallePedidoReservaId; Apartada no pertenece a EstadoUnidadInventario.
 
@@ -118,14 +121,18 @@ Las reservas se nombran mediante DetallePedidoReservaId; Apartada no pertenece a
 
 ## Base de datos
 
-Las tablas estarán en singular.
+Las tablas comerciales actuales se mapean en plural mediante EF, mientras las entidades permanecen en singular.
 
 Ejemplos:
 
-Cliente
-Producto
-UnidadInventario
-Compra
+Clientes
+Productos
+UnidadesInventario
+Compras
+Pedidos
+Ventas
+
+Esta descripción no propone renombres de tablas ni migraciones. Los nombres de tablas propios de Identity conservan las convenciones del framework.
 
 ---
 

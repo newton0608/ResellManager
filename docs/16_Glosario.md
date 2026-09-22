@@ -21,6 +21,9 @@ Estado exclusivamente físico/logístico de una unidad. Valores V1:
 - `Disponible`
 - `Vendida`
 - `Entregada`
+- `Perdida`
+
+`Perdida` solo se alcanza desde `Comprada` o `EnTransito` y es irreversible en V1. Libera la reserva y conserva unidad, compra, costo e historial; no puede recibirse, reservarse o venderse después, ni cuenta como recibida. No incluye reembolsos, ajustes contables automáticos ni recuperación de pérdidas.
 
 `Apartada` no es un valor de este enum.
 
@@ -30,7 +33,7 @@ Asociación comercial opcional desde una `UnidadInventario` hacia un `DetallePed
 
 ## Compra
 
-Adquisición de productos a un proveedor. Puede contener varios detalles y un comprobante. Una compra de catálogo puede no generar unidades si la mercancía no pasa por inventario físico.
+Adquisición de productos a un proveedor. Puede contener varios detalles y un comprobante. Una compra de catálogo nunca genera unidades de inventario físico en V1.
 
 ## DetalleCompra
 
@@ -50,7 +53,7 @@ Persona que realiza pedidos y puede tener ventas, pagos, reservas y saldo pendie
 
 ## Pedido
 
-Solicitud del cliente previa a la venta. Sus detalles definen productos y cantidades requeridas. Puede representar venta directa, apartado, importación o catálogo.
+Solicitud del cliente previa a la venta. Sus detalles definen productos y cantidades requeridas. Puede representar venta directa, apartado, importación o catálogo. Puede existir sin venta y admite como máximo una, incluso si se cancela. `CanalVenta` es obligatorio e independiente del tipo de pedido.
 
 ## DetallePedido
 
@@ -58,11 +61,11 @@ Producto y cantidad solicitada dentro de un pedido. Es el destino de la asociaci
 
 ## Venta
 
-Transacción completa registrada a partir de un único pedido. Debe coincidir exactamente por producto y cantidad con el pedido. Una vez registrada no admite agregar artículos. No implica necesariamente entrega física.
+Transacción completa registrada a partir de un único pedido obligatorio (`Venta.PedidoId`); Venta Directa crea automáticamente ese pedido. Debe coincidir exactamente por producto y cantidad con él. Una vez registrada no admite agregar artículos. Sus únicos estados son `Registrada` y `Cancelada`; no implica necesariamente entrega física ni un estado de pago individual.
 
 ## DetalleVenta
 
-Una unidad vendida; no contiene cantidad. En inventario referencia una `UnidadInventario` y guarda snapshots de producto/costo. En catálogo puede usar `ProductoId`, `CostoUnitario` y `PrecioFinal` sin unidad física.
+Una unidad vendida; no contiene cantidad. En inventario referencia una `UnidadInventario` y guarda snapshots de producto/costo. En catálogo debe registrar `ProductoId`, `CostoUnitario` y `PrecioFinal` sin unidad física. Una misma unidad puede aparecer en varios detalles históricos de ventas canceladas; su reventa exige otro pedido y no puede participar simultáneamente en dos ventas `Registrada`.
 
 ## PrecioFinal
 
@@ -82,7 +85,7 @@ Conjunto de unidades físicas administradas por el sistema. No constituye una en
 
 ## Catálogo
 
-Productos ofrecidos por proveedores externos bajo pedido. Cuando la mercancía se entrega al cliente al recibirse y no pasa por inventario general, el pedido/venta de catálogo no genera ni reserva `UnidadInventario`.
+Productos ofrecidos por proveedores externos bajo pedido. En V1 sus compras no generan `UnidadInventario`, sus pedidos no reservan inventario físico y sus ventas no utilizan unidades físicas: registran producto, costo y precio explícitos.
 
 ## Comisión de catálogo
 
@@ -102,7 +105,7 @@ Compra cuyo traslado puede separar `FechaCompra` de `FechaIngreso`. Sus unidades
 
 ## Recepción de mercancía
 
-Caso de uso que registra la llegada física, asigna `FechaIngreso` y cambia unidades `Comprada`/`EnTransito` a `Disponible`, conservando cualquier reserva.
+Caso de uso que registra la llegada física, asigna `FechaIngreso` y cambia unidades existentes `Comprada`/`EnTransito` a `Disponible`, conservando cualquier reserva. No crea unidades y excluye las `Perdida` de recibidas y pendientes de recibir.
 
 ## Entrega
 
