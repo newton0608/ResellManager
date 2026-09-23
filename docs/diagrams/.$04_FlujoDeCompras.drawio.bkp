@@ -1,6 +1,6 @@
 <mxfile host="Electron" agent="ChatGPT">
   <diagram id="62cce19b-44f6-44b1-9bc4-61193ebb1a15" name="Flujo de Compras">
-    <mxGraphModel dx="1212" dy="746" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1050" pageHeight="1320" math="0" shadow="0">
+    <mxGraphModel dx="822" dy="528" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1050" pageHeight="1320" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -32,7 +32,7 @@
           <mxGeometry height="70" width="240" x="410" y="620" as="geometry" />
         </mxCell>
         <mxCell id="12" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;strokeWidth=2;fontColor=#1F2937;arcSize=12;" value="Crear unidades según cantidad&lt;br&gt;con el estado y fecha indicados" vertex="1">
-          <mxGeometry height="70" width="240" x="410" y="960" as="geometry" />
+          <mxGeometry height="70" width="240" x="410" y="950" as="geometry" />
         </mxCell>
         <mxCell id="13" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;strokeWidth=2;fontColor=#1F2937;arcSize=12;" value="Según origen de compra" vertex="1">
           <mxGeometry height="60" width="190" x="435" y="725" as="geometry" />
@@ -44,10 +44,10 @@
           <mxGeometry height="70" width="190" x="600" y="850" as="geometry" />
         </mxCell>
         <mxCell id="16" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;strokeWidth=2;fontColor=#1F2937;arcSize=12;" value="Guardar compra y detalles" vertex="1">
-          <mxGeometry height="60" width="190" x="435" y="1080" as="geometry" />
+          <mxGeometry height="60" width="190" x="410" y="1070" as="geometry" />
         </mxCell>
         <mxCell id="17" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#F8CECC;strokeColor=#B85450;strokeWidth=2;fontStyle=1;fontColor=#1F2937;" value="Fin" vertex="1">
-          <mxGeometry height="50" width="140" x="460" y="1180" as="geometry" />
+          <mxGeometry height="50" width="140" x="435" y="1170" as="geometry" />
         </mxCell>
         <mxCell id="18" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#F5F5F5;strokeColor=#666666;fontColor=#374151;" value="Nota:&lt;br&gt;envíos del hijo pueden no tener comprobante&lt;br&gt;o costo exacto al momento de recibir." vertex="1">
           <mxGeometry height="110" width="260" x="715" y="700" as="geometry" />
@@ -119,7 +119,7 @@
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="1030" y="885" />
-              <mxPoint x="1030" y="1110.03" />
+              <mxPoint x="1030" y="1100" />
             </Array>
           </mxGeometry>
         </mxCell>
