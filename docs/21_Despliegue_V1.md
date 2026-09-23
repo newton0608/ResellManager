@@ -214,8 +214,11 @@ docker network ls
 docker network inspect $(docker network ls -q) --format '{{.Name}} {{json .IPAM.Config}}'
 ```
 
-Si hay solapamiento, cambiar conjuntamente subnet, ipv4_address de Caddy y
-ReverseProxy__KnownProxy en compose.yml. Ninguna subred privada garantiza ausencia de conflictos.
+Si hay solapamiento y es necesario cambiar la subred, actualizar conjuntamente subnet,
+ipv4_address de Caddy, ipv4_address de ResellManager y ReverseProxy__KnownProxy en compose.yml.
+Ambas IP estáticas deben pertenecer a la nueva subred, ser distintas entre sí y no entrar
+en conflicto con otras direcciones utilizadas. ReverseProxy__KnownProxy debe seguir apuntando
+a la IP de Caddy. Ninguna subred privada garantiza ausencia de conflictos.
 La red bridge es privada entre contenedores, con salida a Internet para ACME; no usa internal:true.
 Solo Caddy publica 80/TCP y 443/TCP+UDP. ResellManager únicamente declara expose:8080,
 sin ports, sin publicación de SQLite ni acceso estático a comprobantes.
