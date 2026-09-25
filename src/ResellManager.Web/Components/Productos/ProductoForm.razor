@@ -27,7 +27,10 @@
     <div class="form-grid">
         <div class="form-field">
             <label for="producto-codigo-barras">Código de barras</label>
-            <InputText disabled="@Guardando" aria-describedby="producto-codigo-barras-validacion" id="producto-codigo-barras" @bind-Value="Modelo.CodigoBarras" inputmode="numeric" autocomplete="off" />
+            <div class="barcode-input-row">
+                <InputText disabled="@Guardando" aria-describedby="producto-codigo-barras-validacion" id="producto-codigo-barras" @bind-Value="Modelo.CodigoBarras" inputmode="numeric" autocomplete="off" />
+                <BarcodeScanner Disabled="@Guardando" OnDetected="CodigoEscaneado" />
+            </div>
             <div id="producto-codigo-barras-validacion"><ValidationMessage For="() => Modelo.CodigoBarras" /></div>
         </div>
 
@@ -129,4 +132,5 @@
     private bool PuedeGuardar => !Guardando && Categorias.Count > 0;
 
     private Task GuardarAsync() => OnGuardar.InvokeAsync(Modelo);
+    private void CodigoEscaneado(string codigo) => Modelo.CodigoBarras = codigo;
 }
