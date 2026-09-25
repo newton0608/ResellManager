@@ -1,18 +1,15 @@
 # Arquitectura
 
-Presentación
+Referencias actuales entre proyectos (`A → B` significa que A referencia B):
 
-↓
+- `Application → Domain`
+- `Infrastructure → Application`
+- `Web → Application`
+- `Web → Infrastructure`
 
-Aplicación
+`Domain` no depende de `Infrastructure`. Estas referencias describen dependencias de proyectos, no una secuencia de ejecución.
 
-↓
-
-Dominio
-
-↓
-
-Infraestructura
+El [diagrama de arquitectura](diagrams/08_Arquitectura.drawio) está sincronizado con las dependencias vigentes descritas aquí y en los archivos de proyecto.
 
 
 
@@ -31,13 +28,13 @@ Infraestructura
 Blazor Web App. Interfaz utilizada desde navegador.
 
 ## Aplicación:
-Casos de uso, servicios y validaciones.
+Contratos de casos de uso y servicios, DTOs y validaciones compartidas.
 
 ## Dominio:
 Entidades principales y reglas del negocio.
 
 ## Infraestructura:
-Entity Framework Core, SQLite, almacenamiento de archivos e Identity.
+Implementaciones principales de servicios, persistencia con Entity Framework Core y SQLite, almacenamiento de archivos e integración de persistencia de Identity.
 
 ## Domain
 - Entidades
@@ -45,16 +42,16 @@ Entity Framework Core, SQLite, almacenamiento de archivos e Identity.
 - Reglas simples del dominio
 
 ## Application
-- Interfaces
-- Servicios / casos de uso
-- DTOs si hacen falta
+- Interfaces de servicios y casos de uso
+- DTOs
+- Validaciones y utilidades compartidas
 
 ## Infrastructure
-- DbContext
-- Entity Framework Core
-- SQLite
-- Repositorios
+- Implementaciones principales de servicios y casos de uso
+- DbContext y configuraciones de Entity Framework Core
+- Persistencia SQLite
 - Almacenamiento de comprobantes
+- Persistencia de Identity
 
 ## Web
 - Blazor

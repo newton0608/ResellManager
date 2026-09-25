@@ -1,6 +1,6 @@
 <mxfile host="Electron" agent="ChatGPT">
   <diagram id="b15c4de4-a897-4450-a997-c4adffb6875c" name="Flujo de Importación">
-    <mxGraphModel dx="1160" dy="746" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="710" dy="437" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -59,22 +59,22 @@
           <mxGeometry height="60" width="190" x="480" y="1130" as="geometry" />
         </mxCell>
         <mxCell id="21" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;strokeWidth=2;fontColor=#1F2937;" value="¿Cómo se transportará?" vertex="1">
-          <mxGeometry height="90" width="140" x="500" y="1220" as="geometry" />
+          <mxGeometry height="90" width="140" x="500" y="1300" as="geometry" />
         </mxCell>
         <mxCell id="22" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;strokeWidth=2;fontColor=#1F2937;arcSize=12;" value="Viaja con ella&lt;br&gt;(equipaje)" vertex="1">
-          <mxGeometry height="60" width="190" x="300" y="1350" as="geometry" />
+          <mxGeometry height="60" width="190" x="300" y="1420" as="geometry" />
         </mxCell>
         <mxCell id="23" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;strokeWidth=2;fontColor=#1F2937;arcSize=12;" value="Se envía en caja" vertex="1">
-          <mxGeometry height="60" width="190" x="700" y="1350" as="geometry" />
+          <mxGeometry height="60" width="190" x="700" y="1420" as="geometry" />
         </mxCell>
-        <mxCell id="24" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;strokeWidth=2;fontColor=#1F2937;arcSize=12;" value="Llega a Guatemala&lt;br&gt;y se recibe" vertex="1">
-          <mxGeometry height="60" width="190" x="500" y="1430" as="geometry" />
+        <mxCell id="24" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;strokeWidth=2;fontColor=#1F2937;arcSize=12;" value="Recepción total o parcial&lt;br&gt;Unidades existentes → Disponible&lt;br&gt;Asignar FechaIngreso&lt;br&gt;Conservar reservas válidas" vertex="1">
+          <mxGeometry height="85" width="230" x="475" y="1520" as="geometry" />
         </mxCell>
-        <mxCell id="25" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;strokeWidth=2;fontColor=#1F2937;arcSize=12;" value="Crear unidades de inventario" vertex="1">
-          <mxGeometry height="60" width="190" x="500" y="1510" as="geometry" />
+        <mxCell id="25" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;strokeWidth=2;fontColor=#1F2937;arcSize=12;" value="Crear unidades: Comprada&lt;br&gt;FechaIngreso = null&lt;br&gt;(al registrar compra)" vertex="1">
+          <mxGeometry height="60" width="190" x="480" y="1210" as="geometry" />
         </mxCell>
         <mxCell id="26" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#D6B656;strokeWidth=2;fontColor=#1F2937;" value="¿Tiene pedido asociado?" vertex="1">
-          <mxGeometry height="90" width="140" x="525" y="1610" as="geometry" />
+          <mxGeometry height="90" width="140" x="520" y="1620" as="geometry" />
         </mxCell>
         <mxCell id="27" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;strokeWidth=2;fontColor=#1F2937;arcSize=12;" value="Preparar entrega / venta" vertex="1">
           <mxGeometry height="60" width="190" x="265" y="1715" as="geometry" />
@@ -136,7 +136,7 @@
         <mxCell id="46" edge="1" parent="1" source="18" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#4B5563;fontColor=#374151;labelBackgroundColor=#FFFFFF;" target="20" value="">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="47" edge="1" parent="1" source="20" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#4B5563;fontColor=#374151;labelBackgroundColor=#FFFFFF;" target="21" value="">
+        <mxCell id="47" edge="1" parent="1" source="20" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#4B5563;fontColor=#374151;labelBackgroundColor=#FFFFFF;" target="25" value="">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="48" edge="1" parent="1" source="21" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#4B5563;fontColor=#374151;labelBackgroundColor=#FFFFFF;" target="22" value="Equipaje">
@@ -151,10 +151,10 @@
         <mxCell id="51" edge="1" parent="1" source="23" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#4B5563;fontColor=#374151;labelBackgroundColor=#FFFFFF;" target="24" value="">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="52" edge="1" parent="1" source="24" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#4B5563;fontColor=#374151;labelBackgroundColor=#FFFFFF;" target="25" value="">
+        <mxCell id="52" edge="1" parent="1" source="25" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#4B5563;fontColor=#374151;labelBackgroundColor=#FFFFFF;" target="21" value="EnTransito opcional">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="53" edge="1" parent="1" source="25" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#4B5563;fontColor=#374151;labelBackgroundColor=#FFFFFF;" target="26" value="">
+        <mxCell id="53" edge="1" parent="1" source="24" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#4B5563;fontColor=#374151;labelBackgroundColor=#FFFFFF;" target="26" value="">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="54" edge="1" parent="1" source="26" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#4B5563;fontColor=#374151;labelBackgroundColor=#FFFFFF;" target="27" value="Sí">

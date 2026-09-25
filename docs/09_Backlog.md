@@ -1,5 +1,7 @@
 # Backlog
 
+V1 está en producción. Este backlog conserva entregas de fases y distingue ampliaciones posteriores; sus pendientes V2 no se consideran resueltos por el despliegue. El estado operativo vigente se mantiene en el [runbook V1](21_Despliegue_V1.md) y las versiones en el [changelog](../CHANGELOG.md).
+
 ## Backend V1 completado
 
 - [x] Separar reserva comercial del estado físico de inventario.
@@ -105,9 +107,15 @@
 - [x] Mostrar producto, identificación de unidad, compra/origen, ingreso y costo real de la unidad.
 - [x] Presentar el estado físico y la reserva comercial como conceptos separados.
 - [x] Registrar recepción parcial de unidades compradas o en tránsito, agrupada por Compra y Proveedor, sin alterar reservas existentes ni mezclar compras en una confirmación.
-- [x] Exponer únicamente las transiciones manuales `Comprada → EnTransito` y `Vendida → Entregada`.
+- [x] Alcance original de Fase 5.5: exponer únicamente las transiciones manuales `Comprada → EnTransito` y `Vendida → Entregada`.
 - [x] Integrar creación de unidades mediante la UI de compras; Inventario no crea unidades directamente y `CompraService` conserva la autoridad.
 - [x] Integrar creación y cancelación de reservas en la UI de pedidos; Inventario continúa como consulta del estado físico y la reserva.
+
+### Ampliación posterior implementada en V1: pérdidas
+
+- [x] Permitir `Comprada/EnTransito → Perdida` con confirmación e irreversibilidad en el flujo actual.
+- [x] Liberar la reserva de la unidad perdida y conservar unidad, compra, costo e historial.
+- [x] Excluir pérdidas de recepción, reserva y venta; contabilizarlas separadamente de recibidas y pendientes de recibir. Esto no implementa el conteo físico futuro de V3.
 
 ---
 

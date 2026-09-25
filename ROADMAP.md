@@ -1,12 +1,22 @@
 # Roadmap
 
-Resumen de planificación; no acredita funcionalidades futuras implementadas ni producción existente.
+Resumen de planificación desde una V1 productiva. Las propuestas V2/V3 no se consideran implementadas.
 
-## V1 — Sistema interno y cierre funcional
+## V1 — Sistema interno en producción
 
 Sistema privado actual: clientes, productos/categorías, proveedores, compras/comprobantes, inventario/recepción, pedidos/reservas, ventas/pagos y Dashboard.
 
-El cierre funcional y técnico está documentado en [Cierre V1](docs/18_Fase510_CierreV1.md). La preparación y el despliegue productivo son el paso operativo actual, no una versión V3: seguir el [runbook V1](docs/21_Despliegue_V1.md), completar QA y comprobar respaldo/restauración antes del go-live. No se declara una release 1.0.0 publicada.
+El cierre funcional y técnico se conserva como registro histórico en [Cierre V1](docs/18_Fase510_CierreV1.md). Existen los tags `v1.0.0` y `v1.0.1`, descritos en el [changelog](CHANGELOG.md); no prueban qué imagen exacta está desplegada.
+
+Producción, dominio/HTTPS, cuentas Identity separadas y pruebas de cliente, compra y venta directa están confirmados operativamente. Backup manual y restore real fueron probados; el timer automático está activo y ya ejecutó correctamente, con retención. Las copias permanecen en el mismo VPS.
+
+Pendientes operativos V1: copia automática externa a Raspberry/otro equipo, validación completa del rollback de versión de aplicación y verificaciones de seguridad/QA todavía sin evidencia detallada incorporada. El [runbook V1](docs/21_Despliegue_V1.md) separa lo confirmado de lo pendiente; estas tareas no convierten el despliegue inicial en un evento futuro ni implementan V2/V3.
+
+## V1.1 — Medidas y presentación de productos
+
+**Planificada, no implementada.** Diseño aprobado para incorporar volumen o peso opcionales y presentación comercial a Producto, con captura administrativa y persistencia normalizada. Se prevé implementar inmediatamente después del cierre documental de V1.0.1, como una mejora funcional tipo V1.1.0; la versión exacta queda por confirmar.
+
+Modelo propuesto, reglas y decisiones abiertas en [Medidas y presentación de producto](docs/23_MedidasYPresentacionProducto.md). La presentación en tienda virtual corresponde al futuro canal V2.4; esta mejora no implementa la tienda.
 
 ## V2 — Evolución planificada
 

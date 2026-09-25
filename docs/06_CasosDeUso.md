@@ -15,6 +15,7 @@
 - Consultar unidades disponibles.
 - Buscar unidades.
 - Cambiar estado físico mediante las transiciones permitidas.
+- Marcar como `Perdida`, previa confirmación, una unidad `Comprada` o `EnTransito`: libera su reserva, conserva unidad/compra/costo/historial y no admite reversión, recepción, reserva ni venta posterior en V1.
 - Registrar recepción parcial de una compra, sin mezclar compras ni alterar reservas vigentes.
 - Registrar entrega de una unidad vendida.
 
@@ -32,7 +33,7 @@
 - Registrar compra.
 - Registrar compra local.
 - Registrar importación.
-- Registrar compra de catálogo sin generar inventario físico cuando corresponda.
+- Registrar compra de catálogo sin generar unidades de inventario físico.
 - Registrar recepción de envío del hijo.
 - Registrar proveedor.
 - Adjuntar comprobante de compra.
@@ -41,12 +42,13 @@
 ## Pedidos y ventas
 
 - Registrar pedido.
-- Registrar venta completa desde un pedido.
+- Registrar venta completa desde un pedido obligatorio; Venta Directa crea automáticamente ese pedido.
 - Sustituir una unidad reservada por otra compatible disponible, sin reserva ajena.
 - Completar la venta liberando todas las reservas sobrantes o sustituidas del pedido, sin modificar el estado físico de las unidades no vendidas.
 - Validar correspondencia exacta de productos y cantidades entre pedido y venta.
-- Registrar venta de catálogo sin `UnidadInventario`.
+- Registrar venta de catálogo sin `UnidadInventario`, con producto, costo y precio explícitos.
 - Cancelar venta antes de entrega cuando no produzca saldo negativo.
+- Revender una unidad liberada por cancelación mediante otro pedido, conservando los detalles históricos y sin usarla simultáneamente en dos ventas `Registrada`.
 - Rechazar cancelación simple si existen unidades entregadas.
 
 ## Pagos

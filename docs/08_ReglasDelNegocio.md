@@ -3,7 +3,7 @@
 ## UnidadInventario
 
 - Una `UnidadInventario` representa una unidad física real de un `Producto`.
-- `EstadoUnidadInventario` describe únicamente el ciclo físico/logístico: `Comprada`, `EnTransito`, `Disponible`, `Vendida` o `Entregada`.
+- `EstadoUnidadInventario` describe únicamente el ciclo físico/logístico: `Comprada`, `EnTransito`, `Disponible`, `Vendida`, `Entregada` y `Perdida`.
 - Una unidad solo puede estar en un estado físico a la vez; una reserva no es un estado físico.
 - Las unidades de compra local y de `EnvioHermano` se generan `Disponible` y con `FechaIngreso`.
 - Las unidades de importación se generan `Comprada`, sin `FechaIngreso`, y pueden pasar manualmente a `EnTransito`.
@@ -11,9 +11,12 @@
 - `Disponible` pasa a `Vendida` únicamente al registrar una venta válida.
 - `Vendida` puede pasar manualmente a `Entregada`; solo una cancelación válida de venta puede devolverla a `Disponible`.
 - `Entregada` no cambia en el flujo V1 actual.
+- `Comprada` o `EnTransito` pueden pasar a `Perdida`, previa confirmación. No se admite desde `Disponible`, `Vendida` o `Entregada`; es irreversible en V1.
+- Marcar `Perdida` elimina `DetallePedidoReservaId` si existía, pero conserva unidad, compra, costo e historial y no reduce la cantidad solicitada del pedido. No genera reembolsos, ajustes contables automáticos ni un flujo de recuperación de pérdidas.
+- Una unidad `Perdida` no puede recibirse, reservarse o venderse; no cuenta como mercancía recibida ni pendiente de recibir. Las pérdidas se muestran por separado en el resumen de recepción.
 - El origen de una unidad se obtiene desde su `DetalleCompra` y `Compra`.
 - Una unidad asociada a una venta registrada no puede pertenecer a otra venta activa.
-- Los `DetalleVenta` de ventas canceladas permanecen como historial.
+- Los `DetalleVenta` de ventas canceladas permanecen como historial: una unidad puede aparecer en varios detalles históricos, sin una restricción permanente de un único detalle.
 
 ## Reservas y apartados
 
@@ -23,7 +26,7 @@
 - Pueden reservarse unidades físicas `Comprada`, `EnTransito` o `Disponible`.
 - Un pedido `Catalogo` nunca puede reservar una unidad física; los demás tipos de pedido pueden hacerlo cuando el flujo lo requiera.
 - La reserva no está restringida exclusivamente a pedidos `Apartado`.
-- Una unidad `Vendida` o `Entregada` no puede reservarse.
+- Una unidad `Vendida`, `Entregada` o `Perdida` no puede reservarse.
 - La unidad y el detalle reservado deben corresponder al mismo producto.
 - Una unidad reservada no puede venderse para un pedido distinto.
 - Una unidad reservada `Disponible` puede venderse para el pedido de su reserva; registrar esa venta consume la asociación de reserva. La liberación final de todas las reservas se rige por la invariante de Pedidos y ventas descrita abajo.
@@ -43,7 +46,8 @@
 
 ## Pedidos y ventas
 
-- Toda venta se origina en un único pedido. El flujo vigente de Venta Directa genera su pedido técnico automáticamente.
+- Toda venta se origina en un único pedido: `Venta.PedidoId` es obligatorio y único. Un pedido puede existir sin venta y admite como máximo una, incluso si se cancela. El flujo vigente de Venta Directa genera su pedido técnico automáticamente.
+- `EstadoVenta` solo contiene `Registrada` y `Cancelada`; los pagos globales del cliente no crean estados `Pendiente`, `Pagada` o `Parcial` en una venta.
 - Un pedido cancelado no puede convertirse en venta.
 - Los detalles del pedido agrupan la cantidad solicitada por `ProductoId`.
 - Los detalles de la venta representan unidades individuales y no tienen campo cantidad.
@@ -56,14 +60,14 @@
 - Una compra posterior del mismo cliente requiere otro pedido y otra venta.
 - Una venta `Registrada` cuenta para el saldo; una venta `Cancelada` no cuenta.
 - Antes de cancelar una venta se calcula el saldo del cliente excluyéndola. Si quedaría negativo por pagos ya registrados, la cancelación se rechaza hasta ajustar o devolver esos pagos.
-- Una cancelación válida conserva detalles históricos, cambia la venta a `Cancelada`, devuelve el pedido a `Pendiente` y libera a `Disponible` las unidades que siguen `Vendida`.
+- Una cancelación válida conserva detalles históricos, cambia la venta a `Cancelada`, devuelve el pedido a `Pendiente` y libera a `Disponible` las unidades que siguen `Vendida`. No restaura reservas antiguas. Para revender una unidad liberada se utiliza otro pedido, conservando la venta cancelada y sin permitir dos ventas `Registrada` simultáneas para la misma unidad.
 - Si alguna unidad está `Entregada`, la cancelación simple se rechaza y requiere un flujo futuro de devolución o cambio.
 
 ## Catálogo
 
-- Una venta de catálogo puede registrar `DetalleVenta` con `ProductoId`, `CostoUnitario` y `PrecioFinal` sin `UnidadInventario`.
+- Una venta de catálogo debe registrar `DetalleVenta` con `ProductoId`, `CostoUnitario` y `PrecioFinal`, sin utilizar `UnidadInventario`.
 - Solo un pedido `Catalogo` permite vender sin unidad física.
-- Una compra de catálogo no genera unidades automáticamente si la mercancía no pasa por inventario físico.
+- Una compra de catálogo nunca genera `UnidadInventario` en V1.
 - En el flujo real, los productos de catálogo se gestionan bajo pedido y normalmente se entregan al cliente al recibirse, por lo que no forman inventario disponible para venta general.
 - El catálogo muestra directamente el precio final al cliente.
 - Dentro de ese precio final ya está incluida la ganancia o comisión de la vendedora.
@@ -81,8 +85,8 @@
 - Una importación genera unidades compradas, todavía no disponibles.
 - `FechaCompra` y `FechaIngreso` pueden ser distintas.
 - La recepción registra la fecha real de ingreso y cambia `Comprada`/`EnTransito` a `Disponible`.
-- La recepción se opera por Compra y Proveedor y puede ser parcial. Una confirmación solo incluye unidades de una misma Compra; las no seleccionadas conservan su estado `Comprada`/`EnTransito` y las reservas vigentes se conservan también en las recibidas.
-- Recibir una unidad ya `Disponible`, `Vendida` o `Entregada` se rechaza.
+- La recepción se opera por Compra y Proveedor y puede ser parcial. Una confirmación solo incluye unidades de una misma Compra; las pendientes de recibir no seleccionadas conservan su estado `Comprada`/`EnTransito` y las reservas vigentes se conservan también en las recibidas.
+- Recibir una unidad `Disponible`, `Vendida`, `Entregada` o `Perdida` se rechaza.
 - La recepción no crea unidades nuevas.
 
 ## Producto, precios y utilidad

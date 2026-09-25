@@ -1,12 +1,22 @@
-# Despliegue V1 — Runbook de preparación
+# Despliegue V1 — Runbook operativo
 
 ## Estado y límites
 
-Este documento prepara el go-live; no afirma que exista producción ni una release/tag 1.0.0. La referencia funcional es [Cierre V1, sección 19](18_Fase510_CierreV1.md#19-cierre-operativo-reservas-recepción-y-actividad-del-cliente-13092026). La verificación técnica allí registrada (405 tests .NET, 17 JS, build sin errores/warnings) no sustituye pruebas en el VPS ni QA visual real.
+ResellManager está en producción. Esta revisión documental del 21/09/2026 toma como referencia versionada `v1.0.1` y separa las fuentes de evidencia:
 
-Objetivo: VPS con Ubuntu LTS soportado, Docker y Docker Compose, Caddy como reverse proxy y una instancia de ResellManager con SQLite persistente. El repositorio incluye Dockerfile, compose.yml, Caddyfile y ajustes de hosting. El despliegue real, bootstrap, QA detrás de Caddy, backup y prueba REAL de restauración siguen pendientes. No se agregan migraciones ni cambios de esquema.
+| Fuente | Estado demostrado o confirmado |
+| --- | --- |
+| Repositorio | Tags `v1.0.0 → 3f2d264` y `v1.0.1 → 97da64e`; Dockerfile, Compose, Caddyfile, hosting/seguridad, corrección de claves duplicadas Blazor en venta directa, script de backup y unidades systemd versionados. |
+| Confirmación operativa del responsable del proyecto | Producción, dominio y HTTPS funcionando, cuentas Identity separadas y pruebas funcionales de cliente, compra y venta directa. |
+| Confirmación operativa de recuperación | Backup manual real y restore real verificado; timer systemd instalado, activo y con al menos una ejecución correcta; retención automática. Las copias permanecen en el mismo VPS. |
+| Pendiente confirmado | Copia automática externa hacia Raspberry/otro equipo y validación completa del rollback de versión de aplicación. |
+| Sin evidencia detallada incorporada | Imagen/commit/digest exactos desplegados, fechas y registros de las comprobaciones, alcance pormenorizado del restore y verificaciones adicionales de seguridad, persistencia y QA indicadas abajo. |
 
-## Arquitectura objetivo
+La existencia de los tags no demuestra qué imagen ejecuta el VPS. Restore probado no equivale a rollback de aplicación validado ni certifica todos los controles. Las cuentas actuales no implican roles/permisos finos o concurrencia fuerte V2.
+
+La referencia funcional vigente es [Alcance V1](14_Alcance_V1.md). [Cierre V1, sección 19](18_Fase510_CierreV1.md#19-cierre-operativo-reservas-recepción-y-actividad-del-cliente-13092026) conserva evidencia histórica (405 tests .NET, 17 JS y build sin errores/warnings); esos resultados no sustituyen pruebas en el VPS ni QA visual real. Esta sincronización no agrega migraciones ni cambios de esquema.
+
+## Arquitectura de operación V1
 
 ```text
 Internet → HTTPS → Caddy → ResellManager ASP.NET Core / Blazor InteractiveServer
@@ -14,11 +24,11 @@ Internet → HTTPS → Caddy → ResellManager ASP.NET Core / Blazor Interactive
 ```
 
 - Solo Caddy publica el servicio web hacia Internet; el puerto de la aplicación queda en una red privada de Compose, sin publicación directa en el host. Restringir aparte el acceso administrativo al VPS y verificar firewall efectivo, también para puertos publicados por Docker.
-- Resolver dominio y DNS antes de emitir/verificar certificados. El Caddyfile usa app.resellmanager.tech; configurar sus registros DNS hacia el VPS antes del arranque. No registrar credenciales en este documento.
-- Configurar HTTPS, renovación y almacenamiento persistente de certificados/estado de Caddy. Validar redirección HTTP a HTTPS y el host permitido. Caddy admite proxy de WebSockets; comprobar la conexión interactiva de Blazor y su reconexión detrás del proxy. Ver [reverse proxy de Caddy](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy).
+- Dominio y HTTPS están operativos según confirmación del responsable. El Caddyfile usa app.resellmanager.tech; mantener DNS alineado con el VPS y comprobarlo al cambiar de host. No registrar credenciales en este documento.
+- Mantener HTTPS y el almacenamiento persistente de certificados/estado de Caddy. La renovación comprobada, la redirección HTTP a HTTPS y el rechazo de hosts no autorizados requieren evidencia propia; no se dan por validados solo porque HTTPS funcione. Caddy admite proxy de WebSockets; comprobar la conexión interactiva de Blazor y su reconexión detrás del proxy. Ver [reverse proxy de Caddy](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy).
 - V1 no promete operación multiinstancia ni concurrencia fuerte multiusuario. No desplegar réplicas escribiendo sobre la misma SQLite como supuesto escalamiento automático.
 
-## Hosting implementado y validación operativa pendiente
+## Hosting implementado y verificaciones operativas
 
 El arranque actual aplica las migraciones existentes antes del bootstrap de usuario, usa redirección HTTPS y protege las rutas de negocio/comprobantes con autenticación. Eso no configura por sí solo la frontera HTTPS de un reverse proxy.
 
@@ -32,7 +42,7 @@ Probar que ASP.NET Core reconoce el esquema HTTPS externo, que login/logout y an
 
 ## Persistencia, permisos y configuración
 
-Antes de arrancar con datos reales, definir y comprobar estos montajes persistentes:
+Conservar y verificar estos montajes persistentes en la instalación operativa y en cada restauración o actualización:
 
 | Recurso | Requisito |
 | --- | --- |
@@ -50,28 +60,91 @@ La persistencia de Data Protection permite conservar material criptográfico ent
 
 ## Bootstrap de acceso
 
+Procedimiento para una instalación que necesite crear su primera cuenta. Las cuentas actuales ya funcionan; su existencia no acredita la retirada de credenciales temporales, que debe verificarse por separado.
+
 1. Preparar una base nueva y persistente, o una restauración verificada; comprobar la ruta exacta antes del arranque.
 2. Solo si hace falta la primera cuenta, configurar temporalmente `UsuarioInicial__Correo` y `UsuarioInicial__Contrasena` desde el mecanismo privado de secretos. Cumplir la política vigente de Identity documentada en la decisión 016.
 3. Arrancar una única instancia, revisar migraciones/errores y verificar acceso con esa cuenta.
 4. Retirar ambas credenciales de bootstrap del entorno y recrear el contenedor sin ellas. Verificar que el acceso sigue funcionando: la cuenta permanece en SQLite. El seed es idempotente y no cambia la contraseña de una cuenta existente; no sirve como recuperación de contraseña.
 5. Mantener un procedimiento administrativo seguro de recuperación de acceso. No habilitar autorregistro ni dejar credenciales de bootstrap como mecanismo permanente.
 
-## Respaldo y restauración: requisito de salida
+## Respaldo y restauración
 
-Definir responsable, frecuencia, retención, pérdida máxima de datos aceptable (RPO) y tiempo de recuperación objetivo (RTO) antes de abrir el servicio. Guardar copias cifradas fuera del VPS; probar acceso a ellas y alertar ante fallos. Proteger credenciales y claves de descifrado por separado.
+Backup manual y restore real fueron realizados y verificados según la confirmación operativa del responsable del proyecto. El sistema automático systemd está instalado y activo, y el timer ya ejecutó correctamente al menos una vez. Esta confirmación no certifica cada control de la guía de restore ni el rollback completo de versión de aplicación.
 
-El conjunto mínimo respaldado es **SQLite + comprobantes + Data Protection**, acompañado de versión/commit de la imagen, fecha, inventario de archivos y configuración no secreta necesaria para reproducir el entorno. Mantener recuperación protegida de los secretos operativos y del estado de Caddy.
+### Automatización instalada y fuentes versionadas
 
-Procedimiento previsto para una copia consistente de V1:
+- Fuente: [scripts/backup-v1.sh](../scripts/backup-v1.sh). Su copia operativa es `/opt/resellmanager/backup.sh`; esa es la ruta de `ExecStart` del servicio. Conservar la correspondencia entre la copia instalada y la versión revisada.
+- Unidades: [resellmanager-backup.service](../deploy/systemd/resellmanager-backup.service) (`Type=oneshot`, requiere Docker) y [resellmanager-backup.timer](../deploy/systemd/resellmanager-backup.timer).
+- Programación: `OnCalendar=*-*-* 03:30:00 America/Guatemala`, con `RandomizedDelaySec=10m`; la ejecución diaria ocurre alrededor de las 03:30, con hasta diez minutos de demora adicional. `Persistent=true` permite recuperar una activación de calendario perdida mientras el timer estuvo inactivo.
+- El script exige root y necesita Bash, Docker Compose, `flock`, Python 3, `tar`, `sha256sum` y `curl`, además de las utilidades de shell usadas. Comprueba que exista `reselladmin` antes de detener la aplicación.
 
-1. Abrir una ventana de mantenimiento, impedir nuevas operaciones y detener ordenadamente la aplicación; verificar que no quedan escritores ni cargas de comprobantes en curso.
-2. Obtener una copia SQLite consistente con herramientas soportadas. No copiar solo el archivo .db de una base activa ni omitir su WAL: una copia incompleta puede perder datos. La [API de backup de SQLite](https://www.sqlite.org/backup.html) es una alternativa para la BD; por sí sola no sincroniza los archivos de comprobantes.
-3. Respaldar comprobantes y key ring del mismo punto operativo. Conservar permisos, rutas relativas y material de descifrado aplicable; comprobar integridad del paquete.
-4. Reiniciar y verificar el servicio. No borrar el respaldo anterior hasta validar el nuevo según la retención acordada.
+| Uso | Ruta o valor del script |
+| --- | --- |
+| Checkout de Compose | `/opt/resellmanager/source` |
+| Datos | `/opt/resellmanager/data` |
+| Backups | `/opt/resellmanager/backups` |
+| Servicio Compose | `resellmanager` |
+| Liveness | `https://app.resellmanager.tech/health` |
+| Bloqueo | `/run/lock/resellmanager-backup.lock` |
 
-**Prueba REAL de restauración, no solo de creación de backup:** restaurar el conjunto en un entorno aislado sin sobrescribir el original; usar la imagen compatible, rutas y permisos correctos. Verificar integridad SQLite y relaciones, login, saldos, pedidos/reservas, lectura de comprobantes y funcionamiento de Data Protection. Si existen claves protegidas en reposo, comprobar su descifrado. Ensayar recuperación tras recreación del contenedor. Registrar fecha, copia usada, tiempos, responsable y resultado sin incluir secretos. Un backup no restaurado con éxito no satisface el go-live.
+### Secuencia de backup
+
+1. Adquiere el bloqueo no bloqueante mediante `flock`. Si otra ejecución tiene el bloqueo, registra que no iniciará otro backup y termina sin crear una nueva copia.
+2. Detiene `resellmanager` con `docker compose stop` para obtener un snapshot consistente de SQLite y sus archivos asociados. Hay una interrupción de servicio; los circuitos Blazor y formularios sin guardar no sobreviven necesariamente al reinicio.
+3. Empaqueta los directorios completos `database`, `comprobantes` y `dataprotection` en `resellmanager-YYYYMMDD-HHMMSS.tar.gz`. Incluye el directorio de SQLite, no una copia aislada del `.db` mientras la app escribe.
+4. Genera el archivo acompañante `.tar.gz.sha256`, con la suma SHA-256 del paquete.
+5. Reinicia la aplicación mediante `docker compose start` y consulta `/health`, esperando una respuesta `OK`. Realiza hasta 20 intentos, con timeout de cinco segundos por petición y pausas de dos segundos entre intentos fallidos.
+6. Tras recuperar liveness, asigna propietario `reselladmin:reselladmin` y permisos `600` al paquete y al checksum; después aplica la retención.
+
+El manejador de salida intenta levantar la aplicación si el script termina anticipadamente y aún la considera detenida. Es un intento de recuperación, no una garantía de servicio restablecido. Si `/health` falla, el script termina con error aunque el paquete ya exista; no llega a aplicar los permisos finales ni la retención de esa ejecución.
+
+SHA-256 sirve para comprobar integridad, **no cifra** el contenido. `/health` es **liveness** del host; no comprueba continuamente SQLite/disco ni certifica una recuperación completa o la integridad del backup.
+
+### Retención automática
+
+Se conserva la **unión**, sin duplicar archivos, de:
+
+- Las 7 copias más recientes.
+- La copia más reciente de cada una de las 4 semanas ISO más recientes disponibles.
+- La copia más reciente de cada uno de los 3 meses más recientes disponibles.
+
+Una misma copia puede satisfacer varios criterios. No se garantiza que existan exactamente 14 backups ni que las siete copias recientes correspondan a siete días distintos. Las ejecuciones manuales también entran en la selección por nombre y fecha. La rotación elimina los paquetes no seleccionados y sus checksums correspondientes.
+
+### Operación y revisión de fallos
+
+Para consultar el estado y las ejecuciones en el VPS:
+
+```bash
+sudo systemctl status resellmanager-backup.timer
+sudo systemctl list-timers --all resellmanager-backup.timer
+sudo systemctl status resellmanager-backup.service
+sudo journalctl -u resellmanager-backup.service -n 100 --no-pager
+```
+
+Para una ejecución manual planificada, con la misma interrupción y retención que la automática:
+
+```bash
+sudo /opt/resellmanager/backup.sh
+```
+
+Revisar el journal y la presencia del paquete/checksum para confirmar una copia nueva; una salida correcta por bloqueo concurrente no crea otro backup. Ante fallo, comprobar `docker compose ps` y los logs del servicio desde `/opt/resellmanager/source`, recuperar la aplicación si sigue detenida e inspeccionar el respaldo antes de considerarlo válido. No eliminar copias anteriores para resolver un fallo.
+
+### Alcance y pendientes de recuperación
+
+Las copias actuales permanecen **en el mismo VPS**. La copia automática externa hacia Raspberry/otro equipo sigue pendiente; no existe todavía esa protección frente a pérdida completa del VPS. Definir destino, acceso y protección/cifrado de las copias externas, además de responsable, alertas y objetivos RPO/RTO. La programación y retención actuales están implementadas; su adecuación a esos objetivos requiere decisión operativa.
+
+El paquete actual incluye **SQLite + comprobantes + Data Protection**. El script no incorpora imágenes de aplicación, un manifiesto de versión/commit, configuración, secretos ni los volúmenes de Caddy. Conservar por separado la identificación de imágenes, configuración necesaria y recuperación protegida de secretos y estado de Caddy; no asumir que están dentro del `.tar.gz`.
+
+### Restore real: resultado y comprobaciones
+
+El restore real desde backup está probado y verificado según evidencia operativa comunicada por el responsable. Falta incorporar su registro detallado: fecha, copia usada, imagen compatible, tiempos, responsable y comprobaciones realizadas, sin secretos. No se afirma que se hayan certificado individualmente todos los puntos siguientes.
+
+Para repetir la validación: comprobar el checksum; restaurar el conjunto en un entorno aislado sin sobrescribir el original; usar imagen compatible, rutas y permisos correctos. Verificar integridad SQLite y relaciones, login, saldos, pedidos/reservas, lectura de comprobantes y funcionamiento de Data Protection. Si existen claves protegidas en reposo, comprobar su descifrado. Ensayar persistencia tras recreación del contenedor y registrar el resultado. Restaurar datos no valida por sí solo volver a una versión anterior de la aplicación.
 
 ## Actualización y rollback
+
+**Pendiente: validación completa del rollback de versión de aplicación.** El restore de datos probado es una comprobación distinta. El procedimiento siguiente debe ensayarse con imágenes y datos compatibles; no se presenta como una operación ya validada.
 
 1. Identificar imagen/commit exactos actual y candidato; conservar la imagen anterior. Auditar dependencias y ejecutar verificaciones técnicas/funcionales en staging. No basar recuperación en una etiqueta mutable sin registrar su digest.
 2. Revisar migraciones incluidas en la versión candidata, compatibilidad de datos y espacio libre. El host aplica migraciones al arrancar: no iniciar una imagen desconocida contra la BD real como prueba.
@@ -91,27 +164,36 @@ Los reinicios interrumpen circuitos InteractiveServer y pueden perder formulario
 - En staging con datos de prueba: compra y recepción parcial por compra con reservas conservadas; pedido con reserva y venta sustituta sin reservas sobrantes; pago y saldo; actividad mensual del cliente. No contaminar contabilidad real con operaciones ficticias.
 - Completar QA real móvil ~390px y escritorio, incluidos formularios de fecha, select de reserva inicial/expandido, confirmaciones, recepción y desplegables del cliente. Guardar evidencia operativa privada y resultado.
 
-## Pendientes antes del go-live
+## Estado operativo y verificaciones pendientes
 
-- [x] Preparar Dockerfile multi-stage .NET 8, Compose, Caddyfile y configuración explícita de hosting en el repositorio.
-- [ ] Definir VPS Ubuntu LTS soportado e instalar/verificar Docker Compose; construir y probar la imagen Linux.
-- [ ] Configurar dominio/DNS, HTTPS y renovación de certificados.
-- [ ] Cerrar y probar Forwarded Headers/proxy confiable, restricciones de red y hosts.
+Completado según la fuente indicada en «Estado y límites»:
+
+- [x] Dockerfile multi-stage .NET 8, Compose, Caddyfile y hosting explícito versionados.
+- [x] Producción, dominio y HTTPS funcionando; cuentas Identity separadas y pruebas funcionales de cliente, compra y venta directa, según confirmación operativa.
+- [x] Tags `v1.0.0` y `v1.0.1` existentes; la corrección de claves duplicadas de Blazor en venta directa está incluida en `v1.0.1`.
+- [x] Backup manual y restore real realizados y verificados, según confirmación operativa.
+- [x] Timer systemd instalado y activo, con al menos una ejecución correcta y retención automática.
+
+Pendientes confirmados y controles cuya evidencia detallada aún debe verificarse/incorporarse:
+
+- [ ] Implementar y probar copia automática externa a Raspberry/otro equipo; las copias actuales siguen en el mismo VPS.
+- [ ] Validar completamente el rollback de versión de aplicación.
+- [ ] Registrar imagen/commit/digest exactos desplegados y conservar una imagen anterior compatible. Los tags no prueban qué ejecuta el VPS.
+- [ ] Registrar la evidencia detallada del backup/restore, responsable y objetivos RPO/RTO.
+- [ ] Verificar renovación de certificados y pruebas de Forwarded Headers/proxy confiable, restricciones de red y hosts.
 - [ ] Verificar persistencia de SQLite, comprobantes, Data Protection y Caddy, con permisos mínimos y secretos externos.
-- [ ] Completar bootstrap y retirar sus credenciales.
-- [ ] Auditar paquetes NuGet directos y transitivos por vulnerabilidades, incluidas dependencias nativas; resolver hallazgos antes de habilitar producción. Registrar la auditoría real, no asumirla por un build exitoso.
-- [ ] Verificar runtime/patch .NET y componentes base soportados en la fecha real del despliegue. El proyecto usa `net8.0`: .NET 8 termina soporte el **10/11/2026**, por lo que requiere un plan de migración y plazo antes de ese límite. No se implementa aquí la migración a .NET 10. Si el go-live ocurre después del fin de soporte, resolver el runtime soportado antes de abrir servicio. Revalidar la [política oficial de soporte .NET](https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core).
-- [ ] Ejecutar build/tests .NET y JS de la versión a desplegar y pruebas del runtime Linux, incluido procesamiento de imágenes/comprobantes.
-- [ ] Completar validación final móvil/escritorio y pruebas detrás del proxy real.
-- [ ] Respaldar y **restaurar realmente** SQLite + comprobantes + Data Protection; registrar evidencia y responsables de recuperación.
-- [ ] Ensayar actualización/rollback, rotación de logs y alertas operativas mínimas.
-- [ ] Aprobar go-live con la usuaria y registrar versión exacta. Solo una release/tag real permite fechar 1.0.0 en CHANGELOG.
+- [ ] Verificar retirada de credenciales temporales de bootstrap.
+- [ ] Auditar paquetes NuGet directos y transitivos por vulnerabilidades, incluidas dependencias nativas; registrar y resolver hallazgos. Un build exitoso no sustituye esa auditoría.
+- [ ] Verificar runtime/patch .NET, Ubuntu y componentes base soportados en la instalación y en cada actualización. El proyecto usa `net8.0`: .NET 8 termina soporte el **10/11/2026**; mantener un plan de migración antes de ese límite. Esta fase documental no implementa la migración a .NET 10. Revalidar la [política oficial de soporte .NET](https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core).
+- [ ] Registrar pruebas de build/tests .NET y JS de la versión candidata y del runtime Linux, incluido procesamiento de imágenes/comprobantes.
+- [ ] Completar o incorporar evidencia de QA móvil/escritorio y pruebas detalladas detrás del proxy real; las pruebas funcionales confirmadas no cubren automáticamente todos esos criterios.
+- [ ] Verificar rotación/retención de logs y definir alertas operativas mínimas.
 
-Los checks de implementación no acreditan el despliegue real ni el go-live. [ROADMAP](../ROADMAP.md) resume versiones futuras; [V2](19_V2_Pendientes.md) y [V3](20_V3_Pendientes.md) no se implementan en este runbook.
+Las casillas de implementación no certifican los controles del VPS. [ROADMAP](../ROADMAP.md) resume versiones futuras; [V2](19_V2_Pendientes.md) y [V3](20_V3_Pendientes.md) siguen pendientes y no se implementan en este runbook.
 
 ## Construcción y arranque en Ubuntu
 
-Desde la raíz del checkout de la versión revisada:
+Procedimiento para nuevas instalaciones o recreaciones planificadas; no describe un despliegue inicial aún pendiente. Identificar la versión revisada y aplicar las precauciones de actualización anteriores. Desde la raíz de ese checkout:
 
 ```bash
 docker build --pull -t resellmanager:v1 .
@@ -120,7 +202,7 @@ docker build --pull -t resellmanager:v1 .
 El runtime copia solo el resultado de publish Release, usa ASP.NET Core .NET 8 sobre Debian/glibc
 y ejecuta como el usuario app (UID/GID 1654 de la imagen .NET 8). El proyecto ya incluye
 SkiaSharp.NativeAssets.Linux.NoDependencies; no se cambian dependencias ni reglas de comprobantes.
-La prueba real de procesamiento de imágenes en Linux continúa siendo un requisito previo al go-live.
+La prueba real de procesamiento de imágenes en Linux requiere evidencia específica; las pruebas funcionales confirmadas no la acreditan por sí solas.
 Compose fija Caddy en `caddy:2.11.4-alpine`, sin actualización automática. Registrar además el digest de las imágenes .NET y Caddy utilizadas y conservar las imágenes para rollback.
 
 Compose usa la subred 172.29.213.0/28 y reserva 172.29.213.2 para Caddy.
@@ -132,8 +214,11 @@ docker network ls
 docker network inspect $(docker network ls -q) --format '{{.Name}} {{json .IPAM.Config}}'
 ```
 
-Si hay solapamiento, cambiar conjuntamente subnet, ipv4_address de Caddy y
-ReverseProxy__KnownProxy en compose.yml. Ninguna subred privada garantiza ausencia de conflictos.
+Si hay solapamiento y es necesario cambiar la subred, actualizar conjuntamente subnet,
+ipv4_address de Caddy, ipv4_address de ResellManager y ReverseProxy__KnownProxy en compose.yml.
+Ambas IP estáticas deben pertenecer a la nueva subred, ser distintas entre sí y no entrar
+en conflicto con otras direcciones utilizadas. ReverseProxy__KnownProxy debe seguir apuntando
+a la IP de Caddy. Ninguna subred privada garantiza ausencia de conflictos.
 La red bridge es privada entre contenedores, con salida a Internet para ACME; no usa internal:true.
 Solo Caddy publica 80/TCP y 443/TCP+UDP. ResellManager únicamente declara expose:8080,
 sin ports, sin publicación de SQLite ni acceso estático a comprobantes.
@@ -187,7 +272,7 @@ docker compose ps
 ```
 
 /health devuelve únicamente OK cuando el host terminó su arranque; no expone configuración ni datos,
-ni comprueba disponibilidad continua de SQLite/disco. No se agrega un framework ni sondeo automático.
+ni comprueba disponibilidad continua de SQLite/disco. El script de backup consulta este endpoint después de reiniciar la app; no constituye un monitor continuo ni readiness avanzada.
 Caddy conserva /data y /config en los volúmenes nombrados caddy_data y caddy_config (no utiliza la carpeta preexistente /opt/resellmanager/data/caddy) y monta Caddyfile read-only; administra TLS
 automáticamente y reverse_proxy admite WebSockets. Verificar SignalR, reconexión, login y antiforgery
 en el VPS real. Nunca usar docker compose down -v durante una actualización.
@@ -208,9 +293,11 @@ se selecciona por endpoint, y siempre después de procesar la IP del proxy confi
 Headers básicos: X-Content-Type-Options=nosniff, Referrer-Policy=no-referrer, X-Frame-Options=DENY
 y CSP frame-ancestors 'none'. La CSP global se añade solo si no existe otra: comprobantes conserva
 sandbox. No se restringen scripts ni estilos. Validar estos controles detrás de Caddy en el VPS;
-esto no completa el go-live.
+su implementación no certifica todas las verificaciones de seguridad.
 
 ## Verificaciones de esta preparación
+
+> **Registro histórico anterior al despliegue.** Los resultados y pendientes siguientes se conservan tal como se documentaron durante la preparación. No describen el estado operativo actual ni pruebas ejecutadas en esta sincronización Markdown; consultar «Estado y límites» y «Estado operativo y verificaciones pendientes» para la situación posterior.
 
 Las pruebas de hosting cubren proxy/IP o CIDR explícitos, fuentes desconocidas (incluido loopback),
 límite de un salto, rechazo de configuración inválida, cabeceras de host ignoradas,

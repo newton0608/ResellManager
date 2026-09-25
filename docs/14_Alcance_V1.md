@@ -1,5 +1,11 @@
 # Alcance V1
 
+## Estado operativo actual
+
+ResellManager está en producción. Existen `v1.0.0` (`3f2d264`) y `v1.0.1` (`97da64e`); no se deduce de esos tags la imagen exacta desplegada. El responsable del proyecto confirmó dominio/HTTPS, cuentas Identity separadas y pruebas de cliente, compra y venta directa. La corrección de claves duplicadas de Blazor en venta directa está incluida en `v1.0.1`.
+
+Backup manual y restore real fueron probados; el timer systemd está instalado, activo y ya ejecutó correctamente con retención automática. Las copias permanecen en el mismo VPS. Siguen pendientes copia automática externa a Raspberry/otro equipo y validación completa del rollback de versión de aplicación. Esta evidencia no certifica todos los controles de seguridad o recuperación. Detalle en el [runbook operativo](21_Despliegue_V1.md).
+
 ## Incluye
 
 ✅ Clientes.
@@ -16,9 +22,11 @@
 
 ✅ Unidades de inventario físicas.
 
-✅ Recepción parcial agrupada por Compra y Proveedor: cada confirmación recibe solo unidades seleccionadas de una misma Compra, sin mezclar compras, y conserva las reservas. Las no recibidas permanecen Comprada/EnTransito.
+✅ Recepción parcial agrupada por Compra y Proveedor: cada confirmación recibe solo unidades seleccionadas de una misma Compra, sin mezclar compras, y conserva las reservas. Las pendientes de recibir permanecen Comprada/EnTransito; las marcadas Perdida se contabilizan aparte.
 
-✅ Estados físicos controlados de inventario.
+✅ Seis estados físicos de inventario: `Comprada`, `EnTransito`, `Disponible`, `Vendida`, `Entregada` y `Perdida`.
+
+✅ Como ampliación posterior a la entrega original de inventario, una unidad `Comprada` o `EnTransito` puede marcarse `Perdida`, previa confirmación y sin reversión en V1. Se libera su reserva y se conservan unidad, compra, costo e historial. No puede recibirse, reservarse o venderse después ni se considera recibida; no hay reembolso ni ajuste contable automático.
 
 ✅ Reservas/apartados separadas del estado físico.
 
@@ -48,7 +56,7 @@ sin captura de la usuaria; toda venta conserva un `PedidoId` y no existe venta s
 
 ✅ Cálculo automático de saldo.
 
-✅ Cancelación protegida de ventas antes de entrega.
+✅ Cancelación protegida de ventas antes de entrega, conservando detalles históricos. Una unidad liberada puede revenderse mediante otro pedido; nunca participa simultáneamente en dos ventas `Registrada`. `EstadoVenta` solo admite `Registrada` y `Cancelada`.
 
 ✅ Dashboard de negocio real en `/`, protegido por autenticación, con total adeudado, valor y unidades
 de inventario disponible, pendientes de entrega, utilidad por periodo, métricas tipadas por canal, últimos
@@ -148,7 +156,7 @@ que preserven relaciones e historial.
 
 ❌ Roles/permisos y administración de usuarios.
 
-❌ PostgreSQL y CI/CD complejo. El despliegue productivo no se ejecutó como parte del cierre funcional: su preparación es el siguiente paso operativo V1, sujeto al [runbook de preparación](21_Despliegue_V1.md), sin declarar producción existente.
+❌ PostgreSQL y CI/CD complejo. El despliegue productivo no se ejecutó como parte del cierre funcional; se realizó posteriormente como operación V1, según el estado operativo anterior.
 
 ❌ Exportación y notificaciones.
 
