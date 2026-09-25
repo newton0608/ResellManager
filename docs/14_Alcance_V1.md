@@ -12,7 +12,7 @@ Backup manual y restore real fueron probados; el timer systemd está instalado, 
 
 ✅ Productos y categorías.
 
-✅ Nueva compra permite buscar productos por nombre, CodigoBarras o CodigoInterno en un solo textbox, y registrar un producto en un panel sin perder la compra. El producto creado queda seleccionado; PRO- sigue generado en backend. Código de barras manual/opcional; cámara y lector siguen en V2.
+✅ Nueva compra permite buscar productos por nombre, CodigoBarras o CodigoInterno en un solo textbox, y registrar un producto en un panel sin perder la compra. El producto creado queda seleccionado; PRO- sigue generado en backend. Código de barras manual/opcional en V1; la captura con cámara durante alta/edición se planifica para V1.1 y el uso operativo del lector para V2.1.
 
 ✅ Proveedores.
 
