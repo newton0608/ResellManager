@@ -43,7 +43,14 @@ internal sealed class ProductoConfiguration : IEntityTypeConfiguration<Producto>
 {
     public void Configure(EntityTypeBuilder<Producto> b)
     {
-        b.ToTable("Productos"); b.HasKey(x => x.Id);
+        b.ToTable("Productos", table =>
+        {
+            table.HasCheckConstraint("CK_Productos_ContenidoMl_Positivo", "ContenidoMl IS NULL OR ContenidoMl > 0");
+            table.HasCheckConstraint("CK_Productos_PesoGramos_Positivo", "PesoGramos IS NULL OR PesoGramos > 0");
+            table.HasCheckConstraint("CK_Productos_UnaMedida", "ContenidoMl IS NULL OR PesoGramos IS NULL");
+            table.HasCheckConstraint("CK_Productos_Presentacion_Longitud", "Presentacion IS NULL OR length(Presentacion) <= 100");
+        });
+        b.HasKey(x => x.Id);
         b.Property(x => x.CodigoInterno).IsRequired().HasMaxLength(50);
         b.HasIndex(x => x.CodigoInterno).IsUnique();
         b.Property(x => x.CodigoBarras).HasMaxLength(100);
@@ -53,6 +60,9 @@ internal sealed class ProductoConfiguration : IEntityTypeConfiguration<Producto>
         b.Property(x => x.Modelo).HasMaxLength(100);
         b.Property(x => x.Color).HasMaxLength(50);
         b.Property(x => x.Talla).HasMaxLength(30);
+        b.Property(x => x.ContenidoMl).HasColumnType("decimal(12,2)");
+        b.Property(x => x.PesoGramos).HasColumnType("decimal(12,2)");
+        b.Property(x => x.Presentacion).HasMaxLength(100);
         b.Property(x => x.PrecioSugerido).HasColumnType("decimal(10,2)");
         b.HasOne(x => x.Categoria).WithMany(x => x.Productos).HasForeignKey(x => x.CategoriaId).OnDelete(DeleteBehavior.Restrict);
     }
