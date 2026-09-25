@@ -441,3 +441,6 @@ FodyWeavers.xsd
 data/
 *.sqlite
 *.sqlite-*
+
+# Draw.io backup files
+docs/diagrams/.$*.drawio.bkp
