@@ -3499,3 +3499,25 @@ textarea {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.product-measure-row {
+    display: grid;
+    gap: .5rem;
+    grid-template-columns: minmax(0, 1fr) 5.25rem;
+    min-width: 0;
+}
+
+.product-measure-row > * {
+    min-width: 0;
+}
+
+.product-measure-row > :disabled {
+    background: #eef2f7;
+    color: #64748b;
+    cursor: not-allowed;
+}
+@media (max-width: 380px) {
+    .product-measure-row {
+        grid-template-columns: minmax(0, 1fr) 4.75rem;
+    }
+}
