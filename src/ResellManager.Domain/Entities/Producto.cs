@@ -11,6 +11,9 @@ public class Producto
     public string? Modelo { get; set; }
     public string? Color { get; set; }
     public string? Talla { get; set; }
+    public decimal? ContenidoMl { get; set; }
+    public decimal? PesoGramos { get; set; }
+    public string? Presentacion { get; set; }
     public decimal PrecioSugerido { get; set; }
     public int CategoriaId { get; set; }
 

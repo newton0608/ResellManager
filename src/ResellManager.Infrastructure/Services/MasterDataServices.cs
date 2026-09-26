@@ -357,6 +357,14 @@ public sealed class ProductoService(ResellManagerDbContext db) : IProductoServic
             return "El nombre es obligatorio.";
         if (x.PrecioSugerido < 0)
             return "El precio sugerido no puede ser negativo.";
+        if (x.ContenidoMl is <= 0)
+            return "El contenido en ml debe ser mayor que cero.";
+        if (x.PesoGramos is <= 0)
+            return "El peso en gramos debe ser mayor que cero.";
+        if (x.ContenidoMl.HasValue && x.PesoGramos.HasValue)
+            return "Un producto no puede tener contenido en ml y peso en gramos simultáneamente.";
+        if (x.Presentacion is { Length: > 100 })
+            return "La presentación no puede superar los 100 caracteres.";
         if (!await db.Categorias.AnyAsync(c => c.Id == x.CategoriaId, ct))
             return "Categoría no encontrada.";
         if (
@@ -378,6 +386,9 @@ public sealed class ProductoService(ResellManagerDbContext db) : IProductoServic
         x.Modelo = i.Modelo?.Trim();
         x.Color = i.Color?.Trim();
         x.Talla = i.Talla?.Trim();
+        x.ContenidoMl = i.ContenidoMl;
+        x.PesoGramos = i.PesoGramos;
+        x.Presentacion = i.Presentacion?.Trim();
         x.PrecioSugerido = i.PrecioSugerido;
         x.CategoriaId = i.CategoriaId;
     }
@@ -397,7 +408,10 @@ public sealed class ProductoService(ResellManagerDbContext db) : IProductoServic
                 x.Talla,
                 x.PrecioSugerido,
                 x.CategoriaId,
-                x.Categoria.Nombre
+                x.Categoria.Nombre,
+                x.ContenidoMl,
+                x.PesoGramos,
+                x.Presentacion
             ));
 }
 

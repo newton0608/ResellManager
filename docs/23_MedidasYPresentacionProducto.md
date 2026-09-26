@@ -1,8 +1,8 @@
 # Medidas y presentación de producto
 
-**Estado: diseño aprobado, pendiente de implementación.**
+**Estado: fase técnica de modelo, contratos, validación y persistencia implementada; UI administrativa y presentación en tienda pendientes.**
 
-Se prevé implementar esta mejora inmediatamente después del cierre documental de V1.0.1, como una entrega funcional tipo **V1.1.0**. La versión exacta de publicación queda por confirmar. Los campos, validaciones, controles de UI y restricciones de persistencia descritos aquí **todavía no existen en la implementación actual**.
+La fase técnica se implementó después del cierre documental de V1.0.1. La entrega funcional tipo **V1.1.0** y su fecha de publicación siguen pendientes de confirmar. Los campos, la validación del servidor y las restricciones de persistencia ya existen; los controles de UI y la presentación pública siguen pendientes.
 
 Este documento registra el diseño futuro. No modifica el modelo vigente de V1.0.1 ni acredita una funcionalidad liberada. La presentación pública se aplicará cuando se implemente la tienda virtual, prevista en [V2.4](19_V2_Pendientes.md#v24--canal-público--tienda-en-línea); no adelanta esa tienda a V1.1.
 
@@ -12,7 +12,7 @@ Describir el volumen o la masa de un producto y su presentación comercial media
 
 ## Modelo propuesto
 
-Se incorporarán a `Producto` estas propiedades opcionales:
+La fase técnica incorporó a `Producto` estas propiedades opcionales:
 
 ```csharp
 decimal? ContenidoMl
@@ -103,15 +103,15 @@ La entrada de peso ofrecerá selector **g / kg / lb**. Antes de persistir, los k
 
 Estos selectores serán una comodidad de entrada. No requieren añadir a la entidad `Producto` propiedades persistidas para la unidad elegida ni conservar valores duplicados. No se prevé entrada en onzas fluidas en este diseño; su equivalencia podrá calcularse para presentación pública.
 
-## Validaciones de aplicación y persistencia previstas
+## Validaciones de aplicación y persistencia
 
-La implementación deberá aplicar reglas equivalentes en tres niveles:
+La implementación cubre actualmente dos de los tres niveles previstos:
 
-1. **UI administrativa:** exclusión entre entradas, positividad y longitud propuesta de presentación.
-2. **Servidor / casos de uso de Producto:** validar `ContenidoMl > 0` cuando tenga valor, `PesoGramos > 0` cuando tenga valor y rechazar siempre ambos simultáneamente, incluso si se omiten los controles visuales. Validar también el máximo propuesto de 100 caracteres de `Presentacion`.
-3. **Base de datos:** planificar columnas opcionales y restricciones `CHECK` equivalentes para las medidas.
+1. **UI administrativa (pendiente):** exclusión visual entre entradas, selectores de unidades y controles de captura. El modelo de formulario ya transporta y valida los tres atributos, pero todavía no hay entradas visibles.
+2. **Servidor / casos de uso de Producto (implementado):** valida `ContenidoMl > 0` y `PesoGramos > 0` cuando tengan valor, rechaza ambos simultáneamente y limita `Presentacion` a 100 caracteres.
+3. **Base de datos (implementado):** columnas opcionales y restricciones `CHECK` para positividad, exclusión de medidas y longitud de `Presentacion`.
 
-Expresiones conceptuales de los `CHECK` previstos, aún no implementados:
+Expresiones de los `CHECK` implementados para las medidas:
 
 ```sql
 CHECK (ContenidoMl IS NULL OR PesoGramos IS NULL)
@@ -123,7 +123,7 @@ La primera expresión permite ambos valores nulos y prohíbe que ambos estén in
 
 La persistencia normalizada conservará mililitros o gramos y el texto opcional de presentación. No almacenará litros, kilogramos, libras ni onzas fluidas como equivalencias duplicadas.
 
-La configuración EF, los tipos y precisión/escala efectivos en SQLite y la migración correspondiente se definirán y comprobarán durante la implementación. Deberán permitir los valores canónicos del diseño, incluido `2267.96185` g; este documento no decide una política adicional de redondeo para almacenamiento. **Todavía no se crea ni ejecuta ninguna migración ni se altera el esquema o los datos.**
+La configuración EF declara `decimal(12,2)` para ambas medidas y la migración local añade columnas nullable y restricciones sin modificar datos existentes. SQLite no impone por sí mismo la escala declarada; esta fase no añade una política de redondeo. La migración se probó en una base de datos de prueba, pero no se aplicó a producción.
 
 ## Presentación futura en tienda virtual
 
@@ -193,7 +193,6 @@ Presentacion = "Set de 3 piezas"
 ## Decisiones todavía abiertas y actualización posterior
 
 - Confirmar la versión exacta de entrega; la previsión es una mejora funcional tipo V1.1.0 tras el cierre documental de V1.0.1.
-- Concretar la precisión/escala y representación de persistencia compatibles con SQLite y las conversiones canónicas descritas.
 - Definir el redondeo y formato visual exactos de las medidas y equivalencias en la futura tienda.
 
 La documentación del modelo implementado, requisitos/reglas vigentes, DER, diagrama de clases y changelog se actualizarán cuando corresponda a la implementación y liberación real. Este diseño no presenta los campos como disponibles en V1.0.1.
