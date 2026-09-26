@@ -32,15 +32,15 @@ Esta planificación no añade columnas, migraciones ni almacenamiento de imágen
 
 ## Lectura de códigos de barras con la cámara
 
-La lectura de códigos de barras mediante la cámara del dispositivo queda planificada para **V2.1**. No forma parte del alcance de V1.
+La captura de `Producto.CodigoBarras` con la cámara durante el alta y edición de Producto se implementará en **V1.1**. La integración operativa del lector en Venta Directa, Inventario y búsquedas permanece planificada para **V2.1**.
 
 ### Objetivo
 
 Permitir que la usuaria pueda escanear `Producto.CodigoBarras` desde un teléfono o dispositivo con cámara para localizar productos rápidamente y reducir la captura manual durante la operación diaria.
 
-### Alcance previsto
+### Alcance operativo previsto para V2.1
 
-- Usar la cámara del dispositivo para leer códigos de barras compatibles.
+- Reutilizar el lector de cámara de V1.1 para leer códigos de barras compatibles.
 - Buscar el producto mediante `Producto.CodigoBarras` después de una lectura exitosa.
 - Integrar el escaneo principalmente con **Venta Directa** e **Inventario**.
 - Evaluar su uso también en búsquedas y selección de productos donde aporte velocidad real al flujo.
@@ -49,13 +49,13 @@ Permitir que la usuaria pueda escanear `Producto.CodigoBarras` desde un teléfon
 
 ### Regla de datos
 
-`Producto.CodigoBarras` continúa siendo una referencia externa del producto. El lector no genera ni modifica códigos de barras: únicamente captura mediante cámara un valor existente para utilizarlo en búsquedas y selección.
+`Producto.CodigoBarras` continúa siendo una referencia externa del producto. El lector no genera códigos de barras: en V1.1 captura mediante cámara el valor de la referencia externa en el formulario de Producto, donde puede editarse manualmente antes de guardar; en V2.1 podrá utilizarse en búsquedas y selección.
 
 El comportamiento de `Producto.CodigoInterno` es independiente de esta funcionalidad y debe seguir la decisión vigente documentada para los códigos internos del sistema.
 
-### Consideraciones técnicas para V2
+### Consideraciones técnicas para la integración V2.1
 
-Antes de implementarlo se deberá evaluar:
+Al extender el lector a flujos operativos se deberá evaluar:
 
 - compatibilidad de cámara en navegadores móviles;
 - permisos y experiencia cuando el usuario deniega acceso a la cámara;

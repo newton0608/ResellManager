@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.JSInterop;
 using ResellManager.Application.DTOs;
 using ResellManager.Infrastructure.Services;
 using ResellManager.Web.Components.Clientes;
@@ -152,6 +153,7 @@ public sealed class FormularioUxTests
             Obtener<string?>(pagina, "ErrorGuardado"), categorias);
         Assert.Contains($"<div class=\"mensaje-error\" role=\"alert\">{mensajeEsperado}</div>", htmlError);
         Assert.DoesNotContain("ErrorGuardado", htmlError);
+        if (producto) Assert.Contains("Escanear código de barras con la cámara", htmlError);
 
         corregirModelo();
         await GuardarAsync(pagina, modelo);
@@ -188,7 +190,7 @@ public sealed class FormularioUxTests
     private static async Task<string> RenderizarFormularioAsync(Type formulario, object modelo,
         string? error, IReadOnlyList<CategoriaDto> categorias)
     {
-        await using var servicios = new ServiceCollection().AddLogging().BuildServiceProvider();
+        await using var servicios = new ServiceCollection().AddLogging().AddSingleton<IJSRuntime, JSInerte>().BuildServiceProvider();
         await using var renderer = new HtmlRenderer(servicios, servicios.GetRequiredService<ILoggerFactory>());
         return await renderer.Dispatcher.InvokeAsync(async () =>
         {
@@ -198,6 +200,15 @@ public sealed class FormularioUxTests
             var resultado = await renderer.RenderComponentAsync(formulario, ParameterView.FromDictionary(parametros));
             return WebUtility.HtmlDecode(resultado.ToHtmlString());
         });
+    }
+
+    private sealed class JSInerte : IJSRuntime
+    {
+        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) =>
+            throw new NotSupportedException("El renderizado estático no usa JavaScript.");
+
+        public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? args) =>
+            throw new NotSupportedException("El renderizado estático no usa JavaScript.");
     }
 
     private static async Task IniciarSesionAsync(HttpClient cliente)

@@ -1,0 +1,127 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<button class="secondary-button barcode-scan-button" type="button" disabled="@Disabled" @onclick="AbrirAsync"
+        aria-label="Escanear código de barras con la cámara">📷 Escanear</button>
+
+@if (!string.IsNullOrEmpty(Mensaje))
+{
+    <p class="barcode-scan-message" role="status">@Mensaje</p>
+}
+
+<dialog class="barcode-scan-dialog" @ref="Dialogo" aria-labelledby="@TituloId" aria-describedby="@InstruccionesId">
+    <div class="barcode-scan-header">
+        <h2 id="@TituloId">Escanear código de barras</h2>
+        <button class="secondary-button" type="button" @onclick="CancelarAsync">Cancelar</button>
+    </div>
+    <p id="@InstruccionesId">Apunta la cámara al código. Si no se detecta, puedes escribirlo manualmente.</p>
+    <div id="@VisorId" class="barcode-scan-viewfinder" aria-label="Vista de la cámara"></div>
+    <p role="status">@Estado</p>
+    <button class="secondary-button" type="button" @onclick="NoDetectadoAsync">No se detecta el código</button>
+</dialog>
+
+@code {
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public EventCallback<string> OnDetected { get; set; }
+
+    private readonly string TituloId = $"barcode-scan-title-{Guid.NewGuid():N}";
+    private readonly string InstruccionesId = $"barcode-scan-help-{Guid.NewGuid():N}";
+    private readonly string VisorId = $"barcode-scan-view-{Guid.NewGuid():N}";
+    private ElementReference Dialogo;
+    private IJSObjectReference? Modulo;
+    private DotNetObjectReference<BarcodeScanner>? Referencia;
+    private bool Abierto;
+    private bool Descartado;
+    private string? Mensaje;
+    private string Estado = "Solicitando acceso a la cámara...";
+
+    private async Task AbrirAsync()
+    {
+        if (Disabled || Abierto || Descartado) return;
+        Abierto = true;
+        Mensaje = null;
+        Estado = "Solicitando acceso a la cámara...";
+        try
+        {
+            Modulo ??= await JS.InvokeAsync<IJSObjectReference>("import", "./barcode-scanner.js");
+            if (Descartado || !Abierto) return;
+            Referencia ??= DotNetObjectReference.Create(this);
+            var resultado = await Modulo.InvokeAsync<string>("abrir", Dialogo, VisorId, Referencia);
+            if (Descartado || !Abierto) return;
+            if (resultado == "started")
+                Estado = "Buscando código...";
+            else
+            {
+                Abierto = false;
+                Mensaje = MensajePara(resultado);
+            }
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or InvalidOperationException)
+        {
+            if (!Descartado)
+            {
+                Abierto = false;
+                Mensaje = "No se pudo iniciar el lector. Escribe el código manualmente o inténtalo de nuevo.";
+            }
+        }
+    }
+
+    private async Task CancelarAsync()
+    {
+        if (!Abierto) return;
+        Abierto = false;
+        try { if (Modulo is not null) await Modulo.InvokeVoidAsync("cerrar", Dialogo); }
+        catch (JSDisconnectedException) { }
+        Mensaje = "Escaneo cancelado. Puedes escribir el código manualmente.";
+    }
+
+    private async Task NoDetectadoAsync()
+    {
+        await CancelarAsync();
+        Mensaje = "No se pudo detectar el código. Acerca el producto o escríbelo manualmente.";
+    }
+
+    [JSInvokable]
+    public Task CancelarDesdeTeclado() => CancelarAsync();
+
+    [JSInvokable]
+    public async Task FinalizarEscaneo(string resultado, string? codigo)
+    {
+        if (Descartado || !Abierto) return;
+        Abierto = false;
+        if (resultado == "detected" && !string.IsNullOrWhiteSpace(codigo))
+        {
+            Mensaje = "Código capturado. Revísalo antes de guardar.";
+            await OnDetected.InvokeAsync(codigo);
+        }
+        else
+            Mensaje = MensajePara(resultado);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private static string MensajePara(string resultado) => resultado switch
+    {
+        "denied" => "El permiso de cámara fue denegado. Habilítalo en Safari o escribe el código manualmente.",
+        "no-camera" => "No se encontró una cámara. Escribe el código manualmente.",
+        "unsupported" => "Este navegador no permite usar la cámara aquí. Abre la app por HTTPS en Safari o escribe el código manualmente.",
+        "busy" => "Ya hay un escáner abierto. Ciérralo antes de intentarlo de nuevo.",
+        "timeout" => "No se pudo detectar un código. Inténtalo de nuevo o escríbelo manualmente.",
+        "background" => "El escaneo se detuvo al salir de la página. Puedes volver a abrirlo.",
+        _ => "No se pudo iniciar la cámara. Escribe el código manualmente o inténtalo de nuevo."
+    };
+
+    public async ValueTask DisposeAsync()
+    {
+        Descartado = true;
+        try
+        {
+            if (Modulo is not null)
+            {
+                await Modulo.InvokeVoidAsync("cerrar", Dialogo);
+                await Modulo.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException) { }
+        finally { Referencia?.Dispose(); }
+    }
+}

@@ -12,11 +12,11 @@ Producción, dominio/HTTPS, cuentas Identity separadas y pruebas de cliente, com
 
 Pendientes operativos V1: copia automática externa a Raspberry/otro equipo, validación completa del rollback de versión de aplicación y verificaciones de seguridad/QA todavía sin evidencia detallada incorporada. El [runbook V1](docs/21_Despliegue_V1.md) separa lo confirmado de lo pendiente; estas tareas no convierten el despliegue inicial en un evento futuro ni implementan V2/V3.
 
-## V1.1 — Medidas y presentación de productos
+## V1.1 — Mejoras de Producto
 
 **Planificada, no implementada.** Diseño aprobado para incorporar volumen o peso opcionales y presentación comercial a Producto, con captura administrativa y persistencia normalizada. Se prevé implementar inmediatamente después del cierre documental de V1.0.1, como una mejora funcional tipo V1.1.0; la versión exacta queda por confirmar.
 
-Modelo propuesto, reglas y decisiones abiertas en [Medidas y presentación de producto](docs/23_MedidasYPresentacionProducto.md). La presentación en tienda virtual corresponde al futuro canal V2.4; esta mejora no implementa la tienda.
+Modelo propuesto, reglas y decisiones abiertas en [Medidas y presentación de producto](docs/23_MedidasYPresentacionProducto.md). V1.1 también incorporará la captura de `Producto.CodigoBarras` con cámara durante alta y edición, conservando la entrada manual. La integración del lector en Venta Directa, Inventario y búsquedas permanece en V2.1. La presentación en tienda virtual corresponde al futuro canal V2.4.
 
 ## V2 — Evolución planificada
 
