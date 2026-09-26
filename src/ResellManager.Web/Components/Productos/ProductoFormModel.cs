@@ -20,6 +20,13 @@ public sealed class ProductoFormModel : IValidatableObject
 
     public string? Talla { get; set; }
 
+    public decimal? ContenidoMl { get; set; }
+
+    public decimal? PesoGramos { get; set; }
+
+    [MaxLength(100, ErrorMessage = "La presentación no puede superar los 100 caracteres.")]
+    public string? Presentacion { get; set; }
+
     public decimal PrecioSugerido { get; set; }
 
     public int CategoriaId { get; set; }
@@ -31,6 +38,27 @@ public sealed class ProductoFormModel : IValidatableObject
             yield return new ValidationResult(
                 "El precio sugerido no puede ser negativo.",
                 [nameof(PrecioSugerido)]);
+        }
+
+        if (ContenidoMl is <= 0)
+        {
+            yield return new ValidationResult(
+                "El contenido en ml debe ser mayor que cero.",
+                [nameof(ContenidoMl)]);
+        }
+
+        if (PesoGramos is <= 0)
+        {
+            yield return new ValidationResult(
+                "El peso en gramos debe ser mayor que cero.",
+                [nameof(PesoGramos)]);
+        }
+
+        if (ContenidoMl.HasValue && PesoGramos.HasValue)
+        {
+            yield return new ValidationResult(
+                "Un producto no puede tener contenido en ml y peso en gramos simultáneamente.",
+                [nameof(ContenidoMl), nameof(PesoGramos)]);
         }
 
         if (CategoriaId <= 0)
@@ -51,7 +79,10 @@ public sealed class ProductoFormModel : IValidatableObject
             Color,
             Talla,
             PrecioSugerido,
-            CategoriaId);
+            CategoriaId,
+            ContenidoMl,
+            PesoGramos,
+            Presentacion);
 
     public static ProductoFormModel FromDto(ProductoDto producto) =>
         new()
@@ -63,6 +94,9 @@ public sealed class ProductoFormModel : IValidatableObject
             Modelo = producto.Modelo,
             Color = producto.Color,
             Talla = producto.Talla,
+            ContenidoMl = producto.ContenidoMl,
+            PesoGramos = producto.PesoGramos,
+            Presentacion = producto.Presentacion,
             PrecioSugerido = producto.PrecioSugerido,
             CategoriaId = producto.CategoriaId,
         };
