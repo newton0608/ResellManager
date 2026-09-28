@@ -88,6 +88,45 @@
             </InputSelect>
             <div id="producto-categoria-validacion"><ValidationMessage For="() => Modelo.CategoriaId" /></div>
         </div>
+        <div class="form-field">
+            <label for="producto-volumen">Volumen</label>
+            <div class="product-measure-row">
+                <input id="producto-volumen" type="number" inputmode="decimal" min="0" step="any"
+                       disabled="@(Guardando || Modelo.Peso.HasValue)" aria-describedby="producto-volumen-validacion producto-medidas-ayuda"
+                       @bind="Modelo.Volumen" @bind:event="oninput" />
+                <select aria-label="Unidad de volumen" disabled="@(Guardando || Modelo.Peso.HasValue)"
+                        @bind="Modelo.VolumenUnidad">
+                    <option value="@UnidadVolumen.Ml">ml</option>
+                    <option value="@UnidadVolumen.L">L</option>
+                </select>
+            </div>
+            <div id="producto-volumen-validacion"><ValidationMessage For="() => Modelo.Volumen" /></div>
+        </div>
+
+        <div class="form-field">
+            <label for="producto-peso">Peso</label>
+            <div class="product-measure-row">
+                <input id="producto-peso" type="number" inputmode="decimal" min="0" step="any"
+                       disabled="@(Guardando || Modelo.Volumen.HasValue)" aria-describedby="producto-peso-validacion producto-medidas-ayuda"
+                       @bind="Modelo.Peso" @bind:event="oninput" />
+                <select aria-label="Unidad de peso" disabled="@(Guardando || Modelo.Volumen.HasValue)"
+                        @bind="Modelo.PesoUnidad">
+                    <option value="@UnidadPeso.G">g</option>
+                    <option value="@UnidadPeso.Kg">kg</option>
+                    <option value="@UnidadPeso.Lb">lb</option>
+                </select>
+            </div>
+            <div id="producto-peso-validacion"><ValidationMessage For="() => Modelo.Peso" /></div>
+        </div>
+
+        <p id="producto-medidas-ayuda" class="field-help form-field-wide">Indica volumen o peso, nunca ambos. Deja la medida vacía para habilitar la otra.</p>
+
+        <div class="form-field form-field-wide">
+            <label for="producto-presentacion">Presentación</label>
+            <InputText disabled="@Guardando" aria-describedby="producto-presentacion-validacion" id="producto-presentacion"
+                       @bind-Value="Modelo.Presentacion" maxlength="100" autocomplete="off" />
+            <div id="producto-presentacion-validacion"><ValidationMessage For="() => Modelo.Presentacion" /></div>
+        </div>
     </div>
 
     <p class="required-note"><span aria-hidden="true">*</span> Campos obligatorios</p>

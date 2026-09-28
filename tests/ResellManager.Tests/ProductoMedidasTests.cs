@@ -154,6 +154,75 @@ public sealed class ProductoMedidasTests
     }
 
     [Fact]
+    public void Conversiones_UsanUnidadesCanonicasYRedondeoExplicito()
+    {
+        Assert.Equal(125.25m, ProductoMedidasConversion.AContenidoMl(125.25m, UnidadVolumen.Ml));
+        Assert.Equal(1500.00m, ProductoMedidasConversion.AContenidoMl(1.5m, UnidadVolumen.L));
+        Assert.Equal(250.25m, ProductoMedidasConversion.APesoGramos(250.25m, UnidadPeso.G));
+        Assert.Equal(2000.00m, ProductoMedidasConversion.APesoGramos(2m, UnidadPeso.Kg));
+        Assert.Equal(2267.96m, ProductoMedidasConversion.APesoGramos(5m, UnidadPeso.Lb));
+        Assert.Equal(0.01m, ProductoMedidasConversion.AContenidoMl(0.005m, UnidadVolumen.Ml));
+        Assert.Equal(0.01m, ProductoMedidasConversion.APesoGramos(0.005m, UnidadPeso.G));
+        Assert.Null(ProductoMedidasConversion.AContenidoMl(null, UnidadVolumen.L));
+        Assert.Null(ProductoMedidasConversion.APesoGramos(null, UnidadPeso.Lb));
+    }
+
+    [Fact]
+    public void Conversiones_CarganUnidadComodaParaEditar()
+    {
+        Assert.Equal((999.99m, UnidadVolumen.Ml),
+            ProductoMedidasConversion.VolumenParaEditar(999.99m));
+        Assert.Equal((1.5m, UnidadVolumen.L),
+            ProductoMedidasConversion.VolumenParaEditar(1500m));
+        Assert.Equal((999.99m, UnidadPeso.G),
+            ProductoMedidasConversion.PesoParaEditar(999.99m));
+        Assert.Equal((2m, UnidadPeso.Kg),
+            ProductoMedidasConversion.PesoParaEditar(2000m));
+        Assert.Equal((null, UnidadVolumen.Ml),
+            ProductoMedidasConversion.VolumenParaEditar(null));
+        Assert.Equal((null, UnidadPeso.G),
+            ProductoMedidasConversion.PesoParaEditar(null));
+    }
+
+    [Fact]
+    public void Formulario_ToInput_ConvierteMedidasSinPersistirUnidad()
+    {
+        var modelo = new ProductoFormModel { Nombre = "Producto", CategoriaId = 1 };
+
+        modelo.Volumen = 1.5m;
+        modelo.VolumenUnidad = UnidadVolumen.L;
+        Assert.Equal(1500.00m, modelo.ToInput().ContenidoMl);
+        Assert.Null(modelo.ToInput().PesoGramos);
+
+        modelo.Volumen = null;
+        modelo.Peso = 2m;
+        modelo.PesoUnidad = UnidadPeso.Kg;
+        Assert.Null(modelo.ToInput().ContenidoMl);
+        Assert.Equal(2000.00m, modelo.ToInput().PesoGramos);
+
+        modelo.PesoUnidad = UnidadPeso.Lb;
+        modelo.Peso = 5m;
+        Assert.Equal(2267.96m, modelo.ToInput().PesoGramos);
+
+        modelo.Peso = null;
+        Assert.Null(modelo.ToInput().ContenidoMl);
+        Assert.Null(modelo.ToInput().PesoGramos);
+    }
+
+    [Fact]
+    public void Formulario_FromDto_ConservaValorCanonicoAlEditar()
+    {
+        var dto = new ProductoDto(1, "PROD-1", null, "Producto", null, null, null,
+            null, null, 0m, 1, "General", null, 2267.96m, "Bolsa");
+
+        var modelo = ProductoFormModel.FromDto(dto);
+
+        Assert.Equal(2.26796m, modelo.Peso);
+        Assert.Equal(UnidadPeso.Kg, modelo.PesoUnidad);
+        Assert.Equal(2267.96m, modelo.ToInput().PesoGramos);
+        Assert.Equal("Bolsa", modelo.ToInput().Presentacion);
+    }
+    [Fact]
     public async Task BaseDeDatos_RechazaEstadosInvalidosSinServicio()
     {
         await using var test = await TestDatabase.CreateAsync();

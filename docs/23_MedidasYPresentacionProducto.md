@@ -1,10 +1,10 @@
 # Medidas y presentación de producto
 
-**Estado: fase técnica de modelo, contratos, validación y persistencia implementada; UI administrativa y presentación en tienda pendientes.**
+**Estado: modelo, contratos, validación, persistencia y UI administrativa implementados; presentación en tienda pendiente. V1.1.0 aún no publicada.**
 
-La fase técnica se implementó después del cierre documental de V1.0.1. La entrega funcional tipo **V1.1.0** y su fecha de publicación siguen pendientes de confirmar. Los campos, la validación del servidor y las restricciones de persistencia ya existen; los controles de UI y la presentación pública siguen pendientes.
+La fase técnica se implementó después del cierre documental de V1.0.1. La entrega funcional tipo **V1.1.0** y su fecha de publicación siguen pendientes de confirmar. Los campos, la validación del servidor, las restricciones de persistencia y los controles administrativos ya existen; la presentación pública sigue pendiente.
 
-Este documento registra el diseño futuro. No modifica el modelo vigente de V1.0.1 ni acredita una funcionalidad liberada. La presentación pública se aplicará cuando se implemente la tienda virtual, prevista en [V2.4](19_V2_Pendientes.md#v24--canal-público--tienda-en-línea); no adelanta esa tienda a V1.1.
+Este documento registra el diseño y el estado de su implementación. No modifica el modelo vigente de V1.0.1 ni acredita una funcionalidad liberada. La presentación pública se aplicará cuando se implemente la tienda virtual, prevista en [V2.4](19_V2_Pendientes.md#v24--canal-público--tienda-en-línea); no adelanta esa tienda a V1.1.
 
 ## Propósito
 
@@ -47,7 +47,7 @@ El diseño convivirá con los atributos actuales `CodigoInterno`, `CodigoBarras`
 | --- | --- |
 | 500 g | `PesoGramos = 500` |
 | 1.5 kg | `PesoGramos = 1500` |
-| 5 lb | `PesoGramos = 2267.96185` |
+| 5 lb | `PesoGramos = 2267.96` |
 
 ### Presentacion: formato comercial
 
@@ -74,40 +74,40 @@ No es un XOR estricto: ambos campos pueden ser `null`. Cero y los valores negati
 
 No se intentará convertir automáticamente **ml ↔ gramos**: volumen y masa son magnitudes diferentes y su conversión requiere conocer la densidad. El diseño no incorpora esa conversión.
 
-## UI administrativa prevista
+## UI administrativa implementada
 
 ### Exclusión entre entradas
 
-- Si la usuaria introduce volumen, la entrada de peso se bloqueará o deshabilitará.
-- Si introduce peso, la entrada de volumen se bloqueará o deshabilitará.
-- Si elimina el valor introducido, se volverá a habilitar la alternativa.
-- Dejar ambas medidas vacías será válido.
-- Un valor inválido deberá señalarse; el bloqueo visual no sustituirá la validación del servidor.
+- Si se introduce volumen, la entrada de peso y su selector se deshabilitan.
+- Si se introduce peso, la entrada de volumen y su selector se deshabilitan.
+- Si se elimina el valor introducido, se vuelve a habilitar la alternativa.
+- Dejar ambas medidas vacías es válido.
+- Un valor inválido se señala durante la validación del formulario; el bloqueo visual no sustituye la validación del servidor.
 
 ### Unidades de entrada
 
-La entrada de volumen ofrecerá selector **ml / L**. Antes de persistir, los litros se convertirán a mililitros multiplicando por 1000.
+La entrada de volumen ofrece selector **ml / L**. Antes de persistir, los litros se convierten a mililitros multiplicando por 1000.
 
 | Entrada | Valor a persistir |
 | --- | --- |
 | 100 ml | `ContenidoMl = 100` |
 | 2 L | `ContenidoMl = 2000` |
 
-La entrada de peso ofrecerá selector **g / kg / lb**. Antes de persistir, los kilogramos se multiplicarán por 1000 y las libras por 453.59237.
+La entrada de peso ofrece selector **g / kg / lb**. Antes de persistir, los kilogramos se multiplican por 1000 y las libras por 453.59237. El resultado se redondea a dos decimales.
 
 | Entrada | Valor a persistir |
 | --- | --- |
 | 500 g | `PesoGramos = 500` |
 | 1.5 kg | `PesoGramos = 1500` |
-| 5 lb | `PesoGramos = 2267.96185` |
+| 5 lb | `PesoGramos = 2267.96` |
 
-Estos selectores serán una comodidad de entrada. No requieren añadir a la entidad `Producto` propiedades persistidas para la unidad elegida ni conservar valores duplicados. No se prevé entrada en onzas fluidas en este diseño; su equivalencia podrá calcularse para presentación pública.
+Estos selectores son una comodidad de entrada. No requieren añadir a la entidad `Producto` propiedades persistidas para la unidad elegida ni conservar valores duplicados. No se prevé entrada en onzas fluidas en este diseño; su equivalencia podrá calcularse para presentación pública.
 
 ## Validaciones de aplicación y persistencia
 
-La implementación cubre actualmente dos de los tres niveles previstos:
+La implementación cubre los tres niveles previstos para la administración:
 
-1. **UI administrativa (pendiente):** exclusión visual entre entradas, selectores de unidades y controles de captura. El modelo de formulario ya transporta y valida los tres atributos, pero todavía no hay entradas visibles.
+1. **UI administrativa (implementada):** entradas visibles para volumen, peso y presentación en alta y edición. Al informar una medida se deshabilitan la otra entrada y su selector; al vaciarla se rehabilitan. Los selectores ml/L y g/kg/lb son temporales. La carga para edición muestra ml o L y g o kg según el umbral de 1000.
 2. **Servidor / casos de uso de Producto (implementado):** valida `ContenidoMl > 0` y `PesoGramos > 0` cuando tengan valor, rechaza ambos simultáneamente y limita `Presentacion` a 100 caracteres.
 3. **Base de datos (implementado):** columnas opcionales y restricciones `CHECK` para positividad, exclusión de medidas y longitud de `Presentacion`.
 
@@ -123,7 +123,7 @@ La primera expresión permite ambos valores nulos y prohíbe que ambos estén in
 
 La persistencia normalizada conservará mililitros o gramos y el texto opcional de presentación. No almacenará litros, kilogramos, libras ni onzas fluidas como equivalencias duplicadas.
 
-La configuración EF declara `decimal(12,2)` para ambas medidas y la migración local añade columnas nullable y restricciones sin modificar datos existentes. SQLite no impone por sí mismo la escala declarada; esta fase no añade una política de redondeo. La migración se probó en una base de datos de prueba, pero no se aplicó a producción.
+La configuración EF declara `decimal(12,2)` para ambas medidas y la migración local añade columnas nullable y restricciones sin modificar datos existentes. SQLite no impone por sí mismo la escala declarada; el formulario convierte a la unidad canónica y redondea a dos decimales con `MidpointRounding.AwayFromZero` antes de enviar el contrato. La validación del servidor y las restricciones de la base de datos siguen siendo la autoridad. La migración se probó en una base de datos de prueba, pero no se aplicó a producción.
 
 ## Presentación futura en tienda virtual
 
@@ -176,7 +176,7 @@ Presentacion = "Frasco"
 
 Proteína:
 ContenidoMl = null
-PesoGramos = 2267.96185
+PesoGramos = 2267.96
 Presentacion = "Bolsa"
 
 Camisa:
@@ -197,4 +197,4 @@ Presentacion = "Set de 3 piezas"
 
 La documentación del modelo implementado, requisitos/reglas vigentes, DER, diagrama de clases y changelog se actualizarán cuando corresponda a la implementación y liberación real. Este diseño no presenta los campos como disponibles en V1.0.1.
 
-La entrada de planificación se encuentra en [ROADMAP](../ROADMAP.md). La mejora administrativa se prevé para V1.1; no se incorpora artificialmente al alcance de V2. La tienda básica permanece planificada en V2.4.
+La entrada de planificación se encuentra en [ROADMAP](../ROADMAP.md). La mejora administrativa está implementada en el desarrollo de V1.1, aún sin publicación; no se incorpora artificialmente al alcance de V2. La tienda básica permanece planificada en V2.4.
