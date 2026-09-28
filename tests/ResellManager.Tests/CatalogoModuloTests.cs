@@ -201,7 +201,8 @@ public sealed class ProductoModuloTests
             .ToArray();
 
         Assert.DoesNotContain(nombres, nombre => nombre.Contains("Inventario", StringComparison.OrdinalIgnoreCase));
-        Assert.DoesNotContain(nombres, nombre => nombre.Contains("Unidad", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(nombres, nombre => nombre.Contains("Unidad", StringComparison.OrdinalIgnoreCase)
+            && nombre is not nameof(ProductoFormModel.VolumenUnidad) and not nameof(ProductoFormModel.PesoUnidad));
         Assert.DoesNotContain(nombres, nombre => nombre.Contains("Stock", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(nombres, nombre => nombre.Contains("Costo", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(nombres, nombre => nombre.Contains("Margen", StringComparison.OrdinalIgnoreCase));

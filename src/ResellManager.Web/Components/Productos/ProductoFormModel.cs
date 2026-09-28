@@ -11,17 +11,33 @@ public sealed class ProductoFormModel : IValidatableObject
     public string Nombre { get; set; } = string.Empty;
 
     public string? Descripcion { get; set; }
-
     public string? Marca { get; set; }
-
     public string? Modelo { get; set; }
-
     public string? Color { get; set; }
-
     public string? Talla { get; set; }
 
-    public decimal PrecioSugerido { get; set; }
+    // Valores y unidades usados solo en el formulario.
+    public decimal? Volumen { get; set; }
+    public UnidadVolumen VolumenUnidad { get; set; } = UnidadVolumen.Ml;
+    public decimal? Peso { get; set; }
+    public UnidadPeso PesoUnidad { get; set; } = UnidadPeso.G;
 
+    public decimal? ContenidoMl
+    {
+        get => ProductoMedidasConversion.AContenidoMl(Volumen, VolumenUnidad);
+        set => (Volumen, VolumenUnidad) = ProductoMedidasConversion.VolumenParaEditar(value);
+    }
+
+    public decimal? PesoGramos
+    {
+        get => ProductoMedidasConversion.APesoGramos(Peso, PesoUnidad);
+        set => (Peso, PesoUnidad) = ProductoMedidasConversion.PesoParaEditar(value);
+    }
+
+    [MaxLength(100, ErrorMessage = "La presentación no puede superar los 100 caracteres.")]
+    public string? Presentacion { get; set; }
+
+    public decimal PrecioSugerido { get; set; }
     public int CategoriaId { get; set; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
@@ -31,6 +47,27 @@ public sealed class ProductoFormModel : IValidatableObject
             yield return new ValidationResult(
                 "El precio sugerido no puede ser negativo.",
                 [nameof(PrecioSugerido)]);
+        }
+
+        if (Volumen.HasValue && (Volumen <= 0 || ContenidoMl <= 0))
+        {
+            yield return new ValidationResult(
+                "El contenido en ml debe ser mayor que cero.",
+                [nameof(Volumen)]);
+        }
+
+        if (Peso.HasValue && (Peso <= 0 || PesoGramos <= 0))
+        {
+            yield return new ValidationResult(
+                "El peso en gramos debe ser mayor que cero.",
+                [nameof(Peso)]);
+        }
+
+        if (Volumen.HasValue && Peso.HasValue)
+        {
+            yield return new ValidationResult(
+                "Un producto no puede tener contenido en ml y peso en gramos simultáneamente.",
+                [nameof(Volumen), nameof(Peso)]);
         }
 
         if (CategoriaId <= 0)
@@ -51,7 +88,10 @@ public sealed class ProductoFormModel : IValidatableObject
             Color,
             Talla,
             PrecioSugerido,
-            CategoriaId);
+            CategoriaId,
+            ContenidoMl,
+            PesoGramos,
+            Presentacion);
 
     public static ProductoFormModel FromDto(ProductoDto producto) =>
         new()
@@ -63,6 +103,9 @@ public sealed class ProductoFormModel : IValidatableObject
             Modelo = producto.Modelo,
             Color = producto.Color,
             Talla = producto.Talla,
+            ContenidoMl = producto.ContenidoMl,
+            PesoGramos = producto.PesoGramos,
+            Presentacion = producto.Presentacion,
             PrecioSugerido = producto.PrecioSugerido,
             CategoriaId = producto.CategoriaId,
         };
