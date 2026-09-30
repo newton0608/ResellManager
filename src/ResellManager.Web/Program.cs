@@ -135,7 +135,7 @@ app.UseAntiforgery();
 app.MapGet("/health", () => Results.Text("OK")).AllowAnonymous();
 
 app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
+    .AddInteractiveServerRenderMode(options => options.ContentSecurityFrameAncestorsPolicy = "'none'");
 
 app.MapPost("/account/login", async (
     [Microsoft.AspNetCore.Mvc.FromForm] string correo,
