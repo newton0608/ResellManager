@@ -56,7 +56,7 @@ El [runbook operativo](21_Despliegue_V1.md#respaldo-y-restauración) documenta `
 
 La retención automática conserva la unión de 7 copias más recientes, una por cada una de las 4 semanas ISO más recientes disponibles y una por cada uno de los 3 meses más recientes disponibles; no implica exactamente 14 archivos. Actualmente las copias permanecen en el mismo VPS y todavía no existe copia automática externa a Raspberry/otro equipo.
 
-El paquete contiene `database`, `comprobantes` y `dataprotection`. SHA-256 comprueba integridad, no cifra; `/health` comprueba liveness después del reinicio, no una recuperación completa. Mantener como pendientes copia externa, política de recuperación/alertas y validación completa del rollback de aplicación. La evidencia de restore no certifica por sí sola permisos, descifrado de claves, todos los datos y operaciones o reconstrucción íntegra del VPS.
+El script versionado incluye `database`, `comprobantes`, `dataprotection` y `productos`; la copia operativa debe actualizarse para que las imágenes queden cubiertas. SHA-256 comprueba integridad, no cifra; `/health` comprueba liveness después del reinicio, no una recuperación completa. Mantener como pendientes copia externa, política de recuperación/alertas y validación completa del rollback de aplicación. La evidencia de restore no certifica por sí sola permisos, descifrado de claves, todos los datos y operaciones o reconstrucción íntegra del VPS.
 
 ### Logs estructurados
 
@@ -132,14 +132,14 @@ Estado: ✅ política definida; procedimientos concretos se agregan cuando exist
 - Cookie de autenticación `Secure` en Production, `HttpOnly` y `SameSite=Lax`.
 - `AllowedHosts` se suministra por entorno para producción.
 - Data Protection puede persistir keys en volumen y usa `ApplicationName = ResellManager`.
-- SQLite, comprobantes y Data Protection se montan fuera de la capa efímera del contenedor.
+- SQLite, comprobantes, imágenes de productos y Data Protection se montan fuera de la capa efímera del contenedor.
 - El Caddyfile expone solo `app.resellmanager.tech` y hace reverse proxy a la red privada.
 - `.dockerignore` excluye `.env`, secretos, bases locales, App_Data, llaves y artefactos innecesarios.
 - `/health` no devuelve configuración ni datos.
 - Logs Docker tienen rotación básica configurada.
 - Login tiene rate limiting nativo por IP y headers básicos globales sin una CSP completa.
 - Caddy está fijado en `caddy:2.11.4-alpine`, sin latest ni auto-update; registrar además el digest utilizado.
-- Bind mounts de la app alineados con `/opt/resellmanager/data/database`, `/opt/resellmanager/data/comprobantes` y `/opt/resellmanager/data/dataprotection`; usuario no-root conservado y Caddy mantiene sus volúmenes nombrados.
+- Bind mounts de la app alineados con `/opt/resellmanager/data/database`, `/opt/resellmanager/data/comprobantes`, `/opt/resellmanager/data/dataprotection` y `/opt/resellmanager/data/productos`; usuario no-root conservado y Caddy mantiene sus volúmenes nombrados.
 
 ### Verificaciones pendientes en producción
 

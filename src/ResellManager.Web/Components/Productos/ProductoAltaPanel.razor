@@ -1,5 +1,6 @@
 @inject ICategoriaService CategoriaService
 @inject IProductoService ProductoService
+@inject IProductoConImagenService ProductoConImagenService
 @inject ILogger<ProductoAltaPanel> Logger
 
 <section class="form-panel product-create-panel" aria-labelledby="titulo-alta-producto">
@@ -61,7 +62,11 @@
         Error = null;
         try
         {
-            var resultado = await ProductoService.CrearAsync(modelo.ToInput());
+            await using var imagen = modelo.ImagenArchivo?.OpenReadStream(
+                ResellManager.Infrastructure.Storage.AlmacenamientoImagenesProductoLocal.TamanoMaximoBytes);
+            var resultado = imagen is null
+                ? await ProductoService.CrearAsync(modelo.ToInput())
+                : await ProductoConImagenService.CrearAsync(modelo.ToInput(), imagen);
             if (!resultado.IsSuccess || resultado.Value is null)
             {
                 Error = resultado.ErrorMessage ?? "No fue posible registrar el producto.";

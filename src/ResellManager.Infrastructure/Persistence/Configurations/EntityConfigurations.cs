@@ -63,6 +63,7 @@ internal sealed class ProductoConfiguration : IEntityTypeConfiguration<Producto>
         b.Property(x => x.ContenidoMl).HasColumnType("decimal(12,2)");
         b.Property(x => x.PesoGramos).HasColumnType("decimal(12,2)");
         b.Property(x => x.Presentacion).HasMaxLength(100);
+        b.Property(x => x.ImagenPrincipalRuta).HasMaxLength(250);
         b.Property(x => x.PrecioSugerido).HasColumnType("decimal(10,2)");
         b.HasOne(x => x.Categoria).WithMany(x => x.Productos).HasForeignKey(x => x.CategoriaId).OnDelete(DeleteBehavior.Restrict);
     }

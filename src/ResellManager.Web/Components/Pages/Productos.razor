@@ -97,7 +97,13 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
                         <tr>
                             <td><span class="code-value">@producto.CodigoInterno</span></td>
                             <td>
-                                <strong>@producto.Nombre</strong>
+                                <div class="product-name-with-image" style="display:flex;align-items:center;gap:0.6rem">
+                                    @if (producto.ImagenPrincipalRuta is not null)
+                                    {
+                                        <img class="product-thumbnail" style="width:48px;height:48px;object-fit:contain;border-radius:0.4rem;flex-shrink:0" src="/productos/@producto.Id/imagen" alt="" loading="lazy" />
+                                    }
+                                    <strong>@producto.Nombre</strong>
+                                </div>
                                 @if (!string.IsNullOrWhiteSpace(ProductoPresentacion.DatosBreves(producto)))
                                 {
                                     <span class="table-secondary">@ProductoPresentacion.DatosBreves(producto)</span>
@@ -120,6 +126,10 @@ else if (string.IsNullOrWhiteSpace(ErrorMessage))
             {
                 <article class="entity-card">
                     <div class="entity-card-heading">
+                        @if (producto.ImagenPrincipalRuta is not null)
+                        {
+                            <img class="product-thumbnail" style="width:48px;height:48px;object-fit:contain;border-radius:0.4rem;flex-shrink:0" src="/productos/@producto.Id/imagen" alt="" loading="lazy" />
+                        }
                         <div>
                             <span class="code-value">@producto.CodigoInterno</span>
                             <h3>@producto.Nombre</h3>

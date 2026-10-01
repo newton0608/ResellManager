@@ -37,10 +37,12 @@ services:
       AllowedHosts: ${AllowedHosts:?Configure AllowedHosts in .env}
       ConnectionStrings__ResellManager: ${ConnectionStrings__ResellManager:?Configure SQLite in .env}
       AlmacenamientoComprobantes__DirectorioBase: ${AlmacenamientoComprobantes__DirectorioBase:?Configure receipt storage in .env}
+      AlmacenamientoImagenesProducto__DirectorioBase: /app/data/productos
       DataProtection__KeysPath: ${DataProtection__KeysPath:?Configure persistent keys in .env}
     volumes:
       - /opt/resellmanager/data/database:/app/data/database
       - /opt/resellmanager/data/comprobantes:/app/data/comprobantes
+      - /opt/resellmanager/data/productos:/app/data/productos
       - /opt/resellmanager/data/dataprotection:/app/data/dataprotection
     networks:
       private:

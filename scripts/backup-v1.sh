@@ -110,7 +110,7 @@ log "Deteniendo ResellManager para obtener un snapshot consistente de SQLite..."
 stopped=1
 
 log "Creando backup: $backup"
-tar -C "$DATA_DIR"   -czf "$backup"   database comprobantes dataprotection
+tar -C "$DATA_DIR"   -czf "$backup"   database comprobantes dataprotection productos
 
 log "Generando SHA-256..."
 (

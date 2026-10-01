@@ -14,6 +14,7 @@ public class Producto
     public decimal? ContenidoMl { get; set; }
     public decimal? PesoGramos { get; set; }
     public string? Presentacion { get; set; }
+    public string? ImagenPrincipalRuta { get; set; }
     public decimal PrecioSugerido { get; set; }
     public int CategoriaId { get; set; }
 
