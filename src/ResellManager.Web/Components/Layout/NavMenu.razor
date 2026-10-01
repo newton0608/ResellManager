@@ -1,15 +1,15 @@
-<div class="brand" aria-label="ResellManager">
-    <img src="branding/resellmanager-logo-light.png" alt="ResellManager"
-         class="block h-10 w-40 max-w-full object-cover" width="1536" height="1024" />
+<div class="mb-7 flex min-h-12 items-center px-3 pt-2" aria-label="ResellManager">
+    <img src="branding/resellmanager-logo-dark.png" alt="ResellManager"
+         class="block h-11 w-44 max-w-full object-cover" width="1536" height="1024" />
 </div>
 
-<nav class="primary-nav" aria-label="Navegación principal">
-    <p class="nav-section-label">Menú principal</p>
-    <ul>
+<nav class="min-w-0 flex-1" aria-label="Navegación principal">
+    <p class="mt-0 mb-3 px-3 text-xs font-semibold tracking-wide text-ui-muted">Menú principal</p>
+    <ul class="m-0 grid list-none gap-1 p-0">
         @foreach (var item in Items)
         {
             <li>
-                <NavLink href="@item.Href" Match="@(item.Exact ? NavLinkMatch.All : NavLinkMatch.Prefix)">
+                <NavLink class="flex min-h-12 items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium text-ui-muted no-underline transition-colors duration-150 hover:bg-ui-canvas hover:text-ui-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-accent motion-reduce:transition-none [&.active]:bg-ui-accent/10 [&.active]:font-semibold [&.active]:text-ui-accent" href="@item.Href" Match="@(item.Exact ? NavLinkMatch.All : NavLinkMatch.Prefix)">
                     <NavIcon Name="@item.Icon" />
                     <span>@item.Label</span>
                 </NavLink>
@@ -18,8 +18,8 @@
     </ul>
 </nav>
 
-<div class="sidebar-note">
-    <span class="status-dot" aria-hidden="true"></span>
+<div class="mt-6 flex items-center gap-2 border-0 border-t border-solid border-ui-border px-3 pt-5 pb-1 text-xs text-ui-muted">
+    <span class="size-2 shrink-0 rounded-full bg-ui-success" aria-hidden="true"></span>
     <span>Acceso privado</span>
 </div>
 

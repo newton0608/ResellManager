@@ -1,10 +1,102 @@
-/* No Preflight: preserve app.css and Blazor's existing scoped styles. */
-@layer theme, utilities;
+/* No Preflight. Utilities are unlayered to coexist with legacy CSS during migration. */
+@layer theme;
 @import "tailwindcss/theme.css" layer(theme);
-@import "tailwindcss/utilities.css" layer(utilities) source(none);
+@import "tailwindcss/utilities.css" source(none);
 
 /* Paths are relative to this file, independent of the CLI working directory. */
 @source "../**/*.{razor,cshtml,html,cs,js}";
 @source not "../bin";
 @source not "../obj";
 @source not "../wwwroot/vendor";
+
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --color-ui-canvas: #f2f2f7;
+  --color-ui-ink: #1c1c1e;
+  --color-ui-muted: #63636b;
+  --color-ui-border: rgb(60 60 67 / 12%);
+  --color-ui-control: #8e8e93;
+  --color-ui-accent: #0066d6;
+  --color-ui-accent-hover: #0056b5;
+  --color-ui-success: #16743a;
+  --color-ui-danger: #c62821;
+  --color-ui-warning: #995000;
+  --shadow-ui-card: 0 2px 8px rgb(28 28 30 / 3%), 0 12px 32px rgb(28 28 30 / 3%);
+  --shadow-ui-sheet: 0 16px 64px rgb(28 28 30 / 16%);
+}
+
+@utility ui-button {
+  @apply inline-flex min-h-12 min-w-12 items-center justify-center gap-2 rounded-2xl border border-solid border-transparent px-4 py-3 text-center text-sm font-semibold leading-5 no-underline transition-colors duration-150 touch-manipulation;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-accent disabled:cursor-not-allowed disabled:border-ui-border disabled:bg-ui-canvas disabled:text-ui-muted disabled:opacity-100 disabled:shadow-none motion-reduce:transition-none;
+}
+
+@utility ui-card {
+  @apply rounded-3xl border border-solid border-ui-border bg-white shadow-ui-card;
+}
+
+@utility ui-input {
+  @apply box-border min-h-12 min-w-0 w-full max-w-full rounded-2xl border border-solid border-ui-control bg-white px-3 py-3 text-base leading-6 text-ui-ink transition-colors duration-150;
+  @apply placeholder:text-ui-muted hover:border-ui-ink focus:border-ui-accent focus:shadow-none focus:outline-2 focus:outline-offset-2 focus:outline-ui-accent disabled:cursor-not-allowed disabled:border-ui-border disabled:bg-ui-canvas disabled:text-ui-muted motion-reduce:transition-none;
+}
+
+/* Shared controls keep their existing names in modules awaiting migration. */
+.rm-ui :is(.primary-button, .secondary-button, .danger-button, .icon-button) {
+  @apply ui-button;
+}
+.rm-ui .primary-button { @apply bg-ui-accent text-white; }
+.rm-ui .primary-button:hover:not(:disabled) { @apply border-ui-accent-hover bg-ui-accent-hover; }
+.rm-ui .secondary-button { @apply border-ui-control bg-white text-ui-ink; }
+.rm-ui .secondary-button:hover:not(:disabled) { @apply border-ui-ink bg-ui-canvas; }
+.rm-ui .danger-button { @apply border-ui-danger/30 bg-white text-ui-danger; }
+.rm-ui .danger-button:hover:not(:disabled) { @apply border-ui-danger bg-ui-danger/5; }
+.rm-ui .icon-button { @apply size-12 shrink-0 border-ui-border bg-white p-0 text-ui-ink; }
+.rm-ui .icon-button:hover:not(:disabled) { @apply bg-ui-canvas; }
+.rm-ui .icon-button svg { @apply size-5; }
+.rm-ui :is(.primary-button, .secondary-button, .danger-button, .icon-button):disabled {
+  @apply border-ui-border bg-ui-canvas text-ui-muted opacity-100;
+}
+
+.rm-ui :is(.data-panel, .form-panel, .info-card, .search-panel, .history-panel, .empty-state, .error-state, .auth-card) {
+  @apply ui-card;
+}
+.rm-ui :is(.search-field, .form-field, .auth-form) :is(input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), select, textarea) {
+  @apply ui-input;
+}
+.rm-ui :is(.search-field, .form-field, .auth-form) :is(input, select, textarea):focus {
+  @apply border-ui-accent shadow-none outline-2 outline-offset-2 outline-ui-accent;
+}
+.rm-ui :is(.search-field, .form-field, .auth-form) :is(input, select, textarea):disabled {
+  @apply border-ui-border bg-ui-canvas text-ui-muted;
+}
+.rm-ui :is(.form-field, .search-field) label { @apply text-sm font-semibold text-ui-ink; }
+.rm-ui :is(input[type="checkbox"], input[type="radio"]) { @apply accent-ui-accent; }
+
+.rm-ui :is(.status-badge, .order-status, .inventory-badge) {
+  @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold leading-5;
+}
+.rm-ui .status-badge { @apply border-ui-warning/20 bg-ui-warning/5 text-ui-warning; }
+.rm-ui .status-badge-success { @apply border-ui-success/20 bg-ui-success/5 text-ui-success; }
+.rm-ui .status-badge-neutral { @apply border-ui-border bg-ui-canvas text-ui-muted; }
+.rm-ui .status-badge-payment { @apply border-ui-accent/20 bg-ui-accent/5 text-ui-accent; }
+.rm-ui :is(.mensaje-error, .mensaje-exito) { @apply rounded-2xl px-4 py-3 text-sm leading-6; }
+.rm-ui .mensaje-error { @apply border-ui-danger/20 bg-ui-danger/5 text-ui-danger; }
+.rm-ui .mensaje-exito { @apply border-ui-success/20 bg-ui-success/5 text-ui-success; }
+
+/* Auth uses the same shared surfaces and controls, retaining its form behavior. */
+.rm-ui .auth-card { @apply p-6 sm:p-8; }
+.rm-ui .auth-brand { @apply border-ui-border; }
+.rm-ui :is(.auth-brand small, .auth-help, .auth-heading p:last-child) { @apply text-ui-muted; }
+.rm-ui .auth-heading h1 { @apply text-ui-ink; }
+.rm-ui .opcion-recordar { @apply min-h-11 text-sm text-ui-ink; }
+.rm-ui .auth-form label:not(.opcion-recordar) { @apply text-sm text-ui-ink; }
+
+/* Keep the native iOS date picker within its available width. */
+.ui-input[type="date"] { inline-size: 100%; max-inline-size: 100%; min-inline-size: 0; }
+.ui-input[type="date"]::-webkit-datetime-edit { min-width: 0; padding: 0; }
+.ui-input[type="date"]::-webkit-date-and-time-value { min-width: 0; text-align: left; }
+@supports (-webkit-touch-callout: none) {
+  .rm-ui input[type="date"] { padding-inline: 0; }
+  .rm-ui input[type="date"]::-webkit-date-and-time-value {
+    box-sizing: border-box; max-inline-size: 100%; padding-inline: .75rem;
+  }
+}

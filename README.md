@@ -67,7 +67,7 @@ Incluye configuración externa, permisos, backups y restauración, hechos operat
 
 ## Tailwind CSS v4 (infraestructura)
 
-Se conservan `wwwroot/app.css`, los estilos aislados de Blazor y todas las clases actuales. La fuente `src/ResellManager.Web/Styles/tailwind.css` importa únicamente `theme.css` y `utilities.css`, sin Preflight ni reset global, siguiendo la [documentación de Tailwind v4](https://tailwindcss.com/docs/preflight#disabling-preflight). El enlace al CSS compilado se carga antes de los estilos existentes en `Components/App.razor`. Las reglas existentes sin capa conservan prioridad sobre las utilities; no se usa `important`.
+Se conservan `wwwroot/app.css` y los estilos aislados de Blazor para los módulos pendientes de migración. La fuente `src/ResellManager.Web/Styles/tailwind.css` importa únicamente `theme.css` y `utilities.css`, sin Preflight ni reset global, siguiendo la [documentación de Tailwind v4](https://tailwindcss.com/docs/preflight#disabling-preflight). En `Components/App.razor`, el CSS compilado se carga después de `app.css` y de los estilos aislados. Las utilities se importan sin capa para que puedan sobrescribir las reglas legacy al migrar un componente; no se usa `important`. Los controles compartidos se adaptan únicamente dentro de `.rm-ui`.
 
 Tailwind y su CLI están fijados en `4.3.3`. Los scripts precargan `scripts/tailwind-resolver.mjs`: en rutas que contienen `#` (como `D:\C#\...`), resuelve los dos imports CSS del paquete con Node mediante el hook `__tw_resolve` de Tailwind. Esto evita que `enhanced-resolve` entregue rutas con bytes NUL y mantiene la CLI oficial para build/watch; en Docker, cuya ruta no contiene `#`, se usa el resolutor normal. Este hook es interno: verifica esta compatibilidad al actualizar Tailwind.
 
@@ -112,11 +112,19 @@ Los assets entregados se conservan como copias exactas en `src/ResellManager.Web
 
 | Nombre base (extensiones `.jpg` y `.png`) | Foto JPG | PNG recibido | Uso |
 | --- | --- | --- | --- |
-| `resellmanager-logo-dark` | 1 | 6 | Horizontal oscuro: login y página de error, sobre fondos claros. |
-| `resellmanager-logo-light` | 6 | 2 | Horizontal claro: sidebar y menú móvil, sobre fondos oscuros. |
+| `resellmanager-logo-dark` | 1 | 6 | Horizontal oscuro: sidebar, menú móvil, topbar móvil, login y página de error, sobre fondos claros. |
+| `resellmanager-logo-light` | 6 | 2 | Horizontal claro: conservado para futuros fondos oscuros. |
 | `resellmanager-icon` | 2 | 3 | Símbolo sin texto: favicon PNG, sin generar tamaños o variantes adicionales. |
 | `resellmanager-logo-monochrome-stacked` | 3 | 4 | Variante vertical monocroma conservada. |
 | `resellmanager-logo-dark-stacked` | 4 | 5 | Variante vertical oscura conservada. |
 | `resellmanager-logo-light-stacked` | 5 | 1 | Variante vertical clara conservada. |
 
-Los logos horizontales ya incluyen el nombre; se retira el texto provisional que aparecía junto al símbolo R. Tailwind se utiliza únicamente para su tamaño, adaptación al ancho disponible y `object-fit: cover`: el encuadre oculta los márgenes exteriores del lienzo y mantiene la proporción del dibujo. No se modifican `app.css`, navegación, layout ni estilos globales. El favicon se declara en `Components/App.razor` como `branding/resellmanager-icon.png`.
+Los logos horizontales ya incluyen el nombre; se retira el texto provisional que aparecía junto al símbolo R. En los logos, Tailwind controla el tamaño, la adaptación al ancho disponible y `object-fit: cover`: el encuadre oculta los márgenes exteriores del lienzo y mantiene la proporción del dibujo. El favicon se declara en `Components/App.razor` como `branding/resellmanager-icon.png`.
+
+## Interfaz base
+
+El layout, la navegación, la topbar y el dashboard usan utilities de Tailwind con superficies blancas, fondo `#F2F2F7`, esquinas redondeadas y sombras suaves. La fuente es `-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`, sin descargas. Los tokens `ui-*` se definen con `@theme` en `Styles/tailwind.css`; el azul `#0066D6` y el secundario `#63636B` mejoran el contraste de textos pequeños.
+
+`ui-button`, `ui-card` y `ui-input` son utilities compartidas. Los nombres legacy de botones, cards, inputs/selects, badges y mensajes reutilizan estas reglas con `@apply` dentro de `.rm-ui`, sin migrar el marcado de Productos, Clientes, Compras, Pedidos o Ventas. Se conserva el CSS legacy, incluidos los ajustes del selector de fechas nativo de iOS.
+
+En móvil se mantiene el menú nativo `popover`, con cierre al navegar, controles de al menos 44–48 px y márgenes reducidos. El dashboard presenta los canales como cards en móvil y los movimientos recientes como cards en todas las resoluciones. Solo la topbar y el fondo del menú utilizan blur; las transiciones respetan `prefers-reduced-motion`.
