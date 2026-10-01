@@ -100,3 +100,7 @@
     box-sizing: border-box; max-inline-size: 100%; padding-inline: .75rem;
   }
 }
+
+/* Product forms use the shared controls, including their validation state. */
+.rm-product-form .validation-message { @apply mt-1 text-sm leading-5 text-ui-danger; }
+.rm-product-form .ui-input.invalid { @apply border-ui-danger; }
