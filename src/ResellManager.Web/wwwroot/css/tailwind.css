@@ -1,2 +1,2 @@
 /*! tailwindcss v4.3.3 | MIT License | https://tailwindcss.com */
-@layer theme;@layer utilities{.visible{visibility:visible}.static{position:static}.block{display:block}.grid{display:grid}.hidden{display:none}}
+@layer theme{:root,:host{--spacing:.25rem}}@layer utilities{.visible{visibility:visible}.static{position:static}.block{display:block}.grid{display:grid}.hidden{display:none}.h-10{height:calc(var(--spacing) * 10)}.h-14{height:calc(var(--spacing) * 14)}.w-40{width:calc(var(--spacing) * 40)}.w-56{width:calc(var(--spacing) * 56)}.max-w-full{max-width:100%}.min-w-0{min-width:0}.object-cover{object-fit:cover}}

@@ -103,3 +103,18 @@ El Dockerfile usa una etapa `node:24-bookworm-slim`, instala las versiones del l
 ```bash
 docker build -t resellmanager:local .
 ```
+
+## Branding oficial de ResellManager
+
+Los assets entregados se conservan como copias exactas en `src/ResellManager.Web/wwwroot/branding/`, sin redibujar, recolorear, recortar ni recomprimir los archivos. Se conservan las seis fotos JPG y las seis versiones PNG transparentes; la aplicación usa los PNG directamente.
+
+| Nombre base (extensiones `.jpg` y `.png`) | Foto JPG | PNG recibido | Uso |
+| --- | --- | --- | --- |
+| `resellmanager-logo-dark` | 1 | 6 | Horizontal oscuro: login y página de error, sobre fondos claros. |
+| `resellmanager-logo-light` | 6 | 2 | Horizontal claro: sidebar y menú móvil, sobre fondos oscuros. |
+| `resellmanager-icon` | 2 | 3 | Símbolo sin texto: favicon PNG, sin generar tamaños o variantes adicionales. |
+| `resellmanager-logo-monochrome-stacked` | 3 | 4 | Variante vertical monocroma conservada. |
+| `resellmanager-logo-dark-stacked` | 4 | 5 | Variante vertical oscura conservada. |
+| `resellmanager-logo-light-stacked` | 5 | 1 | Variante vertical clara conservada. |
+
+Los logos horizontales ya incluyen el nombre; se retira el texto provisional que aparecía junto al símbolo R. Tailwind se utiliza únicamente para su tamaño, adaptación al ancho disponible y `object-fit: cover`: el encuadre oculta los márgenes exteriores del lienzo y mantiene la proporción del dibujo. No se modifican `app.css`, navegación, layout ni estilos globales. El favicon se declara en `Components/App.razor` como `branding/resellmanager-icon.png`.
