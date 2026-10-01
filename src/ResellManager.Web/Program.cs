@@ -6,6 +6,7 @@ using ResellManager.Application.Interfaces;
 using ResellManager.Infrastructure;
 using ResellManager.Infrastructure.Storage;
 using ResellManager.Web.Components;
+using ResellManager.Web.Endpoints;
 using ResellManager.Web.Identity;
 using ResellManager.Web.Hosting;
 using ResellManager.Web.Inicializacion;
@@ -153,6 +154,7 @@ app.UseAuthorization();
 app.UseAntiforgery();
 
 app.MapGet("/health", () => Results.Text("OK")).AllowAnonymous();
+app.MapCatalogoPublico();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode(options => options.ContentSecurityFrameAncestorsPolicy = "'none'");

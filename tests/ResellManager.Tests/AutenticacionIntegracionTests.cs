@@ -457,6 +457,10 @@ public sealed class AplicacionAutenticacionFactory : WebApplicationFactory<Progr
     private readonly string _rutaComprobantes =
         Path.Combine(Path.GetTempPath(), $"resellmanager-auth-comprobantes-{Guid.NewGuid():N}");
 
+    private readonly string _rutaImagenes =
+        Path.Combine(Path.GetTempPath(), $"resellmanager-auth-productos-{Guid.NewGuid():N}");
+
+    internal string RutaImagenes => _rutaImagenes;
     internal string RutaBaseDatos => _rutaBaseDatos;
     internal string RutaComprobantes => _rutaComprobantes;
     private string CadenaConexion => $"Data Source={_rutaBaseDatos};Pooling=False";
@@ -471,15 +475,16 @@ public sealed class AplicacionAutenticacionFactory : WebApplicationFactory<Progr
                 ["ConnectionStrings:ResellManager"] = CadenaConexion,
                 ["UsuarioInicial:Correo"] = CorreoUsuario,
                 ["UsuarioInicial:Contrasena"] = ContrasenaValida,
-                ["AlmacenamientoComprobantes:DirectorioBase"] = _rutaComprobantes
+                ["AlmacenamientoComprobantes:DirectorioBase"] = _rutaComprobantes,
+                ["AlmacenamientoImagenesProducto:DirectorioBase"] = _rutaImagenes
             });
         });
         builder.ConfigureServices(services => services.AddSingleton<IStartupFilter>(
-            new ComprobarAislamientoAntesDeSolicitudes(CadenaConexion, _rutaComprobantes)));
+            new ComprobarAislamientoAntesDeSolicitudes(CadenaConexion, _rutaComprobantes, _rutaImagenes)));
     }
 
     private sealed class ComprobarAislamientoAntesDeSolicitudes(
-        string cadenaConexionEsperada, string rutaComprobantesEsperada) : IStartupFilter
+        string cadenaConexionEsperada, string rutaComprobantesEsperada, string rutaImagenesEsperada) : IStartupFilter
     {
         public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> siguiente) => app =>
         {
@@ -487,11 +492,14 @@ public sealed class AplicacionAutenticacionFactory : WebApplicationFactory<Progr
             var db = scope.ServiceProvider.GetRequiredService<ResellManagerDbContext>();
             var almacenamiento = scope.ServiceProvider
                 .GetRequiredService<IOptions<AlmacenamientoComprobantesOptions>>().Value;
+            var imagenes = scope.ServiceProvider
+                .GetRequiredService<IOptions<AlmacenamientoImagenesProductoOptions>>().Value;
             if (db.Database.GetConnectionString() != cadenaConexionEsperada
-                || almacenamiento.DirectorioBase != Path.GetFullPath(rutaComprobantesEsperada))
+                || almacenamiento.DirectorioBase != Path.GetFullPath(rutaComprobantesEsperada)
+                || imagenes.DirectorioBase != Path.GetFullPath(rutaImagenesEsperada))
             {
                 throw new InvalidOperationException(
-                    "El host de pruebas no está aislado en sus rutas temporales de SQLite y comprobantes.");
+                    "El host de pruebas no está aislado en sus rutas temporales de SQLite, comprobantes e imágenes.");
             }
 
             siguiente(app);
@@ -509,6 +517,10 @@ public sealed class AplicacionAutenticacionFactory : WebApplicationFactory<Progr
         if (disposing && Directory.Exists(_rutaComprobantes))
         {
             Directory.Delete(_rutaComprobantes, recursive: true);
+        }
+        if (disposing && Directory.Exists(_rutaImagenes))
+        {
+            Directory.Delete(_rutaImagenes, recursive: true);
         }
     }
 }

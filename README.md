@@ -14,6 +14,8 @@ Existen los tags `v1.0.0` (`3f2d264`) y `v1.0.1` (`97da64e`); este último inclu
 
 El [runbook operativo V1](docs/21_Despliegue_V1.md) distingue configuración versionada y evidencia operativa. Se probaron backup manual y restore real; el timer systemd está instalado, activo y ya ejecutó correctamente, con retención automática. Las copias permanecen en el mismo VPS. Siguen pendientes la copia automática externa a Raspberry/otro equipo y la validación completa del rollback de versión de aplicación.
 
+El [backend del catálogo público](docs/25_CatalogoPublicoBackend.md) ofrece únicamente lecturas comerciales de productos con inventario físico libre, mediante `/api/catalogo/productos`. Incluye detalle e imagen pública controlada; la administración conserva su autenticación. Esta iteración no incorpora una UI pública ni modifica los flujos del negocio.
+
 ## Estructura
 
 ```text
