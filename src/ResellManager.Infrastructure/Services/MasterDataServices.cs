@@ -411,7 +411,8 @@ public sealed class ProductoService(ResellManagerDbContext db) : IProductoServic
                 x.Categoria.Nombre,
                 x.ContenidoMl,
                 x.PesoGramos,
-                x.Presentacion
+                x.Presentacion,
+                x.ImagenPrincipalRuta
             ));
 }
 

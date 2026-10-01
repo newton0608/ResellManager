@@ -2,6 +2,7 @@
 @page "/productos/{Id:int}/editar"
 @rendermode InteractiveServer
 @inject IProductoService ProductoService
+@inject IProductoConImagenService ProductoConImagenService
 @inject ICategoriaService CategoriaService
 @inject NavigationManager Navigation
 @inject ILogger<ProductoEdicion> Logger
@@ -40,6 +41,7 @@ else
         <ProductoForm Modelo="Modelo"
                       Categorias="CategoriasDisponibles"
                       Guardando="Guardando"
+                      ProductoId="Id"
                       ErrorMessage="@ErrorGuardado"
                       OnGuardar="GuardarAsync"
                       CancelarHref="@CancelarHref" />
@@ -129,9 +131,16 @@ else
 
         try
         {
-            var resultado = EsEdicion
-                ? await ProductoService.EditarAsync(Id!.Value, modelo.ToInput())
-                : await ProductoService.CrearAsync(modelo.ToInput());
+            await using var imagen = modelo.ImagenArchivo?.OpenReadStream(
+                ResellManager.Infrastructure.Storage.AlmacenamientoImagenesProductoLocal.TamanoMaximoBytes);
+            var resultado = imagen is null && !modelo.EliminarImagenPrincipal
+                ? EsEdicion
+                    ? await ProductoService.EditarAsync(Id!.Value, modelo.ToInput())
+                    : await ProductoService.CrearAsync(modelo.ToInput())
+                : EsEdicion
+                    ? await ProductoConImagenService.EditarAsync(
+                        Id!.Value, modelo.ToInput(), imagen, modelo.EliminarImagenPrincipal)
+                    : await ProductoConImagenService.CrearAsync(modelo.ToInput(), imagen);
 
             if (!resultado.IsSuccess)
             {

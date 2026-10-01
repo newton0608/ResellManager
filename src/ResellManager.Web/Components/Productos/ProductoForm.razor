@@ -127,6 +127,26 @@
                        @bind-Value="Modelo.Presentacion" maxlength="100" autocomplete="off" />
             <div id="producto-presentacion-validacion"><ValidationMessage For="() => Modelo.Presentacion" /></div>
         </div>
+        <div class="form-field form-field-wide">
+            <label for="producto-imagen">Imagen principal (opcional)</label>
+            <InputFile @key="VersionSelectorImagen" id="producto-imagen"
+                       OnChange="SeleccionarImagenAsync"
+                       accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                       disabled="@Guardando" />
+            <p class="field-help">JPEG, PNG o WebP; máximo 8 MB. En móvil puedes elegir cámara o galería.</p>
+            @if (!string.IsNullOrWhiteSpace(ErrorImagen))
+            {
+                <p class="mensaje-error" role="alert">@ErrorImagen</p>
+            }
+            @if (VistaPrevia is not null || (Modelo.ImagenPrincipalRuta is not null && !Modelo.EliminarImagenPrincipal))
+            {
+                <div class="product-image-preview" style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;margin-top:0.75rem">
+                    <img src="@(VistaPrevia ?? $"/productos/{ProductoId}/imagen")" alt="Vista previa de la imagen principal" style="width:120px;height:120px;object-fit:contain;border-radius:0.5rem" />
+                    <button class="secondary-button" type="button" disabled="@Guardando"
+                            @onclick="QuitarImagen">Eliminar imagen</button>
+                </div>
+            }
+        </div>
     </div>
 
     <p class="required-note"><span aria-hidden="true">*</span> Campos obligatorios</p>
@@ -167,6 +187,61 @@
 
     [Parameter] public EventCallback OnCancelar { get; set; }
     [Parameter] public bool CategoriasEnOtraPestana { get; set; }
+    [Parameter] public int? ProductoId { get; set; }
+    private string? VistaPrevia;
+    private string? ErrorImagen;
+    private int VersionSelectorImagen;
+
+    private async Task SeleccionarImagenAsync(InputFileChangeEventArgs evento)
+    {
+        Modelo.ImagenArchivo = null;
+        VistaPrevia = null;
+        ErrorImagen = null;
+        var archivo = evento.File;
+        if (archivo.Size > ResellManager.Infrastructure.Storage.AlmacenamientoImagenesProductoLocal.TamanoMaximoBytes)
+        {
+            ErrorImagen = "La imagen supera el límite máximo de 8 MB.";
+            return;
+        }
+        try
+        {
+            await using var entrada = archivo.OpenReadStream(
+                ResellManager.Infrastructure.Storage.AlmacenamientoImagenesProductoLocal.TamanoMaximoBytes);
+            using var memoria = new MemoryStream();
+            await entrada.CopyToAsync(memoria);
+            var bytes = memoria.ToArray();
+            var tipo = bytes.Length >= 3 && bytes[0] == 0xff && bytes[1] == 0xd8 && bytes[2] == 0xff
+                ? "image/jpeg"
+                : bytes.Length >= 8 && bytes.AsSpan(0, 8).SequenceEqual(
+                    new byte[] { 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a })
+                    ? "image/png"
+                    : bytes.Length >= 12 && bytes.AsSpan(0, 4).SequenceEqual("RIFF"u8)
+                        && bytes.AsSpan(8, 4).SequenceEqual("WEBP"u8)
+                        ? "image/webp" : null;
+            if (tipo is null)
+            {
+                ErrorImagen = "Selecciona una imagen JPEG, PNG o WebP válida.";
+                return;
+            }
+            VistaPrevia = $"data:{tipo};base64,{Convert.ToBase64String(bytes)}";
+            Modelo.ImagenArchivo = archivo;
+            Modelo.EliminarImagenPrincipal = false;
+        }
+        catch (Exception)
+        {
+            ErrorImagen = "No fue posible mostrar la imagen seleccionada.";
+        }
+    }
+
+    private void QuitarImagen()
+    {
+        Modelo.ImagenArchivo = null;
+        Modelo.EliminarImagenPrincipal = Modelo.ImagenPrincipalRuta is not null;
+        VistaPrevia = null;
+        ErrorImagen = null;
+        VersionSelectorImagen++;
+    }
+
 
     private bool PuedeGuardar => !Guardando && Categorias.Count > 0;
 

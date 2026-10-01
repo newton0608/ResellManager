@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Components.Forms;
 using System.ComponentModel.DataAnnotations;
 using ResellManager.Application.DTOs;
 
@@ -39,6 +40,9 @@ public sealed class ProductoFormModel : IValidatableObject
 
     public decimal PrecioSugerido { get; set; }
     public int CategoriaId { get; set; }
+    public string? ImagenPrincipalRuta { get; set; }
+    public IBrowserFile? ImagenArchivo { get; set; }
+    public bool EliminarImagenPrincipal { get; set; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
@@ -108,5 +112,6 @@ public sealed class ProductoFormModel : IValidatableObject
             Presentacion = producto.Presentacion,
             PrecioSugerido = producto.PrecioSugerido,
             CategoriaId = producto.CategoriaId,
+            ImagenPrincipalRuta = producto.ImagenPrincipalRuta,
         };
 }

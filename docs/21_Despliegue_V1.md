@@ -92,7 +92,7 @@ Backup manual y restore real fueron realizados y verificados según la confirmac
 
 1. Adquiere el bloqueo no bloqueante mediante `flock`. Si otra ejecución tiene el bloqueo, registra que no iniciará otro backup y termina sin crear una nueva copia.
 2. Detiene `resellmanager` con `docker compose stop` para obtener un snapshot consistente de SQLite y sus archivos asociados. Hay una interrupción de servicio; los circuitos Blazor y formularios sin guardar no sobreviven necesariamente al reinicio.
-3. Empaqueta los directorios completos `database`, `comprobantes` y `dataprotection` en `resellmanager-YYYYMMDD-HHMMSS.tar.gz`. Incluye el directorio de SQLite, no una copia aislada del `.db` mientras la app escribe.
+3. Empaqueta los directorios completos `database`, `comprobantes`, `dataprotection` y `productos` en `resellmanager-YYYYMMDD-HHMMSS.tar.gz`. Incluye el directorio de SQLite, no una copia aislada del `.db` mientras la app escribe.
 4. Genera el archivo acompañante `.tar.gz.sha256`, con la suma SHA-256 del paquete.
 5. Reinicia la aplicación mediante `docker compose start` y consulta `/health`, esperando una respuesta `OK`. Realiza hasta 20 intentos, con timeout de cinco segundos por petición y pausas de dos segundos entre intentos fallidos.
 6. Tras recuperar liveness, asigna propietario `reselladmin:reselladmin` y permisos `600` al paquete y al checksum; después aplica la retención.
@@ -134,13 +134,13 @@ Revisar el journal y la presencia del paquete/checksum para confirmar una copia 
 
 Las copias actuales permanecen **en el mismo VPS**. La copia automática externa hacia Raspberry/otro equipo sigue pendiente; no existe todavía esa protección frente a pérdida completa del VPS. Definir destino, acceso y protección/cifrado de las copias externas, además de responsable, alertas y objetivos RPO/RTO. La programación y retención actuales están implementadas; su adecuación a esos objetivos requiere decisión operativa.
 
-El paquete actual incluye **SQLite + comprobantes + Data Protection**. El script no incorpora imágenes de aplicación, un manifiesto de versión/commit, configuración, secretos ni los volúmenes de Caddy. Conservar por separado la identificación de imágenes, configuración necesaria y recuperación protegida de secretos y estado de Caddy; no asumir que están dentro del `.tar.gz`.
+El script versionado incluye **SQLite + comprobantes + Data Protection + imágenes de productos**. La copia operativa instalada debe actualizarse antes de considerar cubierto `productos/` por el backup. El script no incorpora imágenes de aplicación, un manifiesto de versión/commit, configuración, secretos ni los volúmenes de Caddy. Conservar por separado la identificación de imágenes, configuración necesaria y recuperación protegida de secretos y estado de Caddy; no asumir que están dentro del `.tar.gz`.
 
 ### Restore real: resultado y comprobaciones
 
 El restore real desde backup está probado y verificado según evidencia operativa comunicada por el responsable. Falta incorporar su registro detallado: fecha, copia usada, imagen compatible, tiempos, responsable y comprobaciones realizadas, sin secretos. No se afirma que se hayan certificado individualmente todos los puntos siguientes.
 
-Para repetir la validación: comprobar el checksum; restaurar el conjunto en un entorno aislado sin sobrescribir el original; usar imagen compatible, rutas y permisos correctos. Verificar integridad SQLite y relaciones, login, saldos, pedidos/reservas, lectura de comprobantes y funcionamiento de Data Protection. Si existen claves protegidas en reposo, comprobar su descifrado. Ensayar persistencia tras recreación del contenedor y registrar el resultado. Restaurar datos no valida por sí solo volver a una versión anterior de la aplicación.
+Para repetir la validación: comprobar el checksum; restaurar el conjunto en un entorno aislado sin sobrescribir el original; usar imagen compatible, rutas y permisos correctos. Verificar integridad SQLite y relaciones, login, saldos, pedidos/reservas, lectura de comprobantes e imágenes de productos y funcionamiento de Data Protection. Si existen claves protegidas en reposo, comprobar su descifrado. Ensayar persistencia tras recreación del contenedor y registrar el resultado. Restaurar datos no valida por sí solo volver a una versión anterior de la aplicación.
 
 ## Actualización y rollback
 
@@ -160,7 +160,7 @@ Los reinicios interrumpen circuitos InteractiveServer y pueden perder formulario
 - Configurar captura/rotación/retención de logs de app y proxy. Revisar errores de arranque, permisos, SQLite, espacio libre, uploads, reconexiones y certificados; no registrar cuerpos de comprobantes, credenciales ni datos comerciales innecesarios. Restringir acceso a logs/backups.
 - Desde fuera del VPS: validar DNS y HTTPS, ausencia de exposición directa de la app, redirecciones y rechazo de hosts/cabeceras no confiables.
 - Verificar login/logout, rutas privadas, acceso anónimo denegado a comprobantes, antiforgery, estilos aislados, WebSockets y reconexión.
-- Recrear controladamente el contenedor y comprobar persistencia de datos, comprobantes y claves; verificar permisos de escritura y lectura sin abrir directorios privados al público.
+- Recrear controladamente el contenedor y comprobar persistencia de datos, comprobantes, imágenes de productos y claves; verificar permisos de escritura y lectura sin abrir directorios privados al público.
 - En staging con datos de prueba: compra y recepción parcial por compra con reservas conservadas; pedido con reserva y venta sustituta sin reservas sobrantes; pago y saldo; actividad mensual del cliente. No contaminar contabilidad real con operaciones ficticias.
 - Completar QA real móvil ~390px y escritorio, incluidos formularios de fecha, select de reserva inicial/expandido, confirmaciones, recepción y desplegables del cliente. Guardar evidencia operativa privada y resultado.
 
@@ -233,7 +233,7 @@ No configurar ASPNETCORE_FORWARDEDHEADERS_ENABLED ni mecanismos alternativos que
 Usar los directorios existentes del VPS bajo `/opt/resellmanager/data/`; no crear otra estructura bajo `/srv`. Deben permitir lectura/escritura al UID/GID del usuario `app` de la imagen (1654:1654 actualmente; verificar si cambia la imagen), incluidos los archivos ya existentes. Comprobar o ajustar los directorios sin borrar su contenido:
 
 ```bash
-sudo install -d -m 0700 -o 1654 -g 1654 /opt/resellmanager/data/database /opt/resellmanager/data/comprobantes /opt/resellmanager/data/dataprotection
+sudo install -d -m 0700 -o 1654 -g 1654 /opt/resellmanager/data/database /opt/resellmanager/data/comprobantes /opt/resellmanager/data/dataprotection /opt/resellmanager/data/productos
 umask 077
 touch .env
 chmod 600 .env
@@ -247,6 +247,14 @@ ConnectionStrings__ResellManager="Data Source=/app/data/database/resellmanager.d
 AlmacenamientoComprobantes__DirectorioBase=/app/data/comprobantes
 DataProtection__KeysPath=/app/data/dataprotection
 ```
+
+Compose fija `AlmacenamientoImagenesProducto__DirectorioBase=/app/data/productos` y monta
+`/opt/resellmanager/data/productos:/app/data/productos`. El directorio debe existir con
+permisos para el usuario de la app antes de recrear el contenedor. Para staging usar
+`/opt/resellmanager-staging/data/productos:/app/data/productos` con la misma configuración
+interna. El backup de staging también debe cubrir `database/`, `comprobantes/`,
+`dataprotection/` y `productos/`. No aplicar estos cambios directamente en el VPS
+sin la operación de despliegue correspondiente.
 
 Compose fija ASPNETCORE_ENVIRONMENT=Production, ASPNETCORE_HTTP_PORTS=8080,
 ASPNETCORE_HTTPS_PORT=443 y ReverseProxy__KnownProxy=172.29.213.2.
