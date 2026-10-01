@@ -1,15 +1,17 @@
 @inject IServiceScopeFactory ScopeFactory
 
-<BuscadorEntidad TItem="ClienteDto" Id="@Id" Etiqueta="Cliente"
-                 Placeholder="Buscar por nombre completo o teléfono"
-                 SinResultados="No se encontraron clientes. Puedes registrar uno desde Clientes."
-                 Seleccionado="Seleccionado" TextoSeleccionado="@(Seleccionado is null ? null : ClientePresentacion.NombreCompleto(Seleccionado))"
-                 Deshabilitado="Deshabilitado" Buscar="BuscarAsync" OnSeleccionado="OnSeleccionado">
-    <Resultado Context="cliente">
-        <strong>@ClientePresentacion.NombreCompleto(cliente)</strong>
-        <span>@cliente.Telefono</span>
-    </Resultado>
-</BuscadorEntidad>
+<div class="rm-client-picker min-w-0">
+    <BuscadorEntidad TItem="ClienteDto" Id="@Id" Etiqueta="Cliente"
+                     Placeholder="Buscar por nombre completo o teléfono"
+                     SinResultados="No se encontraron clientes. Puedes registrar uno desde Clientes."
+                     Seleccionado="Seleccionado" TextoSeleccionado="@(Seleccionado is null ? null : ClientePresentacion.NombreCompleto(Seleccionado))"
+                     Deshabilitado="Deshabilitado" Buscar="BuscarAsync" OnSeleccionado="OnSeleccionado">
+        <Resultado Context="cliente">
+            <strong class="min-w-0 text-sm font-semibold leading-6 text-ui-ink [overflow-wrap:anywhere]">@ClientePresentacion.NombreCompleto(cliente)</strong>
+            <span class="text-sm leading-5 text-ui-muted [overflow-wrap:anywhere]">@cliente.Telefono</span>
+        </Resultado>
+    </BuscadorEntidad>
+</div>
 
 @code {
     [Parameter] public string Id { get; set; } = "pago-cliente";

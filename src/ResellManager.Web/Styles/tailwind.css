@@ -101,6 +101,18 @@
   }
 }
 
-/* Product forms use the shared controls, including their validation state. */
-.rm-product-form .validation-message { @apply mt-1 text-sm leading-5 text-ui-danger; }
-.rm-product-form .ui-input.invalid { @apply border-ui-danger; }
+/* Migrated forms use the shared controls, including their validation state. */
+:is(.rm-product-form, .rm-client-form) .validation-message { @apply mt-1 text-sm leading-5 text-ui-danger; }
+:is(.rm-product-form, .rm-client-form) .ui-input.invalid { @apply border-ui-danger; }
+
+/* Only the client picker adopts these controls; other entity pickers retain their styling. */
+.rm-client-picker .form-field { @apply min-w-0; }
+.rm-client-picker .field-help { @apply text-sm leading-6 text-ui-muted; }
+.rm-client-picker .lookup-results { @apply grid min-w-0 gap-2 rounded-2xl; }
+.rm-client-picker .lookup-result {
+  @apply ui-button grid w-full min-w-0 justify-stretch gap-1 border-ui-border bg-white text-left;
+  margin-bottom: 0;
+}
+.rm-client-picker .lookup-result:hover { @apply border-ui-accent bg-ui-accent/5 outline-none; }
+.rm-client-picker .lookup-result:focus-visible { @apply border-ui-accent bg-ui-accent/5 outline-2 outline-offset-2 outline-ui-accent; }
+.rm-client-picker .lookup-result:disabled { @apply border-ui-border bg-ui-canvas text-ui-muted outline-none; }

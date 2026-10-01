@@ -1,29 +1,47 @@
 @typeparam T
 @inject ILogger<ActividadMensual<T>> Logger
-<section class="history-panel">
-    <h3><button type="button" class="history-month-toggle" aria-expanded="@Abierta" @onclick="() => Abierta = !Abierta"><span aria-hidden="true">@(Abierta ? "▼" : "▶")</span> @Titulo</button></h3>
+
+<section class="ui-card grid min-w-0 gap-4 p-4 sm:p-5" aria-label="@Titulo">
+    <h3 class="m-0">
+        <button type="button" class="ui-button w-full justify-between border-ui-border bg-ui-canvas text-left text-base text-ui-ink hover:bg-ui-accent/5" aria-expanded="@(Abierta ? "true" : "false")" @onclick="() => Abierta = !Abierta">
+            <span class="min-w-0 [overflow-wrap:anywhere]">@Titulo</span>
+            <svg class="size-5 shrink-0 text-ui-muted transition-transform duration-150 motion-reduce:transition-none @(Abierta ? "rotate-90" : "")" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7" /></svg>
+        </button>
+    </h3>
     @if (Abierta)
     {
         @foreach (var mes in Meses)
         {
-            <h4>@NombreMes(mes.Mes!.Value)</h4>
-            <div class="timeline-list">
-                @foreach (var registro in mes.Registros) { @Registro(registro) }
+            <div class="grid min-w-0 gap-3">
+                <h4 class="m-0 px-1 text-sm font-semibold text-ui-muted">@NombreMes(mes.Mes!.Value)</h4>
+                <div class="grid min-w-0 gap-3">
+                    @foreach (var registro in mes.Registros)
+                    {
+                        @Registro(registro)
+                    }
+                </div>
             </div>
         }
-        @if (Cargando) { <p role="status">Cargando actividad...</p> }
+        @if (Cargando)
+        {
+            <p class="m-0 px-1 text-sm leading-6 text-ui-muted" role="status">Cargando actividad...</p>
+        }
         else if (Error is not null)
         {
             <p class="mensaje-error" role="alert">@Error</p>
-            <button class="secondary-button" @onclick="CargarAsync">Reintentar</button>
+            <button class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" @onclick="CargarAsync">Reintentar</button>
         }
-        else if (Meses.Count == 0) { <p class="compact-empty">@Vacio</p> }
+        else if (Meses.Count == 0)
+        {
+            <p class="m-0 px-1 text-sm leading-6 text-ui-muted">@Vacio</p>
+        }
         @if (!Cargando && Error is null && Anterior is { } anterior)
         {
-            <button class="secondary-button" @onclick="CargarAsync">Cargar @NombreMes(anterior).ToLowerInvariant()</button>
+            <button class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" @onclick="CargarAsync">Cargar @NombreMes(anterior).ToLowerInvariant()</button>
         }
     }
 </section>
+
 @code {
     [Parameter] public int ClienteId { get; set; }
     [Parameter] public string Titulo { get; set; } = "";
