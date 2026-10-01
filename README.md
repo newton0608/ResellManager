@@ -62,3 +62,44 @@ Los comprobantes se guardan en `App_Data` por defecto, fuera de `wwwroot`. `Alma
 Para construir y ejecutar la imagen .NET 8 con Caddy, consulta el
 [runbook de despliegue V1](docs/21_Despliegue_V1.md#construcción-y-arranque-en-ubuntu).
 Incluye configuración externa, permisos, backups y restauración, hechos operativos confirmados y verificaciones pendientes.
+
+## Tailwind CSS v4 (infraestructura)
+
+Se conservan `wwwroot/app.css`, los estilos aislados de Blazor y todas las clases actuales. La fuente `src/ResellManager.Web/Styles/tailwind.css` importa únicamente `theme.css` y `utilities.css`, sin Preflight ni reset global, siguiendo la [documentación de Tailwind v4](https://tailwindcss.com/docs/preflight#disabling-preflight). El enlace al CSS compilado se carga antes de los estilos existentes en `Components/App.razor`. Las reglas existentes sin capa conservan prioridad sobre las utilities; no se usa `important`.
+
+Tailwind y su CLI están fijados en `4.3.3`. Los scripts precargan `scripts/tailwind-resolver.mjs`: en rutas que contienen `#` (como `D:\C#\...`), resuelve los dos imports CSS del paquete con Node mediante el hook `__tw_resolve` de Tailwind. Esto evita que `enhanced-resolve` entregue rutas con bytes NUL y mantiene la CLI oficial para build/watch; en Docker, cuya ruta no contiene `#`, se usa el resolutor normal. Este hook es interno: verifica esta compatibilidad al actualizar Tailwind.
+
+Desde la raíz, con Node.js 24 y npm:
+
+```bash
+npm install
+npm run css:build
+```
+
+Durante desarrollo, ejecuta el watcher en una terminal y Blazor en otra:
+
+```bash
+npm run css:watch
+```
+
+```bash
+dotnet run --project src/ResellManager.Web/ResellManager.Web.csproj
+```
+
+`css:watch` regenera `src/ResellManager.Web/wwwroot/css/tailwind.css` al cambiar las fuentes. `css:build` produce el mismo archivo minificado para producción. El CSS compilado se versiona como asset normal: `dotnet run` y `dotnet build` no ejecutan npm ni necesitan Node o un watcher activo. No edites el archivo generado; ejecuta `npm run css:build` y conserva su actualización cuando agregues utilities. `node_modules/` ya está excluido por `.gitignore`; `package-lock.json` se versiona.
+
+El [escaneo de fuentes](https://tailwindcss.com/docs/detecting-classes-in-source-files) usa `source(none)` y `@source` con rutas relativas al CSS fuente: todos los `.razor`, `.cshtml`, `.html`, `.cs` y `.js` de `src/ResellManager.Web`. Se excluyen `bin`, `obj` y `wwwroot/vendor`; no se escanean el CSS existente, los paquetes npm ni otras capas de la solución. Usa nombres completos y literales (por ejemplo, `text-red-600`), también en condiciones Razor/C#; las concatenaciones como `text-@color-600` no son detectables. No hay `tailwind.config.js` ni configuración `content` de v3.
+
+Para publicar fuera de Docker, genera el CSS **antes** de publicar:
+
+```bash
+npm ci --include=dev
+npm run css:build
+dotnet publish src/ResellManager.Web/ResellManager.Web.csproj -c Release
+```
+
+El Dockerfile usa una etapa `node:24-bookworm-slim`, instala las versiones del lockfile con `npm ci --include=dev` y ejecuta `npm run css:build`. La etapa SDK .NET 10 copia ese CSS antes de `dotnet publish`; la imagen final sigue basada en ASP.NET Core 10 y recibe solo la aplicación publicada, sin Node, npm ni `node_modules`. `.dockerignore` excluye el CSS compilado local para construirlo siempre desde las fuentes.
+
+```bash
+docker build -t resellmanager:local .
+```

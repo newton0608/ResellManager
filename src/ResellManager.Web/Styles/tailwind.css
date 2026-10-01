@@ -1,0 +1,10 @@
+/* No Preflight: preserve app.css and Blazor's existing scoped styles. */
+@layer theme, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+
+/* Paths are relative to this file, independent of the CLI working directory. */
+@source "../**/*.{razor,cshtml,html,cs,js}";
+@source not "../bin";
+@source not "../obj";
+@source not "../wwwroot/vendor";
