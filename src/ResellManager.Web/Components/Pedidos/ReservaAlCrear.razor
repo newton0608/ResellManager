@@ -1,25 +1,25 @@
 @inject IServiceScopeFactory Scopes
 @inject ILogger<ReservaAlCrear> Logger
-<section class="origin-guidance reservation-prompt" aria-label="Reserva opcional">
+<section class="ui-card mt-5 grid min-w-0 max-w-full gap-4 p-4 sm:p-5" aria-label="Reserva opcional">
     @if (Error is not null)
     {
         <p class="mensaje-error" role="alert">@Error</p>
-        <button type="button" class="secondary-button" disabled="@(Deshabilitado || Cargando)" @onclick="CargarAsync">Reintentar consulta</button>
+        <button type="button" class="ui-button min-w-0 border-ui-control bg-white text-ui-ink hover:border-ui-ink hover:bg-ui-canvas" disabled="@(Deshabilitado || Cargando)" @onclick="CargarAsync">Reintentar consulta</button>
     }
-    @if (Cargando) { <p role="status">Consultando unidades para reservar...</p> }
+    @if (Cargando) { <p class="m-0 text-sm leading-6 text-ui-muted" role="status">Consultando unidades para reservar...</p> }
     else if (!Aceptada)
     {
-        <p>Hay @Opciones.Count unidades compatibles sin reserva. Puedes reservar mercancía comprada, en tránsito o disponible.</p>
-        <div class="form-actions reservation-prompt-actions">
-            <button type="button" class="secondary-button" disabled="@(Deshabilitado || Opciones.Count == 0)" @onclick="AceptarAsync">Reservar para este pedido</button>
-            <button type="button" class="inline-button" disabled="@Deshabilitado" @onclick="Continuar">Continuar sin reservar</button>
+        <p class="m-0 text-sm leading-6 text-ui-muted">Hay @Opciones.Count unidades compatibles sin reserva. Puedes reservar mercancía comprada, en tránsito o disponible.</p>
+        <div class="grid min-w-0 gap-3 sm:grid-cols-2">
+            <button type="button" class="ui-button min-w-0 border-ui-control bg-white text-ui-ink hover:border-ui-ink hover:bg-ui-canvas" disabled="@(Deshabilitado || Opciones.Count == 0)" @onclick="AceptarAsync">Reservar para este pedido</button>
+            <button type="button" class="ui-button min-w-0 border-ui-control bg-white text-ui-ink hover:border-ui-ink hover:bg-ui-canvas" disabled="@Deshabilitado" @onclick="Continuar">Continuar sin reservar</button>
         </div>
     }
     else
     {
-        <div class="form-field">
-            <label for="@Id">Unidad para reservar</label>
-            <select id="@Id" value="" disabled="@(Deshabilitado || Seleccionadas.Count >= Cantidad || Opciones.Count == 0)" @onchange="Elegir">
+        <div class="grid min-w-0 gap-2">
+            <label class="text-sm font-medium text-ui-ink" for="@Id">Unidad para reservar</label>
+            <select class="ui-input" id="@Id" value="" disabled="@(Deshabilitado || Seleccionadas.Count >= Cantidad || Opciones.Count == 0)" @onchange="Elegir">
                 <option value="">Selecciona una unidad</option>
                 @foreach (var unidad in Opciones)
                 {
@@ -27,17 +27,19 @@
                 }
             </select>
         </div>
-        <p>Selecciona hasta @Cantidad unidades. No se reservarán hasta confirmar el pedido.</p>
-        <ul>
+        <p class="m-0 text-sm leading-6 text-ui-muted">Selecciona hasta @Cantidad unidades. No se reservarán hasta confirmar el pedido.</p>
+        <ul class="m-0 grid min-w-0 list-none gap-3 p-0">
             @foreach (var unidad in Seleccionadas)
             {
-                <li><span class="code-value">@unidad.CodigoInterno · @InventarioPresentacion.Estado(unidad.Estado) · @VentaPresentacion.Moneda(unidad.Costo)</span>
-                    <button type="button" class="inline-button" disabled="@Deshabilitado" @onclick="() => Quitar(unidad)">Quitar</button></li>
+                <li class="grid min-w-0 gap-3 rounded-2xl border border-solid border-ui-border bg-ui-canvas p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                    <span class="min-w-0 text-sm font-medium leading-6 text-ui-ink [overflow-wrap:anywhere]">@unidad.CodigoInterno · @InventarioPresentacion.Estado(unidad.Estado) · <span class="inline-block max-w-full [overflow-wrap:anywhere]">@VentaPresentacion.Moneda(unidad.Costo)</span></span>
+                    <button type="button" class="ui-button min-w-0 border-ui-danger/30 bg-white text-ui-danger hover:border-ui-danger hover:bg-ui-danger/5" disabled="@Deshabilitado" @onclick="() => Quitar(unidad)">Quitar</button>
+                </li>
             }
         </ul>
         @if (Seleccionadas.Count > Cantidad) { <p class="mensaje-error" role="alert">Quita unidades: la selección supera la cantidad del detalle.</p> }
-        <div class="form-actions reservation-prompt-actions">
-            <button type="button" class="inline-button" disabled="@Deshabilitado" @onclick="Continuar">Continuar sin reservar</button>
+        <div class="grid min-w-0 gap-3 sm:grid-cols-2">
+            <button type="button" class="ui-button min-w-0 border-ui-control bg-white text-ui-ink hover:border-ui-ink hover:bg-ui-canvas" disabled="@Deshabilitado" @onclick="Continuar">Continuar sin reservar</button>
         </div>
     }
 </section>

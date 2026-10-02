@@ -1,10 +1,15 @@
 @inject IServiceScopeFactory Scopes
-<BuscadorEntidad TItem="PedidoDto" Id="venta-pedido" Etiqueta="Pedido"
-    Placeholder="Buscar por código de pedido o nombre del cliente" Seleccionado="Seleccionado"
-    TextoSeleccionado="@(Seleccionado is null ? null : Seleccionado.CodigoInterno + " · " + Seleccionado.Cliente)"
-    Deshabilitado="Deshabilitado" Buscar="BuscarAsync" OnSeleccionado="OnSeleccionado">
-    <Resultado Context="pedido"><strong>@pedido.CodigoInterno</strong><span>@pedido.Cliente</span></Resultado>
-</BuscadorEntidad>
+<div class="rm-order-picker min-w-0">
+    <BuscadorEntidad TItem="PedidoDto" Id="venta-pedido" Etiqueta="Pedido"
+        Placeholder="Buscar por código de pedido o nombre del cliente" Seleccionado="Seleccionado"
+        TextoSeleccionado="@(Seleccionado is null ? null : Seleccionado.CodigoInterno + " · " + Seleccionado.Cliente)"
+        Deshabilitado="Deshabilitado" Buscar="BuscarAsync" OnSeleccionado="OnSeleccionado">
+        <Resultado Context="pedido">
+            <strong class="min-w-0 text-sm font-semibold text-ui-ink [overflow-wrap:anywhere]">@pedido.CodigoInterno</strong>
+            <span class="min-w-0 text-sm leading-6 text-ui-muted [overflow-wrap:anywhere]">@pedido.Cliente</span>
+        </Resultado>
+    </BuscadorEntidad>
+</div>
 @code {
     [Parameter] public PedidoDto? Seleccionado { get; set; }
     [Parameter] public bool Deshabilitado { get; set; }
