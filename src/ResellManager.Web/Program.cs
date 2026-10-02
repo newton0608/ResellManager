@@ -6,6 +6,7 @@ using ResellManager.Application.Interfaces;
 using ResellManager.Infrastructure;
 using ResellManager.Infrastructure.Storage;
 using ResellManager.Web.Components;
+using ResellManager.Web.Catalogo;
 using ResellManager.Web.Endpoints;
 using ResellManager.Web.Identity;
 using ResellManager.Web.Hosting;
@@ -40,6 +41,7 @@ builder.Services.AddRateLimiter(options =>
 });
 
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddScoped<ICatalogoPublicoClient, CatalogoPublicoClient>();
 
 builder.Services.AddSingleton<IEmailSender<IdentityUser>, NoOpEmailSender>();
 

@@ -1,0 +1,24 @@
+@inherits LayoutComponentBase
+
+<a class="skip-link" href="#contenido-principal">Ir al contenido principal</a>
+<div class="rm-ui flex min-h-screen flex-col bg-ui-canvas text-ui-ink">
+    <header class="border-x-0 border-t-0 border-b border-solid border-ui-border bg-white">
+        <div class="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+            <a href="/catalogo" aria-label="ResellManager, inicio del catálogo" class="shrink-0">
+                <img src="/branding/resellmanager-logo-dark.png" alt="ResellManager"
+                     class="block h-10 w-40 max-w-full object-cover" width="1536" height="1024" />
+            </a>
+            <nav aria-label="Navegación del catálogo">
+                <a href="/catalogo" class="text-sm font-semibold text-ui-accent no-underline">Catálogo</a>
+            </nav>
+        </div>
+    </header>
+    <main id="contenido-principal" tabindex="-1" class="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
+        @Body
+    </main>
+    <footer class="border-x-0 border-b-0 border-t border-solid border-ui-border bg-white">
+        <div class="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-6 text-sm text-ui-muted sm:px-6 lg:px-8">
+            <span>ResellManager</span><span>Ropa, accesorios, perfumes y más.</span>
+        </div>
+    </footer>
+</div>

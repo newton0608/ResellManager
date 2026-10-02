@@ -41,10 +41,10 @@ public sealed class FormularioUxTests
         Assert.Contains(esperado, html);
         if (ruta == "/")
         {
-            Assert.Contains("href=\"/pagos\">Registrar abono", html);
-            Assert.Contains("href=\"/ventas/nueva?modo=directa\">Venta directa", html);
-            Assert.Contains("href=\"/pedidos/nuevo\">Registrar pedido", html);
-            Assert.Contains("href=\"/clientes\">Buscar cliente", html);
+            HtmlPrueba.Enlace(html, "/pagos", "Registrar abono");
+            HtmlPrueba.Enlace(html, "/ventas/nueva?modo=directa", "Venta directa");
+            HtmlPrueba.Enlace(html, "/pedidos/nuevo", "Registrar pedido");
+            HtmlPrueba.Enlace(html, "/clientes", "Buscar cliente");
             Assert.Contains("Pendiente de entregar", html);
             Assert.DoesNotContain("Pedidos activos", html);
         }

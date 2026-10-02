@@ -401,16 +401,16 @@ public sealed class DashboardUiTests
         );
 
         Assert.Contains("IDashboardService", home, StringComparison.Ordinal);
-        Assert.Contains("id=\"titulo-dashboard\">Inicio", home, StringComparison.Ordinal);
+        HtmlPrueba.TituloPrincipal(home, "titulo-dashboard", "Inicio");
         Assert.Contains("id=\"titulo-resumen\">Resumen", home, StringComparison.Ordinal);
         Assert.Contains("Total por cobrar", home, StringComparison.Ordinal);
         Assert.Contains("Inventario al costo", home, StringComparison.Ordinal);
         Assert.Contains("Pendiente de entregar", home, StringComparison.Ordinal);
         Assert.Contains("Dashboard.PendientesEntrega", home, StringComparison.Ordinal);
         Assert.Contains("Acciones rápidas", home, StringComparison.Ordinal);
-        Assert.Contains("href=\"/pagos\">Registrar abono", home, StringComparison.Ordinal);
-        Assert.Contains("href=\"/pedidos/nuevo\">Registrar pedido", home, StringComparison.Ordinal);
-        Assert.Contains("href=\"/clientes\">Buscar cliente", home, StringComparison.Ordinal);
+        HtmlPrueba.Enlace(home, "/pagos", "Registrar abono");
+        HtmlPrueba.Enlace(home, "/pedidos/nuevo", "Registrar pedido");
+        HtmlPrueba.Enlace(home, "/clientes", "Buscar cliente");
         Assert.Contains("href=\"/clientes?saldo=pendiente\"", home, StringComparison.Ordinal);
         Assert.Contains("href=\"/inventario?estado=vendida\"", home, StringComparison.Ordinal);
         Assert.Contains("href=\"/inventario?estado=disponible\"", home, StringComparison.Ordinal);

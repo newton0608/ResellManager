@@ -1,0 +1,61 @@
+<div class="mb-6"><a href="/catalogo" class="secondary-button">← Volver al catálogo</a></div>
+@if (Cargando)
+{
+    <h1><span class="text-2xl">Cargando producto…</span></h1>
+    <p class="flex items-center gap-3 text-sm text-ui-muted" role="status" aria-live="polite"><span class="spinner" aria-hidden="true"></span>Estamos preparando el detalle.</p>
+}
+else if (NoDisponible)
+{
+    <CatalogoEstado Titulo="Este producto ya no está disponible" Mensaje="Puede que se haya vendido o reservado. Explora el catálogo para encontrar otros productos."
+                    EncabezadoPrincipal="true" MostrarRegreso="true" />
+}
+else if (Error is not null)
+{
+    <CatalogoEstado Titulo="No pudimos abrir este producto" Mensaje="@Error" EsError="true" EncabezadoPrincipal="true" OnAccion="OnReintentar" />
+}
+else if (Producto is not null)
+{
+    <article class="grid grid-cols-1 items-start gap-6 md:grid-cols-2 md:gap-10 lg:gap-14" aria-labelledby="titulo-producto-publico">
+        <div class="overflow-hidden rounded-3xl border border-solid border-ui-border bg-white">
+            <ImagenCatalogo ProductoId="Producto.Id" Nombre="@Producto.Nombre" TieneImagen="Producto.TieneImagenPrincipal" Prioritaria="true" />
+        </div>
+        <div class="min-w-0 py-2 md:py-4">
+            <a href="/catalogo?categoriaId=@Producto.CategoriaId" class="text-sm text-ui-muted underline underline-offset-4">@Producto.Categoria</a>
+            <h1 id="titulo-producto-publico" class="mt-3"><span class="block break-words text-2xl leading-tight tracking-tight sm:text-3xl lg:text-4xl">@Producto.Nombre</span></h1>
+            <div class="my-6 flex flex-wrap items-center gap-4">
+                <p class="m-0 text-3xl font-bold tabular-nums">@CatalogoPresentacion.Precio(Producto.PrecioPublico)</p>
+                @if (Producto.Disponible)
+                {
+                    <span class="rounded-full bg-ui-success/5 px-3 py-1 text-sm font-medium text-ui-success">Disponible</span>
+                }
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Producto.Descripcion))
+            {
+                <section class="mb-6" aria-labelledby="descripcion-producto-publico">
+                    <h2 id="descripcion-producto-publico">Sobre este producto</h2>
+                    <p class="text-sm leading-relaxed break-words whitespace-pre-line text-ui-muted sm:text-base">@Producto.Descripcion</p>
+                </section>
+            }
+            @if (CatalogoPresentacion.Caracteristicas(Producto).Any())
+            {
+                <section class="rounded-2xl border border-solid border-ui-border bg-white p-5" aria-labelledby="caracteristicas-producto-publico">
+                    <h2 id="caracteristicas-producto-publico">Detalles que importan</h2>
+                    <dl class="mb-0 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        @foreach (var dato in CatalogoPresentacion.Caracteristicas(Producto))
+                        {
+                            <div class="min-w-0"><dt class="text-xs text-ui-muted">@dato.Etiqueta</dt><dd class="m-0 mt-1 text-sm font-medium break-words">@dato.Valor</dd></div>
+                        }
+                    </dl>
+                </section>
+            }
+        </div>
+    </article>
+}
+
+@code {
+    [Parameter] public ProductoCatalogoDetalleDto? Producto { get; set; }
+    [Parameter] public bool Cargando { get; set; }
+    [Parameter] public bool NoDisponible { get; set; }
+    [Parameter] public string? Error { get; set; }
+    [Parameter] public EventCallback OnReintentar { get; set; }
+}
