@@ -1,9 +1,11 @@
 @inject IProveedorService ProveedorService
 @inject ILogger<ProveedorAltaPanel> Logger
 
-<section class="form-panel" aria-labelledby="titulo-alta-proveedor">
-    <h2 id="titulo-alta-proveedor" tabindex="-1" @ref="Titulo">Registrar proveedor para esta compra</h2>
-    <p>La compra permanece abierta. Al guardar se seleccionará este proveedor.</p>
+<section class="rm-purchase-supplier ui-card grid min-w-0 gap-5 p-4 sm:p-6" aria-labelledby="titulo-alta-proveedor">
+    <div class="grid gap-2">
+        <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-accent" id="titulo-alta-proveedor" tabindex="-1" @ref="Titulo">Registrar proveedor para esta compra</h2>
+        <p class="m-0 text-sm leading-6 text-ui-muted">La compra permanece abierta. Al guardar se seleccionará este proveedor.</p>
+    </div>
     <ProveedorForm Modelo="Modelo" Guardando="Guardando" ErrorGuardado="@Error"
                    OnGuardar="GuardarAsync" OnCancelar="OnCancelar" />
 </section>

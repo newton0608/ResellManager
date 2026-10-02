@@ -6,132 +6,107 @@
 
 <PageTitle>Compras | ResellManager</PageTitle>
 
-<section class="page-heading" aria-labelledby="titulo-compras">
-    <div>
-        <p class="eyebrow">Abastecimiento</p>
-        <h1 id="titulo-compras">Compras</h1>
-        <p class="page-lead">Consulta el abastecimiento, sus proveedores y comprobantes.</p>
-    </div>
-    <a class="primary-button" href="/compras/nueva">Nueva compra</a>
-</section>
-
-@if (!string.IsNullOrWhiteSpace(MensajeExito))
-{
-    <div class="mensaje-exito" role="status">@MensajeExito</div>
-}
-
-<FiltrosHistorial Id="filtros-compras" Modelo="Filtros" Placeholder="Buscar por código o proveedor" Ocupado="Cargando" OnAplicar="AplicarFiltrosAsync" OnLimpiar="LimpiarFiltrosAsync">
-
-</FiltrosHistorial>
-
-@if (!string.IsNullOrWhiteSpace(ErrorMessage))
-{
-    <div class="mensaje-error alert-with-action" role="alert">
-        <span>@ErrorMessage</span>
-        <button class="inline-button" type="button" disabled="@Cargando" @onclick="CargarAsync">Reintentar</button>
-    </div>
-}
-
-@if (Cargando)
-{
-    <div class="loading-state" role="status" aria-live="polite">
-        <span class="spinner" aria-hidden="true"></span>
-        Cargando compras...
-    </div>
-}
-else if (string.IsNullOrWhiteSpace(ErrorMessage) && ComprasRegistradas.Count == 0)
-{
-    <section class="empty-state" aria-labelledby="titulo-sin-compras">
-        <span class="empty-state-icon" aria-hidden="true"><NavIcon Name="bag" /></span>
-        <h2 id="titulo-sin-compras">@(Filtros.Activo ? "No se encontraron compras con estos filtros" : "Aún no hay compras")</h2>
-        <p>Registra la primera compra con un proveedor y al menos un producto.</p>
-        <a class="primary-button" href="/compras/nueva">Registrar compra</a>
+<div class="rm-purchases grid min-w-0 gap-6 pb-4">
+    <section class="flex items-start justify-between gap-4" aria-labelledby="titulo-compras">
+        <div class="min-w-0 space-y-2">
+            <p class="m-0 text-xs font-semibold tracking-wide text-ui-muted uppercase">Abastecimiento</p>
+            <h1 class="m-0 text-3xl font-bold tracking-tight text-ui-ink sm:text-4xl" id="titulo-compras">Compras</h1>
+            <p class="m-0 max-w-2xl text-sm leading-6 text-ui-muted">Consulta el abastecimiento, sus proveedores y comprobantes.</p>
+        </div>
+        <a class="ui-button shrink-0 bg-ui-accent text-white hover:bg-ui-accent-hover" href="/compras/nueva">
+            <svg class="size-5 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
+            <span class="sr-only sm:not-sr-only">Nueva compra</span>
+        </a>
     </section>
-}
-else if (string.IsNullOrWhiteSpace(ErrorMessage))
-{
-    <section class="data-panel" aria-labelledby="titulo-listado-compras">
-        <div class="data-panel-heading">
-            <h2 id="titulo-listado-compras">Historial de compras</h2>
-            <span>@ComprasRegistradas.Count @(ComprasRegistradas.Count == 1 ? "compra" : "compras")</span>
-        </div>
 
-        <div class="desktop-table purchase-desktop-table">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th scope="col">Código</th>
-                        <th scope="col">Fecha</th>
-                        <th scope="col">Origen</th>
-                        <th scope="col">Proveedor</th>
-                        <th scope="col" class="numeric-cell">Total</th>
-                        <th scope="col">Comprobante</th>
-                        <th scope="col" class="actions-cell">Acción</th>
-                    </tr>
-                </thead>
-                @foreach (var grupo in Grupos)
-                {
-                <tbody>
-                    <tr class="history-month-row"><th scope="rowgroup" colspan="7"><button class="history-month-toggle" type="button" aria-expanded="@Meses.Abierto(grupo.Anio, grupo.Mes)" @onclick="() => Meses.Alternar(grupo.Anio, grupo.Mes)"><span aria-hidden="true">@(Meses.Abierto(grupo.Anio, grupo.Mes) ? "▼" : "▶")</span> @grupo.Titulo</button></th></tr>
-                    @foreach (var compra in Meses.Abierto(grupo.Anio, grupo.Mes) ? grupo.Registros : Array.Empty<CompraDto>())
-                    {
-                        <tr>
-                            <td><span class="code-value">@compra.CodigoInterno</span></td>
-                            <td>@compra.FechaCompra.ToString("dd/MM/yyyy")</td>
-                            <td>
-                                <span class="status-badge @CompraPresentacion.ClaseOrigen(compra.Origen)">
-                                    @CompraPresentacion.Origen(compra.Origen)
-                                </span>
-                            </td>
-                            <td><strong>@compra.Proveedor</strong></td>
-                            <td class="numeric-cell"><span class="transaction-amount">@CompraPresentacion.Moneda(compra.Total)</span></td>
-                            <td>
-                                <span class="receipt-indicator @(TieneComprobante(compra) ? "receipt-attached" : "receipt-missing")">
-                                    @(TieneComprobante(compra) ? "Adjunto" : "Sin adjunto")
-                                </span>
-                            </td>
-                            <td class="actions-cell"><a class="table-action" href="/compras/@compra.Id">Ver</a></td>
-                        </tr>
-                    }
-                </tbody>
-                }
-            </table>
-        </div>
+    @if (!string.IsNullOrWhiteSpace(MensajeExito))
+    {
+        <div class="mensaje-exito" role="status">@MensajeExito</div>
+    }
 
-        <div class="mobile-card-list">
+    <FiltrosHistorial Id="filtros-compras" Modelo="Filtros" Placeholder="Buscar por código o proveedor" Ocupado="Cargando" OnAplicar="AplicarFiltrosAsync" OnLimpiar="LimpiarFiltrosAsync">
+    </FiltrosHistorial>
+
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="mensaje-error" role="alert">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <span>@ErrorMessage</span>
+                <button class="ui-button border-ui-danger/30 bg-white text-ui-danger hover:bg-ui-danger/5" type="button" disabled="@Cargando" @onclick="CargarAsync">Reintentar</button>
+            </div>
+        </div>
+    }
+
+    @if (Cargando)
+    {
+        <div class="ui-card flex items-center gap-3 p-6 text-sm text-ui-muted" role="status" aria-live="polite">
+            <span class="spinner" aria-hidden="true"></span>
+            Cargando compras...
+        </div>
+    }
+    else if (string.IsNullOrWhiteSpace(ErrorMessage) && ComprasRegistradas.Count == 0)
+    {
+        <section class="empty-state" aria-labelledby="titulo-sin-compras">
+            <div class="grid justify-items-center gap-4">
+                <span class="inline-flex size-12 items-center justify-center rounded-2xl bg-ui-accent/10 text-ui-accent" aria-hidden="true"><NavIcon Name="bag" /></span>
+                <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-sin-compras">@(Filtros.Activo ? "No se encontraron compras con estos filtros" : "Aún no hay compras")</h2>
+                <p class="m-0 max-w-md text-sm leading-6 text-ui-muted">Registra la primera compra con un proveedor y al menos un producto.</p>
+                <a class="ui-button bg-ui-accent text-white hover:bg-ui-accent-hover" href="/compras/nueva">Registrar compra</a>
+            </div>
+        </section>
+    }
+    else if (string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <section class="grid min-w-0 gap-4" aria-labelledby="titulo-listado-compras">
+            <div class="flex flex-wrap items-center justify-between gap-2 px-1">
+                <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-listado-compras">Historial de compras</h2>
+                <span class="text-sm text-ui-muted">@ComprasRegistradas.Count @(ComprasRegistradas.Count == 1 ? "compra" : "compras")</span>
+            </div>
+
             @foreach (var grupo in Grupos)
             {
-                <h3 class="history-month-title"><button class="history-month-toggle" type="button" aria-expanded="@Meses.Abierto(grupo.Anio, grupo.Mes)" @onclick="() => Meses.Alternar(grupo.Anio, grupo.Mes)"><span aria-hidden="true">@(Meses.Abierto(grupo.Anio, grupo.Mes) ? "▼" : "▶")</span> @grupo.Titulo</button></h3>
-            @foreach (var compra in Meses.Abierto(grupo.Anio, grupo.Mes) ? grupo.Registros : Array.Empty<CompraDto>())
-            {
-                <article class="entity-card purchase-card">
-                    <div class="entity-card-heading">
-                        <div>
-                            <span class="code-value">@compra.CodigoInterno</span>
-                            <h3>@compra.Proveedor</h3>
-                            <p class="entity-card-subtitle">@compra.FechaCompra.ToString("dd/MM/yyyy")</p>
-                        </div>
-                        <span class="status-badge @CompraPresentacion.ClaseOrigen(compra.Origen)">
-                            @CompraPresentacion.Origen(compra.Origen)
-                        </span>
+                <section class="grid min-w-0 gap-3" aria-label="@grupo.Titulo">
+                    <h3 class="m-0">
+                        <button class="ui-button w-full justify-between border-ui-border bg-ui-canvas text-left text-ui-ink hover:bg-white" type="button"
+                                aria-expanded="@(Meses.Abierto(grupo.Anio, grupo.Mes) ? "true" : "false")"
+                                @onclick="() => Meses.Alternar(grupo.Anio, grupo.Mes)">
+                            <span>@grupo.Titulo</span>
+                            <svg class="size-5 shrink-0 @(Meses.Abierto(grupo.Anio, grupo.Mes) ? "rotate-90" : "")" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7" /></svg>
+                        </button>
+                    </h3>
+                    @* A single responsive list serves both legacy desktop-table and mobile-card-list views. *@
+                    <div class="desktop-table mobile-card-list grid gap-3" role="list">
+                        @foreach (var compra in Meses.Abierto(grupo.Anio, grupo.Mes) ? grupo.Registros : Array.Empty<CompraDto>())
+                        {
+                            <article class="ui-card min-w-0" role="listitem">
+                                <a class="grid min-w-0 grid-cols-[minmax(0,1fr)_1.25rem] items-start gap-x-3 gap-y-2 rounded-3xl p-4 text-ui-ink no-underline transition-colors duration-150 hover:bg-ui-accent/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-accent motion-reduce:transition-none sm:grid-cols-[minmax(0,1fr)_auto_1.25rem] sm:items-center sm:gap-x-5 sm:p-5"
+                                   href="/compras/@compra.Id" aria-label="@($"Ver compra {compra.CodigoInterno}")">
+                                    <div class="grid min-w-0 gap-1">
+                                        <h3 class="m-0 text-base font-semibold leading-6 text-ui-ink [overflow-wrap:anywhere]">@compra.Proveedor</h3>
+                                        <span class="text-sm leading-6 text-ui-muted">@compra.FechaCompra.ToString("dd/MM/yyyy")</span>
+                                        <span class="max-w-full font-mono text-xs leading-5 break-all text-ui-muted">@compra.CodigoInterno</span>
+                                    </div>
+                                    <div class="col-start-1 min-w-0 sm:col-start-2 sm:row-start-1 sm:text-right">
+                                        <p class="m-0 text-lg font-semibold leading-6 tracking-tight text-ui-ink tabular-nums [overflow-wrap:anywhere]">@CompraPresentacion.Moneda(compra.Total)</p>
+                                        <span class="text-xs leading-5 text-ui-muted">Total · @compra.Detalles.Count @(compra.Detalles.Count == 1 ? "detalle" : "detalles")</span>
+                                    </div>
+                                    <svg class="col-start-2 row-start-1 row-span-2 mt-1 size-5 text-ui-muted sm:col-start-3 sm:row-span-1 sm:mt-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7" /></svg>
+                                </a>
+                                <div class="flex flex-wrap items-center justify-between gap-2 border-0 border-t border-solid border-ui-border px-4 py-3 sm:px-5">
+                                    <span class="status-badge @CompraPresentacion.ClaseOrigen(compra.Origen)">@CompraPresentacion.Origen(compra.Origen)</span>
+                                    <span class="inline-flex items-center gap-2 text-xs leading-5 @(TieneComprobante(compra) ? "text-ui-success" : "text-ui-muted")">
+                                        <svg class="size-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6M8 13h8M8 17h5" /></svg>
+                                        @(TieneComprobante(compra) ? "Adjunto" : "Sin adjunto")
+                                    </span>
+                                </div>
+                            </article>
+                        }
                     </div>
-                    <dl class="inventory-card-details">
-                        <div><dt>Total</dt><dd><strong>@CompraPresentacion.Moneda(compra.Total)</strong></dd></div>
-                        <div><dt>Detalles</dt><dd>@compra.Detalles.Count</dd></div>
-                        <div>
-                            <dt>Comprobante</dt>
-                            <dd>@(TieneComprobante(compra) ? "Adjunto" : "Sin adjunto")</dd>
-                        </div>
-                    </dl>
-                    <div class="entity-card-actions">
-                        <a class="secondary-button" href="/compras/@compra.Id">Ver compra</a>
-                    </div>
-                </article>
+                </section>
             }
-            }
-        </div>
-    </section>
-}
+        </section>
+    }
+</div>
 
 @code {
     [SupplyParameterFromQuery(Name = "buscar")] public string? BuscarConsulta { get; set; }

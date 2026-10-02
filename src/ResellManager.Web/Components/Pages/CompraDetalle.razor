@@ -6,167 +6,142 @@
 
 <PageTitle>@(Compra is null ? "Compra" : Compra.CodigoInterno) | ResellManager</PageTitle>
 
-@if (Cargando)
-{
-    <div class="loading-state" role="status" aria-live="polite">
-        <span class="spinner" aria-hidden="true"></span>
-        Cargando compra...
-    </div>
-}
-else if (!string.IsNullOrWhiteSpace(ErrorCarga))
-{
-    <section class="error-state" role="alert">
-        <h1>No fue posible cargar la compra</h1>
-        <p>@ErrorCarga</p>
-        <div class="form-actions">
-            <button class="primary-button" type="button" @onclick="CargarAsync">Reintentar</button>
-            <a class="secondary-button" href="/compras">Volver a compras</a>
-        </div>
-    </section>
-}
-else if (Compra is not null)
-{
-    <section class="page-heading detail-heading" aria-labelledby="titulo-compra">
-        <div>
-            <p class="eyebrow">Detalle de compra</p>
-            <h1 id="titulo-compra">@Compra.CodigoInterno</h1>
-            <p class="page-lead">Compra registrada con @Compra.Detalles.Count @(Compra.Detalles.Count == 1 ? "detalle" : "detalles").</p>
-        </div>
-        <a class="secondary-button" href="/compras">Volver a compras</a>
-    </section>
-
-    @if (Mensaje == "compra-creada")
+<div class="rm-purchases grid min-w-0 gap-6 pb-4">
+    @if (Cargando)
     {
-        <div class="mensaje-exito" role="status">Compra registrada correctamente.</div>
+        <div class="ui-card flex items-center gap-3 p-6 text-sm text-ui-muted" role="status" aria-live="polite">
+            <span class="spinner" aria-hidden="true"></span>
+            Cargando compra...
+        </div>
     }
-
-    <section class="purchase-summary" aria-label="Resumen de compra">
-        <article class="info-card">
-            <span class="info-label">Proveedor</span>
-            <strong>@Compra.Proveedor</strong>
-            <a class="contact-link" href="/proveedores">Ver proveedores</a>
-        </article>
-        <article class="info-card">
-            <span class="info-label">Fecha de compra</span>
-            <strong>@Compra.FechaCompra.ToString("dd/MM/yyyy")</strong>
-        </article>
-        <article class="info-card">
-            <span class="info-label">Origen</span>
-            <span class="status-badge @CompraPresentacion.ClaseOrigen(Compra.Origen)">
-                @CompraPresentacion.Origen(Compra.Origen)
-            </span>
-        </article>
-        <article class="info-card balance-card">
-            <span class="info-label">Total</span>
-            <strong class="balance-hero">@CompraPresentacion.Moneda(Compra.Total)</strong>
-            <span class="field-help">Calculado por el servicio de compras</span>
-        </article>
-    </section>
-
-    @if (Compra.Origen == OrigenCompra.Importacion && Compra.Recepcion is { } recepcion)
+    else if (!string.IsNullOrWhiteSpace(ErrorCarga))
     {
-        <div class="purchase-reception-note">
-            <div>
-                <strong>@CompraPresentacion.EstadoRecepcion(recepcion)</strong>
-                <p>@recepcion.Recibidas de @recepcion.Total unidades recibidas</p>
-                <p>Recibidas: @recepcion.Recibidas · En tránsito: @recepcion.EnTransito · Compradas: @recepcion.Compradas</p>
-                <p>Perdidas: @recepcion.Perdidas · Pendientes: @recepcion.Pendientes</p>
+        <section class="ui-card grid min-w-0 gap-4 p-6 text-center sm:p-8" role="alert">
+            <h1 class="m-0 text-2xl font-semibold tracking-tight text-ui-ink">No fue posible cargar la compra</h1>
+            <p class="m-0 text-sm leading-6 text-ui-muted">@ErrorCarga</p>
+            <div class="grid gap-3 sm:flex sm:justify-center">
+                <button class="ui-button bg-ui-accent text-white hover:bg-ui-accent-hover" type="button" @onclick="CargarAsync">Reintentar</button>
+                <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/compras">Volver a compras</a>
             </div>
-            @if (recepcion.Pendientes > 0)
-            {
-                <a class="secondary-button" href="/inventario">Ir a recepción</a>
-            }
-        </div>
-    }
-
-    @if (!string.IsNullOrWhiteSpace(Compra.Observaciones))
-    {
-        <section class="info-card purchase-notes" aria-labelledby="titulo-observaciones-compra">
-            <span class="info-label" id="titulo-observaciones-compra">Observaciones</span>
-            <p>@Compra.Observaciones</p>
         </section>
     }
+    else if (Compra is not null)
+    {
+        <section class="grid min-w-0 gap-4 sm:flex sm:items-start sm:justify-between" aria-labelledby="titulo-compra">
+            <div class="grid min-w-0 gap-2">
+                <p class="m-0 text-xs font-semibold tracking-wide text-ui-muted uppercase">Detalle de compra</p>
+                <h1 class="m-0 text-2xl font-bold tracking-tight break-all text-ui-ink sm:text-3xl" id="titulo-compra">@Compra.CodigoInterno</h1>
+                <p class="m-0 text-sm leading-6 text-ui-muted">Compra registrada con @Compra.Detalles.Count @(Compra.Detalles.Count == 1 ? "detalle" : "detalles").</p>
+            </div>
+            <a class="ui-button shrink-0 border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/compras">Volver a compras</a>
+        </section>
 
-    <section class="data-panel purchase-detail-panel" aria-labelledby="titulo-detalles-compra">
-        <div class="data-panel-heading">
-            <h2 id="titulo-detalles-compra">Detalles</h2>
-            <span>@Compra.Detalles.Count @(Compra.Detalles.Count == 1 ? "producto" : "productos")</span>
-        </div>
-        <div class="desktop-table">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th scope="col">Producto</th>
-                        <th scope="col" class="numeric-cell">Cantidad</th>
-                        <th scope="col" class="numeric-cell">Costo unitario</th>
-                        <th scope="col" class="numeric-cell">Subtotal</th>
-                    </tr>
-                </thead>
-                <tbody>
+        @if (Mensaje == "compra-creada")
+        {
+            <div class="mensaje-exito" role="status">Compra registrada correctamente.</div>
+        }
+
+        <section class="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Resumen de compra">
+            <article class="ui-card grid min-w-0 content-start gap-2 p-4 sm:p-5">
+                <span class="text-xs font-medium leading-5 text-ui-muted">Proveedor</span>
+                <strong class="text-base leading-6 [overflow-wrap:anywhere]">@Compra.Proveedor</strong>
+                <a class="inline-flex min-h-12 items-center rounded-xl text-sm font-medium text-ui-accent no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-accent" href="/proveedores">Ver proveedores</a>
+            </article>
+            <article class="ui-card grid min-w-0 content-start gap-2 p-4 sm:p-5">
+                <span class="text-xs font-medium leading-5 text-ui-muted">Fecha de compra</span>
+                <strong class="text-base leading-6">@Compra.FechaCompra.ToString("dd/MM/yyyy")</strong>
+            </article>
+            <article class="ui-card grid min-w-0 content-start justify-items-start gap-2 p-4 sm:p-5">
+                <span class="text-xs font-medium leading-5 text-ui-muted">Origen</span>
+                <span class="status-badge @CompraPresentacion.ClaseOrigen(Compra.Origen)">@CompraPresentacion.Origen(Compra.Origen)</span>
+            </article>
+            <article class="ui-card grid min-w-0 content-start gap-2 p-4 sm:p-5">
+                <span class="text-xs font-medium leading-5 text-ui-muted">Total</span>
+                <strong class="text-2xl font-semibold leading-8 tracking-tight tabular-nums [overflow-wrap:anywhere]">@CompraPresentacion.Moneda(Compra.Total)</strong>
+                <span class="text-xs leading-5 text-ui-muted">Calculado por el servicio de compras</span>
+            </article>
+        </section>
+
+        @if (Compra.Origen == OrigenCompra.Importacion && Compra.Recepcion is { } recepcion)
+        {
+            <div class="grid min-w-0 gap-4 rounded-2xl border border-solid border-ui-warning/20 bg-ui-warning/5 p-4 text-sm leading-6 sm:flex sm:items-center sm:justify-between">
+                <div class="grid min-w-0 gap-1">
+                    <strong class="text-ui-warning">@CompraPresentacion.EstadoRecepcion(recepcion)</strong>
+                    <p class="m-0 text-ui-ink">@recepcion.Recibidas de @recepcion.Total unidades recibidas</p>
+                    <p class="m-0 text-ui-muted">Recibidas: @recepcion.Recibidas · En tránsito: @recepcion.EnTransito · Compradas: @recepcion.Compradas</p>
+                    <p class="m-0 text-ui-muted">Perdidas: @recepcion.Perdidas · Pendientes: @recepcion.Pendientes</p>
+                </div>
+                @if (recepcion.Pendientes > 0)
+                {
+                    <a class="ui-button shrink-0 border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/inventario">Ir a recepción</a>
+                }
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Compra.Observaciones))
+        {
+            <section class="ui-card grid min-w-0 gap-2 p-4 sm:p-5" aria-labelledby="titulo-observaciones-compra">
+                <h2 class="m-0 text-base font-semibold text-ui-ink" id="titulo-observaciones-compra">Observaciones</h2>
+                <p class="m-0 text-sm leading-6 text-ui-muted [overflow-wrap:anywhere]">@Compra.Observaciones</p>
+            </section>
+        }
+
+        <div class="grid min-w-0 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
+            <section class="ui-card min-w-0 overflow-hidden" aria-labelledby="titulo-detalles-compra">
+                <div class="flex flex-wrap items-center justify-between gap-2 p-4 sm:p-5">
+                    <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-detalles-compra">Detalles</h2>
+                    <span class="text-sm text-ui-muted">@Compra.Detalles.Count @(Compra.Detalles.Count == 1 ? "producto" : "productos")</span>
+                </div>
+                <ul class="m-0 grid min-w-0 list-none p-0" role="list">
                     @foreach (var detalle in Compra.Detalles)
                     {
-                        <tr>
-                            <td><strong>@detalle.Producto</strong></td>
-                            <td class="numeric-cell">@detalle.Cantidad</td>
-                            <td class="numeric-cell">@CompraPresentacion.Moneda(detalle.CostoUnitario)</td>
-                            <td class="numeric-cell"><strong>@CompraPresentacion.Moneda(detalle.Subtotal)</strong></td>
-                        </tr>
+                        <li class="grid min-w-0 gap-2 border-0 border-t border-solid border-ui-border px-4 py-4 sm:flex sm:items-center sm:justify-between sm:gap-5 sm:px-5">
+                            <div class="grid min-w-0 gap-1">
+                                <h3 class="m-0 text-base font-semibold leading-6 text-ui-ink [overflow-wrap:anywhere]">@detalle.Producto</h3>
+                                <p class="m-0 text-sm leading-6 text-ui-muted">@detalle.Cantidad × @CompraPresentacion.Moneda(detalle.CostoUnitario)</p>
+                            </div>
+                            <div class="flex min-w-0 items-center justify-between gap-2 sm:block sm:shrink-0 sm:text-right">
+                                <span class="text-xs leading-5 text-ui-muted">Subtotal</span>
+                                <strong class="block text-base leading-6 text-ui-ink tabular-nums [overflow-wrap:anywhere]">@CompraPresentacion.Moneda(detalle.Subtotal)</strong>
+                            </div>
+                        </li>
                     }
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <th colspan="3" scope="row">Total</th>
-                        <td class="numeric-cell">@CompraPresentacion.Moneda(Compra.Total)</td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
-        <div class="mobile-card-list">
-            @foreach (var detalle in Compra.Detalles)
-            {
-                <article class="entity-card purchase-detail-card">
-                    <div class="entity-card-heading">
-                        <div>
-                            <h3>@detalle.Producto</h3>
-                            <p class="entity-card-subtitle">@detalle.Cantidad × @CompraPresentacion.Moneda(detalle.CostoUnitario)</p>
-                        </div>
-                        <strong class="transaction-amount">@CompraPresentacion.Moneda(detalle.Subtotal)</strong>
-                    </div>
-                </article>
-            }
-        </div>
-    </section>
+                </ul>
+                <div class="flex min-w-0 flex-wrap items-center justify-between gap-2 border-0 border-t border-solid border-ui-border bg-ui-canvas p-4 sm:p-5">
+                    <span class="text-sm font-medium text-ui-muted">Total</span>
+                    <strong class="min-w-0 text-xl font-semibold tracking-tight text-ui-ink tabular-nums [overflow-wrap:anywhere]">@CompraPresentacion.Moneda(Compra.Total)</strong>
+                </div>
+            </section>
 
-    <section class="info-card receipt-detail" aria-labelledby="titulo-comprobante">
-        <div class="data-panel-heading">
-            <div>
-                <h2 id="titulo-comprobante">Comprobante</h2>
-                <p>Documento externo asociado con esta compra.</p>
-            </div>
-            @if (Comprobante is not null)
-            {
-                <a class="primary-button" href="/comprobantes/@Compra.Id" target="_blank" rel="noopener">Ver / abrir</a>
-            }
+            <section class="ui-card grid min-w-0 gap-4 p-4 sm:p-5" aria-labelledby="titulo-comprobante">
+                <div class="grid min-w-0 gap-1">
+                    <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-comprobante">Comprobante</h2>
+                    <p class="m-0 text-sm leading-6 text-ui-muted">Documento externo asociado con esta compra.</p>
+                </div>
+                @if (Comprobante is not null)
+                {
+                    <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/comprobantes/@Compra.Id" target="_blank" rel="noopener">Ver / abrir</a>
+                }
+                @if (!string.IsNullOrWhiteSpace(ErrorComprobante))
+                {
+                    <div class="mensaje-error" role="alert">@ErrorComprobante</div>
+                }
+                else if (Comprobante is null)
+                {
+                    <p class="m-0 rounded-2xl bg-ui-canvas p-4 text-sm leading-6 text-ui-muted">Esta compra no tiene comprobante adjunto.</p>
+                }
+                else
+                {
+                    <dl class="m-0 grid min-w-0 gap-4 text-sm leading-6">
+                        <div class="min-w-0"><dt class="text-xs text-ui-muted">Número de documento</dt><dd class="m-0 font-medium [overflow-wrap:anywhere]">@TextoOpcional(Comprobante.NumeroDocumento)</dd></div>
+                        <div class="min-w-0"><dt class="text-xs text-ui-muted">Fecha</dt><dd class="m-0 font-medium">@Comprobante.Fecha.ToString("dd/MM/yyyy")</dd></div>
+                        <div class="min-w-0"><dt class="text-xs text-ui-muted">Observaciones</dt><dd class="m-0 [overflow-wrap:anywhere]">@TextoOpcional(Comprobante.Observaciones)</dd></div>
+                    </dl>
+                }
+            </section>
         </div>
-
-        @if (!string.IsNullOrWhiteSpace(ErrorComprobante))
-        {
-            <div class="mensaje-error" role="alert">@ErrorComprobante</div>
-        }
-        else if (Comprobante is null)
-        {
-            <p class="receipt-empty">Esta compra no tiene comprobante adjunto.</p>
-        }
-        else
-        {
-            <dl class="receipt-values">
-                <div><dt>Número de documento</dt><dd>@TextoOpcional(Comprobante.NumeroDocumento)</dd></div>
-                <div><dt>Fecha</dt><dd>@Comprobante.Fecha.ToString("dd/MM/yyyy")</dd></div>
-                <div><dt>Observaciones</dt><dd>@TextoOpcional(Comprobante.Observaciones)</dd></div>
-            </dl>
-        }
-    </section>
-}
+    }
+</div>
 
 @code {
     [Parameter]
