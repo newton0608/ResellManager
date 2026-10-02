@@ -7,150 +7,121 @@
 
 <PageTitle>@(Venta is null ? "Venta" : Venta.CodigoInterno) | ResellManager</PageTitle>
 
-@if (Cargando)
-{
-    <div class="loading-state" role="status" aria-live="polite">
-        <span class="spinner" aria-hidden="true"></span>
-        Cargando venta...
-    </div>
-}
-else if (!string.IsNullOrWhiteSpace(ErrorCarga))
-{
-    <section class="error-state" role="alert">
-        <h1>No fue posible cargar la venta</h1>
-        <p>@ErrorCarga</p>
-        <div class="form-actions">
-            <button class="primary-button" type="button" @onclick="CargarAsync">Reintentar</button>
-            <a class="secondary-button" href="/ventas">Volver a ventas</a>
-        </div>
-    </section>
-}
-else if (Venta is not null)
-{
-    <section class="page-heading detail-heading" aria-labelledby="titulo-venta">
-        <div>
-            <p class="eyebrow">Detalle de venta</p>
-            <h1 id="titulo-venta">@Venta.CodigoInterno</h1>
-            <p class="page-lead">Consulta los productos vendidos y el pedido de origen.</p>
-        </div>
-        <div class="heading-actions">
-            <a class="secondary-button" href="/pagos?cliente=@Venta.ClienteId">Pagos del cliente</a>
-            @if (Venta.Estado == EstadoVenta.Registrada)
-            {
-                <button class="danger-button" type="button" disabled="@Cancelando" @onclick="CancelarAsync">
-                    @(Cancelando ? "Cancelando..." : "Cancelar venta")
-                </button>
-            }
-        </div>
-    </section>
-
-    @if (!string.IsNullOrWhiteSpace(MensajeExito))
+<div class="rm-sales grid min-w-0 gap-6 pb-4">
+    @if (Cargando)
     {
-        <div class="mensaje-exito" role="status">@MensajeExito</div>
+        <div class="ui-card flex items-center gap-3 p-6 text-sm text-ui-muted" role="status" aria-live="polite">
+            <span class="spinner" aria-hidden="true"></span>
+            Cargando venta...
+        </div>
     }
-    @if (!string.IsNullOrWhiteSpace(ErrorOperacion))
+    else if (!string.IsNullOrWhiteSpace(ErrorCarga))
     {
-        <div class="mensaje-error" role="alert">@ErrorOperacion</div>
-    }
-
-    <section class="sale-summary" aria-label="Resumen de venta">
-        <article class="info-card">
-            <span class="info-label">Cliente</span>
-            <strong>@Venta.Cliente</strong>
-            <a class="contact-link" href="/clientes/@Venta.ClienteId">Ver cliente</a>
-        </article>
-        <article class="info-card">
-            <span class="info-label">Pedido</span>
-            <a class="contact-link" href="/pedidos/@Venta.PedidoId">Ver pedido</a>
-        </article>
-        <article class="info-card">
-            <span class="info-label">Fecha</span>
-            <strong>@Venta.Fecha.ToString("dd/MM/yyyy")</strong>
-            <span class="status-badge @VentaPresentacion.ClaseEstado(Venta.Estado)">@VentaPresentacion.Estado(Venta.Estado)</span>
-        </article>
-        <article class="info-card balance-card">
-            <span class="info-label">Total</span>
-            <strong class="balance-hero">@VentaPresentacion.Moneda(Venta.Total)</strong>
-            <span class="field-help">Utilidad: @VentaPresentacion.Moneda(VentaPresentacion.UtilidadTotal(Venta))</span>
-        </article>
-    </section>
-
-    @if (!string.IsNullOrWhiteSpace(Venta.Observaciones))
-    {
-        <section class="info-card sale-notes" aria-labelledby="titulo-observaciones-venta">
-            <span class="info-label" id="titulo-observaciones-venta">Observaciones</span>
-            <p>@Venta.Observaciones</p>
+        <section class="ui-card grid min-w-0 gap-4 p-6 text-center sm:p-8" role="alert">
+            <h1 class="m-0 text-2xl font-semibold tracking-tight text-ui-ink">No fue posible cargar la venta</h1>
+            <p class="m-0 text-sm leading-6 text-ui-muted">@ErrorCarga</p>
+            <div class="grid gap-3 sm:flex sm:justify-center">
+                <button class="ui-button bg-ui-accent text-white hover:bg-ui-accent-hover" type="button" @onclick="CargarAsync">Reintentar</button>
+                <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/ventas">Volver a ventas</a>
+            </div>
         </section>
     }
-
-    <section class="data-panel sale-detail-panel" aria-labelledby="titulo-detalles-venta">
-        <div class="data-panel-heading">
-            <h2 id="titulo-detalles-venta">Detalles</h2>
-            <span>@Venta.Detalles.Count @(Venta.Detalles.Count == 1 ? "artículo" : "artículos")</span>
-        </div>
-        <div class="desktop-table sale-desktop-table">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th scope="col">Producto</th>
-                        <th scope="col">Unidad</th>
-                        <th scope="col" class="numeric-cell">Costo unitario</th>
-                        <th scope="col" class="numeric-cell">Precio final</th>
-                        <th scope="col" class="numeric-cell">Utilidad</th>
-                        <th scope="col">Observaciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var detalle in Venta.Detalles)
-                    {
-                        <tr>
-                            <td><strong>@detalle.Producto</strong></td>
-                            <td>@(detalle.CodigoUnidad ?? "Catálogo")</td>
-                            <td class="numeric-cell">@VentaPresentacion.Moneda(detalle.CostoUnitario)</td>
-                            <td class="numeric-cell">@VentaPresentacion.Moneda(detalle.PrecioFinal)</td>
-                            <td class="numeric-cell"><strong>@VentaPresentacion.Moneda(VentaPresentacion.Utilidad(detalle))</strong></td>
-                            <td>@(detalle.Observaciones ?? "—")</td>
-                        </tr>
-                    }
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <th colspan="3" scope="row">Totales</th>
-                        <td class="numeric-cell">@VentaPresentacion.Moneda(Venta.Total)</td>
-                        <td class="numeric-cell">@VentaPresentacion.Moneda(VentaPresentacion.UtilidadTotal(Venta))</td>
-                        <td></td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
-        <div class="mobile-card-list sale-mobile-cards">
-            @foreach (var detalle in Venta.Detalles)
-            {
-                <article class="entity-card sale-detail-card">
-                    <div class="entity-card-heading">
-                        <div>
-                            <h3>@detalle.Producto</h3>
-                            <p class="entity-card-subtitle">Unidad: @(detalle.CodigoUnidad ?? "No aplica · catálogo")</p>
-                        </div>
-                        <strong class="transaction-amount">@VentaPresentacion.Moneda(detalle.PrecioFinal)</strong>
-                    </div>
-                    <dl class="sale-detail-values">
-                        <div><dt>Costo unitario</dt><dd>@VentaPresentacion.Moneda(detalle.CostoUnitario)</dd></div>
-                        <div><dt>Utilidad</dt><dd>@VentaPresentacion.Moneda(VentaPresentacion.Utilidad(detalle))</dd></div>
-                        @if (!string.IsNullOrWhiteSpace(detalle.Observaciones))
-                        {
-                            <div><dt>Observaciones</dt><dd>@detalle.Observaciones</dd></div>
-                        }
-                    </dl>
-                </article>
-            }
-            <div class="sale-mobile-total">
-                <span>Total: <strong>@VentaPresentacion.Moneda(Venta.Total)</strong></span>
-                <span>Utilidad: <strong>@VentaPresentacion.Moneda(VentaPresentacion.UtilidadTotal(Venta))</strong></span>
+    else if (Venta is not null)
+    {
+        <section class="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start" aria-labelledby="titulo-venta">
+            <div class="grid min-w-0 gap-2">
+                <p class="m-0 text-xs font-semibold tracking-wide text-ui-muted uppercase">Detalle de venta</p>
+                <h1 id="titulo-venta" class="m-0 text-2xl font-bold tracking-tight break-all text-ui-ink sm:text-3xl">@Venta.CodigoInterno</h1>
+                <p class="m-0 text-sm leading-6 text-ui-muted">Consulta los productos vendidos y el pedido de origen.</p>
             </div>
-        </div>
-    </section>
-}
+            <div class="grid min-w-0 gap-3 sm:flex sm:flex-wrap">
+                <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/pagos?cliente=@Venta.ClienteId">Pagos del cliente</a>
+                @if (Venta.Estado == EstadoVenta.Registrada)
+                {
+                    <button class="ui-button min-w-0 border-ui-danger/30 bg-white text-ui-danger hover:border-ui-danger hover:bg-ui-danger/5" type="button" disabled="@Cancelando" @onclick="CancelarAsync">
+                        @(Cancelando ? "Cancelando..." : "Cancelar venta")
+                    </button>
+                }
+            </div>
+        </section>
+
+        @if (!string.IsNullOrWhiteSpace(MensajeExito))
+        {
+            <div class="mensaje-exito" role="status">@MensajeExito</div>
+        }
+        @if (!string.IsNullOrWhiteSpace(ErrorOperacion))
+        {
+            <div class="mensaje-error" role="alert">@ErrorOperacion</div>
+        }
+
+        <section class="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Resumen de venta">
+            <article class="ui-card grid min-w-0 content-start gap-2 p-4 sm:p-5">
+                <span class="text-xs font-medium leading-5 text-ui-muted">Cliente</span>
+                <strong class="text-base leading-6 [overflow-wrap:anywhere]">@Venta.Cliente</strong>
+                <a class="inline-flex min-h-12 items-center rounded-xl text-sm font-medium text-ui-accent no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-accent" href="/clientes/@Venta.ClienteId">Ver cliente</a>
+            </article>
+            <article class="ui-card grid min-w-0 content-start gap-2 p-4 sm:p-5">
+                <span class="text-xs font-medium leading-5 text-ui-muted">Pedido</span>
+                <a class="inline-flex min-h-12 items-center rounded-xl text-sm font-medium text-ui-accent no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-accent" href="/pedidos/@Venta.PedidoId">Ver pedido</a>
+            </article>
+            <article class="ui-card grid min-w-0 content-start justify-items-start gap-2 p-4 sm:p-5">
+                <span class="text-xs font-medium leading-5 text-ui-muted">Fecha</span>
+                <strong class="text-base leading-6">@Venta.Fecha.ToString("dd/MM/yyyy")</strong>
+                <span class="status-badge @VentaPresentacion.ClaseEstado(Venta.Estado)">@VentaPresentacion.Estado(Venta.Estado)</span>
+            </article>
+            <article class="ui-card grid min-w-0 content-start gap-2 p-4 sm:p-5">
+                <span class="text-xs font-medium leading-5 text-ui-muted">Total</span>
+                <strong class="text-2xl font-semibold leading-8 tracking-tight text-ui-ink tabular-nums [overflow-wrap:anywhere]">@VentaPresentacion.Moneda(Venta.Total)</strong>
+                <span class="text-xs leading-5 text-ui-muted">Utilidad: @VentaPresentacion.Moneda(VentaPresentacion.UtilidadTotal(Venta))</span>
+            </article>
+        </section>
+
+        @if (!string.IsNullOrWhiteSpace(Venta.Observaciones))
+        {
+            <section class="ui-card grid min-w-0 gap-2 p-4 sm:p-5" aria-labelledby="titulo-observaciones-venta">
+                <h2 class="m-0 text-base font-semibold text-ui-ink" id="titulo-observaciones-venta">Observaciones</h2>
+                <p class="m-0 text-sm leading-6 text-ui-muted [overflow-wrap:anywhere]">@Venta.Observaciones</p>
+            </section>
+        }
+
+        <section class="grid min-w-0 gap-4" aria-labelledby="titulo-detalles-venta">
+            <div class="flex flex-wrap items-center justify-between gap-2 px-1">
+                <h2 id="titulo-detalles-venta" class="m-0 text-xl font-semibold tracking-tight text-ui-ink">Detalles</h2>
+                <span class="text-sm text-ui-muted">@Venta.Detalles.Count @(Venta.Detalles.Count == 1 ? "artículo" : "artículos")</span>
+            </div>
+            <!-- One responsive list serves both desktop and mobile presentations. -->
+            <ul class="sale-desktop-table sale-mobile-cards m-0 grid min-w-0 list-none gap-3 p-0" role="list">
+                @foreach (var detalle in Venta.Detalles)
+                {
+                    <li class="ui-card grid min-w-0 gap-4 p-4 sm:p-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                        <div class="grid min-w-0 content-start gap-1">
+                            <h3 class="m-0 text-base font-semibold leading-6 text-ui-ink [overflow-wrap:anywhere]">@detalle.Producto</h3>
+                            <p class="m-0 text-sm leading-6 text-ui-muted [overflow-wrap:anywhere]">
+                                Unidad: <span class="font-mono text-xs">@(detalle.CodigoUnidad ?? "No aplica · catálogo")</span>
+                            </p>
+                        </div>
+                        <dl class="m-0 grid min-w-0 grid-cols-2 gap-3 rounded-2xl bg-ui-canvas p-3 text-sm leading-6 sm:grid-cols-3 [&_dt]:text-xs [&_dt]:leading-5 [&_dt]:text-ui-muted [&_dd]:m-0 [&_dd]:font-medium [&_dd]:text-ui-ink [&_dd]:tabular-nums [&_dd]:[overflow-wrap:anywhere]">
+                            <div class="grid min-w-0 gap-1"><dt>Costo unitario</dt><dd>@VentaPresentacion.Moneda(detalle.CostoUnitario)</dd></div>
+                            <div class="grid min-w-0 gap-1"><dt>Precio final</dt><dd>@VentaPresentacion.Moneda(detalle.PrecioFinal)</dd></div>
+                            <div class="grid min-w-0 gap-1"><dt>Utilidad</dt><dd>@VentaPresentacion.Moneda(VentaPresentacion.Utilidad(detalle))</dd></div>
+                        </dl>
+                        <dl class="m-0 grid min-w-0 gap-1 border-0 border-t border-solid border-ui-border pt-3 text-sm leading-6 xl:col-span-2">
+                            <dt class="text-xs leading-5 text-ui-muted">Observaciones</dt>
+                            <dd class="m-0 text-ui-ink [overflow-wrap:anywhere]">@(detalle.Observaciones ?? "—")</dd>
+                        </dl>
+                    </li>
+                }
+            </ul>
+            <section class="ui-card grid min-w-0 gap-4 p-4 sm:p-5" aria-label="Totales">
+                <h3 class="m-0 text-base font-semibold text-ui-ink">Totales</h3>
+                <dl class="m-0 grid min-w-0 gap-4 sm:grid-cols-2 [&_dt]:text-xs [&_dt]:leading-5 [&_dt]:text-ui-muted [&_dd]:m-0 [&_dd]:font-semibold [&_dd]:text-ui-ink [&_dd]:tabular-nums [&_dd]:[overflow-wrap:anywhere]">
+                    <div class="grid min-w-0 gap-1"><dt>Total</dt><dd class="text-2xl leading-8 tracking-tight">@VentaPresentacion.Moneda(Venta.Total)</dd></div>
+                    <div class="grid min-w-0 gap-1"><dt>Utilidad</dt><dd class="text-2xl leading-8 tracking-tight">@VentaPresentacion.Moneda(VentaPresentacion.UtilidadTotal(Venta))</dd></div>
+                </dl>
+            </section>
+        </section>
+    }
+</div>
 
 @code {
     [Parameter]

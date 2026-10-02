@@ -214,7 +214,7 @@ public sealed class HistorialConsultaTests
         await CallAsync(pagina, "OnParametersSetAsync");
         Assert.Null(Get<string?>(pagina, "ErrorMessage"));
         var texto = BuscadoresContextualesTests.TextoRenderizado(pagina);
-        Assert.Equal(modulo is "compras" or "pedidos" ? 1 : 2, texto.Split("Septiembre 2026").Length - 1); // Compras y Pedidos usan un único listado responsive; Ventas conserva tabla y tarjetas.
+        Assert.Equal(1, texto.Split("Septiembre 2026").Length - 1); // Los historiales usan un único listado responsive.
         Set(pagina, "HastaConsulta", "2026-08-31");
         await CallAsync(pagina, "OnParametersSetAsync");
         Assert.Contains("Desde", Get<string>(pagina, "ErrorMessage"));
