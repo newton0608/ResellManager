@@ -1,17 +1,19 @@
 @inject IServiceScopeFactory Scopes
-<BuscadorEntidad TItem="UnidadInventarioDto" Id="@Id" Etiqueta="Unidad física"
-    Placeholder="Buscar unidad, producto o código de barras" Seleccionado="Seleccionado"
-    TextoSeleccionado="@(Seleccionado is null ? null : Seleccionado.Producto + " · " + Seleccionado.CodigoInterno)"
-    Deshabilitado="Deshabilitado" Buscar="BuscarAsync" OnSeleccionado="ElegirAsync">
-    <Resultado Context="unidad">
-        <strong>@unidad.Producto · @unidad.CodigoInterno</strong>
-        <span>Costo @VentaPresentacion.Moneda(unidad.Costo) @(unidad.PedidoReservaId.HasValue ? "· Reservada para este pedido" : "· Sin reserva")</span>
-    </Resultado>
-</BuscadorEntidad>
-@if (Seleccionado?.PedidoReservaId is not null)
-{
-    <p class="field-help">Unidad reservada para este pedido.</p>
-}
+<div class="rm-inventory-picker grid min-w-0 gap-2">
+    <BuscadorEntidad TItem="UnidadInventarioDto" Id="@Id" Etiqueta="Unidad física"
+        Placeholder="Buscar unidad, producto o código de barras" Seleccionado="Seleccionado"
+        TextoSeleccionado="@(Seleccionado is null ? null : Seleccionado.Producto + " · " + Seleccionado.CodigoInterno)"
+        Deshabilitado="Deshabilitado" Buscar="BuscarAsync" OnSeleccionado="ElegirAsync">
+        <Resultado Context="unidad">
+            <strong class="min-w-0 text-sm font-semibold leading-5 [overflow-wrap:anywhere]">@unidad.Producto · @unidad.CodigoInterno</strong>
+            <span class="min-w-0 text-sm font-normal leading-6 text-ui-muted [overflow-wrap:anywhere]">Costo @VentaPresentacion.Moneda(unidad.Costo) @(unidad.PedidoReservaId.HasValue ? "· Reservada para este pedido" : "· Sin reserva")</span>
+        </Resultado>
+    </BuscadorEntidad>
+    @if (Seleccionado?.PedidoReservaId is not null)
+    {
+        <p class="field-help">Unidad reservada para este pedido.</p>
+    }
+</div>
 @code {
     [Parameter, EditorRequired] public string Id { get; set; } = string.Empty;
     [Parameter] public UnidadInventarioDto? Seleccionado { get; set; }

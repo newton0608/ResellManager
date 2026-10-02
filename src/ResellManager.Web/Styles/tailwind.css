@@ -106,16 +106,16 @@
 :is(.rm-product-form, .rm-client-form, .rm-purchase-form, .rm-order-form, .rm-sale-form) .ui-input.invalid { @apply border-ui-danger; }
 
 /* Migrated entity pickers reuse the same controls, scoped to their modules. */
-:is(.rm-client-picker, .rm-purchases, .rm-orders, .rm-order-picker, .rm-sales) .form-field { @apply min-w-0; }
-:is(.rm-client-picker, .rm-purchases, .rm-orders, .rm-order-picker, .rm-sales) .field-help { @apply text-sm leading-6 text-ui-muted; }
-:is(.rm-client-picker, .rm-purchases, .rm-orders, .rm-order-picker, .rm-sales) .lookup-results { @apply grid min-w-0 gap-2 rounded-2xl; }
-:is(.rm-client-picker, .rm-purchases, .rm-orders, .rm-order-picker, .rm-sales) .lookup-result {
+:is(.rm-client-picker, .rm-purchases, .rm-orders, .rm-order-picker, .rm-sales, .rm-inventory-picker) .form-field { @apply min-w-0; }
+:is(.rm-client-picker, .rm-purchases, .rm-orders, .rm-order-picker, .rm-sales, .rm-inventory-picker) .field-help { @apply text-sm leading-6 text-ui-muted; }
+:is(.rm-client-picker, .rm-purchases, .rm-orders, .rm-order-picker, .rm-sales, .rm-inventory-picker) .lookup-results { @apply grid min-w-0 gap-2 rounded-2xl; }
+:is(.rm-client-picker, .rm-purchases, .rm-orders, .rm-order-picker, .rm-sales, .rm-inventory-picker) .lookup-result {
   @apply ui-button grid w-full min-w-0 justify-stretch gap-1 border-ui-border bg-white text-left;
   margin-bottom: 0;
 }
-:is(.rm-client-picker, .rm-purchases, .rm-orders, .rm-order-picker, .rm-sales) .lookup-result:hover { @apply border-ui-accent bg-ui-accent/5 outline-none; }
-:is(.rm-client-picker, .rm-purchases, .rm-orders, .rm-order-picker, .rm-sales) .lookup-result:focus-visible { @apply border-ui-accent bg-ui-accent/5 outline-2 outline-offset-2 outline-ui-accent; }
-:is(.rm-client-picker, .rm-purchases, .rm-orders, .rm-order-picker, .rm-sales) .lookup-result:disabled { @apply border-ui-border bg-ui-canvas text-ui-muted outline-none; }
+:is(.rm-client-picker, .rm-purchases, .rm-orders, .rm-order-picker, .rm-sales, .rm-inventory-picker) .lookup-result:hover { @apply border-ui-accent bg-ui-accent/5 outline-none; }
+:is(.rm-client-picker, .rm-purchases, .rm-orders, .rm-order-picker, .rm-sales, .rm-inventory-picker) .lookup-result:focus-visible { @apply border-ui-accent bg-ui-accent/5 outline-2 outline-offset-2 outline-ui-accent; }
+:is(.rm-client-picker, .rm-purchases, .rm-orders, .rm-order-picker, .rm-sales, .rm-inventory-picker) .lookup-result:disabled { @apply border-ui-border bg-ui-canvas text-ui-muted outline-none; }
 
 /* Migrated transaction controls retain shared behavior and legacy consumers. */
 .rm-purchases .desktop-table { @apply overflow-visible; }
@@ -124,32 +124,32 @@
 }
 .rm-purchases .history-search { @apply col-auto sm:col-span-2 xl:col-span-1; }
 .rm-purchases .history-filter-actions { @apply m-0 grid grid-cols-2 gap-2 sm:col-span-2 xl:col-span-1; }
-:is(.rm-purchases, .rm-orders, .rm-sales) .form-field { @apply min-w-0 gap-2; }
-:is(.rm-purchases, .rm-orders, .rm-sales) .field-help { @apply m-0 text-sm leading-6 text-ui-muted; }
-:is(.rm-purchases, .rm-orders, .rm-sales) :is(.lookup-result, .product-search-result) { overflow-wrap: anywhere; }
-:is(.rm-purchases, .rm-orders, .rm-sales) .product-search-results { @apply gap-2 rounded-2xl; }
-:is(.rm-purchases, .rm-orders, .rm-sales) .product-search-result {
+:is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory) .form-field { @apply min-w-0 gap-2; }
+:is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory) .field-help { @apply m-0 text-sm leading-6 text-ui-muted; }
+:is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory) :is(.lookup-result, .product-search-result) { overflow-wrap: anywhere; }
+:is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory) .product-search-results { @apply gap-2 rounded-2xl; }
+:is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory) .product-search-result {
   @apply ui-button grid w-full min-w-0 justify-stretch gap-1 border-ui-border bg-white text-left;
 }
-:is(.rm-purchases, .rm-orders, .rm-sales) .product-search-result:hover { @apply border-ui-accent bg-ui-accent/5 outline-none; }
-:is(.rm-purchases, .rm-orders, .rm-sales) .product-search-result:focus-visible { @apply border-ui-accent bg-ui-accent/5 outline-2 outline-offset-2 outline-ui-accent; }
-:is(.rm-purchases, .rm-orders, .rm-sales) .product-search-result:disabled { @apply border-ui-border bg-ui-canvas text-ui-muted outline-none; }
-:is(.rm-purchases, .rm-orders, .rm-sales) .inline-button { @apply ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas; }
-:is(.rm-purchases, .rm-orders, .rm-sales) .inline-button:disabled { @apply border-ui-border bg-ui-canvas text-ui-muted; }
+:is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory) .product-search-result:hover { @apply border-ui-accent bg-ui-accent/5 outline-none; }
+:is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory) .product-search-result:focus-visible { @apply border-ui-accent bg-ui-accent/5 outline-2 outline-offset-2 outline-ui-accent; }
+:is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory) .product-search-result:disabled { @apply border-ui-border bg-ui-canvas text-ui-muted outline-none; }
+:is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory) .inline-button { @apply ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas; }
+:is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory) .inline-button:disabled { @apply border-ui-border bg-ui-canvas text-ui-muted; }
 .rm-purchases .purchase-origin-import { @apply border-ui-accent/20 bg-ui-accent/5 text-ui-accent; }
 .rm-purchases .purchase-origin-received { @apply border-ui-success/20 bg-ui-success/5 text-ui-success; }
 .rm-purchases .purchase-origin-catalog { @apply border-ui-warning/20 bg-ui-warning/5 text-ui-warning; }
-:is(.rm-purchases, .rm-orders, .rm-sales) .validation-summary { @apply m-0 text-sm leading-6 text-ui-danger; }
+:is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory) .validation-summary { @apply m-0 text-sm leading-6 text-ui-danger; }
 .rm-ui :is(.rm-purchase-form, .rm-order-form, .rm-sale-form) :is(input.invalid, select.invalid, textarea.invalid) { @apply border-ui-danger; }
 .rm-purchase-supplier .form-grid { @apply gap-4 sm:grid-cols-2; }
 .rm-purchase-supplier .form-actions { @apply grid grid-cols-2 gap-3 sm:flex sm:flex-wrap; }
 .rm-purchase-supplier .required-note { @apply m-0 text-xs leading-5 text-ui-muted; }
-:is(.rm-purchases, .rm-orders, .rm-sales) .operation-review { @apply ui-card min-w-0 p-5 text-ui-ink shadow-ui-sheet sm:p-6; }
-:is(.rm-purchases, .rm-orders, .rm-sales) .operation-review::backdrop { @apply bg-ui-ink/40; }
-:is(.rm-purchases, .rm-orders, .rm-sales) .operation-review h2 { @apply mb-4 text-xl font-semibold tracking-tight text-ui-ink; }
-:is(.rm-purchases, .rm-orders, .rm-sales) .operation-review-actions { @apply grid grid-cols-2 gap-3; }
-:is(.rm-purchases, .rm-orders, .rm-sales) .operation-review-content :is(.rm-purchase-review-lines, .rm-order-review-lines, .rm-sale-review-lines) { @apply p-0; }
-:is(.rm-purchases, .rm-orders, .rm-sales) :is(.rm-purchase-review-lines, .rm-order-review-lines, .rm-sale-review-lines) li { @apply m-0; }
+:is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory) .operation-review { @apply ui-card min-w-0 p-5 text-ui-ink shadow-ui-sheet sm:p-6; }
+:is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory) .operation-review::backdrop { @apply bg-ui-ink/40; }
+:is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory) .operation-review h2 { @apply mb-4 text-xl font-semibold tracking-tight text-ui-ink; }
+:is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory) .operation-review-actions { @apply grid grid-cols-2 gap-3; }
+:is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory) .operation-review-content :is(.rm-purchase-review-lines, .rm-order-review-lines, .rm-sale-review-lines, .rm-inventory-review-lines) { @apply p-0; }
+:is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory) :is(.rm-purchase-review-lines, .rm-order-review-lines, .rm-sale-review-lines, .rm-inventory-review-lines) li { @apply m-0; }
 
 /* Orders reuse the shared surfaces; these layouts include their state filter and line editor. */
 :is(.rm-orders, .rm-sales) .history-filter-form {
@@ -163,16 +163,25 @@
 .rm-orders .order-status-confirmed { @apply border-ui-accent/20 bg-ui-accent/5 text-ui-accent; }
 .rm-orders .order-status-canceled { @apply border-ui-danger/20 bg-ui-danger/5 text-ui-danger; }
 .rm-orders .order-status-completed { @apply border-ui-success/20 bg-ui-success/5 text-ui-success; }
-.rm-orders .inventory-status-purchased { @apply border-ui-border bg-ui-canvas text-ui-muted; }
-.rm-orders .inventory-status-transit { @apply border-ui-accent/20 bg-ui-accent/5 text-ui-accent; }
-.rm-orders .inventory-status-available { @apply border-ui-success/20 bg-ui-success/5 text-ui-success; }
-.rm-orders .inventory-status-sold { @apply border-ui-warning/20 bg-ui-warning/5 text-ui-warning; }
-.rm-orders .inventory-status-delivered { @apply border-ui-success/20 bg-ui-success/5 text-ui-success; }
-.rm-orders .inventory-status-lost { @apply border-ui-danger/20 bg-ui-danger/5 text-ui-danger; }
-.rm-orders .reservation-badge { @apply inline-flex items-center rounded-full border-ui-accent/20 bg-ui-accent/5 px-3 py-1 text-xs font-semibold leading-5 text-ui-accent; }
+:is(.rm-orders, .rm-inventory) .inventory-status-purchased { @apply border-ui-border bg-ui-canvas text-ui-muted; }
+:is(.rm-orders, .rm-inventory) .inventory-status-transit { @apply border-ui-accent/20 bg-ui-accent/5 text-ui-accent; }
+:is(.rm-orders, .rm-inventory) .inventory-status-available { @apply border-ui-success/20 bg-ui-success/5 text-ui-success; }
+:is(.rm-orders, .rm-inventory) .inventory-status-sold { @apply border-ui-warning/20 bg-ui-warning/5 text-ui-warning; }
+:is(.rm-orders, .rm-inventory) .inventory-status-delivered { @apply border-ui-success/20 bg-ui-success/5 text-ui-success; }
+:is(.rm-orders, .rm-inventory) .inventory-status-lost { @apply border-ui-danger/20 bg-ui-danger/5 text-ui-danger; }
+:is(.rm-orders, .rm-inventory) .reservation-badge { @apply inline-flex items-center rounded-full border-ui-accent/20 bg-ui-accent/5 px-3 py-1 text-xs font-semibold leading-5 text-ui-accent; }
 .rm-order-picker .lookup-result { overflow-wrap: anywhere; }
 /* Sales use the existing badges and selected control state. */
 .rm-sales .sale-status-registered { @apply border-ui-success/20 bg-ui-success/5 text-ui-success; }
 .rm-sales .sale-status-canceled { @apply border-ui-danger/20 bg-ui-danger/5 text-ui-danger; }
 .rm-sales .sale-mode-active:not(:disabled) { @apply border-ui-accent/20 bg-ui-accent/5 text-ui-accent; }
 .rm-sales :is(.field-help, .lookup-results strong, .lookup-results span) { overflow-wrap: anywhere; }
+/* Inventory retains independent physical states and commercial reservations. */
+.rm-inventory :is(.inventory-status-neutral, .no-reservation-badge) { @apply border-ui-border bg-ui-canvas text-ui-muted; }
+:is(.rm-inventory, .rm-inventory-picker) .form-field { @apply min-w-0 gap-2; }
+.rm-inventory-picker .field-help { @apply m-0 text-sm leading-6 text-ui-muted; }
+.rm-inventory-picker :is(.field-help, .lookup-results strong, .lookup-results span) { overflow-wrap: anywhere; }
+.rm-inventory-picker .lookup-result { @apply text-ui-ink; }
+.rm-inventory-picker .lookup-result:disabled { @apply text-ui-muted; }
+.rm-inventory-loss .operation-review .primary-button:not(:disabled) { @apply border-ui-danger bg-ui-danger text-white; }
+.rm-inventory-loss .operation-review .primary-button:hover:not(:disabled) { @apply border-ui-danger bg-ui-danger/90; }
