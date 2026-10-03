@@ -7,41 +7,43 @@
 
 <PageTitle>@(EsEdicion ? "Editar categoría" : "Nueva categoría") | ResellManager</PageTitle>
 
-<section class="page-heading" aria-labelledby="titulo-formulario-categoria">
-    <div>
-        <p class="eyebrow">Categorías</p>
-        <h1 id="titulo-formulario-categoria">@(EsEdicion ? "Editar categoría" : "Nueva categoría")</h1>
-        <p class="page-lead">@(EsEdicion ? "Actualiza la definición de la categoría." : "Crea una categoría para organizar las definiciones de productos.")</p>
-    </div>
-</section>
+<div class="rm-categories min-w-0 max-w-3xl space-y-6 pb-4">
+    <section class="space-y-2" aria-labelledby="titulo-formulario-categoria">
+        <p class="m-0 text-xs font-semibold tracking-wide text-ui-muted uppercase">Categorías</p>
+        <h1 class="m-0 text-3xl font-bold tracking-tight text-ui-ink sm:text-4xl" id="titulo-formulario-categoria">@(EsEdicion ? "Editar categoría" : "Nueva categoría")</h1>
+        <p class="m-0 max-w-2xl text-sm leading-6 text-ui-muted">@(EsEdicion ? "Actualiza la definición de la categoría." : "Crea una categoría para organizar las definiciones de productos.")</p>
+    </section>
 
-@if (Cargando)
-{
-    <div class="loading-state" role="status" aria-live="polite">
-        <span class="spinner" aria-hidden="true"></span>
-        Cargando categoría...
-    </div>
-}
-else if (!string.IsNullOrWhiteSpace(ErrorCarga))
-{
-    <section class="error-state" role="alert">
-        <h2>No fue posible abrir la categoría</h2>
-        <p>@ErrorCarga</p>
-        <div class="form-actions">
-            <button class="primary-button" type="button" @onclick="CargarCategoriaAsync">Reintentar</button>
-            <a class="secondary-button" href="/categorias">Volver a categorías</a>
+    @if (Cargando)
+    {
+        <div class="ui-card flex items-center gap-3 p-6 text-sm text-ui-muted" role="status" aria-live="polite">
+            <span class="spinner" aria-hidden="true"></span>
+            Cargando categoría...
         </div>
-    </section>
-}
-else
-{
-    <section class="form-panel" aria-label="Formulario de categoría">
-        <CategoriaForm Modelo="Modelo"
-                       Guardando="Guardando"
-                       ErrorMessage="@ErrorGuardado"
-                       OnGuardar="GuardarAsync" />
-    </section>
-}
+    }
+    else if (!string.IsNullOrWhiteSpace(ErrorCarga))
+    {
+        <section class="error-state" role="alert">
+            <div class="grid min-w-0 gap-4">
+                <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink">No fue posible abrir la categoría</h2>
+                <p class="m-0 text-sm leading-6 text-ui-muted [overflow-wrap:anywhere]">@ErrorCarga</p>
+                <div class="grid min-w-0 gap-2 sm:flex sm:justify-center">
+                    <button class="ui-button bg-ui-accent text-white hover:bg-ui-accent-hover" type="button" @onclick="CargarCategoriaAsync">Reintentar</button>
+                    <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/categorias">Volver a categorías</a>
+                </div>
+            </div>
+        </section>
+    }
+    else
+    {
+        <section class="ui-card min-w-0 p-5 sm:p-6" aria-label="Formulario de categoría">
+            <CategoriaForm Modelo="Modelo"
+                           Guardando="Guardando"
+                           ErrorMessage="@ErrorGuardado"
+                           OnGuardar="GuardarAsync" />
+        </section>
+    }
+</div>
 
 @code {
     [Parameter]

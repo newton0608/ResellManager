@@ -1,36 +1,38 @@
-<EditForm Model="Modelo" OnValidSubmit="GuardarAsync" class="entity-form">
-    <DataAnnotationsValidator />
+<div class="rm-category-form min-w-0 [&>.entity-form]:grid [&>.entity-form]:gap-6">
+    <EditForm Model="Modelo" OnValidSubmit="GuardarAsync" class="entity-form">
+        <DataAnnotationsValidator />
 
-    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
-    {
-        <div class="mensaje-error" role="alert">@ErrorMessage</div>
-    }
+        @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+        {
+            <div class="mensaje-error" role="alert">@ErrorMessage</div>
+        }
 
-    <ValidationSummary class="validation-summary" role="alert" />
+        <ValidationSummary class="rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger empty:hidden [&_ul]:m-0 [&_ul]:pl-5" role="alert" />
 
-    <div class="form-grid">
-        <div class="form-field form-field-wide">
-            <label for="categoria-nombre">Nombre <span aria-hidden="true">*</span></label>
-            <InputText disabled="@Guardando" aria-describedby="categoria-nombre-validacion" aria-required="true" id="categoria-nombre" @bind-Value="Modelo.Nombre" autocomplete="off" />
-            <div id="categoria-nombre-validacion"><ValidationMessage For="() => Modelo.Nombre" /></div>
+        <div class="grid min-w-0 gap-5">
+            <div class="grid min-w-0 gap-2">
+                <label class="text-sm font-medium" for="categoria-nombre">Nombre <span aria-hidden="true">*</span></label>
+                <InputText class="ui-input" disabled="@Guardando" aria-describedby="categoria-nombre-validacion" aria-required="true" id="categoria-nombre" @bind-Value="Modelo.Nombre" autocomplete="off" />
+                <div class="empty:hidden" id="categoria-nombre-validacion"><ValidationMessage For="() => Modelo.Nombre" /></div>
+            </div>
+
+            <div class="grid min-w-0 gap-2">
+                <label class="text-sm font-medium" for="categoria-observaciones">Observaciones</label>
+                <InputTextArea class="ui-input min-h-28 resize-y" disabled="@Guardando" aria-describedby="categoria-observaciones-validacion" id="categoria-observaciones" @bind-Value="Modelo.Observaciones" rows="4" />
+                <div class="empty:hidden" id="categoria-observaciones-validacion"><ValidationMessage For="() => Modelo.Observaciones" /></div>
+            </div>
         </div>
 
-        <div class="form-field form-field-wide">
-            <label for="categoria-observaciones">Observaciones</label>
-            <InputTextArea disabled="@Guardando" aria-describedby="categoria-observaciones-validacion" id="categoria-observaciones" @bind-Value="Modelo.Observaciones" rows="4" />
-            <div id="categoria-observaciones-validacion"><ValidationMessage For="() => Modelo.Observaciones" /></div>
+        <p class="m-0 text-xs leading-5 text-ui-muted"><span aria-hidden="true">*</span> Campos obligatorios</p>
+
+        <div class="grid min-w-0 gap-2 border-0 border-t border-solid border-ui-border pt-5 sm:flex">
+            <button class="ui-button bg-ui-accent text-white hover:bg-ui-accent-hover" type="submit" disabled="@Guardando">
+                @(Guardando ? "Guardando..." : "Guardar categoría")
+            </button>
+            <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/categorias">Cancelar</a>
         </div>
-    </div>
-
-    <p class="required-note"><span aria-hidden="true">*</span> Campos obligatorios</p>
-
-    <div class="form-actions">
-        <button class="primary-button" type="submit" disabled="@Guardando">
-            @(Guardando ? "Guardando..." : "Guardar categoría")
-        </button>
-        <a class="secondary-button" href="/categorias">Cancelar</a>
-    </div>
-</EditForm>
+    </EditForm>
+</div>
 
 @code {
     [Parameter, EditorRequired]
