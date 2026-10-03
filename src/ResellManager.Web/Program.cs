@@ -42,6 +42,7 @@ builder.Services.AddRateLimiter(options =>
 
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ICatalogoPublicoClient, CatalogoPublicoClient>();
+builder.Services.AddScoped<BusquedaTiendaEstado>();
 
 builder.Services.AddSingleton<IEmailSender<IdentityUser>, NoOpEmailSender>();
 

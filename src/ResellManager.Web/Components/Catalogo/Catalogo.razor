@@ -5,10 +5,11 @@
 @implements IDisposable
 @inject ICatalogoPublicoClient Cliente
 @inject ILogger<Catalogo> Logger
+@inject BusquedaTiendaEstado Busqueda
 
-<PageTitle>Catálogo | ResellManager</PageTitle>
-<CatalogoVista Modelo="Modelo" OnBuscar="Modelo.BuscarAsync" OnCategoria="Modelo.FiltrarCategoriaAsync"
-               OnBuscarAhora="Modelo.CargarAsync" OnLimpiar="Modelo.LimpiarAsync" OnReintentar="Modelo.CargarAsync" />
+<PageTitle>Catálogo | Virtuosa Store</PageTitle>
+<CatalogoVista Modelo="Modelo" OnCategoria="Modelo.FiltrarCategoriaAsync"
+               OnLimpiar="LimpiarAsync" OnReintentar="Modelo.CargarAsync" />
 
 @code {
     [SupplyParameterFromQuery(Name = "termino")] public string? TerminoInicial { get; set; }
@@ -18,14 +19,21 @@
     private bool Pendiente;
     private bool Descartado;
 
-    protected override void OnInitialized() => Modelo = new(Cliente, Logger);
+    protected override void OnInitialized()
+    {
+        Modelo = new(Cliente, Logger);
+        Busqueda.Registrar(this, BuscarDesdeEncabezadoAsync, BuscarAhoraDesdeEncabezadoAsync);
+    }
+
     protected override void OnParametersSet()
     {
         if (Anterior == (TerminoInicial, CategoriaInicial)) return;
         Anterior = (TerminoInicial, CategoriaInicial);
         Modelo.EstablecerFiltros(TerminoInicial, CategoriaInicial);
+        Busqueda.FijarTermino(Modelo.Termino);
         Pendiente = true;
     }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!Pendiente) return;
@@ -33,5 +41,33 @@
         await Modelo.CargarAsync();
         if (!Descartado) StateHasChanged();
     }
-    public void Dispose() { Descartado = true; Modelo.Dispose(); }
+
+    private async Task BuscarDesdeEncabezadoAsync(string termino)
+    {
+        var carga = Modelo.BuscarAsync(termino);
+        await InvokeAsync(StateHasChanged);
+        await carga;
+        if (!Descartado) await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task BuscarAhoraDesdeEncabezadoAsync()
+    {
+        var carga = Modelo.CargarAsync();
+        await InvokeAsync(StateHasChanged);
+        await carga;
+        if (!Descartado) await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LimpiarAsync()
+    {
+        Busqueda.FijarTermino(string.Empty);
+        await Modelo.LimpiarAsync();
+    }
+
+    public void Dispose()
+    {
+        Descartado = true;
+        Busqueda.Liberar(this);
+        Modelo.Dispose();
+    }
 }

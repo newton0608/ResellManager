@@ -2,6 +2,7 @@
 @layer theme;
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" source(none);
+@import "./storefront.css";
 
 /* Paths are relative to this file, independent of the CLI working directory. */
 @source "../**/*.{razor,cshtml,html,cs,js}";

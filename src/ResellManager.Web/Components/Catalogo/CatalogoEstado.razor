@@ -1,20 +1,19 @@
-<section class="rounded-2xl border border-solid border-ui-border bg-white px-6 py-12 text-center sm:py-16"
-         role="@(EsError ? "alert" : "status")">
-    <div class="mx-auto mb-5 flex size-14 items-center justify-center rounded-2xl bg-ui-accent/5 text-ui-accent">
-        <svg class="size-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+<section class="store-state" role="@(EsError ? "alert" : "status")">
+    <div class="store-state-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
             <rect x="4" y="5" width="16" height="15" rx="3" /><path d="M8 5V4a4 4 0 0 1 8 0v1" />
         </svg>
     </div>
-    @if (EncabezadoPrincipal) { <h1><span class="text-2xl sm:text-3xl">@Titulo</span></h1> }
+    @if (EncabezadoPrincipal) { <h1>@Titulo</h1> }
     else { <h2>@Titulo</h2> }
-    <p class="mx-auto mb-6 max-w-lg text-sm text-ui-muted sm:text-base">@Mensaje</p>
+    <p>@Mensaje</p>
     @if (OnAccion.HasDelegate)
     {
-        <button type="button" class="secondary-button" @onclick="OnAccion">@TextoAccion</button>
+        <button type="button" class="store-button store-button--quiet" @onclick="OnAccion">@TextoAccion</button>
     }
     @if (MostrarRegreso)
     {
-        <a href="/catalogo" class="secondary-button">Volver al catálogo</a>
+        <a href="/catalogo" class="store-button store-button--quiet">Volver al catálogo</a>
     }
 </section>
 

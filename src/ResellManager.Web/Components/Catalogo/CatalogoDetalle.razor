@@ -6,7 +6,7 @@
 @inject ICatalogoPublicoClient Cliente
 @inject ILogger<CatalogoDetalle> Logger
 
-<PageTitle>@(Producto?.Nombre ?? "Producto") | ResellManager</PageTitle>
+<PageTitle>@(Producto?.Nombre ?? "Producto") | Virtuosa Store</PageTitle>
 <CatalogoDetalleVista Producto="Producto" Cargando="Cargando" NoDisponible="NoDisponible" Error="@Error" OnReintentar="CargarAsync" />
 
 @code {

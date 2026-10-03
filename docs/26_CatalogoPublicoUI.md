@@ -2,7 +2,9 @@
 
 La primera vista pública permite explorar productos disponibles en `/catalogo` y consultar su detalle en `/catalogo/{productoId}` sin iniciar sesión. Usa exclusivamente la API de lectura descrita en [25_CatalogoPublicoBackend.md](25_CatalogoPublicoBackend.md).
 
-El backend terminado se separó primero en el commit `9a119bb` (`feat(catalog): add public product catalog backend`), sobre `feature/tailwind-ui`. Los cambios de esta UI se mantienen aparte, sin push.
+El backend se incorporó en `9a119bb` y esta primera UI en `c345ad6`, sobre `feature/tailwind-ui`.
+
+> Esta página documenta la primera iteración visual. La identidad pública vigente y su despliegue futuro se describen en [27_VirtuosaStore.md](27_VirtuosaStore.md).
 
 ## Componentes y responsabilidades
 
