@@ -190,4 +190,8 @@
 .rm-barcode-scanner .barcode-camera-window { @apply relative min-w-0 w-full; aspect-ratio: 2 / 1; max-height: 14rem; }
 .rm-barcode-scanner .barcode-camera-feed { position: absolute !important; inset-inline: 0; top: 50%; transform: translateY(-50%); width: 100%; }
 .rm-barcode-scanner .barcode-camera-feed video { display: block; width: 100%; max-width: 100%; height: auto; }
-.rm-barcode-scanner [data-barcode-zoom][hidden] { display: none; }
+/* JS controls photo/live sections; hidden must win over layout utilities. */
+.rm-barcode-scanner [hidden] { display: none; }
+.rm-barcode-scanner [data-barcode-photo]:has([data-barcode-result]:not([hidden])) [data-barcode-capture] {
+  @apply border-ui-control bg-white text-ui-ink hover:bg-ui-canvas;
+}

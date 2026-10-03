@@ -15,23 +15,49 @@
 <dialog class="rm-barcode-scanner ui-card m-auto max-h-[calc(100dvh-2rem)] w-full max-w-[min(32rem,calc(100vw-2rem))] overflow-y-auto overscroll-contain p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] font-sans text-ui-ink shadow-ui-sheet backdrop:bg-ui-ink/25 backdrop:backdrop-blur-sm sm:p-6" @ref="Dialogo" aria-labelledby="@TituloId" aria-describedby="@InstruccionesId">
     <div class="grid gap-3 sm:flex sm:items-center sm:justify-between">
         <h2 class="m-0 min-w-0 text-xl font-semibold tracking-tight text-ui-ink" id="@TituloId">Escanear código de barras</h2>
-        <button class="ui-button shrink-0 border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" type="button" @onclick="CancelarAsync">Cancelar</button>
+        <button class="ui-button min-h-12 shrink-0 border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" type="button" @onclick="CancelarAsync">Cancelar</button>
     </div>
-    <p class="mt-4 mb-0 text-sm leading-6 text-ui-muted" id="@InstruccionesId">Coloca el código dentro del marco horizontal. Mantén distancia para enfocar y usa el zoom si aparece. También puedes escribirlo manualmente.</p>
-    <div class="barcode-camera-window mt-4 overflow-hidden rounded-2xl bg-ui-ink">
-        <div class="barcode-camera-feed" id="@VisorId" aria-label="Vista de la cámara"></div>
-    </div>
-    <p class="mt-3 mb-0 text-sm leading-6 text-ui-muted" role="status">@Estado</p>
-    <section class="mt-4 rounded-2xl border border-ui-border bg-ui-canvas p-3" hidden data-barcode-zoom>
-        <div class="flex min-w-0 items-center justify-between gap-3">
-            <label class="text-sm font-medium text-ui-ink" for="@(VisorId + "-zoom")">Zoom de cámara</label>
-            <output class="shrink-0 text-sm font-semibold tabular-nums text-ui-ink" for="@(VisorId + "-zoom")" data-barcode-zoom-value>1×</output>
+    <p class="mt-4 mb-0 text-sm leading-6 text-ui-muted" id="@InstruccionesId">Toma una foto del código completo y enfocado. La imagen se analiza en este dispositivo.</p>
+    <section class="mt-4 grid min-w-0 gap-4" data-barcode-photo>
+        <input class="sr-only" type="file" accept="image/*" capture="environment" id="@(VisorId + "-photo")"
+               tabindex="-1" aria-label="Tomar o seleccionar una foto del código de barras" data-barcode-file />
+        <p class="m-0 text-sm leading-6 text-ui-muted" role="status" aria-live="polite" data-barcode-photo-status>Puedes tomar una foto o elegir una imagen.</p>
+        <section class="grid min-w-0 gap-3 rounded-2xl border border-ui-success/20 bg-ui-success/5 p-4" hidden data-barcode-result aria-label="Resultado del código de barras">
+            <h3 class="m-0 text-sm font-semibold text-ui-success">Código detectado</h3>
+            <output class="block min-w-0 whitespace-pre-wrap break-all text-xl font-semibold leading-7 tabular-nums text-ui-ink" data-barcode-code></output>
+            <button class="ui-button min-h-12 w-full border-ui-accent bg-ui-accent text-white hover:bg-ui-accent/90" type="button" data-barcode-use>Usar código</button>
+        </section>
+        <button class="ui-button min-h-12 w-full border-ui-accent bg-ui-accent text-white hover:bg-ui-accent/90" type="button" data-barcode-capture>
+            <svg class="size-5 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l2-3h6l2 3h3a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1Z" /><circle cx="12" cy="13" r="4" /></svg>
+            <span data-barcode-capture-label>Tomar foto</span>
+        </button>
+        <p class="m-0 text-sm leading-6 text-ui-muted" data-barcode-photo-help>Procura que el código esté completo, enfocado y ocupe buena parte de la foto.</p>
+        <div class="flex min-w-0 items-center gap-3 text-xs text-ui-muted" aria-hidden="true">
+            <span class="h-px min-w-0 flex-1 bg-ui-border"></span>
+            <span>o</span>
+            <span class="h-px min-w-0 flex-1 bg-ui-border"></span>
         </div>
-        <input class="block h-12 min-w-0 w-full cursor-pointer accent-ui-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-accent disabled:cursor-not-allowed disabled:opacity-50"
-               id="@(VisorId + "-zoom")" type="range" data-barcode-zoom-input />
-        <p class="m-0 text-sm leading-6 text-ui-muted" role="status" aria-live="polite" data-barcode-zoom-message></p>
+        <button class="ui-button min-h-12 w-full border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" type="button" data-barcode-live>Escanear en vivo</button>
     </section>
-    <button class="ui-button mt-4 w-full border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" type="button" @onclick="NoDetectadoAsync">No se detecta el código</button>
+    <section class="mt-4 min-w-0" hidden data-barcode-live-panel>
+        <p class="m-0 text-sm leading-6 text-ui-muted">Coloca el código dentro del marco horizontal. Mantén distancia para enfocar y usa el zoom si aparece.</p>
+        <div class="barcode-camera-window mt-4 overflow-hidden rounded-2xl bg-ui-ink">
+            <div class="barcode-camera-feed" id="@VisorId" aria-label="Vista de la cámara"></div>
+        </div>
+        <p class="mt-3 mb-0 text-sm leading-6 text-ui-muted" role="status" aria-live="polite" data-barcode-live-status>Solicitando acceso a la cámara…</p>
+        <section class="mt-4 rounded-2xl border border-ui-border bg-ui-canvas p-3" hidden data-barcode-zoom>
+            <div class="flex min-w-0 items-center justify-between gap-3">
+                <label class="text-sm font-medium text-ui-ink" for="@(VisorId + "-zoom")">Zoom de cámara</label>
+                <output class="shrink-0 text-sm font-semibold tabular-nums text-ui-ink" for="@(VisorId + "-zoom")" data-barcode-zoom-value>1×</output>
+            </div>
+            <input class="block h-12 min-w-0 w-full cursor-pointer accent-ui-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-accent disabled:cursor-not-allowed disabled:opacity-50"
+                   id="@(VisorId + "-zoom")" type="range" data-barcode-zoom-input />
+            <p class="m-0 text-sm leading-6 text-ui-muted" role="status" aria-live="polite" data-barcode-zoom-message></p>
+        </section>
+        <button class="ui-button mt-4 min-h-12 w-full border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" type="button" data-barcode-back-photo>Volver a fotografía</button>
+    </section>
+    <div hidden id="@(VisorId + "-file-reader")" aria-hidden="true" data-barcode-file-reader></div>
+    <button class="ui-button mt-4 min-h-12 w-full border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" type="button" data-barcode-manual>Introducir manualmente</button>
 </dialog>
 
 @code {
@@ -47,14 +73,12 @@
     private bool Abierto;
     private bool Descartado;
     private string? Mensaje;
-    private string Estado = "Solicitando acceso a la cámara...";
 
     private async Task AbrirAsync()
     {
         if (Disabled || Abierto || Descartado) return;
         Abierto = true;
         Mensaje = null;
-        Estado = "Solicitando acceso a la cámara...";
         try
         {
             Modulo ??= await JS.InvokeAsync<IJSObjectReference>("import", "./barcode-scanner.js");
@@ -62,9 +86,7 @@
             Referencia ??= DotNetObjectReference.Create(this);
             var resultado = await Modulo.InvokeAsync<string>("abrir", Dialogo, VisorId, Referencia);
             if (Descartado || !Abierto) return;
-            if (resultado == "started")
-                Estado = "Buscando código...";
-            else
+            if (resultado != "ready")
             {
                 Abierto = false;
                 Mensaje = MensajePara(resultado);
@@ -87,12 +109,6 @@
         try { if (Modulo is not null) await Modulo.InvokeVoidAsync("cerrar", Dialogo); }
         catch (JSDisconnectedException) { }
         Mensaje = "Escaneo cancelado. Puedes escribir el código manualmente.";
-    }
-
-    private async Task NoDetectadoAsync()
-    {
-        await CancelarAsync();
-        Mensaje = "No se pudo detectar el código. Acerca el producto o escríbelo manualmente.";
     }
 
     [JSInvokable]
@@ -124,6 +140,7 @@
         "unsupported" => "Este navegador no permite usar la cámara aquí. Abre la app por HTTPS en Safari o escribe el código manualmente.",
         "busy" => "Ya hay un escáner abierto. Ciérralo antes de intentarlo de nuevo.",
         "timeout" => "No se pudo detectar un código. Inténtalo de nuevo o escríbelo manualmente.",
+        "manual" => "Puedes escribir el código manualmente.",
         "background" => "El escaneo se detuvo al salir de la página. Puedes volver a abrirlo.",
         _ => "No se pudo iniciar la cámara. Escribe el código manualmente o inténtalo de nuevo."
     };

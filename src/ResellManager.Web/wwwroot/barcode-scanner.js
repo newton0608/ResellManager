@@ -73,7 +73,7 @@ function safeZoom(range, value) {
 }
 
 function running(session) {
-    return active === session && !session.cancelled && !session.done;
+    return alive(session.owner) && session.owner.live === session && !session.cancelled && !session.done;
 }
 
 function trackZoom(session, fallback) {
@@ -240,9 +240,54 @@ function resetView(dialog) {
     if (!feed) return;
     for (const property of ["width", "left", "right", "transform"]) feed.style.removeProperty(property);
 }
-function closeDialog(session) {
+function alive(session) {
+    return !!session && active === session && !session.cancelled && !session.done;
+}
+
+function element(session, name) {
+    return session.dialog.querySelector("[data-barcode-" + name + "]");
+}
+
+function photoState(session, state, message = "", code = null) {
+    session.mode = "photo";
+    session.pendingCode = code;
+    const photo = element(session, "photo");
+    if (photo) {
+        photo.hidden = false;
+        photo.setAttribute("aria-busy", String(state === "analysing"));
+    }
+    const panel = element(session, "live-panel");
+    if (panel) panel.hidden = true;
+    const result = element(session, "result");
+    if (result) result.hidden = code === null;
+    const output = element(session, "code");
+    if (output) output.textContent = code ?? "";
+    const status = element(session, "photo-status");
+    if (status) status.textContent = message;
+    const label = element(session, "capture-label");
+    if (label) label.textContent = state === "idle" ? "Tomar foto" : "Tomar otra foto";
+    for (const name of ["capture", "file", "live", "use"]) {
+        const control = element(session, name);
+        if (control) control.disabled = state === "analysing" || session.transitioning
+            || (name === "use" && code === null);
+    }
+}
+
+function scannerInstance(id) {
+    const formats = window.Html5QrcodeSupportedFormats;
+    return new window.Html5Qrcode(id, {
+        formatsToSupport: [formats.EAN_13, formats.EAN_8, formats.UPC_A, formats.UPC_E, formats.CODE_128],
+        useBarCodeDetectorIfSupported: false
+    });
+}
+
+function closeDialog(session, manual = false) {
     if (session.dialog.open) session.dialog.close();
-    if (session.origin?.isConnected) session.origin.focus();
+    // Preferir el input hermano del consumidor, sin modificar su valor ni contrato.
+    const field = manual ? session.dialog.parentElement?.querySelector(
+        "input:not([type='file']):not([type='range']), textarea") : null;
+    const target = field && !session.dialog.contains?.(field) && !field.disabled ? field : session.origin;
+    if (target?.isConnected) target.focus();
 }
 
 function captureTracks(session) {
@@ -257,121 +302,336 @@ function releaseTracks(session) {
     session.dialog.querySelectorAll("video").forEach(video => { video.srcObject = null; });
 }
 
-function release(session) {
+function stopCamera(session) {
+    if (!session) return Promise.resolve();
     if (session.stopPromise) return session.stopPromise;
     session.cancelled = true;
     clearTimeout(session.timeout);
     hideZoom(session);
+    session.resizeObserver?.disconnect();
+    if (session.onResize) window.removeEventListener("resize", session.onResize);
+    session.stopPromise = (async () => {
+        try { await session.startPromise; } catch { /* Permiso o inicio fallido. */ }
+        captureTracks(session);
+        try { await session.scanner?.stop(); } catch { /* Puede no haber iniciado. */ }
+        releaseTracks(session);
+        try { session.scanner?.clear(); } catch { /* Tracks ya liberados. */ }
+    })();
+    return session.stopPromise;
+}
+
+// Adaptador acotado a 2.3.8: scanFileV2 crea dos object URLs y no las libera.
+// Las APIs se interceptan sólo durante su llamada síncrona, nunca durante un await.
+// Capturar el Image permite cancelar su carga sin dejar un onload sobre un host descartado.
+function localPhotoScan(session, file) {
+    const urls = new Set();
+    const images = new Set();
+    const urlApi = globalThis.URL;
+    if (typeof urlApi?.createObjectURL !== "function" || typeof urlApi?.revokeObjectURL !== "function"
+        || typeof window.Image !== "function") throw new Error("Local image processing unavailable");
+    const originalCreate = urlApi.createObjectURL;
+    const OriginalImage = window.Image;
+    let rejectCancellation;
+    let cancelled = false;
+    const cancellation = new Promise((_, reject) => { rejectCancellation = reject; });
+    const captureUrl = function(blob) {
+        const url = originalCreate.call(urlApi, blob);
+        if (blob === file) urls.add(url);
+        return url;
+    };
+    const CapturedImage = new Proxy(OriginalImage, {
+        construct(target, args) {
+            const image = Reflect.construct(target, args);
+            images.add(image);
+            return image;
+        }
+    });
+    const clean = () => {
+        for (const image of images) {
+            for (const event of ["onload", "onerror", "onabort", "onstalled", "onsuspend"])
+                image[event] = null;
+            image.removeAttribute?.("src");
+        }
+        images.clear();
+        for (const url of urls) urlApi.revokeObjectURL(url);
+        urls.clear();
+    };
+    const operation = {
+        cancel() {
+            if (cancelled) return;
+            cancelled = true;
+            clean();
+            rejectCancellation(new Error("Photo analysis cancelled"));
+        }
+    };
+    session.photoOperation = operation;
+    let decode;
+    try {
+        urlApi.createObjectURL = captureUrl;
+        window.Image = CapturedImage;
+        if (urlApi.createObjectURL !== captureUrl || window.Image !== CapturedImage)
+            throw new Error("Local image cleanup unavailable");
+        decode = session.photoScanner.scanFileV2(file, false);
+        // El vendor no captura excepciones de onload (p. ej. canvas sin memoria).
+        // Convertirlas en fallo recuperable, en vez de dejar Analizando indefinidamente.
+        for (const image of images) {
+            const onload = image.onload;
+            if (typeof onload === "function") image.onload = function(...args) {
+                try { return onload.apply(this, args); }
+                catch (error) { rejectCancellation(error); }
+            };
+        }
+    } catch (error) {
+        decode = Promise.reject(error);
+    } finally {
+        if (urlApi.createObjectURL === captureUrl) urlApi.createObjectURL = originalCreate;
+        if (window.Image === CapturedImage) window.Image = OriginalImage;
+    }
+    return Promise.race([decode, cancellation]).finally(() => {
+        clean();
+        if (session.photoOperation === operation) session.photoOperation = null;
+        try { session.photoScanner?.clear(); } catch { /* El lector ya puede estar vacío. */ }
+    });
+}
+
+async function analysePhoto(session, file) {
+    if (!alive(session) || session.mode !== "photo" || session.analysing || session.transitioning || !file) return;
+    session.analysing = true;
+    photoState(session, "analysing", "Analizando código…");
+    // File permanece exclusivamente en JS; ningún byte cruza la interop de Blazor.
+    session.photoPromise = (async () => {
+        try {
+            await Promise.race([loadLibrary(), session.closed]);
+            if (!alive(session)) return;
+            const reader = element(session, "file-reader");
+            session.photoScanner ??= scannerInstance(reader.id);
+            const result = await localPhotoScan(session, file);
+            if (!alive(session)) return;
+            const code = result?.decodedText;
+            if (typeof code !== "string" || !code.length) throw new Error("No barcode");
+            photoState(session, "success", "Revisa el código antes de usarlo.", code);
+            element(session, "use")?.focus?.();
+        } catch {
+            if (alive(session)) photoState(session, "error", "No encontramos un código de barras en la foto.");
+        } finally {
+            session.analysing = false;
+            // No se conserva el File, preview, canvas ni object URL después del análisis.
+        }
+    })();
+    await session.photoPromise;
+}
+
+function release(session) {
+    if (session.releasePromise) return session.releasePromise;
+    session.cancelled = true;
+    session.resolveClosed();
+    session.photoOperation?.cancel();
+    session.pendingCode = null;
+    const file = element(session, "file");
+    if (file) file.value = "";
     session.dialog.removeEventListener("cancel", session.onCancel);
     session.dialog.removeEventListener("close", session.onClose);
     document.removeEventListener("visibilitychange", session.onVisibilityChange);
     window.removeEventListener("pagehide", session.onPageHide);
     session.observer?.disconnect();
-    session.resizeObserver?.disconnect();
-    if (session.onResize) window.removeEventListener("resize", session.onResize);
-    session.stopPromise = (async () => {
-        try { await session.startPromise; } catch { /* Error de inicio ya se comunica arriba. */ }
-        captureTracks(session);
-        if (session.scanner) {
-            try { await session.scanner.stop(); } catch { /* Puede no haber llegado a iniciar. */ }
-            releaseTracks(session);
-            try { session.scanner.clear(); } catch { /* La cámara ya está cerrada. */ }
-        }
+    for (const [control, name, listener] of session.listeners) control.removeEventListener(name, listener);
+    session.listeners.length = 0;
+    session.releasePromise = (async () => {
+        await stopCamera(session.live);
+        try { await session.photoPromise; } catch { /* Resultado descartado. */ }
+        try { session.photoScanner?.clear(); } catch { /* El canvas ya está vacío. */ }
         if (active === session) active = undefined;
     })();
-    return session.stopPromise;
+    return session.releasePromise;
 }
 
-async function finish(session, reason, value) {
-    if (session.done || session.cancelled) return;
+async function finish(session, reason, value = null) {
+    if (!alive(session)) return;
     session.done = true;
+    closeDialog(session, reason === "manual");
     await release(session);
-    closeDialog(session);
     try { await session.reference.invokeMethodAsync("FinalizarEscaneo", reason, value); }
-    catch { /* El circuito de Blazor pudo cerrarse durante el escaneo. */ }
+    catch { /* El circuito de Blazor pudo cerrarse durante el análisis. */ }
+}
+
+async function liveResult(camera, reason, value = null) {
+    if (!running(camera)) return;
+    camera.done = true;
+    const session = camera.owner;
+    session.transitioning = true;
+    await stopCamera(camera);
+    if (!alive(session)) return;
+    session.live = null;
+    session.transitioning = false;
+    if (reason === "detected") {
+        photoState(session, "success", "Revisa el código antes de usarlo.", value);
+        element(session, "use")?.focus?.();
+    } else {
+        photoState(session, "error", liveMessage(reason));
+    }
+}
+
+function liveMessage(reason) {
+    return {
+        denied: "El permiso de cámara fue denegado. Puedes tomar una foto o introducir el código manualmente.",
+        "no-camera": "No se encontró una cámara. Puedes elegir una imagen o introducir el código manualmente.",
+        unsupported: "Este navegador no permite usar la cámara aquí. Prueba una foto o introduce el código manualmente.",
+        timeout: "No se pudo detectar un código. Prueba una foto o introduce el código manualmente.",
+        "startup-error": "No se pudo iniciar la cámara. Prueba una foto o introduce el código manualmente."
+    }[reason] ?? "Prueba una foto o introduce el código manualmente.";
+}
+
+export async function escanearEnVivo(dialog) {
+    const session = active;
+    if (!session || session.dialog !== dialog || !alive(session) || session.analysing || session.transitioning || session.live) return "busy";
+    if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+        photoState(session, "error", liveMessage("unsupported"));
+        return "unsupported";
+    }
+    session.transitioning = true;
+    session.pendingCode = null;
+    session.mode = "live";
+    element(session, "photo").hidden = true;
+    element(session, "live-panel").hidden = false;
+    element(session, "back-photo").disabled = true;
+    element(session, "live-status").textContent = "Solicitando acceso a la cámara…";
+    try { session.photoScanner?.clear(); } catch { /* Sin imagen activa. */ }
+    hideZoom({ dialog });
+    resetView(dialog);
+    const camera = {
+        owner: session, dialog, scanner: null, startPromise: null, stopPromise: null,
+        timeout: null, tracks: new Set(), cancelled: false, done: false
+    };
+    session.live = camera;
+    try {
+        await loadLibrary();
+        if (!alive(session)) return "cancelled";
+        camera.scanner = scannerInstance(session.viewId);
+        camera.startPromise = Promise.resolve().then(() => camera.scanner.start(
+            { facingMode: "environment" },
+            {
+                fps: 10, disableFlip: true, qrbox: barcodeBox,
+                videoConstraints: cameraConstraints()
+            },
+            text => { if (text) void liveResult(camera, "detected", text); },
+            () => { /* Sin coincidencia en este fotograma. */ }
+        ));
+        await camera.startPromise;
+        captureTracks(camera);
+        if (camera.done) return "started";
+        if (!alive(session) || camera.cancelled) {
+            await stopCamera(camera);
+            return "cancelled";
+        }
+        improveDecoderSampling(camera);
+        adaptView(camera);
+        camera.timeout = setTimeout(() => void liveResult(camera, "timeout"), 45000);
+        session.transitioning = false;
+        element(session, "back-photo").disabled = false;
+        element(session, "live-status").textContent = "Buscando código…";
+        void configureCamera(camera);
+        return "started";
+    } catch (error) {
+        const reason = classify(error);
+        await stopCamera(camera);
+        if (alive(session)) {
+            session.live = null;
+            session.transitioning = false;
+            photoState(session, "error", liveMessage(reason));
+        }
+        return reason;
+    }
+}
+
+export async function volverAFoto(dialog) {
+    const session = active;
+    if (!session || session.dialog !== dialog || !alive(session) || session.analysing || session.transitioning) return;
+    session.transitioning = true;
+    const camera = session.live;
+    await stopCamera(camera);
+    if (!alive(session)) return;
+    session.live = null;
+    session.transitioning = false;
+    photoState(session, "idle", "Puedes tomar una foto o elegir una imagen.");
+    element(session, "capture")?.focus?.();
 }
 
 export async function abrir(dialog, viewId, reference) {
     if (active) return "busy";
-    if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia || typeof dialog.showModal !== "function") return "unsupported";
-
+    if (typeof dialog.showModal !== "function") return "unsupported";
     const session = {
-        dialog, reference, origin: document.activeElement,
-        cancelled: false, done: false, scanner: null,
-        startPromise: null, stopPromise: null, timeout: null, tracks: new Set()
+        dialog, viewId, reference, origin: document.activeElement,
+        cancelled: false, done: false, mode: "photo", live: null,
+        analysing: false, transitioning: false, photoScanner: null,
+        photoOperation: null, photoPromise: null, releasePromise: null,
+        pendingCode: null, listeners: []
     };
+    session.closed = new Promise(resolve => { session.resolveClosed = resolve; });
+    active = session;
+    const listen = (name, event, callback) => {
+        const control = element(session, name);
+        if (!control) return;
+        control.addEventListener(event, callback);
+        session.listeners.push([control, event, callback]);
+    };
+    listen("capture", "click", () => {
+        if (!alive(session) || session.mode !== "photo" || session.analysing || session.transitioning) return;
+        const file = element(session, "file");
+        file.value = "";
+        // Sin await/interop: conservar la activación del gesto para la cámara nativa.
+        file.click();
+    });
+    listen("file", "change", () => {
+        const input = element(session, "file");
+        const file = input.files?.[0];
+        input.value = ""; // Permite elegir exactamente la misma fotografía de nuevo.
+        void analysePhoto(session, file);
+    });
+    listen("use", "click", () => {
+        if (!session.analysing && !session.transitioning && session.pendingCode !== null)
+            void finish(session, "detected", session.pendingCode);
+    });
+    listen("manual", "click", () => { void finish(session, "manual"); });
+    listen("live", "click", () => { void escanearEnVivo(dialog); });
+    listen("back-photo", "click", () => { void volverAFoto(dialog); });
     session.onCancel = event => {
         event.preventDefault();
-        // Escape libera localmente aunque el circuito .NET ya no responda.
         void cerrar(dialog);
         void reference.invokeMethodAsync("CancelarDesdeTeclado").catch(() => {});
     };
     session.onClose = () => {
-        if (running(session)) {
+        if (alive(session)) {
             void cerrar(dialog);
             void reference.invokeMethodAsync("CancelarDesdeTeclado").catch(() => {});
         }
     };
-    session.onVisibilityChange = () => { if (document.hidden) void finish(session, "background", null); };
-    session.onPageHide = () => { void finish(session, "background", null); };
-    active = session;
-    hideZoom(session);
-    resetView(dialog);
+    // El picker nativo de iOS puede ocultar la página: en modo foto debe seguir abierto.
+    session.onVisibilityChange = () => {
+        if (document.hidden && session.mode === "live") void finish(session, "background");
+    };
+    session.onPageHide = () => { void finish(session, "background"); };
     dialog.addEventListener("cancel", session.onCancel);
     dialog.addEventListener("close", session.onClose);
     document.addEventListener("visibilitychange", session.onVisibilityChange);
     window.addEventListener("pagehide", session.onPageHide);
     if (typeof MutationObserver !== "undefined") {
         session.observer = new MutationObserver(() => {
-            if (!dialog.isConnected) {
-                session.cancelled = true;
-                void release(session);
-            } else {
-                improveDecoderSampling(session);
-            }
+            if (!dialog.isConnected) void release(session);
+            else if (session.live) improveDecoderSampling(session.live);
         });
         session.observer.observe(document.body, { childList: true, subtree: true });
     }
-
     try {
+        hideZoom({ dialog });
+        photoState(session, "idle", "Puedes tomar una foto o elegir una imagen.");
+        const input = element(session, "file");
+        if (input) input.value = "";
         dialog.showModal();
-        await loadLibrary();
-        if (session.cancelled) return "cancelled";
-
-        const formats = window.Html5QrcodeSupportedFormats;
-        session.scanner = new window.Html5Qrcode(viewId, {
-            formatsToSupport: [formats.EAN_13, formats.EAN_8, formats.UPC_A, formats.UPC_E, formats.CODE_128],
-            useBarCodeDetectorIfSupported: false
-        });
-        // La promesa existe antes de cualquier callback sincrónico de start.
-        session.startPromise = Promise.resolve().then(() => session.scanner.start(
-            { facingMode: "environment" },
-            {
-                fps: 10, disableFlip: true, qrbox: barcodeBox,
-                // videoConstraints sustituye cameraIdOrConfig en html5-qrcode.
-                videoConstraints: cameraConstraints()
-            },
-            text => { if (text) void finish(session, "detected", text); },
-            () => { /* Sin coincidencia en este fotograma; continúa buscando. */ }
-        ));
-        await session.startPromise;
-        captureTracks(session);
-        if (session.done) return "started";
-        if (session.cancelled) {
-            await release(session);
-            return "cancelled";
-        }
-        improveDecoderSampling(session);
-        adaptView(session);
-        session.timeout = setTimeout(() => void finish(session, "timeout", null), 45000);
-        // Los ajustes opcionales nunca bloquean el inicio ni la detección.
-        void configureCamera(session);
-        return "started";
-    } catch (error) {
-        const reason = classify(error);
+        return "ready";
+    } catch {
         await release(session);
         closeDialog(session);
-        return reason;
+        return "startup-error";
     }
 }
 
