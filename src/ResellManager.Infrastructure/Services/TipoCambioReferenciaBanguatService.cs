@@ -223,4 +223,3 @@ public sealed class TipoCambioReferenciaBanguatService(
     private sealed record FilaReferencia(DateOnly? Fecha, decimal? Valor);
     private readonly record struct ClaveCache(MonedaCompra Moneda, DateOnly Fecha);
 }
-

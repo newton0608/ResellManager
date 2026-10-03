@@ -1,4 +1,4 @@
-﻿BEGIN TRANSACTION;
+BEGIN TRANSACTION;
 ALTER TABLE "DetallesCompra" ADD "CostoUnitarioMonedaOrigen" decimal(10,2) NOT NULL DEFAULT '0.0';
 
 ALTER TABLE "Compras" ADD "FechaTipoCambioReferencia" TEXT NULL;
@@ -21,4 +21,3 @@ INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
 VALUES ('20261003155826_AddPurchaseCurrencies', '10.0.12');
 
 COMMIT;
-
