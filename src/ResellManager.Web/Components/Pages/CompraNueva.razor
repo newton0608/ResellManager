@@ -1,7 +1,9 @@
 @page "/compras/nueva"
 @rendermode InteractiveServer
 @using ResellManager.Domain.Enums
+@implements IDisposable
 @inject IRegistroCompraConComprobanteService RegistroCompraService
+@inject ITipoCambioReferenciaService TipoCambioReferenciaService
 @inject NavigationManager Navigation
 @inject ILogger<CompraNueva> Logger
 
@@ -45,7 +47,7 @@
                     <div class="grid min-w-0 gap-4 sm:grid-cols-2">
                         <div class="grid min-w-0 gap-2">
                             <label class="text-sm font-medium" for="compra-fecha">Fecha de compra <span aria-hidden="true">*</span></label>
-                            <InputDate class="ui-input" id="compra-fecha" @bind-Value="Modelo.FechaCompra" />
+                            <InputDate class="ui-input" id="compra-fecha" @bind-Value="Modelo.FechaCompra" @bind-Value:after="ConsultarReferenciaAsync" />
                         </div>
                         <div class="grid min-w-0 gap-2">
                             <label class="text-sm font-medium" for="compra-origen">Origen <span aria-hidden="true">*</span></label>
@@ -55,6 +57,17 @@
                                     <option value="@origen">@CompraPresentacion.Origen(origen)</option>
                                 }
                             </select>
+                        </div>
+                        <div class="grid min-w-0 gap-2 sm:col-span-2">
+                            <label class="text-sm font-medium" for="compra-moneda">Moneda <span aria-hidden="true">*</span></label>
+                            <select class="ui-input" id="compra-moneda" value="@Modelo.Moneda" @onchange="CambiarMonedaAsync">
+                                <option value="GTQ">GTQ — Quetzal</option>
+                                <option value="USD">USD — Dólar estadounidense</option>
+                            </select>
+                            @if (Modelo.Origen == OrigenCompra.Importacion && Modelo.Moneda == MonedaCompra.GTQ)
+                            {
+                                <p class="m-0 text-xs leading-5 text-ui-muted">Si el proveedor cobra en dólares, puedes seleccionar USD. El origen y la moneda son independientes.</p>
+                            }
                         </div>
                         <div class="grid min-w-0 gap-2 sm:col-span-2">
                             <ProveedorBuscador Seleccionado="ProveedorSeleccionado" Deshabilitado="@(Guardando || AltaAbierta)"
@@ -91,6 +104,45 @@
                     }
                 </section>
 
+                @if (EsUsd)
+                {
+                    <section class="ui-card grid min-w-0 gap-4 p-4 sm:p-6" aria-labelledby="titulo-moneda-compra">
+                        <div class="grid min-w-0 gap-1">
+                            <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-moneda-compra">USD — Dólar estadounidense</h2>
+                            <p class="m-0 text-sm leading-6 text-ui-muted">Ingresa los costos en dólares. El inventario y la utilidad se registrarán usando el costo convertido a GTQ.</p>
+                        </div>
+                        <div class="grid min-w-0 gap-4 sm:grid-cols-2">
+                            <div class="grid min-w-0 content-start gap-1 rounded-2xl bg-ui-canvas p-4" role="status" aria-live="polite" aria-busy="@ConsultandoReferencia.ToString().ToLowerInvariant()">
+                                <span class="text-xs font-medium leading-5 text-ui-muted">Referencia Banco de Guatemala</span>
+                                @if (ConsultandoReferencia)
+                                {
+                                    <span class="text-sm leading-6 text-ui-muted">Consultando referencia…</span>
+                                }
+                                else if (Modelo.Referencia is { } referencia)
+                                {
+                                    <strong class="text-base leading-6 tabular-nums [overflow-wrap:anywhere]">@CompraPresentacion.TipoCambio(referencia.Valor) por US$1</strong>
+                                    <span class="text-xs leading-5 text-ui-muted">Vigente: @referencia.FechaEfectiva.ToString("dd/MM/yyyy")</span>
+                                    <span class="text-xs leading-5 text-ui-muted">Es una sugerencia; puedes usar el costo real de tu conversión.</span>
+                                }
+                                else
+                                {
+                                    <span class="text-sm leading-6 text-ui-muted">@(ErrorReferencia ?? MensajeReferenciaNoDisponible)</span>
+                                }
+                            </div>
+                            <div class="grid min-w-0 content-start gap-2">
+                                <label class="text-sm font-medium" for="compra-tipo-cambio">Tipo de cambio usado <span aria-hidden="true">*</span></label>
+                                <InputNumber class="ui-input" id="compra-tipo-cambio" inputmode="decimal" min="0" step="any" @bind-Value="Modelo.TipoCambio" @bind-Value:after="Modelo.MarcarTipoCambioManual" @oninput="Modelo.MarcarTipoCambioManual" />
+                                <ValidationMessage For="() => Modelo.TipoCambio" />
+                                <p class="m-0 text-xs leading-5 text-ui-muted">GTQ por US$1. Usa el tipo de cambio que realmente pagaste.</p>
+                                @if (Modelo.Referencia is { } referenciaDisponible && Modelo.TipoCambio != referenciaDisponible.Valor)
+                                {
+                                    <button class="ui-button justify-start border-ui-control bg-white text-ui-accent hover:bg-ui-canvas" type="button" @onclick="Modelo.UsarReferencia">Usar referencia</button>
+                                }
+                            </div>
+                        </div>
+                    </section>
+                }
+
                 <section class="ui-card grid min-w-0 gap-5 p-4 sm:p-6" aria-labelledby="titulo-detalles-compra">
                     <div class="grid min-w-0 gap-4 sm:flex sm:items-center sm:justify-between">
                         <div class="grid min-w-0 gap-1">
@@ -122,23 +174,39 @@
                                     </div>
                                     <div class="grid min-w-0 gap-2">
                                         <label class="text-sm font-medium" for="cantidad-compra-@numero">Cantidad <span aria-hidden="true">*</span></label>
-                                        <input class="ui-input" inputmode="numeric" data-select-once="true" id="cantidad-compra-@numero" type="number" min="1" step="1" @bind="detalle.Cantidad" />
+                                        <input class="ui-input" inputmode="numeric" data-select-once="true" id="cantidad-compra-@numero" type="number" min="1" step="1" @bind="detalle.Cantidad" @bind:event="oninput" />
                                     </div>
                                     <div class="grid min-w-0 gap-2">
-                                        <label class="text-sm font-medium" for="costo-compra-@numero">Costo unitario <span aria-hidden="true">*</span></label>
-                                        <input class="ui-input" inputmode="decimal" data-select-once="true" id="costo-compra-@numero" type="number" min="0" step="0.01" @bind="detalle.CostoUnitario" />
+                                        <label class="text-sm font-medium" for="costo-compra-@numero">Costo unitario (@(EsUsd ? "US$" : "Q")) <span aria-hidden="true">*</span></label>
+                                        <input class="ui-input" inputmode="decimal" data-select-once="true" id="costo-compra-@numero" type="number" min="0" step="0.01" @bind="detalle.CostoUnitarioMonedaOrigen" @bind:event="oninput" />
+                                        @if (EsUsd)
+                                        {
+                                            <span class="text-xs leading-5 text-ui-muted tabular-nums">≈ @EquivalenteUnitario(detalle)</span>
+                                        }
                                     </div>
                                     <div class="col-span-2 flex min-w-0 items-center justify-between gap-2 rounded-2xl bg-ui-canvas px-3 py-3 xl:col-span-1 xl:grid xl:gap-1">
                                         <span class="text-xs leading-5 text-ui-muted">Subtotal</span>
-                                        <strong class="min-w-0 text-base leading-6 tabular-nums [overflow-wrap:anywhere]">@CompraPresentacion.Moneda(detalle.Subtotal)</strong>
+                                        <div class="grid min-w-0 gap-1 text-right xl:text-left">
+                                            <strong class="min-w-0 text-base leading-6 tabular-nums [overflow-wrap:anywhere]">@SubtotalOrigen(detalle)</strong>
+                                            @if (EsUsd)
+                                            {
+                                                <span class="text-xs leading-5 text-ui-muted tabular-nums [overflow-wrap:anywhere]">≈ @EquivalenteSubtotal(detalle)</span>
+                                            }
+                                        </div>
                                     </div>
                                 </div>
                             </article>
                         }
                     </div>
                     <div class="flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-2xl bg-ui-canvas p-4">
-                        <span class="text-sm font-medium text-ui-muted">Total visual</span>
-                        <strong class="min-w-0 text-2xl font-semibold tracking-tight text-ui-ink tabular-nums [overflow-wrap:anywhere]">@CompraPresentacion.Moneda(Modelo.TotalVisual)</strong>
+                        <span class="text-sm font-medium text-ui-muted">@(EsUsd ? "Total compra" : "Total visual")</span>
+                        <div class="grid min-w-0 gap-1 text-right">
+                            <strong class="min-w-0 text-2xl font-semibold tracking-tight text-ui-ink tabular-nums [overflow-wrap:anywhere]">@CompraPresentacion.MonedaOrigen(Modelo.TotalVisualMonedaOrigen, Modelo.Moneda)</strong>
+                            @if (EsUsd)
+                            {
+                                <span class="text-sm leading-6 text-ui-muted tabular-nums [overflow-wrap:anywhere]">Equivalente @CompraPresentacion.Equivalente(Modelo.TotalVisualGtq)</span>
+                            }
+                        </div>
                     </div>
                 </section>
 
@@ -217,20 +285,42 @@
                     <div class="min-w-0"><dt class="text-xs text-ui-muted">Origen</dt><dd class="m-0 font-medium">@CompraPresentacion.Origen(Modelo.Origen)</dd></div>
                     <div class="min-w-0"><dt class="text-xs text-ui-muted">Fecha de compra</dt><dd class="m-0 font-medium">@Modelo.FechaCompra.ToString("dd/MM/yyyy")</dd></div>
                     <div class="min-w-0"><dt class="text-xs text-ui-muted">Fecha de ingreso</dt><dd class="m-0 font-medium">@(Modelo.FechaIngreso?.ToString("dd/MM/yyyy") ?? "Pendiente / no aplica")</dd></div>
+                    @if (EsUsd)
+                    {
+                        <div class="min-w-0"><dt class="text-xs text-ui-muted">Moneda</dt><dd class="m-0 font-medium">USD</dd></div>
+                        <div class="min-w-0"><dt class="text-xs text-ui-muted">Tipo de cambio usado</dt><dd class="m-0 font-medium [overflow-wrap:anywhere]">@CompraPresentacion.TipoCambio(Modelo.TipoCambio) por US$1</dd></div>
+                        @if (Modelo.Referencia is { } referencia)
+                        {
+                            <div class="min-w-0"><dt class="text-xs text-ui-muted">Referencia Banguat</dt><dd class="m-0 font-medium">@CompraPresentacion.TipoCambio(referencia.Valor)</dd></div>
+                            <div class="min-w-0"><dt class="text-xs text-ui-muted">Fecha efectiva</dt><dd class="m-0 font-medium">@referencia.FechaEfectiva.ToString("dd/MM/yyyy")</dd></div>
+                        }
+                    }
                 </dl>
                 <ul class="rm-purchase-review-lines m-0 grid min-w-0 list-none gap-3 p-0">
                     @foreach (var detalle in Modelo.Detalles)
                     {
                         <li class="grid min-w-0 gap-1 rounded-2xl bg-ui-canvas p-3">
                             <strong>@detalle.ProductoSeleccionado?.Nombre</strong>
-                            <span class="text-ui-muted">@detalle.Cantidad × @CompraPresentacion.Moneda(detalle.CostoUnitario) = @CompraPresentacion.Moneda(detalle.Subtotal)</span>
+                            <span class="min-w-0 text-ui-muted [overflow-wrap:anywhere]">@detalle.Cantidad × @CompraPresentacion.MonedaOrigen(detalle.CostoUnitarioMonedaOrigen, Modelo.Moneda) = @SubtotalOrigen(detalle)</span>
+                            @if (EsUsd)
+                            {
+                                <span class="min-w-0 text-ui-muted [overflow-wrap:anywhere]">Equivalente GTQ: @EquivalenteSubtotal(detalle) · Costo unitario GTQ: @EquivalenteUnitario(detalle)</span>
+                            }
                         </li>
                     }
                 </ul>
                 <p class="m-0 flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-ui-canvas p-4">
-                    <span class="text-ui-muted">Total</span>
-                    <strong class="text-xl tracking-tight tabular-nums">@CompraPresentacion.Moneda(Modelo.TotalVisual)</strong>
+                    <span class="text-ui-muted">@(EsUsd ? "Total moneda origen" : "Total")</span>
+                    <strong class="text-xl tracking-tight tabular-nums [overflow-wrap:anywhere]">@CompraPresentacion.MonedaOrigen(Modelo.TotalVisualMonedaOrigen, Modelo.Moneda)</strong>
                 </p>
+                @if (EsUsd)
+                {
+                    <p class="m-0 flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-ui-canvas p-4">
+                        <span class="text-ui-muted">Total registrado en GTQ</span>
+                        <strong class="text-xl tracking-tight tabular-nums [overflow-wrap:anywhere]">@CompraPresentacion.Equivalente(Modelo.TotalVisualGtq)</strong>
+                    </p>
+                    <p class="m-0 text-ui-muted">El inventario y la utilidad se registrarán usando el costo convertido a GTQ.</p>
+                }
                 <p class="m-0">Comprobante: @(Modelo.AdjuntarComprobante ? ArchivoSeleccionado?.Name : "Sin archivo adjunto")</p>
                 <p class="m-0 text-ui-muted">La compra y sus unidades se registrarán únicamente al confirmar.</p>
             </div>
@@ -251,6 +341,84 @@
     private bool Guardando { get; set; }
     private string? ErrorGuardado { get; set; }
     private string? ErrorArchivo { get; set; }
+    private const string MensajeReferenciaNoDisponible = "No pudimos consultar la referencia del Banco de Guatemala. Ingresa el tipo de cambio manualmente.";
+    private bool EsUsd => Modelo.Moneda == MonedaCompra.USD;
+    private bool ConsultandoReferencia { get; set; }
+    private string? ErrorReferencia { get; set; }
+    private CancellationTokenSource? ConsultaReferencia;
+    private long VersionConsulta;
+    private bool Eliminado;
+
+    private async Task CambiarMonedaAsync(ChangeEventArgs evento)
+    {
+        if (Guardando || !Enum.TryParse<MonedaCompra>(evento.Value?.ToString(), out var moneda) || !Enum.IsDefined(moneda)) return;
+        Modelo.CambiarMoneda(moneda);
+        await ConsultarReferenciaAsync();
+    }
+
+    private async Task ConsultarReferenciaAsync()
+    {
+        var version = ++VersionConsulta;
+        ConsultaReferencia?.Cancel();
+        ConsultaReferencia?.Dispose();
+        ConsultaReferencia = null;
+        ConsultandoReferencia = false;
+        ErrorReferencia = null;
+        Modelo.PrepararConsultaReferencia();
+        if (!EsUsd || Eliminado) return;
+
+        var fecha = Modelo.FechaCompra;
+        using var cancelacion = new CancellationTokenSource();
+        ConsultaReferencia = cancelacion;
+        ConsultandoReferencia = true;
+        try
+        {
+            var resultado = await TipoCambioReferenciaService.ConsultarAsync(MonedaCompra.USD, fecha, cancelacion.Token);
+            if (Eliminado || version != VersionConsulta || !EsUsd || fecha != Modelo.FechaCompra) return;
+            if (resultado.Disponible && resultado.Referencia is { } referencia)
+            {
+                Modelo.ActualizarReferencia(referencia);
+                if (Modelo.Referencia is null) ErrorReferencia = MensajeReferenciaNoDisponible;
+            }
+            else ErrorReferencia = MensajeReferenciaNoDisponible;
+        }
+        catch (OperationCanceledException) when (cancelacion.IsCancellationRequested) { }
+        catch (Exception ex)
+        {
+            if (Eliminado || version != VersionConsulta) return;
+            Logger.LogWarning(ex, "No fue posible consultar la referencia de compra para {FechaCompra}.", fecha);
+            ErrorReferencia = MensajeReferenciaNoDisponible;
+        }
+        finally
+        {
+            if (version == VersionConsulta)
+            {
+                ConsultandoReferencia = false;
+                ConsultaReferencia = null;
+            }
+        }
+    }
+
+    private string EquivalenteUnitario(DetalleCompraFormModel detalle) =>
+        CompraPresentacion.Equivalente(Modelo.TipoCambio > 0 ? detalle.CostoUnitarioGtq(Modelo.TipoCambio) : null);
+
+    private string EquivalenteSubtotal(DetalleCompraFormModel detalle) =>
+        CompraPresentacion.Equivalente(Modelo.TipoCambio > 0 ? detalle.SubtotalGtq(Modelo.TipoCambio) : null);
+
+    private string SubtotalOrigen(DetalleCompraFormModel detalle)
+    {
+        try { return CompraPresentacion.MonedaOrigen(detalle.Subtotal, Modelo.Moneda); }
+        catch (OverflowException) { return "—"; }
+    }
+
+    public void Dispose()
+    {
+        Eliminado = true;
+        VersionConsulta++;
+        ConsultaReferencia?.Cancel();
+        ConsultaReferencia?.Dispose();
+        ConsultaReferencia = null;
+    }
 
     private bool RequiereFechaIngreso =>
         Modelo.Origen is OrigenCompra.CompraLocal or OrigenCompra.EnvioHermano;
@@ -422,8 +590,18 @@
             return "Selecciona un producto válido en cada detalle.";
         if (Modelo.Detalles.Any(x => x.Cantidad <= 0))
             return "La cantidad de cada detalle debe ser mayor que cero.";
-        if (Modelo.Detalles.Any(x => x.CostoUnitario < 0))
+        if (!Enum.IsDefined(Modelo.Moneda))
+            return "Selecciona una moneda válida.";
+        if (Modelo.Moneda == MonedaCompra.GTQ && Modelo.TipoCambio != 1m)
+            return "El tipo de cambio para GTQ debe ser 1.";
+        if (EsUsd && Modelo.TipoCambio <= 0m)
+            return "Ingresa un tipo de cambio usado mayor que cero.";
+        if (Modelo.Detalles.Any(x => x.CostoUnitarioMonedaOrigen < 0))
             return "El costo unitario no puede ser negativo.";
+        if (Modelo.Detalles.Any(x => decimal.Round(x.CostoUnitarioMonedaOrigen, 2) != x.CostoUnitarioMonedaOrigen))
+            return "El costo unitario debe tener como máximo dos decimales.";
+        if (Modelo.TotalVisualMonedaOrigen is null || Modelo.TotalVisualGtq is null)
+            return "Los importes de la compra exceden el máximo permitido.";
         if (RequiereFechaIngreso && !Modelo.FechaIngreso.HasValue)
             return "La fecha de ingreso es obligatoria para mercancía recibida.";
         if (Modelo.AdjuntarComprobante && !string.IsNullOrWhiteSpace(ErrorArchivo))

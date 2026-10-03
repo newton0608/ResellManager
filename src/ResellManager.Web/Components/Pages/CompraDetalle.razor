@@ -57,10 +57,31 @@
             </article>
             <article class="ui-card grid min-w-0 content-start gap-2 p-4 sm:p-5">
                 <span class="text-xs font-medium leading-5 text-ui-muted">Total</span>
-                <strong class="text-2xl font-semibold leading-8 tracking-tight tabular-nums [overflow-wrap:anywhere]">@CompraPresentacion.Moneda(Compra.Total)</strong>
+                <strong class="text-2xl font-semibold leading-8 tracking-tight tabular-nums [overflow-wrap:anywhere]">@CompraPresentacion.MonedaOrigen(Compra.Moneda == MonedaCompra.USD ? Compra.TotalMonedaOrigen : Compra.Total, Compra.Moneda)</strong>
+                @if (Compra.Moneda == MonedaCompra.USD)
+                {
+                    <span class="text-sm leading-6 text-ui-muted tabular-nums [overflow-wrap:anywhere]">Total GTQ: @CompraPresentacion.Moneda(Compra.Total)</span>
+                }
                 <span class="text-xs leading-5 text-ui-muted">Calculado por el servicio de compras</span>
             </article>
         </section>
+
+        @if (Compra.Moneda == MonedaCompra.USD)
+        {
+            <section class="ui-card grid min-w-0 gap-4 p-4 sm:p-5" aria-labelledby="titulo-moneda-registrada">
+                <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-moneda-registrada">Moneda y conversión</h2>
+                <dl class="m-0 grid min-w-0 gap-4 text-sm leading-6 sm:grid-cols-2">
+                    <div class="min-w-0"><dt class="text-xs text-ui-muted">Moneda</dt><dd class="m-0 font-medium">USD — Dólar estadounidense</dd></div>
+                    <div class="min-w-0"><dt class="text-xs text-ui-muted">Tipo de cambio usado</dt><dd class="m-0 font-medium tabular-nums [overflow-wrap:anywhere]">@CompraPresentacion.TipoCambio(Compra.TipoCambio) por US$1</dd></div>
+                    @if (Compra.TipoCambioReferencia is { } referencia)
+                    {
+                        <div class="min-w-0"><dt class="text-xs text-ui-muted">Referencia @TextoOpcional(Compra.FuenteTipoCambio)</dt><dd class="m-0 font-medium tabular-nums">@CompraPresentacion.TipoCambio(referencia)</dd></div>
+                        <div class="min-w-0"><dt class="text-xs text-ui-muted">Fecha efectiva de referencia</dt><dd class="m-0 font-medium">@(Compra.FechaTipoCambioReferencia?.ToString("dd/MM/yyyy") ?? "—")</dd></div>
+                    }
+                </dl>
+                <p class="m-0 text-sm leading-6 text-ui-muted">El tipo de cambio quedó guardado con esta compra. El inventario y la utilidad usan el costo convertido a GTQ.</p>
+            </section>
+        }
 
         @if (Compra.Origen == OrigenCompra.Importacion && Compra.Recepcion is { } recepcion)
         {
@@ -98,18 +119,34 @@
                         <li class="grid min-w-0 gap-2 border-0 border-t border-solid border-ui-border px-4 py-4 sm:flex sm:items-center sm:justify-between sm:gap-5 sm:px-5">
                             <div class="grid min-w-0 gap-1">
                                 <h3 class="m-0 text-base font-semibold leading-6 text-ui-ink [overflow-wrap:anywhere]">@detalle.Producto</h3>
-                                <p class="m-0 text-sm leading-6 text-ui-muted">@detalle.Cantidad × @CompraPresentacion.Moneda(detalle.CostoUnitario)</p>
+                                <p class="m-0 text-sm leading-6 text-ui-muted">@detalle.Cantidad × @CompraPresentacion.MonedaOrigen(Compra.Moneda == MonedaCompra.USD ? detalle.CostoUnitarioMonedaOrigen : detalle.CostoUnitario, Compra.Moneda)</p>
+                                @if (Compra.Moneda == MonedaCompra.USD)
+                                {
+                                    <p class="m-0 text-xs leading-5 text-ui-muted">Costo unitario GTQ: @CompraPresentacion.Moneda(detalle.CostoUnitario)</p>
+                                }
                             </div>
                             <div class="flex min-w-0 items-center justify-between gap-2 sm:block sm:shrink-0 sm:text-right">
                                 <span class="text-xs leading-5 text-ui-muted">Subtotal</span>
-                                <strong class="block text-base leading-6 text-ui-ink tabular-nums [overflow-wrap:anywhere]">@CompraPresentacion.Moneda(detalle.Subtotal)</strong>
+                                <div class="grid min-w-0 gap-1 text-right">
+                                    <strong class="block text-base leading-6 text-ui-ink tabular-nums [overflow-wrap:anywhere]">@CompraPresentacion.MonedaOrigen(Compra.Moneda == MonedaCompra.USD ? detalle.SubtotalMonedaOrigen : detalle.Subtotal, Compra.Moneda)</strong>
+                                    @if (Compra.Moneda == MonedaCompra.USD)
+                                    {
+                                        <span class="text-xs leading-5 text-ui-muted tabular-nums [overflow-wrap:anywhere]">GTQ: @CompraPresentacion.Moneda(detalle.Subtotal)</span>
+                                    }
+                                </div>
                             </div>
                         </li>
                     }
                 </ul>
                 <div class="flex min-w-0 flex-wrap items-center justify-between gap-2 border-0 border-t border-solid border-ui-border bg-ui-canvas p-4 sm:p-5">
                     <span class="text-sm font-medium text-ui-muted">Total</span>
-                    <strong class="min-w-0 text-xl font-semibold tracking-tight text-ui-ink tabular-nums [overflow-wrap:anywhere]">@CompraPresentacion.Moneda(Compra.Total)</strong>
+                    <div class="grid min-w-0 gap-1 text-right">
+                        <strong class="min-w-0 text-xl font-semibold tracking-tight text-ui-ink tabular-nums [overflow-wrap:anywhere]">@CompraPresentacion.MonedaOrigen(Compra.Moneda == MonedaCompra.USD ? Compra.TotalMonedaOrigen : Compra.Total, Compra.Moneda)</strong>
+                        @if (Compra.Moneda == MonedaCompra.USD)
+                        {
+                            <span class="text-sm leading-6 text-ui-muted tabular-nums [overflow-wrap:anywhere]">Total registrado en GTQ: @CompraPresentacion.Moneda(Compra.Total)</span>
+                        }
+                    </div>
                 </div>
             </section>
 

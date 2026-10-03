@@ -128,3 +128,5 @@ El layout, la navegación, la topbar y el dashboard usan utilities de Tailwind c
 `ui-button`, `ui-card` y `ui-input` son utilities compartidas. Los nombres legacy de botones, cards, inputs/selects, badges y mensajes reutilizan estas reglas con `@apply` dentro de `.rm-ui`, sin migrar el marcado de Productos, Clientes, Compras, Pedidos o Ventas. Se conserva el CSS legacy, incluidos los ajustes del selector de fechas nativo de iOS.
 
 En móvil se mantiene el menú nativo `popover`, con cierre al navegar, controles de al menos 44–48 px y márgenes reducidos. El dashboard presenta los canales como cards en móvil y los movimientos recientes como cards en todas las resoluciones. Solo la topbar y el fondo del menú utilizan blur; las transiciones respetan `prefers-reduced-motion`.
+
+El [soporte GTQ/USD en compras](docs/28_MonedasDeCompra.md) conserva GTQ como moneda base de inventario, ventas, utilidad, pagos y Dashboard. Banguat ofrece una sugerencia opcional; el tipo aplicado queda congelado al registrar la compra.
