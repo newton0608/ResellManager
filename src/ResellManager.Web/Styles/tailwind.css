@@ -103,8 +103,8 @@
 }
 
 /* Migrated forms use the shared controls, including their validation state. */
-:is(.rm-product-form, .rm-client-form, .rm-purchase-form, .rm-order-form, .rm-sale-form) .validation-message { @apply mt-1 text-sm leading-5 text-ui-danger; }
-:is(.rm-product-form, .rm-client-form, .rm-purchase-form, .rm-order-form, .rm-sale-form) .ui-input.invalid { @apply border-ui-danger; }
+:is(.rm-product-form, .rm-client-form, .rm-purchase-form, .rm-order-form, .rm-sale-form, .rm-payment-form) .validation-message { @apply mt-1 text-sm leading-5 text-ui-danger; }
+:is(.rm-product-form, .rm-client-form, .rm-purchase-form, .rm-order-form, .rm-sale-form, .rm-payment-form) .ui-input.invalid { @apply border-ui-danger; }
 
 /* Migrated entity pickers reuse the same controls, scoped to their modules. */
 :is(.rm-client-picker, .rm-purchases, .rm-orders, .rm-order-picker, .rm-sales, .rm-inventory-picker) .form-field { @apply min-w-0; }
@@ -125,8 +125,8 @@
 }
 .rm-purchases .history-search { @apply col-auto sm:col-span-2 xl:col-span-1; }
 .rm-purchases .history-filter-actions { @apply m-0 grid grid-cols-2 gap-2 sm:col-span-2 xl:col-span-1; }
-:is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory) .form-field { @apply min-w-0 gap-2; }
-:is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory) .field-help { @apply m-0 text-sm leading-6 text-ui-muted; }
+:is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory, .rm-payments) .form-field { @apply min-w-0 gap-2; }
+:is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory, .rm-payments) .field-help { @apply m-0 text-sm leading-6 text-ui-muted; }
 :is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory) :is(.lookup-result, .product-search-result) { overflow-wrap: anywhere; }
 :is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory) .product-search-results { @apply gap-2 rounded-2xl; }
 :is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory) .product-search-result {
@@ -140,24 +140,26 @@
 .rm-purchases .purchase-origin-import { @apply border-ui-accent/20 bg-ui-accent/5 text-ui-accent; }
 .rm-purchases .purchase-origin-received { @apply border-ui-success/20 bg-ui-success/5 text-ui-success; }
 .rm-purchases .purchase-origin-catalog { @apply border-ui-warning/20 bg-ui-warning/5 text-ui-warning; }
-:is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory) .validation-summary { @apply m-0 text-sm leading-6 text-ui-danger; }
-.rm-ui :is(.rm-purchase-form, .rm-order-form, .rm-sale-form) :is(input.invalid, select.invalid, textarea.invalid) { @apply border-ui-danger; }
+:is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory, .rm-payments) .validation-summary { @apply m-0 text-sm leading-6 text-ui-danger; }
+.rm-ui :is(.rm-purchase-form, .rm-order-form, .rm-sale-form, .rm-payment-form) :is(input.invalid, select.invalid, textarea.invalid) { @apply border-ui-danger; }
 .rm-purchase-supplier .form-grid { @apply gap-4 sm:grid-cols-2; }
 .rm-purchase-supplier .form-actions { @apply grid grid-cols-2 gap-3 sm:flex sm:flex-wrap; }
 .rm-purchase-supplier .required-note { @apply m-0 text-xs leading-5 text-ui-muted; }
-:is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory) .operation-review { @apply ui-card min-w-0 p-5 text-ui-ink shadow-ui-sheet sm:p-6; }
-:is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory) .operation-review::backdrop { @apply bg-ui-ink/40; }
-:is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory) .operation-review h2 { @apply mb-4 text-xl font-semibold tracking-tight text-ui-ink; }
-:is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory) .operation-review-actions { @apply grid grid-cols-2 gap-3; }
+:is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory, .rm-payments) .operation-review { @apply ui-card min-w-0 p-5 text-ui-ink shadow-ui-sheet sm:p-6; }
+:is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory, .rm-payments) .operation-review::backdrop { @apply bg-ui-ink/40; }
+:is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory, .rm-payments) .operation-review h2 { @apply mb-4 text-xl font-semibold tracking-tight text-ui-ink; }
+:is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory, .rm-payments) .operation-review-actions { @apply grid grid-cols-2 gap-3; }
 :is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory) .operation-review-content :is(.rm-purchase-review-lines, .rm-order-review-lines, .rm-sale-review-lines, .rm-inventory-review-lines) { @apply p-0; }
 :is(.rm-purchases, .rm-orders, .rm-sales, .rm-inventory) :is(.rm-purchase-review-lines, .rm-order-review-lines, .rm-sale-review-lines, .rm-inventory-review-lines) li { @apply m-0; }
 
-/* Orders reuse the shared surfaces; these layouts include their state filter and line editor. */
-:is(.rm-orders, .rm-sales) .history-filter-form {
-  @apply ui-card m-0 grid min-w-0 grid-cols-1 gap-4 p-4 sm:grid-cols-2 sm:p-5 xl:grid-cols-3;
+/* Transaction filters reuse shared surfaces; order and sale editors retain their layouts. */
+:is(.rm-orders, .rm-sales, .rm-payments) .history-filter-form {
+  @apply ui-card m-0 grid min-w-0 grid-cols-1 gap-4 p-4 sm:grid-cols-2 sm:p-5;
 }
+:is(.rm-orders, .rm-sales) .history-filter-form { @apply xl:grid-cols-3; }
 :is(.rm-orders, .rm-sales) .history-search { @apply col-auto sm:col-span-2; }
-:is(.rm-orders, .rm-sales) .history-filter-actions { @apply m-0 grid grid-cols-2 gap-2 sm:col-span-2 xl:col-span-1; }
+:is(.rm-orders, .rm-sales, .rm-payments) .history-filter-actions { @apply m-0 grid grid-cols-2 gap-2 sm:col-span-2; }
+:is(.rm-orders, .rm-sales) .history-filter-actions { @apply xl:col-span-1; }
 :is(.rm-orders, .rm-sales) .entity-form { @apply grid min-w-0 gap-6; }
 .rm-orders .order-line-grid { @apply grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]; }
 .rm-orders .order-status-pending { @apply border-ui-warning/20 bg-ui-warning/5 text-ui-warning; }
