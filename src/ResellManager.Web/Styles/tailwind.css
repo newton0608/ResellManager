@@ -103,8 +103,10 @@
 }
 
 /* Migrated forms use the shared controls, including their validation state. */
-:is(.rm-product-form, .rm-client-form, .rm-purchase-form, .rm-order-form, .rm-sale-form, .rm-payment-form, .rm-category-form) .validation-message { @apply mt-1 text-sm leading-5 text-ui-danger; }
-:is(.rm-product-form, .rm-client-form, .rm-purchase-form, .rm-order-form, .rm-sale-form, .rm-payment-form, .rm-category-form) .ui-input.invalid { @apply border-ui-danger; }
+:is(.rm-product-form, .rm-client-form, .rm-purchase-form, .rm-order-form, .rm-sale-form, .rm-payment-form, .rm-category-form, .rm-provider-form) .validation-message { @apply mt-1 text-sm leading-5 text-ui-danger; }
+:is(.rm-product-form, .rm-client-form, .rm-purchase-form, .rm-order-form, .rm-sale-form, .rm-payment-form, .rm-category-form, .rm-provider-form) .ui-input.invalid { @apply border-ui-danger; }
+
+.rm-provider-form .entity-form { @apply grid min-w-0 gap-5; }
 
 /* Migrated entity pickers reuse the same controls, scoped to their modules. */
 :is(.rm-client-picker, .rm-purchases, .rm-orders, .rm-order-picker, .rm-sales, .rm-inventory-picker) .form-field { @apply min-w-0; }

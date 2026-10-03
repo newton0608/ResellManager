@@ -6,17 +6,17 @@
 
 <PageTitle>Nuevo proveedor | ResellManager</PageTitle>
 
-<section class="page-heading" aria-labelledby="titulo-nuevo-proveedor">
-    <div>
-        <p class="eyebrow">Proveedores</p>
-        <h1 id="titulo-nuevo-proveedor">Nuevo proveedor</h1>
-        <p class="page-lead">Registra los datos básicos para seleccionarlo en futuras compras.</p>
-    </div>
-</section>
+<div class="rm-providers min-w-0 space-y-6 pb-[env(safe-area-inset-bottom)]">
+    <section class="grid min-w-0 gap-2" aria-labelledby="titulo-nuevo-proveedor">
+        <p class="m-0 text-xs font-semibold tracking-wide text-ui-muted uppercase">Proveedores</p>
+        <h1 class="m-0 text-3xl font-bold tracking-tight text-ui-ink sm:text-4xl" id="titulo-nuevo-proveedor">Nuevo proveedor</h1>
+        <p class="m-0 max-w-2xl text-sm leading-6 text-ui-muted">Registra los datos básicos para seleccionarlo en futuras compras.</p>
+    </section>
 
-<section class="form-panel" aria-label="Formulario de proveedor">
-    <ProveedorForm Modelo="Modelo" Guardando="Guardando" ErrorGuardado="@ErrorGuardado" OnGuardar="GuardarAsync" />
-</section>
+    <section class="ui-card min-w-0 max-w-3xl p-5 sm:p-6" aria-label="Formulario de proveedor">
+        <ProveedorForm Modelo="Modelo" Guardando="Guardando" ErrorGuardado="@ErrorGuardado" OnGuardar="GuardarAsync" />
+    </section>
+</div>
 
 @code {
     private ProveedorFormModel Modelo { get; } = new();

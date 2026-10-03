@@ -1,48 +1,58 @@
+<div class="rm-provider-form min-w-0">
     <EditForm Model="Modelo" OnValidSubmit="OnGuardar" class="entity-form">
         <DataAnnotationsValidator />
 
         @if (!string.IsNullOrWhiteSpace(ErrorGuardado))
         {
-            <div class="mensaje-error" role="alert">@ErrorGuardado</div>
+            <div class="mensaje-error [overflow-wrap:anywhere]" role="alert">@ErrorGuardado</div>
         }
 
-        <ValidationSummary class="validation-summary" role="alert" />
+        <ValidationSummary class="rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger empty:hidden [&_ul]:m-0 [&_ul]:pl-5" role="alert" />
 
-        <div class="form-grid">
-            <div class="form-field">
-                <label for="proveedor-nombre">Nombre <span aria-hidden="true">*</span></label>
-                <InputText disabled="@Guardando" id="proveedor-nombre" aria-describedby="proveedor-nombre-validacion" @bind-Value="Modelo.Nombre" autocomplete="organization" />
-                <div id="proveedor-nombre-validacion"><ValidationMessage For="() => Modelo.Nombre" /></div>
+        <div class="grid min-w-0 gap-5 sm:grid-cols-2">
+            <div class="grid min-w-0 content-start gap-2 sm:col-span-2">
+                <label class="text-sm font-medium text-ui-ink" for="proveedor-nombre">Nombre <span aria-hidden="true">*</span></label>
+                <InputText class="ui-input" disabled="@Guardando" id="proveedor-nombre" aria-describedby="proveedor-nombre-validacion" aria-required="true" @bind-Value="Modelo.Nombre" autocomplete="organization" />
+                <div class="empty:hidden" id="proveedor-nombre-validacion"><ValidationMessage For="() => Modelo.Nombre" /></div>
             </div>
 
-            <div class="form-field">
-                <label for="proveedor-pais">Código de país</label>
-                <InputText disabled="@Guardando" id="proveedor-pais" aria-describedby="proveedor-pais-validacion" @bind-Value="Modelo.CodigoPais" maxlength="10" autocomplete="country" />
-                <div id="proveedor-pais-validacion"><ValidationMessage For="() => Modelo.CodigoPais" /></div>
+            <div class="grid min-w-0 content-start gap-2">
+                <label class="text-sm font-medium text-ui-ink" for="proveedor-pais">Código de país</label>
+                <InputText class="ui-input" disabled="@Guardando" id="proveedor-pais" aria-describedby="proveedor-pais-validacion" @bind-Value="Modelo.CodigoPais" maxlength="10" autocomplete="country" />
+                <div class="empty:hidden" id="proveedor-pais-validacion"><ValidationMessage For="() => Modelo.CodigoPais" /></div>
             </div>
 
-            <div class="form-field">
-                <label for="proveedor-telefono">Teléfono</label>
-                <InputText disabled="@Guardando" id="proveedor-telefono" aria-describedby="proveedor-telefono-validacion" @bind-Value="Modelo.Telefono" inputmode="tel" autocomplete="tel" />
-                <div id="proveedor-telefono-validacion"><ValidationMessage For="() => Modelo.Telefono" /></div>
+            <div class="grid min-w-0 content-start gap-2">
+                <label class="text-sm font-medium text-ui-ink" for="proveedor-telefono">Teléfono</label>
+                <InputText class="ui-input" disabled="@Guardando" id="proveedor-telefono" aria-describedby="proveedor-telefono-validacion" @bind-Value="Modelo.Telefono" inputmode="tel" autocomplete="tel" />
+                <div class="empty:hidden" id="proveedor-telefono-validacion"><ValidationMessage For="() => Modelo.Telefono" /></div>
             </div>
 
-            <div class="form-field form-field-wide">
-                <label for="proveedor-descripcion">Descripción</label>
-                <InputTextArea disabled="@Guardando" id="proveedor-descripcion" aria-describedby="proveedor-descripcion-validacion" @bind-Value="Modelo.Descripcion" rows="4" />
-                <div id="proveedor-descripcion-validacion"><ValidationMessage For="() => Modelo.Descripcion" /></div>
+            <div class="grid min-w-0 content-start gap-2 sm:col-span-2">
+                <label class="text-sm font-medium text-ui-ink" for="proveedor-descripcion">Descripción</label>
+                <InputTextArea class="ui-input min-h-28 resize-y" disabled="@Guardando" id="proveedor-descripcion" aria-describedby="proveedor-descripcion-validacion" @bind-Value="Modelo.Descripcion" rows="4" />
+                <div class="empty:hidden" id="proveedor-descripcion-validacion"><ValidationMessage For="() => Modelo.Descripcion" /></div>
             </div>
         </div>
 
-        <p class="required-note"><span aria-hidden="true">*</span> Campos obligatorios</p>
+        <p class="m-0 text-sm leading-6 text-ui-muted"><span aria-hidden="true">*</span> Campos obligatorios</p>
 
-        <div class="form-actions">
-            <button class="primary-button" type="submit" disabled="@Guardando">
+        <div class="grid min-w-0 gap-3 sm:flex sm:flex-wrap">
+            <button class="ui-button bg-ui-accent text-white hover:bg-ui-accent-hover" type="submit" disabled="@Guardando">
                 @(Guardando ? "Guardando..." : "Guardar proveedor")
             </button>
-            @if (OnCancelar.HasDelegate) { <button class="secondary-button" type="button" disabled="@Guardando" @onclick="OnCancelar">Cancelar</button> } else { <a class="secondary-button" href="/proveedores">Cancelar</a> }
+            @if (OnCancelar.HasDelegate)
+            {
+                <button class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" type="button" disabled="@Guardando" @onclick="OnCancelar">Cancelar</button>
+            }
+            else
+            {
+                <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/proveedores">Cancelar</a>
+            }
         </div>
     </EditForm>
+</div>
+
 @code {
     [Parameter, EditorRequired] public ProveedorFormModel Modelo { get; set; } = default!;
     [Parameter] public bool Guardando { get; set; }
