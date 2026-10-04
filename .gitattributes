@@ -1,0 +1,3 @@
+# Keep the vendored npm decoder and its license byte-identical across platforms.
+src/ResellManager.Web/wwwroot/vendor/quagga2/quagga.min.js -text
+src/ResellManager.Web/wwwroot/vendor/quagga2/LICENSE -text

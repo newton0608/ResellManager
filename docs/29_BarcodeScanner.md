@@ -20,7 +20,9 @@ Se comprobó el registro npm antes de instalar: 1.11.0 está disponible y el
 registro también anuncia 1.12.1. Este hotfix fija **1.11.0** sin rangos en
 package.json y conserva la integridad del paquete en package-lock.json.
 
-wwwroot/vendor/quagga2/quagga.min.js y LICENSE están versionados. Por ello
+wwwroot/vendor/quagga2/quagga.min.js y LICENSE están versionados. Las reglas
+.gitattributes de estos dos assets evitan conversión LF/CRLF para conservar
+los bytes de la distribución npm también en checkouts Windows. Por ello
 dotnet run/build/publish funcionan sin Node ni node_modules. El decoder se
 carga bajo demanda desde el mismo origen y respetando document.baseURI; no
 usa CDN.
