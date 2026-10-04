@@ -188,8 +188,8 @@
 .rm-inventory-picker :is(.field-help, .lookup-results strong, .lookup-results span) { overflow-wrap: anywhere; }
 .rm-inventory-picker .lookup-result { @apply text-ui-ink; }
 .rm-inventory-picker .lookup-result:disabled { @apply text-ui-muted; }
-.rm-inventory-loss .operation-review .primary-button:not(:disabled) { @apply border-ui-danger bg-ui-danger text-white; }
-.rm-inventory-loss .operation-review .primary-button:hover:not(:disabled) { @apply border-ui-danger bg-ui-danger/90; }
+.rm-inventory-loss .rm-operation-confirm:not(:disabled) { @apply border-ui-danger bg-ui-danger text-white; }
+.rm-inventory-loss .rm-operation-confirm:hover:not(:disabled) { @apply border-ui-danger bg-ui-danger/90; }
 /* Compact camera window: natural video geometry keeps html5-qrcode's crop aligned. */
 .rm-barcode-scanner .barcode-camera-window { @apply relative min-w-0 w-full; aspect-ratio: 2 / 1; max-height: 14rem; }
 .rm-barcode-scanner .barcode-camera-feed { position: absolute !important; inset-inline: 0; top: 50%; transform: translateY(-50%); width: 100%; }
