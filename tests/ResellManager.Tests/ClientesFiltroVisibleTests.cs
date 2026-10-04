@@ -9,14 +9,25 @@ namespace ResellManager.Tests;
 public sealed class ClientesFiltroVisibleTests
 {
     [Fact]
-    public void AccionesRapidas_ConservanGridConAlturaTactilDe80Px()
+    public void AccionesRapidas_ConservanGridResponsiveConAlturaTactilDe96Px()
     {
         var raiz = new DirectoryInfo(AppContext.BaseDirectory);
         while (raiz is not null && !File.Exists(Path.Combine(raiz.FullName, "ResellManager.sln"))) raiz = raiz.Parent;
         Assert.NotNull(raiz);
-        var css = File.ReadAllText(Path.Combine(raiz.FullName, "src/ResellManager.Web/wwwroot/app.css"));
-        Assert.Matches(@"\.dashboard-action-grid > a\s*\{[^}]*min-height:\s*5rem;", css);
-        Assert.Matches(@"\.dashboard-action-grid\s*\{[^}]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)", css);
+        var home = File.ReadAllText(Path.Combine(raiz.FullName, "src/ResellManager.Web/Components/Pages/Home.razor"));
+        var acciones = System.Text.RegularExpressions.Regex.Match(home,
+            "<section aria-labelledby=\"titulo-acciones-rapidas\">[\\s\\S]*?</section>");
+        Assert.True(acciones.Success);
+        Assert.Contains("grid-cols-2", acciones.Value, StringComparison.Ordinal);
+        Assert.Contains("xl:grid-cols-4", acciones.Value, StringComparison.Ordinal);
+        var enlaces = System.Text.RegularExpressions.Regex.Matches(acciones.Value,
+            "<a\\s+class=\"([^\"]+)\"");
+        Assert.Equal(4, enlaces.Count);
+        foreach (System.Text.RegularExpressions.Match enlace in enlaces)
+        {
+            Assert.Contains("ui-button", enlace.Groups[1].Value, StringComparison.Ordinal);
+            Assert.Contains("min-h-24", enlace.Groups[1].Value, StringComparison.Ordinal);
+        }
     }
 
     [Fact]

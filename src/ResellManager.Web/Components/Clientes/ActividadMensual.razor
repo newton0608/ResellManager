@@ -5,7 +5,7 @@
     <h3 class="m-0">
         <button type="button" class="ui-button w-full justify-between border-ui-border bg-ui-canvas text-left text-base text-ui-ink hover:bg-ui-accent/5" aria-expanded="@(Abierta ? "true" : "false")" @onclick="() => Abierta = !Abierta">
             <span class="min-w-0 [overflow-wrap:anywhere]">@Titulo</span>
-            <svg class="size-5 shrink-0 text-ui-muted transition-transform duration-150 motion-reduce:transition-none @(Abierta ? "rotate-90" : "")" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7" /></svg>
+            <svg class="size-5 shrink-0 text-ui-muted transition-transform duration-150 motion-reduce:transition-none @(Abierta ?"rotate-90" : "")" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7" /></svg>
         </button>
     </h3>
     @if (Abierta)
@@ -28,7 +28,7 @@
         }
         else if (Error is not null)
         {
-            <p class="mensaje-error" role="alert">@Error</p>
+            <p class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger" role="alert">@Error</p>
             <button class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" @onclick="CargarAsync">Reintentar</button>
         }
         else if (Meses.Count == 0)

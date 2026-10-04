@@ -20,9 +20,9 @@
     </section>
 
     <FiltrosHistorial Id="filtros-ventas" Modelo="Filtros" Placeholder="Buscar por código de venta" Ocupado="Cargando" OnAplicar="AplicarFiltrosAsync" OnLimpiar="LimpiarFiltrosAsync">
-        <div class="form-field">
+        <div class="grid min-w-0 gap-2 [&>label]:text-sm [&>label]:font-semibold">
             <label for="estado-historial">Estado</label>
-            <select id="estado-historial" @bind="Filtros.Estado" disabled="@Cargando">
+            <select class="ui-input" id="estado-historial" @bind="Filtros.Estado" disabled="@Cargando">
                 <option value="">Todos</option>
                 <option value="registrada">Registrada</option>
                 <option value="cancelada">Cancelada</option>
@@ -32,7 +32,7 @@
 
     @if (!string.IsNullOrWhiteSpace(ErrorMessage))
     {
-        <div class="mensaje-error" role="alert">
+        <div class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger" role="alert">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <span>@ErrorMessage</span>
                 <button class="ui-button border-ui-danger/30 bg-white text-ui-danger hover:bg-ui-danger/5" type="button" @onclick="CargarAsync">Reintentar</button>
@@ -43,13 +43,13 @@
     @if (Cargando)
     {
         <div class="ui-card flex items-center gap-3 p-6 text-sm text-ui-muted" role="status" aria-live="polite">
-            <span class="spinner" aria-hidden="true"></span>
+            <span class="size-5 shrink-0 rounded-full border-[3px] border-solid border-ui-accent/20 border-t-ui-accent motion-safe:animate-spin" aria-hidden="true"></span>
             Cargando ventas...
         </div>
     }
     else if (string.IsNullOrWhiteSpace(ErrorMessage) && VentasRegistradas.Count == 0)
     {
-        <section class="empty-state" aria-labelledby="titulo-sin-ventas">
+        <section class="empty-state ui-card min-w-0 p-6 text-center text-ui-muted sm:p-8" aria-labelledby="titulo-sin-ventas">
             <div class="grid justify-items-center gap-4">
                 <span class="inline-flex size-12 items-center justify-center rounded-2xl bg-ui-accent/10 text-ui-accent" aria-hidden="true"><NavIcon Name="cart" /></span>
                 <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-sin-ventas">@(Filtros.Activo ? "No se encontraron ventas con estos filtros" : "Aún no hay ventas")</h2>
@@ -73,7 +73,7 @@
                                 aria-expanded="@(Meses.Abierto(grupo.Anio, grupo.Mes) ? "true" : "false")"
                                 @onclick="() => Meses.Alternar(grupo.Anio, grupo.Mes)">
                             <span>@grupo.Titulo</span>
-                            <svg class="size-5 shrink-0 @(Meses.Abierto(grupo.Anio, grupo.Mes) ? "rotate-90" : "")" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7" /></svg>
+                            <svg class="size-5 shrink-0 @(Meses.Abierto(grupo.Anio, grupo.Mes) ?"rotate-90" : "")" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7" /></svg>
                         </button>
                     </h3>
                     @* A single responsive list serves both sale-desktop-table and sale-mobile-cards views. *@
@@ -96,7 +96,7 @@
                                 </a>
                                 <div class="flex flex-wrap items-center justify-between gap-2 border-0 border-t border-solid border-ui-border px-4 py-2 sm:px-5">
                                     <a class="ui-button min-w-0 border-ui-border bg-white text-ui-accent [overflow-wrap:anywhere] hover:bg-ui-accent/5" href="/pedidos/@venta.PedidoId">Pedido #@venta.PedidoId</a>
-                                    <span class="status-badge @VentaPresentacion.ClaseEstado(venta.Estado)">@VentaPresentacion.Estado(venta.Estado)</span>
+                                    <span class="inline-flex items-center rounded-full bg-ui-warning/5 px-3 py-1 text-xs font-semibold leading-5 text-ui-warning @VentaPresentacion.ClaseEstado(venta.Estado)">@VentaPresentacion.Estado(venta.Estado)</span>
                                 </div>
                             </article>
                         }

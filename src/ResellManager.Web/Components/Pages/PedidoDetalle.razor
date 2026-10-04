@@ -14,7 +14,7 @@
     @if (Cargando)
     {
         <div class="ui-card flex items-center gap-3 p-6 text-sm text-ui-muted" role="status" aria-live="polite">
-            <span class="spinner" aria-hidden="true"></span>
+            <span class="size-5 shrink-0 rounded-full border-[3px] border-solid border-ui-accent/20 border-t-ui-accent motion-safe:animate-spin" aria-hidden="true"></span>
             Cargando pedido y reservas...
         </div>
     }
@@ -41,7 +41,7 @@
                 </p>
             </div>
             <div class="grid min-w-0 gap-3 xl:justify-items-end">
-                <span class="order-status justify-self-start xl:justify-self-end @PedidoPresentacion.ClaseEstado(Pedido.Estado)">@PedidoPresentacion.Estado(Pedido.Estado)</span>
+                <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold leading-5 justify-self-start xl:justify-self-end @PedidoPresentacion.ClaseEstado(Pedido.Estado)">@PedidoPresentacion.Estado(Pedido.Estado)</span>
                 <div class="grid min-w-0 grid-cols-2 gap-2 sm:flex sm:flex-wrap">
                     @if (Pedido.VentaId.HasValue)
                     {
@@ -65,11 +65,11 @@
 
         @if (!string.IsNullOrWhiteSpace(MensajeExito))
         {
-            <div class="mensaje-exito" role="status">@MensajeExito</div>
+            <div class="rounded-2xl border border-solid border-ui-success/20 bg-ui-success/5 px-4 py-3 text-sm leading-6 text-ui-success" role="status">@MensajeExito</div>
         }
         @if (!string.IsNullOrWhiteSpace(ErrorOperacion))
         {
-            <div class="mensaje-error" role="alert">@ErrorOperacion</div>
+            <div class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger" role="alert">@ErrorOperacion</div>
         }
 
         <section class="grid min-w-0 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]" aria-label="Resumen del pedido">
@@ -153,8 +153,8 @@
                                                     <span class="text-xs leading-5 text-ui-muted">Reservada para este pedido</span>
                                                 </div>
                                                 <div class="flex min-w-0 flex-wrap items-center gap-2">
-                                                    <span class="inventory-badge @InventarioPresentacion.ClaseEstado(unidad.Estado)">@InventarioPresentacion.Estado(unidad.Estado)</span>
-                                                    <span class="inventory-badge reservation-badge">Reservada</span>
+                                                    <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold leading-5 @InventarioPresentacion.ClaseEstado(unidad.Estado)">@InventarioPresentacion.Estado(unidad.Estado)</span>
+                                                    <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold leading-5 reservation-badge">Reservada</span>
                                                 </div>
                                                 @if (EsModificable)
                                                 {
@@ -216,7 +216,7 @@
                 <div class="grid min-w-0 gap-4 pt-4">
                     <p class="m-0 text-sm leading-6 text-ui-muted">Agrega un producto adicional. Los productos ya registrados se conservan.</p>
                     <div class="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_8rem_10rem]">
-                        <div class="form-field min-w-0 sm:col-span-2 xl:col-span-1">
+                        <div class="grid min-w-0 gap-2 [&>label]:text-sm [&>label]:font-semibold sm:col-span-2 xl:col-span-1">
                             <ProductoBuscador Id="nuevo-detalle-producto" Seleccionado="NuevoDetalle.ProductoSeleccionado" Deshabilitado="Procesando" OnSeleccionado="ElegirProductoNuevo" />
                         </div>
                         <div class="grid min-w-0 gap-2">

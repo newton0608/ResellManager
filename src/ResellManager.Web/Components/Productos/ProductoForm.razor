@@ -1,9 +1,9 @@
-<EditForm Model="Modelo" OnValidSubmit="GuardarAsync" class="entity-form">
+<EditForm Model="Modelo" OnValidSubmit="GuardarAsync" class="entity-form grid min-w-0 gap-6">
     <DataAnnotationsValidator />
 
     @if (!string.IsNullOrWhiteSpace(ErrorMessage))
     {
-        <div class="mensaje-error" role="alert">@ErrorMessage</div>
+        <div class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger" role="alert">@ErrorMessage</div>
     }
 
     @if (Categorias.Count == 0)
@@ -173,7 +173,7 @@
                 </div>
                 @if (!string.IsNullOrWhiteSpace(ErrorImagen))
                 {
-                    <p class="mensaje-error" role="alert">@ErrorImagen</p>
+                    <p class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger" role="alert">@ErrorImagen</p>
                 }
             </section>
         </div>

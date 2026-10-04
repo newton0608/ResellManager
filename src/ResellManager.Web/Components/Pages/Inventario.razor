@@ -18,16 +18,16 @@
 
     @if (!string.IsNullOrWhiteSpace(MensajeExito))
     {
-        <div class="mensaje-exito" role="status">@MensajeExito</div>
+        <div class="rounded-2xl border border-solid border-ui-success/20 bg-ui-success/5 px-4 py-3 text-sm leading-6 text-ui-success" role="status">@MensajeExito</div>
     }
 
     <form class="ui-card grid min-w-0 gap-4 p-4 sm:grid-cols-2 sm:p-5 xl:grid-cols-[minmax(0,1fr)_14rem_auto]" @onsubmit="BuscarAsync" @onsubmit:preventDefault>
-        <div class="search-field min-w-0 sm:col-span-2 xl:col-auto">
+        <div class="grid min-w-0 gap-2 sm:col-span-2 xl:col-auto [&>label]:text-sm [&>label]:font-semibold">
             <label for="buscar-unidad">Buscar unidad</label>
             <input class="ui-input" id="buscar-unidad" type="search" placeholder="Producto, código de producto o código de unidad"
                    @bind="Termino" @bind:event="oninput" />
         </div>
-        <div class="form-field min-w-0">
+        <div class="grid min-w-0 gap-2 [&>label]:text-sm [&>label]:font-semibold">
             <label for="estado-unidad">Estado físico</label>
             <select class="ui-input" id="estado-unidad" @bind="EstadoFiltro">
                 <option value="">Todos los estados</option>
@@ -56,7 +56,7 @@
 
     @if (!string.IsNullOrWhiteSpace(ErrorMessage))
     {
-        <div class="mensaje-error flex min-w-0 flex-wrap items-center justify-between gap-3" role="alert">
+        <div class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger flex min-w-0 flex-wrap items-center justify-between gap-3" role="alert">
             <span class="min-w-0 [overflow-wrap:anywhere]">@ErrorMessage</span>
             <button class="ui-button border-ui-danger/30 bg-white text-ui-danger hover:bg-ui-danger/5" type="button" disabled="@Ocupado" @onclick="RecargarAsync">Reintentar</button>
         </div>
@@ -67,13 +67,13 @@
     @if (Cargando)
     {
         <div class="ui-card flex items-center gap-3 p-6 text-sm text-ui-muted" role="status" aria-live="polite">
-            <span class="spinner" aria-hidden="true"></span>
+            <span class="size-5 shrink-0 rounded-full border-[3px] border-solid border-ui-accent/20 border-t-ui-accent motion-safe:animate-spin" aria-hidden="true"></span>
             Cargando inventario...
         </div>
     }
     else if (string.IsNullOrWhiteSpace(ErrorMessage) && Unidades.Count == 0)
     {
-        <section class="empty-state" aria-labelledby="titulo-sin-inventario">
+        <section class="empty-state ui-card min-w-0 p-6 text-center text-ui-muted sm:p-8" aria-labelledby="titulo-sin-inventario">
             <div class="grid justify-items-center gap-4">
                 <span class="inline-flex size-12 items-center justify-center rounded-2xl bg-ui-accent/10 text-ui-accent" aria-hidden="true"><NavIcon Name="boxes" /></span>
                 <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-sin-inventario">@(BusquedaActiva ? "No se encontraron unidades" : "Aún no hay unidades de inventario")</h2>
@@ -103,7 +103,7 @@
                             <p class="m-0 text-xs leading-5 text-ui-muted [overflow-wrap:anywhere]">Producto @unidad.CodigoProducto</p>
                             <div class="grid justify-items-start gap-1">
                                 <span class="text-xs leading-5 text-ui-muted">Estado físico</span>
-                                <span class="inventory-badge @InventarioPresentacion.ClaseEstado(unidad.Estado)">@InventarioPresentacion.Estado(unidad.Estado)</span>
+                                <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold leading-5 @InventarioPresentacion.ClaseEstado(unidad.Estado)">@InventarioPresentacion.Estado(unidad.Estado)</span>
                             </div>
                         </div>
                         <dl class="m-0 grid min-w-0 grid-cols-2 content-start gap-3 rounded-2xl bg-ui-canvas p-3 text-sm leading-6 [&_dt]:text-xs [&_dt]:leading-5 [&_dt]:text-ui-muted [&_dd]:m-0 [&_dd]:text-ui-ink [&_dd]:[overflow-wrap:anywhere]">
@@ -115,12 +115,12 @@
                                 <dd class="grid min-w-0 justify-items-start gap-1">
                                     @if (InventarioPresentacion.EstaReservada(unidad))
                                     {
-                                        <span class="inventory-badge reservation-badge">Reservada</span>
+                                        <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold leading-5 reservation-badge">Reservada</span>
                                         <a class="inline-flex min-h-12 min-w-0 items-center rounded-xl text-sm font-semibold text-ui-accent no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-accent" href="/pedidos/@unidad.PedidoReservaId">Ver pedido de la reserva</a>
                                     }
                                     else
                                     {
-                                        <span class="inventory-badge no-reservation-badge">Sin reserva</span>
+                                        <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold leading-5 no-reservation-badge">Sin reserva</span>
                                     }
                                 </dd>
                             </div>

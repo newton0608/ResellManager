@@ -1,10 +1,10 @@
-<div class="rm-category-form min-w-0 [&>.entity-form]:grid [&>.entity-form]:gap-6">
-    <EditForm Model="Modelo" OnValidSubmit="GuardarAsync" class="entity-form">
+<div class="rm-category-form min-w-0">
+    <EditForm Model="Modelo" OnValidSubmit="GuardarAsync" class="entity-form grid min-w-0 gap-6">
         <DataAnnotationsValidator />
 
         @if (!string.IsNullOrWhiteSpace(ErrorMessage))
         {
-            <div class="mensaje-error" role="alert">@ErrorMessage</div>
+            <div class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger" role="alert">@ErrorMessage</div>
         }
 
         <ValidationSummary class="rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger empty:hidden [&_ul]:m-0 [&_ul]:pl-5" role="alert" />

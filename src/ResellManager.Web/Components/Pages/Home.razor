@@ -14,7 +14,7 @@
     @if (CargandoDashboard)
     {
         <div class="ui-card flex items-center gap-3 p-6 text-sm text-ui-muted" role="status" aria-live="polite">
-            <span class="spinner" aria-hidden="true"></span>
+            <span class="size-5 shrink-0 rounded-full border-[3px] border-solid border-ui-accent/20 border-t-ui-accent motion-safe:animate-spin" aria-hidden="true"></span>
             Cargando resumen del negocio...
         </div>
     }
@@ -94,7 +94,7 @@
         </form>
         @if (!string.IsNullOrWhiteSpace(ErrorUtilidad))
         {
-            <div class="mensaje-error mt-5 mb-0" role="alert">@ErrorUtilidad</div>
+            <div class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger mt-5 mb-0" role="alert">@ErrorUtilidad</div>
         }
         else if (ConsultandoUtilidad)
         {
@@ -116,7 +116,7 @@
                 <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-canales">Ventas por canal</h2>
                 <p class="mt-2 mb-0 text-sm text-ui-muted">Pedidos no cancelados y ventas registradas.</p>
             </div>
-            <div class="desktop-table hidden overflow-x-visible md:block">
+            <div class="rm-desktop-list hidden overflow-x-visible md:block">
                 <table class="w-full border-collapse text-sm [&_td]:border-0 [&_td]:border-t [&_td]:border-solid [&_td]:border-ui-border [&_td]:px-6 [&_td]:py-4">
                     <thead class="bg-ui-canvas/70">
                         <tr>
@@ -139,7 +139,7 @@
                     </tbody>
                 </table>
             </div>
-            <div class="mobile-card-list grid gap-3 px-4 pb-4 md:hidden">
+            <div class="rm-mobile-list grid gap-3 px-4 pb-4 md:hidden">
                 @foreach (var canal in Dashboard.Canales)
                 {
                     <article class="min-w-0 rounded-2xl bg-ui-canvas/70 p-4">

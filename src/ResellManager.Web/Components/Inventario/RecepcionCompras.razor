@@ -8,7 +8,7 @@
     </div>
     @if (Error is not null && Revision is null && UnidadPerdida is null)
     {
-        <div class="mensaje-error" role="alert">
+        <div class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger" role="alert">
             <div class="flex min-w-0 flex-wrap items-center justify-between gap-3">
                 <span class="min-w-0 [overflow-wrap:anywhere]">@Error</span>
                 <button class="ui-button min-w-0 border-ui-danger/30 bg-white text-ui-danger hover:bg-ui-danger/5" @onclick="CargarAsync">Reintentar</button>
@@ -18,11 +18,11 @@
     @if (Cargando)
     {
         <div class="ui-card flex min-w-0 items-center gap-3 p-5 text-sm leading-6 text-ui-muted" role="status">
-            <span class="spinner shrink-0" aria-hidden="true"></span>
+            <span class="size-5 shrink-0 rounded-full border-[3px] border-solid border-ui-accent/20 border-t-ui-accent motion-safe:animate-spin" aria-hidden="true"></span>
             Consultando compras pendientes...
         </div>
     }
-    @if (Exito is not null) { <p class="mensaje-exito m-0" role="status">@Exito</p> }
+    @if (Exito is not null) { <p class="rounded-2xl border border-solid border-ui-success/20 bg-ui-success/5 px-4 py-3 text-sm leading-6 text-ui-success m-0" role="status">@Exito</p> }
     @foreach (var grupo in Grupos)
     {
         <section class="ui-card grid min-w-0 gap-4 p-4 sm:p-5" @key="grupo.Compra.CompraId">
@@ -32,7 +32,7 @@
                         <span class="font-mono text-sm leading-6 [overflow-wrap:anywhere]">@grupo.Compra.CodigoCompra</span>
                         <span class="text-xs font-medium leading-5 text-ui-muted">@grupo.Compra.Unidades.Count pendientes</span>
                     </span>
-                    <svg class="size-5 shrink-0 text-ui-muted @(grupo.Abierta ? "rotate-90" : "")" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7" /></svg>
+                    <svg class="size-5 shrink-0 text-ui-muted @(grupo.Abierta ?"rotate-90" : "")" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7" /></svg>
                 </button>
             </h3>
             @if (grupo.Abierta)
@@ -59,13 +59,13 @@
                                     <span class="max-w-full font-mono text-xs leading-5 break-all text-ui-muted">@unidad.CodigoInterno</span>
                                     <span class="flex min-w-0 flex-wrap items-center gap-2">
                                         <span class="text-xs leading-5 text-ui-muted">Estado físico</span>
-                                        <span class="inventory-badge @InventarioPresentacion.ClaseEstado(unidad.Estado)">@InventarioPresentacion.Estado(unidad.Estado)</span>
+                                        <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold leading-5 @InventarioPresentacion.ClaseEstado(unidad.Estado)">@InventarioPresentacion.Estado(unidad.Estado)</span>
                                     </span>
                                     @if (InventarioPresentacion.EstaReservada(unidad))
                                     {
                                         <span class="flex min-w-0 flex-wrap items-center gap-2">
                                             <span class="text-xs leading-5 text-ui-muted">Reserva comercial</span>
-                                            <span class="inventory-badge reservation-badge">Reservada</span>
+                                            <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold leading-5 reservation-badge">Reservada</span>
                                         </span>
                                     }
                                 </span>

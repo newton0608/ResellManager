@@ -26,16 +26,16 @@
     }
     @if (ConfirmacionProducto is not null)
     {
-        <p class="mensaje-exito" role="status">@ConfirmacionProducto</p>
+        <p class="rounded-2xl border border-solid border-ui-success/20 bg-ui-success/5 px-4 py-3 text-sm leading-6 text-ui-success" role="status">@ConfirmacionProducto</p>
     }
 
     <section class="min-w-0" aria-label="Formulario de compra">
-        <EditForm Model="Modelo" OnValidSubmit="RevisarCompra" class="entity-form">
+        <EditForm Model="Modelo" OnValidSubmit="RevisarCompra" class="entity-form grid min-w-0 gap-6">
             <DataAnnotationsValidator />
             <fieldset class="m-0 grid min-w-0 max-w-full gap-6 border-0 p-0" disabled="@(Guardando || AltaAbierta)">
                 @if (!string.IsNullOrWhiteSpace(ErrorGuardado))
                 {
-                    <div class="mensaje-error" role="alert">@ErrorGuardado</div>
+                    <div class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger" role="alert">@ErrorGuardado</div>
                 }
                 <ValidationSummary class="validation-summary" />
 
@@ -217,7 +217,7 @@
                             <p class="m-0 text-sm leading-6 text-ui-muted">Adjunta una imagen JPG, JPEG, PNG, WebP o un PDF de hasta 10 MB.</p>
                         </div>
                         <label class="rm-receipt-toggle ui-button shrink-0 justify-start border-ui-control bg-ui-canvas text-left text-ui-ink has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ui-accent has-disabled:cursor-not-allowed has-disabled:border-ui-border has-disabled:text-ui-muted">
-                            <InputCheckbox class="m-0 size-5 shrink-0" @bind-Value="Modelo.AdjuntarComprobante" disabled="@Guardando" />
+                            <InputCheckbox class="m-0 size-5 shrink-0 accent-ui-accent" @bind-Value="Modelo.AdjuntarComprobante" disabled="@Guardando" />
                             Adjuntar comprobante
                         </label>
                     </div>
@@ -226,7 +226,7 @@
                         <div class="grid min-w-0 gap-4">
                             @if (!string.IsNullOrWhiteSpace(ErrorArchivo))
                             {
-                                <div class="mensaje-error" role="alert">@ErrorArchivo</div>
+                                <div class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger" role="alert">@ErrorArchivo</div>
                             }
                             <div class="grid min-w-0 gap-4 sm:grid-cols-2">
                                 <div class="grid min-w-0 gap-2">

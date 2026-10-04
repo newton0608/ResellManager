@@ -12,7 +12,7 @@
 @if (Cargando)
 {
     <div class="ui-card flex items-center gap-3 p-6 text-sm text-ui-muted" role="status" aria-live="polite">
-        <span class="spinner" aria-hidden="true"></span>
+        <span class="size-5 shrink-0 rounded-full border-[3px] border-solid border-ui-accent/20 border-t-ui-accent motion-safe:animate-spin" aria-hidden="true"></span>
         Cargando clientes e inventario elegible...
     </div>
 }
@@ -35,10 +35,10 @@ else
             <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-venta-directa">Venta directa con pedido automático</h2>
             <p class="m-0 max-w-2xl text-sm leading-6 text-ui-muted">Se creará primero un pedido <strong>Venta directa</strong> y después la venta. No existen ventas sin pedido.</p>
         </div>
-        <span class="status-badge status-badge-neutral justify-self-start sm:shrink-0">Sin reserva intermedia</span>
+        <span class="inline-flex items-center rounded-full bg-ui-warning/5 px-3 py-1 text-xs font-semibold leading-5 text-ui-warning status-badge-neutral justify-self-start sm:shrink-0">Sin reserva intermedia</span>
     </section>
 
-    <EditForm Model="Modelo" OnValidSubmit="RevisarVentaDirectaAsync" class="entity-form direct-sale-form">
+    <EditForm Model="Modelo" OnValidSubmit="RevisarVentaDirectaAsync" class="entity-form grid min-w-0 gap-6">
         <DataAnnotationsValidator />
         <ValidationSummary class="validation-summary" />
 
@@ -46,7 +46,7 @@ else
         {
             @if (PedidoAutomaticoCreado is null)
             {
-                <div class="mensaje-error" role="alert">@ErrorGuardado</div>
+                <div class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger" role="alert">@ErrorGuardado</div>
             }
             else
             {
@@ -64,16 +64,16 @@ else
         <section class="ui-card grid min-w-0 gap-5 p-4 sm:p-6" aria-label="Datos generales de la venta directa">
             <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink">Información general</h2>
             <div class="grid min-w-0 gap-4 sm:grid-cols-2">
-                <div class="form-field min-w-0">
+                <div class="grid min-w-0 gap-2 [&>label]:text-sm [&>label]:font-semibold">
                     <ClienteBuscador Id="venta-directa-cliente" Seleccionado="ClienteSeleccionado"
                         Deshabilitado="@(Registrando || RevisandoVenta || PedidoAutomaticoCreado is not null)" OnSeleccionado="ElegirCliente" />
                     <ValidationMessage id="venta-directa-cliente-error" For="() => Modelo.ClienteId" />
                 </div>
-                <div class="form-field min-w-0">
+                <div class="grid min-w-0 gap-2 [&>label]:text-sm [&>label]:font-semibold">
                     <label for="venta-directa-fecha">Fecha <span aria-hidden="true">*</span></label>
                     <InputDate class="ui-input" id="venta-directa-fecha" @bind-Value="Modelo.Fecha" disabled="@(Registrando || PedidoAutomaticoCreado is not null)" />
                 </div>
-                <div class="form-field min-w-0 sm:col-span-2">
+                <div class="grid min-w-0 gap-2 [&>label]:text-sm [&>label]:font-semibold sm:col-span-2">
                     <label for="venta-directa-observaciones">Observaciones</label>
                     <InputTextArea class="ui-input" id="venta-directa-observaciones"
                                    @bind-Value="Modelo.Observaciones"
@@ -96,7 +96,7 @@ else
                         <h3 class="m-0 text-base font-semibold leading-6 text-ui-ink [overflow-wrap:anywhere]">@detalle.Unidad.Producto</h3>
                         <p class="m-0 font-mono text-xs leading-5 text-ui-muted [overflow-wrap:anywhere]">@detalle.Unidad.CodigoInterno</p>
                     </div>
-                    <div class="form-field min-w-0">
+                    <div class="grid min-w-0 gap-2 [&>label]:text-sm [&>label]:font-semibold">
                         <label for="precio-directo-@detalle.Unidad.Id">Precio final</label>
                         <input class="ui-input" inputmode="decimal" data-select-once="true" id="precio-directo-@detalle.Unidad.Id" type="number" step="0.01" min="0" @bind="detalle.PrecioFinal"
                             disabled="@(Registrando || RevisandoVenta || PedidoAutomaticoCreado is not null)" />
@@ -126,7 +126,7 @@ else
                            Ocupado="Registrando" Error="@ErrorGuardado" OnEditar="EditarVentaAsync" OnConfirmar="ConfirmarVentaAsync">
         <p class="m-0 text-base font-semibold leading-6 text-ui-ink [overflow-wrap:anywhere]">Cliente: @ClientePresentacion.NombreCompleto(Clientes.First(x => x.Id == Modelo.ClienteId))</p>
         <p class="m-0 text-sm leading-6 text-ui-muted">Venta directa · Presencial · @Modelo.Fecha.ToString("dd/MM/yyyy")</p>
-        <ul class="rm-sale-review-lines grid min-w-0 list-none gap-2">
+        <ul class="rm-sale-review-lines m-0 grid min-w-0 list-none gap-2 p-0">
             @foreach (var detalle in Seleccionadas)
             {
                 <li class="rounded-2xl bg-ui-canvas p-3 text-sm leading-6 text-ui-ink [overflow-wrap:anywhere]">@detalle.Unidad.Producto · @detalle.Unidad.CodigoInterno:

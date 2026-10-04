@@ -18,7 +18,7 @@
     @if (CargandoClientes)
     {
         <div class="ui-card flex items-center gap-3 p-6 text-sm text-ui-muted" role="status" aria-live="polite">
-            <span class="spinner" aria-hidden="true"></span>
+            <span class="size-5 shrink-0 rounded-full border-[3px] border-solid border-ui-accent/20 border-t-ui-accent motion-safe:animate-spin" aria-hidden="true"></span>
             Cargando clientes...
         </div>
     }
@@ -34,11 +34,11 @@
     {
         @if (!string.IsNullOrWhiteSpace(MensajeExito))
         {
-            <div class="rounded-2xl border border-solid p-4 text-sm leading-6 [overflow-wrap:anywhere] @(SaldoActual.HasValue ? "border-ui-success/20 bg-ui-success/5 text-ui-success" : "border-ui-warning/20 bg-ui-warning/5 text-ui-warning")" role="status" aria-live="polite">@MensajeExito</div>
+            <div class="rounded-2xl border border-solid p-4 text-sm leading-6 [overflow-wrap:anywhere] @(SaldoActual.HasValue ?"border-ui-success/20 bg-ui-success/5 text-ui-success" : "border-ui-warning/20 bg-ui-warning/5 text-ui-warning")" role="status" aria-live="polite">@MensajeExito</div>
         }
         @if (!string.IsNullOrWhiteSpace(ErrorOperacion))
         {
-            <div class="mensaje-error grid min-w-0 gap-3 sm:flex sm:flex-wrap sm:items-center sm:justify-between" role="alert">
+            <div class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger grid min-w-0 gap-3 sm:flex sm:flex-wrap sm:items-center sm:justify-between" role="alert">
                 <span class="min-w-0 [overflow-wrap:anywhere]">@ErrorOperacion</span>
                 @if (ClienteSeleccionado is not null && !SaldoActual.HasValue)
                 {
@@ -54,7 +54,7 @@
 
         @if (ClienteSeleccionado is null)
         {
-            <section class="empty-state" aria-labelledby="titulo-sin-clientes-pago">
+            <section class="empty-state ui-card min-w-0 p-6 text-center text-ui-muted sm:p-8" aria-labelledby="titulo-sin-clientes-pago">
                 <div class="grid min-w-0 justify-items-center gap-4">
                     <span class="inline-flex size-12 items-center justify-center rounded-2xl bg-ui-accent/10 text-ui-accent" aria-hidden="true"><NavIcon Name="users" /></span>
                     <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-sin-clientes-pago">Busca y selecciona un cliente</h2>
@@ -66,7 +66,7 @@
         else if (CargandoCliente)
         {
             <div class="ui-card flex items-center gap-3 p-6 text-sm text-ui-muted" role="status" aria-live="polite">
-                <span class="spinner" aria-hidden="true"></span>
+                <span class="size-5 shrink-0 rounded-full border-[3px] border-solid border-ui-accent/20 border-t-ui-accent motion-safe:animate-spin" aria-hidden="true"></span>
                 Consultando saldo e historial...
             </div>
         }
@@ -143,12 +143,12 @@
                     </div>
                     @if (ErrorHistorial is not null)
                     {
-                        <p class="mensaje-error m-0" role="alert">@ErrorHistorial</p>
+                        <p class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger m-0" role="alert">@ErrorHistorial</p>
                     }
                     else if (CargandoHistorial)
                     {
                         <div class="flex items-center gap-3 text-sm text-ui-muted" role="status" aria-live="polite">
-                            <span class="spinner" aria-hidden="true"></span>
+                            <span class="size-5 shrink-0 rounded-full border-[3px] border-solid border-ui-accent/20 border-t-ui-accent motion-safe:animate-spin" aria-hidden="true"></span>
                             Consultando historial...
                         </div>
                     }
@@ -169,7 +169,7 @@
                                         <button class="ui-button w-full justify-between border-ui-border bg-ui-canvas text-left text-ui-ink hover:bg-white" type="button"
                                                 aria-expanded="@(Meses.Abierto(grupo.Anio, grupo.Mes) ? "true" : "false")" @onclick="() => Meses.Alternar(grupo.Anio, grupo.Mes)">
                                             <span class="min-w-0 [overflow-wrap:anywhere]">@grupo.Titulo</span>
-                                            <svg class="size-5 shrink-0 @(Meses.Abierto(grupo.Anio, grupo.Mes) ? "rotate-90" : "")" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7" /></svg>
+                                            <svg class="size-5 shrink-0 @(Meses.Abierto(grupo.Anio, grupo.Mes) ?"rotate-90" : "")" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7" /></svg>
                                         </button>
                                     </h3>
                                     <ul class="payment-desktop-table payment-mobile-cards m-0 grid min-w-0 list-none gap-3 pl-0" role="list">
@@ -182,16 +182,16 @@
                                                             <p class="m-0 text-xl font-semibold tracking-tight text-ui-accent tabular-nums [overflow-wrap:anywhere]">@ClientePresentacion.Moneda(pago.Monto)</p>
                                                             <time class="block text-xs leading-5 text-ui-muted" datetime="@pago.Fecha.ToString("yyyy-MM-dd")">@pago.Fecha.ToString("dd/MM/yyyy")</time>
                                                         </div>
-                                                        <span class="status-badge status-badge-payment justify-self-start sm:justify-self-end">@PagoPresentacion.Metodo(pago.MetodoPago)</span>
+                                                        <span class="inline-flex items-center rounded-full bg-ui-warning/5 px-3 py-1 text-xs font-semibold leading-5 text-ui-warning status-badge-payment justify-self-start sm:justify-self-end">@PagoPresentacion.Metodo(pago.MetodoPago)</span>
                                                     </div>
                                                     <dl class="m-0 grid min-w-0 gap-3 text-sm leading-6">
                                                         <div class="grid min-w-0 gap-1 sm:grid-cols-[6rem_minmax(0,1fr)] sm:gap-3">
                                                             <dt class="text-ui-muted">Referencia</dt>
-                                                            <dd class="m-0 min-w-0 [overflow-wrap:anywhere] @(pago.Referencia is null ? "text-ui-muted" : "text-ui-ink")">@(pago.Referencia ?? "—")</dd>
+                                                            <dd class="m-0 min-w-0 [overflow-wrap:anywhere] @(pago.Referencia is null ?"text-ui-muted" : "text-ui-ink")">@(pago.Referencia ?? "—")</dd>
                                                         </div>
                                                         <div class="grid min-w-0 gap-1 sm:grid-cols-[6rem_minmax(0,1fr)] sm:gap-3">
                                                             <dt class="text-ui-muted">Observaciones</dt>
-                                                            <dd class="m-0 min-w-0 whitespace-pre-line [overflow-wrap:anywhere] @(pago.Observaciones is null ? "text-ui-muted" : "text-ui-ink")">@(pago.Observaciones ?? "—")</dd>
+                                                            <dd class="m-0 min-w-0 whitespace-pre-line [overflow-wrap:anywhere] @(pago.Observaciones is null ?"text-ui-muted" : "text-ui-ink")">@(pago.Observaciones ?? "—")</dd>
                                                         </div>
                                                     </dl>
                                                 </article>

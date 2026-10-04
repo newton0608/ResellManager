@@ -22,7 +22,7 @@
 
     @if (!string.IsNullOrWhiteSpace(MensajeExito))
     {
-        <div class="mensaje-exito" role="status">@MensajeExito</div>
+        <div class="rounded-2xl border border-solid border-ui-success/20 bg-ui-success/5 px-4 py-3 text-sm leading-6 text-ui-success" role="status">@MensajeExito</div>
     }
 
     <FiltrosHistorial Id="filtros-compras" Modelo="Filtros" Placeholder="Buscar por código o proveedor" Ocupado="Cargando" OnAplicar="AplicarFiltrosAsync" OnLimpiar="LimpiarFiltrosAsync">
@@ -30,7 +30,7 @@
 
     @if (!string.IsNullOrWhiteSpace(ErrorMessage))
     {
-        <div class="mensaje-error" role="alert">
+        <div class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger" role="alert">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <span>@ErrorMessage</span>
                 <button class="ui-button border-ui-danger/30 bg-white text-ui-danger hover:bg-ui-danger/5" type="button" disabled="@Cargando" @onclick="CargarAsync">Reintentar</button>
@@ -41,13 +41,13 @@
     @if (Cargando)
     {
         <div class="ui-card flex items-center gap-3 p-6 text-sm text-ui-muted" role="status" aria-live="polite">
-            <span class="spinner" aria-hidden="true"></span>
+            <span class="size-5 shrink-0 rounded-full border-[3px] border-solid border-ui-accent/20 border-t-ui-accent motion-safe:animate-spin" aria-hidden="true"></span>
             Cargando compras...
         </div>
     }
     else if (string.IsNullOrWhiteSpace(ErrorMessage) && ComprasRegistradas.Count == 0)
     {
-        <section class="empty-state" aria-labelledby="titulo-sin-compras">
+        <section class="empty-state ui-card min-w-0 p-6 text-center text-ui-muted sm:p-8" aria-labelledby="titulo-sin-compras">
             <div class="grid justify-items-center gap-4">
                 <span class="inline-flex size-12 items-center justify-center rounded-2xl bg-ui-accent/10 text-ui-accent" aria-hidden="true"><NavIcon Name="bag" /></span>
                 <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-sin-compras">@(Filtros.Activo ? "No se encontraron compras con estos filtros" : "Aún no hay compras")</h2>
@@ -72,11 +72,11 @@
                                 aria-expanded="@(Meses.Abierto(grupo.Anio, grupo.Mes) ? "true" : "false")"
                                 @onclick="() => Meses.Alternar(grupo.Anio, grupo.Mes)">
                             <span>@grupo.Titulo</span>
-                            <svg class="size-5 shrink-0 @(Meses.Abierto(grupo.Anio, grupo.Mes) ? "rotate-90" : "")" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7" /></svg>
+                            <svg class="size-5 shrink-0 @(Meses.Abierto(grupo.Anio, grupo.Mes) ?"rotate-90" : "")" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7" /></svg>
                         </button>
                     </h3>
                     @* A single responsive list serves both legacy desktop-table and mobile-card-list views. *@
-                    <div class="desktop-table mobile-card-list grid gap-3" role="list">
+                    <div class="rm-desktop-list rm-mobile-list grid gap-3" role="list">
                         @foreach (var compra in Meses.Abierto(grupo.Anio, grupo.Mes) ? grupo.Registros : Array.Empty<CompraDto>())
                         {
                             <article class="ui-card min-w-0" role="listitem">
@@ -98,8 +98,8 @@
                                     <svg class="col-start-2 row-start-1 row-span-2 mt-1 size-5 text-ui-muted sm:col-start-3 sm:row-span-1 sm:mt-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7" /></svg>
                                 </a>
                                 <div class="flex flex-wrap items-center justify-between gap-2 border-0 border-t border-solid border-ui-border px-4 py-3 sm:px-5">
-                                    <span class="status-badge @CompraPresentacion.ClaseOrigen(compra.Origen)">@CompraPresentacion.Origen(compra.Origen)</span>
-                                    <span class="inline-flex items-center gap-2 text-xs leading-5 @(TieneComprobante(compra) ? "text-ui-success" : "text-ui-muted")">
+                                    <span class="inline-flex items-center rounded-full bg-ui-warning/5 px-3 py-1 text-xs font-semibold leading-5 text-ui-warning @CompraPresentacion.ClaseOrigen(compra.Origen)">@CompraPresentacion.Origen(compra.Origen)</span>
+                                    <span class="inline-flex items-center gap-2 text-xs leading-5 @(TieneComprobante(compra) ?"text-ui-success" : "text-ui-muted")">
                                         <svg class="size-4 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6M8 13h8M8 17h5" /></svg>
                                         @(TieneComprobante(compra) ? "Adjunto" : "Sin adjunto")
                                     </span>

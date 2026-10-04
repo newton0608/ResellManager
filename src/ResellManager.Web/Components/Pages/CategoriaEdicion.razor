@@ -17,13 +17,13 @@
     @if (Cargando)
     {
         <div class="ui-card flex items-center gap-3 p-6 text-sm text-ui-muted" role="status" aria-live="polite">
-            <span class="spinner" aria-hidden="true"></span>
+            <span class="size-5 shrink-0 rounded-full border-[3px] border-solid border-ui-accent/20 border-t-ui-accent motion-safe:animate-spin" aria-hidden="true"></span>
             Cargando categoría...
         </div>
     }
     else if (!string.IsNullOrWhiteSpace(ErrorCarga))
     {
-        <section class="error-state" role="alert">
+        <section class="ui-card min-w-0 p-6 text-center text-ui-muted sm:p-8" role="alert">
             <div class="grid min-w-0 gap-4">
                 <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink">No fue posible abrir la categoría</h2>
                 <p class="m-0 text-sm leading-6 text-ui-muted [overflow-wrap:anywhere]">@ErrorCarga</p>

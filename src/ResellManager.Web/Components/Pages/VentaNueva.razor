@@ -24,14 +24,14 @@
         <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-modo-venta">¿Cómo nace la venta?</h2>
     </div>
     <div class="grid min-w-0 grid-cols-2 gap-3" role="group" aria-label="Modo de venta">
-        <button class="ui-button min-w-0 border-ui-control bg-white text-ui-ink hover:bg-ui-canvas @(ModoActual == ModoVenta.DesdePedido ? "sale-mode-active" : null)"
+        <button class="ui-button min-w-0 border-ui-control bg-white text-ui-ink hover:bg-ui-canvas @(ModoActual == ModoVenta.DesdePedido ?"sale-mode-active" : null)"
                 type="button"
                 disabled="@OperacionEnCurso"
                 aria-pressed="@(ModoActual == ModoVenta.DesdePedido ? "true" : "false")"
                 @onclick="() => CambiarModo(ModoVenta.DesdePedido)">
             Desde pedido
         </button>
-        <button class="ui-button min-w-0 border-ui-control bg-white text-ui-ink hover:bg-ui-canvas @(ModoActual == ModoVenta.VentaDirecta ? "sale-mode-active" : null)"
+        <button class="ui-button min-w-0 border-ui-control bg-white text-ui-ink hover:bg-ui-canvas @(ModoActual == ModoVenta.VentaDirecta ?"sale-mode-active" : null)"
                 type="button"
                 disabled="@OperacionEnCurso"
                 aria-pressed="@(ModoActual == ModoVenta.VentaDirecta ? "true" : "false")"
@@ -47,7 +47,7 @@
 @if (Cargando)
 {
     <div class="ui-card flex items-center gap-3 p-6 text-sm text-ui-muted" role="status" aria-live="polite">
-        <span class="spinner" aria-hidden="true"></span>
+        <span class="size-5 shrink-0 rounded-full border-[3px] border-solid border-ui-accent/20 border-t-ui-accent motion-safe:animate-spin" aria-hidden="true"></span>
         Cargando pedidos elegibles...
     </div>
 }
@@ -71,20 +71,20 @@ else
                 <p class="mt-2 mb-0 text-sm leading-6 text-ui-muted">Se muestran pedidos no cancelados que todavía no tienen venta.</p>
             </div>
         </div>
-        <div class="form-field min-w-0">
+        <div class="grid min-w-0 gap-2 [&>label]:text-sm [&>label]:font-semibold">
             <PedidoBuscador Seleccionado="PedidoSeleccionado" Deshabilitado="OperacionEnCurso" OnSeleccionado="pedido => SeleccionarPedidoAsync(pedido?.Id ?? 0)" />
         </div>
     </section>
 
     @if (!string.IsNullOrWhiteSpace(ErrorGuardado))
     {
-        <div class="mensaje-error" role="alert">@ErrorGuardado</div>
+        <div class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger" role="alert">@ErrorGuardado</div>
     }
 
     @if (CargandoPedido)
     {
         <div class="ui-card flex items-center gap-3 p-6 text-sm text-ui-muted" role="status" aria-live="polite">
-            <span class="spinner" aria-hidden="true"></span>
+            <span class="size-5 shrink-0 rounded-full border-[3px] border-solid border-ui-accent/20 border-t-ui-accent motion-safe:animate-spin" aria-hidden="true"></span>
             Preparando el detalle exacto del pedido...
         </div>
     }
@@ -99,27 +99,27 @@ else
             <article class="ui-card grid min-w-0 content-start gap-2 p-4 sm:p-5">
                 <span class="text-xs font-semibold tracking-wide text-ui-muted uppercase">Cliente</span>
                 <strong class="min-w-0 text-base font-semibold leading-6 text-ui-ink [overflow-wrap:anywhere]">@PedidoSeleccionado.Cliente</strong>
-                <span class="field-help">@PedidoPresentacion.Tipo(PedidoSeleccionado.TipoPedido)</span>
+                <span class="m-0 text-sm leading-6 text-ui-muted [overflow-wrap:anywhere]">@PedidoPresentacion.Tipo(PedidoSeleccionado.TipoPedido)</span>
             </article>
             <article class="ui-card grid min-w-0 content-start gap-2 p-4 sm:p-5">
                 <span class="text-xs font-semibold tracking-wide text-ui-muted uppercase">Cantidad exacta</span>
                 <strong class="min-w-0 text-base font-semibold leading-6 text-ui-ink [overflow-wrap:anywhere]">@Detalles.Count @(Detalles.Count == 1 ? "artículo" : "artículos")</strong>
-                <span class="field-help">No se pueden agregar ni quitar renglones.</span>
+                <span class="m-0 text-sm leading-6 text-ui-muted [overflow-wrap:anywhere]">No se pueden agregar ni quitar renglones.</span>
             </article>
         </section>
 
-        <EditForm Model="Modelo" OnValidSubmit="RegistrarAsync" class="entity-form sale-form rm-sale-form">
+        <EditForm Model="Modelo" OnValidSubmit="RegistrarAsync" class="entity-form grid min-w-0 gap-6 rm-sale-form">
             <DataAnnotationsValidator />
 
             <ValidationSummary class="validation-summary" />
 
             <section class="ui-card grid min-w-0 gap-4 p-4 sm:p-5" aria-label="Datos generales de la venta">
                 <div class="grid min-w-0 gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-                    <div class="form-field min-w-0">
+                    <div class="grid min-w-0 gap-2 [&>label]:text-sm [&>label]:font-semibold">
                         <label for="venta-fecha">Fecha <span aria-hidden="true">*</span></label>
                         <InputDate class="ui-input" id="venta-fecha" @bind-Value="Modelo.Fecha" disabled="@Registrando" aria-required="true" />
                     </div>
-                    <div class="form-field min-w-0">
+                    <div class="grid min-w-0 gap-2 [&>label]:text-sm [&>label]:font-semibold">
                         <label for="venta-observaciones">Observaciones</label>
                         <InputTextArea class="ui-input" id="venta-observaciones" @bind-Value="Modelo.Observaciones" rows="3" maxlength="500" disabled="@Registrando" aria-describedby="venta-observaciones-error" />
                         <ValidationMessage id="venta-observaciones-error" For="() => Modelo.Observaciones" />
@@ -147,16 +147,16 @@ else
                                     <span class="block text-xs leading-5 text-ui-muted [overflow-wrap:anywhere]">Unidad @detalle.Numero</span>
                                     <h3 class="mt-1 mb-0 text-base font-semibold leading-6 text-ui-ink [overflow-wrap:anywhere]">@detalle.Producto</h3>
                                 </div>
-                                <span class="status-badge status-badge-neutral">@(EsCatalogo ? "Catálogo" : "Inventario físico")</span>
+                                <span class="inline-flex items-center rounded-full bg-ui-warning/5 px-3 py-1 text-xs font-semibold leading-5 text-ui-warning status-badge-neutral">@(EsCatalogo ? "Catálogo" : "Inventario físico")</span>
                             </div>
 
                             <div class="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
                                 @if (EsCatalogo)
                                 {
-                                    <div class="form-field min-w-0">
+                                    <div class="grid min-w-0 gap-2 [&>label]:text-sm [&>label]:font-semibold">
                                         <label for="costo-@detalle.DetallePedidoId-@detalle.Numero">Costo unitario <span aria-hidden="true">*</span></label>
                                         <input class="ui-input" inputmode="decimal" data-select-once="true" id="costo-@detalle.DetallePedidoId-@detalle.Numero" type="number" min="0" step="0.01" required disabled="@Registrando" @bind="detalle.CostoUnitario" />
-                                        <p class="field-help">Este costo queda registrado para calcular la utilidad; no se calculan comisiones.</p>
+                                        <p class="m-0 text-sm leading-6 text-ui-muted [overflow-wrap:anywhere]">Este costo queda registrado para calcular la utilidad; no se calculan comisiones.</p>
                                     </div>
                                 }
                                 else
@@ -170,12 +170,12 @@ else
                                     </div>
                                 }
 
-                                <div class="form-field min-w-0">
+                                <div class="grid min-w-0 gap-2 [&>label]:text-sm [&>label]:font-semibold">
                                     <label for="precio-@detalle.DetallePedidoId-@detalle.Numero">Precio final <span aria-hidden="true">*</span></label>
                                     <input class="ui-input" inputmode="decimal" data-select-once="true" id="precio-@detalle.DetallePedidoId-@detalle.Numero" type="number" min="0" step="0.01" required disabled="@Registrando" @bind="detalle.PrecioFinal" />
-                                    <p class="field-help">Precio real editable; no modifica el precio sugerido.</p>
+                                    <p class="m-0 text-sm leading-6 text-ui-muted [overflow-wrap:anywhere]">Precio real editable; no modifica el precio sugerido.</p>
                                 </div>
-                                <div class="form-field min-w-0 sm:col-span-2">
+                                <div class="grid min-w-0 gap-2 [&>label]:text-sm [&>label]:font-semibold sm:col-span-2">
                                     <label for="nota-@detalle.DetallePedidoId-@detalle.Numero">Observaciones</label>
                                     <input class="ui-input" id="nota-@detalle.DetallePedidoId-@detalle.Numero" type="text" maxlength="500" disabled="@Registrando" @bind="detalle.Observaciones" />
                                 </div>

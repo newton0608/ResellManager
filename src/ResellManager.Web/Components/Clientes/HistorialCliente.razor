@@ -9,7 +9,7 @@
                         <a class="inline-flex min-h-12 max-w-full items-center rounded-xl text-sm font-semibold text-ui-accent no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-accent" href="/ventas/@venta.Id"><span class="inline-block max-w-full font-mono break-all">@venta.CodigoInterno</span></a>
                         <time class="block text-xs leading-5 text-ui-muted" datetime="@venta.Fecha.ToString("yyyy-MM-dd")">@venta.Fecha.ToString("dd/MM/yyyy")</time>
                     </div>
-                    <span class="status-badge @VentaPresentacion.ClaseEstado(venta.Estado)">@VentaPresentacion.Estado(venta.Estado)</span>
+                    <span class="inline-flex items-center rounded-full bg-ui-warning/5 px-3 py-1 text-xs font-semibold leading-5 text-ui-warning @VentaPresentacion.ClaseEstado(venta.Estado)">@VentaPresentacion.Estado(venta.Estado)</span>
                 </div>
                 <p class="m-0 text-xl font-semibold tracking-tight text-ui-ink tabular-nums [overflow-wrap:anywhere]">@ClientePresentacion.Moneda(venta.Total)</p>
                 @if (!string.IsNullOrWhiteSpace(venta.Observaciones))
@@ -36,7 +36,7 @@
                         <strong class="block text-sm font-semibold leading-6 text-ui-ink">Pago recibido</strong>
                         <time class="block text-xs leading-5 text-ui-muted" datetime="@pago.Fecha.ToString("yyyy-MM-dd")">@pago.Fecha.ToString("dd/MM/yyyy")</time>
                     </div>
-                    <span class="status-badge status-badge-payment">@PagoPresentacion.Metodo(pago.MetodoPago)</span>
+                    <span class="inline-flex items-center rounded-full bg-ui-warning/5 px-3 py-1 text-xs font-semibold leading-5 text-ui-warning status-badge-payment">@PagoPresentacion.Metodo(pago.MetodoPago)</span>
                 </div>
                 <p class="m-0 text-xl font-semibold tracking-tight text-ui-accent tabular-nums [overflow-wrap:anywhere]">@ClientePresentacion.Moneda(pago.Monto)</p>
                 @if (!string.IsNullOrWhiteSpace(pago.Referencia))

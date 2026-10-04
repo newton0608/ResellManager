@@ -3,7 +3,7 @@
 <section class="ui-card mt-5 grid min-w-0 max-w-full gap-4 p-4 sm:p-5" aria-label="Reserva opcional">
     @if (Error is not null)
     {
-        <p class="mensaje-error" role="alert">@Error</p>
+        <p class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger" role="alert">@Error</p>
         <button type="button" class="ui-button min-w-0 border-ui-control bg-white text-ui-ink hover:border-ui-ink hover:bg-ui-canvas" disabled="@(Deshabilitado || Cargando)" @onclick="CargarAsync">Reintentar consulta</button>
     }
     @if (Cargando) { <p class="m-0 text-sm leading-6 text-ui-muted" role="status">Consultando unidades para reservar...</p> }
@@ -37,7 +37,7 @@
                 </li>
             }
         </ul>
-        @if (Seleccionadas.Count > Cantidad) { <p class="mensaje-error" role="alert">Quita unidades: la selección supera la cantidad del detalle.</p> }
+        @if (Seleccionadas.Count > Cantidad) { <p class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger" role="alert">Quita unidades: la selección supera la cantidad del detalle.</p> }
         <div class="grid min-w-0 gap-3 sm:grid-cols-2">
             <button type="button" class="ui-button min-w-0 border-ui-control bg-white text-ui-ink hover:border-ui-ink hover:bg-ui-canvas" disabled="@Deshabilitado" @onclick="Continuar">Continuar sin reservar</button>
         </div>
