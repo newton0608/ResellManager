@@ -2,24 +2,24 @@
 
 <CerrarMenuMovilAlNavegar />
 
-<a class="skip-link" href="#contenido-principal">Ir al contenido principal</a>
+<a class="skip-link" href="#contenido-principal" data-enhance-nav="false">Ir al contenido principal</a>
 
-<div class="app-shell">
-    <aside class="app-sidebar" aria-label="Barra lateral">
+<div class="rm-ui grid min-h-dvh w-full bg-ui-canvas font-sans text-ui-ink antialiased lg:grid-cols-[15rem_minmax(0,1fr)]">
+    <aside class="sticky top-0 hidden h-dvh flex-col overflow-y-auto border-0 border-r border-solid border-ui-border bg-white px-3 py-6 lg:flex" aria-label="Barra lateral">
         <NavMenu />
     </aside>
 
-    <div class="app-workspace">
+    <div class="flex min-w-0 flex-col">
         <TopBar />
 
-        <main id="contenido-principal" class="app-main" tabindex="-1">
+        <main id="contenido-principal" class="mx-auto w-full min-w-0 max-w-7xl scroll-mt-24 px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10" tabindex="-1">
             @Body
         </main>
     </div>
 </div>
 
-<aside id="navegacion-movil" class="mobile-drawer" popover="auto" aria-label="Menú de navegación">
-    <button class="icon-button drawer-close" type="button" popovertarget="navegacion-movil"
+<aside id="navegacion-movil" class="rm-ui inset-y-0 left-0 m-0 h-dvh max-h-none w-[min(22rem,calc(100vw-1.5rem))] max-w-none flex-col gap-6 overflow-y-auto overscroll-contain rounded-r-3xl border-0 bg-white p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] font-sans text-ui-ink shadow-ui-sheet backdrop:bg-ui-ink/25 backdrop:backdrop-blur-sm [&:popover-open]:flex" popover="auto" aria-label="Menú de navegación">
+    <button class="ui-button size-12 shrink-0 border-ui-border bg-white p-0 text-ui-ink hover:bg-ui-canvas [&>svg]:size-5 absolute top-5 right-5" type="button" popovertarget="navegacion-movil"
             popovertargetaction="hide" aria-label="Cerrar menú">
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M18 6 6 18M6 6l12 12" />

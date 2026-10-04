@@ -618,3 +618,7 @@ No se simula una transacción distribuida. La estrategia es compensatoria, expl�
 La suite pasó con **195 pruebas**: las 161 anteriores más 34 nuevas. Cubre códigos, orígenes, múltiples detalles, total backend, entidades reales, formatos admitidos, 10 MB, nombres/rutas seguras, resize, limpieza, unicidad 1:0..1, autorización, lectura real, ausencia de `DbContext` en Blazor, responsive y doble submit.
 
 Dashboard, roles, permisos, OCR, nube, edición/eliminación de compras y múltiples comprobantes permanecen fuera de alcance.
+
+## Evolución: moneda de origen
+
+El soporte inicial GTQ/USD mantiene los orígenes, recepción y comprobantes descritos aquí. CompraService convierte los costos originales a GTQ antes de generar inventario; Catálogo sigue sin unidades. Consulta [monedas de compra](28_MonedasDeCompra.md) para modelo, redondeo, referencia Banguat y fallback manual.

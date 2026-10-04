@@ -10,54 +10,56 @@
 
 <PageTitle>Nuevo pedido | ResellManager</PageTitle>
 
-<section class="page-heading" aria-labelledby="titulo-nuevo-pedido">
-    <div>
-        <p class="eyebrow">Pedidos</p>
-        <h1 id="titulo-nuevo-pedido">Nuevo pedido</h1>
-        <p class="page-lead">Registra el acuerdo y elige opcionalmente unidades para reservar al confirmar.</p>
+<div class="rm-orders grid min-w-0 gap-6 pb-4">
+<section class="flex items-start justify-between gap-4" aria-labelledby="titulo-nuevo-pedido">
+    <div class="grid min-w-0 gap-2">
+        <p class="m-0 text-xs font-semibold tracking-wide text-ui-muted uppercase">Pedidos</p>
+        <h1 class="m-0 text-3xl font-bold tracking-tight text-ui-ink sm:text-4xl" id="titulo-nuevo-pedido">Nuevo pedido</h1>
+        <p class="m-0 max-w-2xl text-sm leading-6 text-ui-muted">Registra el acuerdo y elige opcionalmente unidades para reservar al confirmar.</p>
     </div>
 </section>
 
 @if (Cargando)
 {
-    <div class="loading-state" role="status" aria-live="polite">
-        <span class="spinner" aria-hidden="true"></span>
+    <div class="ui-card flex items-center gap-3 p-6 text-sm text-ui-muted" role="status" aria-live="polite">
+        <span class="size-5 shrink-0 rounded-full border-[3px] border-solid border-ui-accent/20 border-t-ui-accent motion-safe:animate-spin" aria-hidden="true"></span>
         Cargando clientes y productos...
     </div>
 }
 else if (!string.IsNullOrWhiteSpace(ErrorCarga))
 {
-    <section class="error-state" role="alert">
-        <h2>No fue posible abrir el formulario</h2>
-        <p>@ErrorCarga</p>
-        <div class="form-actions">
-            <button class="primary-button" type="button" @onclick="CargarAsync">Reintentar</button>
-            <a class="secondary-button" href="/pedidos">Volver a pedidos</a>
+    <section class="ui-card grid min-w-0 gap-4 p-5 sm:p-6" role="alert">
+        <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink">No fue posible abrir el formulario</h2>
+        <p class="m-0 text-sm leading-6 text-ui-muted">@ErrorCarga</p>
+        <div class="grid grid-cols-1 gap-3 sm:flex sm:flex-wrap">
+            <button class="ui-button bg-ui-accent text-white hover:bg-ui-accent-hover" type="button" @onclick="CargarAsync">Reintentar</button>
+            <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/pedidos">Volver a pedidos</a>
         </div>
     </section>
 }
 else
 {
-    <section class="form-panel order-form-panel" aria-label="Formulario de pedido">
-        <EditForm Model="Modelo" OnValidSubmit="RevisarPedido" class="entity-form">
+    <section class="rm-order-form grid min-w-0" aria-label="Formulario de pedido">
+        <EditForm Model="Modelo" OnValidSubmit="RevisarPedido" class="entity-form grid min-w-0 gap-6">
             <DataAnnotationsValidator />
 
             @if (!string.IsNullOrWhiteSpace(ErrorGuardado))
             {
-                <div class="mensaje-error" role="alert">@ErrorGuardado</div>
+                <div class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger" role="alert">@ErrorGuardado</div>
             }
 
             <ValidationSummary class="validation-summary" />
 
-            <div class="form-grid">
-                <div class="form-field">
+            <div class="ui-card grid min-w-0 grid-cols-1 gap-4 p-4 sm:grid-cols-2 sm:p-5 xl:grid-cols-3">
+                <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink sm:col-span-2 xl:col-span-3">Información del pedido</h2>
+                <div class="grid min-w-0 gap-2 [&>label]:text-sm [&>label]:font-semibold">
                     <label for="pedido-fecha">Fecha <span aria-hidden="true">*</span></label>
-                    <InputDate id="pedido-fecha" @bind-Value="Modelo.Fecha" disabled="@Guardando" aria-required="true" />
+                    <InputDate class="ui-input" id="pedido-fecha" @bind-Value="Modelo.Fecha" disabled="@Guardando" aria-required="true" />
                 </div>
 
-                <div class="form-field">
+                <div class="grid min-w-0 gap-2 [&>label]:text-sm [&>label]:font-semibold">
                     <label for="pedido-tipo">Tipo de pedido <span aria-hidden="true">*</span></label>
-                    <InputSelect id="pedido-tipo" @bind-Value="Modelo.TipoPedido" @bind-Value:after="CambiarTipo" disabled="@Guardando">
+                    <InputSelect class="ui-input" id="pedido-tipo" @bind-Value="Modelo.TipoPedido" @bind-Value:after="CambiarTipo" disabled="@Guardando">
                         @foreach (var tipo in PedidoFormModel.TiposManuales)
                         {
                             <option value="@tipo">@PedidoPresentacion.Tipo(tipo)</option>
@@ -65,9 +67,9 @@ else
                     </InputSelect>
                 </div>
 
-                <div class="form-field">
+                <div class="grid min-w-0 gap-2 [&>label]:text-sm [&>label]:font-semibold">
                     <label for="pedido-canal">Canal de venta <span aria-hidden="true">*</span></label>
-                    <InputSelect id="pedido-canal" @bind-Value="Modelo.CanalVenta" disabled="@Guardando" aria-describedby="pedido-canal-error" aria-required="true">
+                    <InputSelect class="ui-input" id="pedido-canal" @bind-Value="Modelo.CanalVenta" disabled="@Guardando" aria-describedby="pedido-canal-error" aria-required="true">
                         @foreach (var canal in Enum.GetValues<CanalVenta>())
                         {
                             <option value="@canal">@PedidoPresentacion.Canal(canal)</option>
@@ -76,55 +78,55 @@ else
                     <ValidationMessage id="pedido-canal-error" For="() => Modelo.CanalVenta" />
                 </div>
 
-                <div class="form-field">
+                <div class="grid min-w-0 gap-2 [&>label]:text-sm [&>label]:font-semibold">
                     <ClienteBuscador Id="pedido-cliente" Seleccionado="ClienteSeleccionado" Deshabilitado="@(Guardando || RevisandoPedido)" OnSeleccionado="SeleccionarCliente" />
                     <ValidationMessage id="pedido-cliente-error" For="() => Modelo.ClienteId" />
                 </div>
 
-                <div class="form-field form-field-wide">
+                <div class="grid min-w-0 gap-2 [&>label]:text-sm [&>label]:font-semibold sm:col-span-2 xl:col-span-3">
                     <label for="pedido-observaciones">Observaciones</label>
-                    <InputTextArea id="pedido-observaciones" @bind-Value="Modelo.Observaciones" rows="3" maxlength="500" disabled="@Guardando" aria-describedby="pedido-observaciones-error" />
+                    <InputTextArea class="ui-input" id="pedido-observaciones" @bind-Value="Modelo.Observaciones" rows="3" maxlength="500" disabled="@Guardando" aria-describedby="pedido-observaciones-error" />
                     <ValidationMessage id="pedido-observaciones-error" For="() => Modelo.Observaciones" />
                 </div>
             </div>
 
-            <section class="order-lines-editor" aria-labelledby="titulo-detalles-nuevo">
-                <div class="data-panel-heading">
+            <section class="grid min-w-0 gap-4" aria-labelledby="titulo-detalles-nuevo">
+                <div class="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                        <h2 id="titulo-detalles-nuevo">Productos del pedido</h2>
-                        <p>El precio sugerido se propone al elegir producto, pero el precio acordado permanece editable.</p>
+                        <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-detalles-nuevo">Productos del pedido</h2>
+                        <p class="mt-2 mb-0 max-w-2xl text-sm leading-6 text-ui-muted">El precio sugerido se propone al elegir producto, pero el precio acordado permanece editable.</p>
                     </div>
-                    <button class="secondary-button" type="button" disabled="@Guardando" @onclick="AgregarFila">Agregar producto</button>
+                    <button class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" type="button" disabled="@Guardando" @onclick="AgregarFila">Agregar producto</button>
                 </div>
 
-                <div class="order-lines-list">
+                <div class="grid min-w-0 gap-4">
                     @for (var index = 0; index < Modelo.Detalles.Count; index++)
                     {
                         var detalle = Modelo.Detalles[index];
                         var numero = index + 1;
-                        <article class="order-line-editor" @key="detalle">
-                            <div class="order-line-heading">
-                                <h3>Detalle @numero</h3>
-                                <button class="table-action button-link" type="button"
+                        <article class="ui-card grid min-w-0 gap-4 p-4 sm:p-5" @key="detalle">
+                            <div class="flex items-center justify-between gap-3">
+                                <h3 class="m-0 text-base font-semibold text-ui-ink">Detalle @numero</h3>
+                                <button class="ui-button border-ui-danger/30 bg-white text-ui-danger hover:bg-ui-danger/5" type="button"
                                         disabled="@(Guardando || Modelo.Detalles.Count == 1)"
                                         aria-label="Quitar detalle @numero"
                                         @onclick="() => QuitarFila(detalle)">Quitar</button>
                             </div>
-                            <div class="order-line-grid">
-                                <div class="form-field order-product-field">
+                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)] min-w-0">
+                                <div class="grid min-w-0 gap-2 [&>label]:text-sm [&>label]:font-semibold sm:col-span-2 xl:col-span-1">
                                     <ProductoBuscador Id="@($"producto-{numero}")" Seleccionado="detalle.ProductoSeleccionado" Deshabilitado="@(Guardando || RevisandoPedido)" OnSeleccionado="producto => ElegirProducto(detalle, producto)" />
                                 </div>
-                                <div class="form-field">
+                                <div class="grid min-w-0 gap-2 [&>label]:text-sm [&>label]:font-semibold">
                                     <label for="cantidad-@numero">Cantidad <span aria-hidden="true">*</span></label>
-                                    <input inputmode="numeric" data-select-once="true" id="cantidad-@numero" type="number" min="1" step="1" required disabled="@Guardando" @bind="detalle.Cantidad" />
+                                    <input class="ui-input" inputmode="numeric" data-select-once="true" id="cantidad-@numero" type="number" min="1" step="1" required disabled="@Guardando" @bind="detalle.Cantidad" />
                                 </div>
-                                <div class="form-field">
+                                <div class="grid min-w-0 gap-2 [&>label]:text-sm [&>label]:font-semibold">
                                     <label for="precio-@numero">Precio unitario <span aria-hidden="true">*</span></label>
-                                    <input inputmode="decimal" data-select-once="true" id="precio-@numero" type="number" min="0" step="0.01" required disabled="@Guardando" @bind="detalle.PrecioUnitario" />
+                                    <input class="ui-input" inputmode="decimal" data-select-once="true" id="precio-@numero" type="number" min="0" step="0.01" required disabled="@Guardando" @bind="detalle.PrecioUnitario" />
                                 </div>
-                                <div class="form-field order-line-note">
+                                <div class="grid min-w-0 gap-2 [&>label]:text-sm [&>label]:font-semibold sm:col-span-2 xl:col-span-3">
                                     <label for="observaciones-@numero">Observaciones</label>
-                                    <input id="observaciones-@numero" type="text" maxlength="500" disabled="@Guardando" @bind="detalle.Observaciones" />
+                                    <input class="ui-input" id="observaciones-@numero" type="text" maxlength="500" disabled="@Guardando" @bind="detalle.Observaciones" />
                                 </div>
                             </div>
                             @if (Modelo.TipoPedido != TipoPedido.Catalogo && detalle.ProductoId > 0)
@@ -138,14 +140,14 @@ else
                 </div>
             </section>
 
-            <p class="required-note"><span aria-hidden="true">*</span> Campos obligatorios</p>
+            <p class="m-0 text-xs leading-5 text-ui-muted"><span aria-hidden="true">*</span> Campos obligatorios</p>
 
-            <div class="form-actions">
-                <button class="primary-button" type="submit"
+            <div class="grid grid-cols-1 gap-3 sm:flex sm:flex-wrap">
+                <button class="ui-button bg-ui-accent text-white hover:bg-ui-accent-hover" type="submit"
                         disabled="@(Guardando || RevisandoPedido)">
                     @(Guardando ? "Guardando..." : "Revisar pedido")
                 </button>
-                <a class="secondary-button" href="/pedidos">Cancelar</a>
+                <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/pedidos">Cancelar</a>
             </div>
         </EditForm>
     </section>
@@ -155,21 +157,23 @@ else
 {
     <ConfirmacionOperacion Titulo="Confirmar pedido" TextoConfirmar="Confirmar pedido"
                            Ocupado="Guardando" Error="@ErrorGuardado" OnEditar="EditarPedido" OnConfirmar="ConfirmarPedidoAsync">
-        <p>Cliente: @Clientes.Where(x => x.Id == Modelo.ClienteId).Select(NombreCliente).FirstOrDefault()</p>
-        <p>@PedidoPresentacion.Tipo(Modelo.TipoPedido) · @PedidoPresentacion.Canal(Modelo.CanalVenta) · @Modelo.Fecha.ToString("dd/MM/yyyy")</p>
-        <ul>
+        <p class="m-0 text-base font-semibold leading-6 text-ui-ink [overflow-wrap:anywhere]">Cliente: @Clientes.Where(x => x.Id == Modelo.ClienteId).Select(NombreCliente).FirstOrDefault()</p>
+        <p class="m-0 text-sm leading-6 text-ui-muted">@PedidoPresentacion.Tipo(Modelo.TipoPedido) · @PedidoPresentacion.Canal(Modelo.CanalVenta) · @Modelo.Fecha.ToString("dd/MM/yyyy")</p>
+        <ul class="rm-order-review-lines m-0 grid min-w-0 list-none gap-2 p-0">
             @foreach (var detalle in Modelo.Detalles)
             {
-                <li>@Productos.FirstOrDefault(x => x.Id == detalle.ProductoId)?.Nombre:
-                    @detalle.Cantidad × @PedidoPresentacion.Moneda(detalle.PrecioUnitario)
-                    = @PedidoPresentacion.Moneda(detalle.Cantidad * detalle.PrecioUnitario)</li>
+                <li class="rounded-2xl bg-ui-canvas p-3 text-sm leading-6 text-ui-ink [overflow-wrap:anywhere]">@Productos.FirstOrDefault(x => x.Id == detalle.ProductoId)?.Nombre:
+                    @detalle.Cantidad × <span class="inline-block max-w-full [overflow-wrap:anywhere]">@PedidoPresentacion.Moneda(detalle.PrecioUnitario)</span>
+                    = <span class="inline-block max-w-full [overflow-wrap:anywhere]">@PedidoPresentacion.Moneda(detalle.Cantidad * detalle.PrecioUnitario)</span></li>
             }
         </ul>
-        <p><strong>Total estimado: @PedidoPresentacion.Moneda(Modelo.Detalles.Sum(x => x.Cantidad * x.PrecioUnitario))</strong></p>
-        <p>Unidades a reservar al confirmar: @Modelo.Detalles.Sum(x => x.Reservas.Count)</p>
-        <ul>@foreach (var unidad in Modelo.Detalles.SelectMany(x => x.Reservas)) { <li>@unidad.Producto · @unidad.CodigoInterno</li> }</ul>
+        <p class="m-0 rounded-2xl bg-ui-canvas p-4 text-lg leading-7 text-ui-ink [overflow-wrap:anywhere]"><strong>Total estimado: @PedidoPresentacion.Moneda(Modelo.Detalles.Sum(x => x.Cantidad * x.PrecioUnitario))</strong></p>
+        <p class="m-0 text-sm leading-6 text-ui-muted">Unidades a reservar al confirmar: @Modelo.Detalles.Sum(x => x.Reservas.Count)</p>
+        <ul class="rm-order-review-lines m-0 grid min-w-0 list-none gap-2 p-0">@foreach (var unidad in Modelo.Detalles.SelectMany(x => x.Reservas)) { <li class="rounded-2xl bg-ui-canvas p-3 text-sm leading-6 text-ui-ink [overflow-wrap:anywhere]">@unidad.Producto · @unidad.CodigoInterno</li> }</ul>
     </ConfirmacionOperacion>
 }
+
+</div>
 
 @code {
     private bool RevisandoPedido { get; set; }

@@ -1,0 +1,15 @@
+<article class="store-product-card">
+    <a href="/catalogo/@Producto.Id" class="store-product-link">
+        <ImagenCatalogo ProductoId="Producto.Id" Nombre="@Producto.Nombre" TieneImagen="Producto.TieneImagenPrincipal" Decorativa="true" />
+        <div class="store-product-info">
+            <h3 class="store-product-name">@Producto.Nombre</h3>
+            <p class="store-product-category">@Producto.Categoria</p>
+            <p class="store-product-price">@CatalogoPresentacion.Precio(Producto.PrecioPublico)</p>
+            <span class="sr-only">Ver producto</span>
+        </div>
+    </a>
+</article>
+
+@code {
+    [Parameter, EditorRequired] public ProductoCatalogoDto Producto { get; set; } = null!;
+}

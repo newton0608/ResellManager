@@ -29,7 +29,7 @@ public static class ProductionHosting
         var proxyText = configuration["ReverseProxy:KnownProxy"];
         var networkText = configuration["ReverseProxy:KnownNetwork"];
         var proxies = options.KnownProxies.ToArray();
-        var networks = options.KnownNetworks.ToArray();
+        var networks = options.KnownIPNetworks.ToArray();
         var configured = false;
 
         if (!string.IsNullOrWhiteSpace(proxyText))
@@ -46,8 +46,7 @@ public static class ProductionHosting
             if (!System.Net.IPNetwork.TryParse(networkText, out var network)
                 || network.PrefixLength == 0)
                 throw new InvalidOperationException("ReverseProxy:KnownNetwork debe ser una red CIDR válida y limitada (no /0).");
-            options.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(
-                network.BaseAddress, network.PrefixLength));
+            options.KnownIPNetworks.Add(network);
             configured = true;
         }
 
@@ -63,7 +62,7 @@ public static class ProductionHosting
         foreach (var proxy in proxies)
             options.KnownProxies.Remove(proxy);
         foreach (var network in networks)
-            options.KnownNetworks.Remove(network);
+            options.KnownIPNetworks.Remove(network);
         options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
         options.ForwardLimit = 1;
     }

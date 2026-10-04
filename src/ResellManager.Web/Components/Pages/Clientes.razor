@@ -5,132 +5,129 @@
 
 <PageTitle>Clientes | ResellManager</PageTitle>
 
-<section class="page-heading" aria-labelledby="titulo-clientes">
-    <div>
-        <p class="eyebrow">Administración</p>
-        <h1 id="titulo-clientes">Clientes</h1>
-        <p class="page-lead">Consulta los clientes, su información de contacto y el saldo provisto por el sistema.</p>
-    </div>
-    <a class="primary-button" href="/clientes/nuevo">Nuevo cliente</a>
-</section>
-
-@if (!string.IsNullOrWhiteSpace(MensajeExito))
-{
-    <div class="mensaje-exito" role="status">@MensajeExito</div>
-}
-
-<form class="search-panel" @onsubmit="BuscarAsync" @onsubmit:preventDefault>
-    <div class="search-field">
-        <label for="buscar-cliente">Buscar cliente</label>
-        <input id="buscar-cliente" type="search" placeholder="Nombre, apellido o teléfono"
-               @bind="Termino" @bind:event="oninput" />
-    </div>
-    <div class="search-actions">
-        <button class="primary-button" type="submit" disabled="@Cargando">Buscar</button>
-        @if (!string.IsNullOrWhiteSpace(Termino) || BusquedaActiva)
-        {
-            <button class="secondary-button" type="button" disabled="@Cargando" @onclick="LimpiarBusquedaAsync">Limpiar</button>
-        }
-    </div>
-</form>
-
-<nav class="search-actions context-filter" aria-label="Filtrar clientes por saldo">
-    <a class="@(SoloConDeuda ? "secondary-button" : "primary-button")" href="@UrlFiltro(false)"
-       aria-current="@(!SoloConDeuda ? "page" : null)">Todos</a>
-    <a class="@(SoloConDeuda ? "primary-button" : "secondary-button")" href="@UrlFiltro(true)"
-       aria-current="@(SoloConDeuda ? "page" : null)">Con deuda</a>
-</nav>
-
-@if (SoloConDeuda)
-{
-    <div class="origin-guidance context-filter" role="status">
-        <span>Clientes con saldo pendiente mayor que cero</span>
-        <a class="inline-button" href="@UrlFiltro(false)">Quitar filtro de deuda</a>
-    </div>
-}
-
-@if (!string.IsNullOrWhiteSpace(ErrorMessage))
-{
-    <div class="mensaje-error alert-with-action" role="alert">
-        <span>@ErrorMessage</span>
-        <button class="inline-button" type="button" @onclick="CargarClientesAsync">Reintentar</button>
-    </div>
-}
-
-@if (Cargando)
-{
-    <div class="loading-state" role="status" aria-live="polite">
-        <span class="spinner" aria-hidden="true"></span>
-        Cargando clientes...
-    </div>
-}
-else if (string.IsNullOrWhiteSpace(ErrorMessage) && ClientesEncontrados.Count == 0)
-{
-    <section class="empty-state" aria-labelledby="titulo-sin-clientes">
-        <span class="empty-state-icon" aria-hidden="true"><NavIcon Name="users" /></span>
-        <h2 id="titulo-sin-clientes">@(SoloConDeuda ? "No hay clientes con saldo pendiente para estos criterios" : BusquedaActiva ? "No se encontraron clientes" : "Aún no hay clientes")</h2>
-        <p>@(SoloConDeuda ? "Puedes quitar el filtro para consultar todos los clientes." : BusquedaActiva ? "Prueba con otro nombre, apellido o teléfono." : "Registra el primer cliente para comenzar.")</p>
-        @if (!BusquedaActiva && !SoloConDeuda)
-        {
-            <a class="primary-button" href="/clientes/nuevo">Registrar cliente</a>
-        }
+<div class="min-w-0 space-y-6 pb-4">
+    <section class="flex items-start justify-between gap-4" aria-labelledby="titulo-clientes">
+        <div class="min-w-0 space-y-2">
+            <p class="m-0 text-xs font-semibold tracking-wide text-ui-muted uppercase">Administración</p>
+            <h1 class="m-0 text-3xl font-bold tracking-tight text-ui-ink sm:text-4xl" id="titulo-clientes">Clientes</h1>
+            <p class="m-0 max-w-2xl text-sm leading-6 text-ui-muted">Consulta los clientes, su información de contacto y el saldo provisto por el sistema.</p>
+        </div>
+        <a class="ui-button shrink-0 bg-ui-accent text-white hover:bg-ui-accent-hover" href="/clientes/nuevo">
+            <svg class="size-5 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
+            <span class="sr-only sm:not-sr-only">Nuevo cliente</span>
+        </a>
     </section>
-}
-else if (string.IsNullOrWhiteSpace(ErrorMessage))
-{
-    <section class="data-panel" aria-labelledby="titulo-listado-clientes">
-        <div class="data-panel-heading">
-            <h2 id="titulo-listado-clientes">Listado de clientes</h2>
-            <span>@ClientesEncontrados.Count @(ClientesEncontrados.Count == 1 ? "cliente" : "clientes")</span>
-        </div>
 
-        <div class="desktop-table">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th scope="col">Cliente</th>
-                        <th scope="col">Teléfono</th>
-                        <th scope="col" class="numeric-cell">Saldo</th>
-                        <th scope="col" class="actions-cell">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var cliente in ClientesEncontrados)
-                    {
-                        <tr>
-                            <td><strong>@ClientePresentacion.NombreCompleto(cliente)</strong></td>
-                            <td>@cliente.Telefono</td>
-                            <td class="numeric-cell"><span class="balance-value">@ClientePresentacion.Moneda(cliente.Saldo)</span></td>
-                            <td class="actions-cell">
-                                <a class="table-action" href="/clientes/@cliente.Id">Ver detalle</a>
-                                <a class="table-action" href="/clientes/@cliente.Id/editar">Editar</a>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+    @if (!string.IsNullOrWhiteSpace(MensajeExito))
+    {
+        <div class="rounded-2xl border border-solid border-ui-success/20 bg-ui-success/5 px-4 py-3 text-sm leading-6 text-ui-success" role="status">@MensajeExito</div>
+    }
 
-        <div class="mobile-card-list">
-            @foreach (var cliente in ClientesEncontrados)
-            {
-                <article class="entity-card">
-                    <div class="entity-card-heading">
-                        <div>
-                            <h3>@ClientePresentacion.NombreCompleto(cliente)</h3>
-                            <a class="contact-link" href="tel:@cliente.Telefono">@cliente.Telefono</a>
-                        </div>
-                        <span class="balance-value">@ClientePresentacion.Moneda(cliente.Saldo)</span>
-                    </div>
-                    <div class="entity-card-actions">
-                        <a class="secondary-button" href="/clientes/@cliente.Id">Ver detalle</a>
-                        <a class="secondary-button" href="/clientes/@cliente.Id/editar">Editar</a>
-                    </div>
-                </article>
-            }
-        </div>
+    <section class="ui-card grid min-w-0 gap-4 p-4 sm:p-5" aria-label="Búsqueda y filtros de clientes">
+        <form class="grid min-w-0 gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end" @onsubmit="BuscarAsync" @onsubmit:preventDefault>
+            <div class="grid min-w-0 gap-2">
+                <label class="text-sm font-medium" for="buscar-cliente">Buscar cliente</label>
+                <div class="relative min-w-0">
+                    <svg class="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-ui-muted" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 4 4" /></svg>
+                    <input class="ui-input pl-11" id="buscar-cliente" type="search" placeholder="Nombre o teléfono"
+                           @bind="Termino" @bind:event="oninput" />
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button class="ui-button flex-1 bg-ui-accent text-white hover:bg-ui-accent-hover" type="submit" disabled="@Cargando">Buscar</button>
+                @if (!string.IsNullOrWhiteSpace(Termino) || BusquedaActiva)
+                {
+                    <button class="ui-button flex-1 border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" type="button" disabled="@Cargando" @onclick="LimpiarBusquedaAsync">Limpiar</button>
+                }
+            </div>
+        </form>
+        <nav class="grid grid-cols-2 gap-2 rounded-2xl bg-ui-canvas p-1 sm:max-w-sm" aria-label="Filtrar clientes por saldo">
+            <a class="ui-button @(SoloConDeuda ?"text-ui-muted hover:bg-white" : "bg-white text-ui-accent shadow-ui-card")"
+               href="@UrlFiltro(false)" aria-current="@(!SoloConDeuda ? "page" : null)">Todos</a>
+            <a class="ui-button @(SoloConDeuda ?"bg-white text-ui-accent shadow-ui-card" : "text-ui-muted hover:bg-white")"
+               href="@UrlFiltro(true)" aria-current="@(SoloConDeuda ? "page" : null)">Con deuda</a>
+        </nav>
     </section>
-}
+
+    @if (SoloConDeuda)
+    {
+        <div class="grid min-w-0 gap-2 rounded-2xl border border-solid border-ui-accent/20 bg-ui-accent/5 px-4 py-3 text-sm leading-6 text-ui-accent sm:flex sm:items-center sm:justify-between" role="status">
+            <span>Clientes con saldo pendiente mayor que cero</span>
+            <a class="ui-button border-ui-accent/20 bg-white text-ui-accent hover:bg-ui-accent/5" href="@UrlFiltro(false)">Quitar filtro de deuda</a>
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger" role="alert">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <span>@ErrorMessage</span>
+                <button class="ui-button border-ui-danger/30 bg-white text-ui-danger hover:bg-ui-danger/5" type="button" @onclick="CargarClientesAsync">Reintentar</button>
+            </div>
+        </div>
+    }
+
+    @if (Cargando)
+    {
+        <div class="ui-card flex items-center gap-3 p-6 text-sm text-ui-muted" role="status" aria-live="polite">
+            <span class="size-5 shrink-0 rounded-full border-[3px] border-solid border-ui-accent/20 border-t-ui-accent motion-safe:animate-spin" aria-hidden="true"></span>
+            Cargando clientes...
+        </div>
+    }
+    else if (string.IsNullOrWhiteSpace(ErrorMessage) && ClientesEncontrados.Count == 0)
+    {
+        <section class="empty-state ui-card min-w-0 p-6 text-center text-ui-muted sm:p-8" aria-labelledby="titulo-sin-clientes">
+            <div class="grid justify-items-center gap-4">
+                <span class="inline-flex size-12 items-center justify-center rounded-2xl bg-ui-accent/10 text-ui-accent" aria-hidden="true"><NavIcon Name="users" /></span>
+                <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-sin-clientes">@(SoloConDeuda ? "No hay clientes con saldo pendiente para estos criterios" : BusquedaActiva ? "No se encontraron clientes" : "Aún no hay clientes")</h2>
+                <p class="m-0 max-w-md text-sm leading-6 text-ui-muted">@(SoloConDeuda ? "Puedes quitar el filtro para consultar todos los clientes." : BusquedaActiva ? "Prueba con otro nombre, apellido o teléfono." : "Registra el primer cliente para comenzar.")</p>
+                @if (!BusquedaActiva && !SoloConDeuda)
+                {
+                    <a class="ui-button bg-ui-accent text-white hover:bg-ui-accent-hover" href="/clientes/nuevo">Registrar cliente</a>
+                }
+            </div>
+        </section>
+    }
+    else if (string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <section class="min-w-0 space-y-4" aria-labelledby="titulo-listado-clientes">
+            <div class="flex flex-wrap items-center justify-between gap-2 px-1">
+                <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-listado-clientes">Listado de clientes</h2>
+                <span class="text-sm text-ui-muted">@ClientesEncontrados.Count @(ClientesEncontrados.Count == 1 ? "cliente" : "clientes")</span>
+            </div>
+            <ul class="m-0 list-none space-y-3 p-0" role="list">
+                @foreach (var cliente in ClientesEncontrados)
+                {
+                    <li class="ui-card min-w-0">
+                        <article aria-label="@ClientePresentacion.NombreCompleto(cliente)">
+                            <a class="grid min-w-0 grid-cols-[3rem_minmax(0,1fr)_1.25rem] items-start gap-x-3 gap-y-2 rounded-3xl p-4 text-ui-ink no-underline transition-colors duration-150 hover:bg-ui-accent/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-accent motion-reduce:transition-none sm:grid-cols-[3rem_minmax(0,1fr)_minmax(8rem,auto)_1.25rem] sm:items-center sm:gap-x-5 sm:p-5"
+                               href="/clientes/@cliente.Id" aria-label="@($"Ver detalle de {ClientePresentacion.NombreCompleto(cliente)}")">
+                                <span class="row-span-2 flex size-12 items-center justify-center rounded-2xl bg-ui-canvas text-ui-muted sm:row-span-1" aria-hidden="true"><NavIcon Name="users" /></span>
+                                <h3 class="m-0 min-w-0 text-base font-semibold leading-6 text-ui-ink [overflow-wrap:anywhere]">@ClientePresentacion.NombreCompleto(cliente)</h3>
+                                <div class="col-start-2 min-w-0 sm:col-start-3 sm:text-right">
+                                    <p class="m-0 text-base font-semibold leading-6 tracking-tight text-ui-ink tabular-nums [overflow-wrap:anywhere] sm:text-lg">@ClientePresentacion.Moneda(cliente.Saldo)</p>
+                                    <span class="block text-xs leading-5 text-ui-muted">Saldo</span>
+                                </div>
+                                <svg class="col-start-3 row-start-1 row-span-2 mt-1 size-5 text-ui-muted sm:col-start-4 sm:row-span-1 sm:mt-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7" /></svg>
+                            </a>
+                            <div class="grid gap-2 border-0 border-t border-solid border-ui-border px-4 py-3 sm:flex sm:items-center sm:justify-between sm:gap-4 sm:px-5">
+                                <a class="inline-flex min-h-12 min-w-0 items-center gap-2 rounded-xl text-sm text-ui-accent no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-accent"
+                                   href="tel:@cliente.Telefono">
+                                    <svg class="size-5 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z" /></svg>
+                                    <span class="min-w-0 [overflow-wrap:anywhere]">@cliente.Telefono</span>
+                                </a>
+                                <div class="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
+                                    <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/clientes/@cliente.Id">Ver detalle</a>
+                                    <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/clientes/@cliente.Id/editar">Editar</a>
+                                </div>
+                            </div>
+                        </article>
+                    </li>
+                }
+            </ul>
+        </section>
+    }
+</div>
 
 @code {
     [SupplyParameterFromQuery(Name = "saldo")]

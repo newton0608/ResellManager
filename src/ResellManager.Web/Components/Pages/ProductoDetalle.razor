@@ -5,91 +5,125 @@
 
 <PageTitle>Detalle de producto | ResellManager</PageTitle>
 
-@if (Cargando)
-{
-    <div class="loading-state" role="status" aria-live="polite">
-        <span class="spinner" aria-hidden="true"></span>
-        Cargando detalle del producto...
-    </div>
-}
-else if (!string.IsNullOrWhiteSpace(ErrorCarga) || Producto is null)
-{
-    <section class="error-state" role="alert">
-        <p class="eyebrow">Productos</p>
-        <h1>No fue posible abrir el producto</h1>
-        <p>@(ErrorCarga ?? "Producto no encontrado.")</p>
-        <div class="form-actions">
-            <button class="primary-button" type="button" @onclick="CargarAsync">Reintentar</button>
-            <a class="secondary-button" href="/productos">Volver a productos</a>
+<div class="min-w-0 space-y-6 pb-[env(safe-area-inset-bottom)]">
+    @if (Cargando)
+    {
+        <div class="ui-card flex items-center gap-3 p-6 text-sm text-ui-muted" role="status" aria-live="polite">
+            <span class="size-5 shrink-0 rounded-full border-[3px] border-solid border-ui-accent/20 border-t-ui-accent motion-safe:animate-spin" aria-hidden="true"></span>
+            Cargando detalle del producto...
         </div>
-    </section>
-}
-else
-{
-    <section class="page-heading detail-heading" aria-labelledby="titulo-detalle-producto">
-        <div>
-            <p class="eyebrow">Productos</p>
-            <h1 id="titulo-detalle-producto">@Producto.Nombre</h1>
-            <p class="page-lead">Definición del artículo y datos de referencia del catálogo.</p>
+    }
+    else if (!string.IsNullOrWhiteSpace(ErrorCarga) || Producto is null)
+    {
+        <section class="ui-card grid min-w-0 gap-4 border-ui-danger/20 p-5 sm:p-6" role="alert">
+            <p class="m-0 text-xs font-semibold tracking-wide text-ui-muted uppercase">Productos</p>
+            <h1 class="m-0 text-3xl font-bold tracking-tight text-ui-ink">No fue posible abrir el producto</h1>
+            <p class="m-0 text-sm leading-6 text-ui-muted [overflow-wrap:anywhere]">@(ErrorCarga ?? "Producto no encontrado.")</p>
+            <div class="grid gap-3 sm:flex sm:flex-wrap">
+                <button class="ui-button bg-ui-accent text-white hover:bg-ui-accent-hover" type="button" @onclick="CargarAsync">Reintentar</button>
+                <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/productos">Volver a productos</a>
+            </div>
+        </section>
+    }
+    else
+    {
+        <section class="min-w-0 space-y-2" aria-labelledby="titulo-detalle-producto">
+            <p class="m-0 text-xs font-semibold tracking-wide text-ui-muted uppercase">Productos</p>
+            <h1 class="m-0 text-3xl font-bold tracking-tight text-ui-ink [overflow-wrap:anywhere] sm:text-4xl" id="titulo-detalle-producto">@Producto.Nombre</h1>
+            <p class="m-0 max-w-2xl text-sm leading-6 text-ui-muted">Definición del artículo y datos de referencia del catálogo.</p>
+        </section>
+
+        <section class="grid min-w-0 items-start gap-4 lg:grid-cols-[minmax(0,.8fr)_minmax(0,1.2fr)]" aria-label="Detalle del producto">
+            <div class="grid min-w-0 gap-4">
+                <figure class="ui-card m-0 min-w-0 p-4 sm:p-5" aria-label="Imagen principal del producto">
+                    <div class="mx-auto flex aspect-[4/3] max-h-64 w-full min-w-0 items-center justify-center overflow-hidden rounded-2xl border border-solid border-ui-border bg-ui-canvas">
+                        @if (Producto.ImagenPrincipalRuta is not null)
+                        {
+                            <img class="block size-full object-contain" width="640" height="480" src="/productos/@Producto.Id/imagen" alt="@Producto.Nombre" />
+                        }
+                        else
+                        {
+                            <div class="grid justify-items-center gap-3 p-4 text-sm text-ui-muted">
+                                <span class="inline-flex size-12 items-center justify-center rounded-2xl bg-white" aria-hidden="true"><NavIcon Name="tag" /></span>
+                                <span>Sin imagen principal</span>
+                            </div>
+                        }
+                    </div>
+                </figure>
+                <article class="ui-card grid min-w-0 gap-3 p-5 sm:p-6" aria-labelledby="precio-sugerido-producto">
+                    <h2 class="m-0 text-xs font-semibold tracking-wide text-ui-muted uppercase" id="precio-sugerido-producto">Precio sugerido</h2>
+                    <p class="m-0 text-3xl font-bold tracking-tight text-ui-ink tabular-nums [overflow-wrap:anywhere] sm:text-4xl">@ProductoPresentacion.PrecioSugerido(Producto.PrecioSugerido)</p>
+                    <p class="m-0 text-sm leading-6 text-ui-muted">Valor de referencia; el precio final pertenece a cada venta.</p>
+                </article>
+            </div>
+
+            <div class="grid min-w-0 gap-4">
+                <article class="ui-card grid min-w-0 gap-5 p-5 sm:p-6">
+                    <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink">Identificación</h2>
+                    <dl class="m-0 grid min-w-0 gap-4 text-sm leading-6">
+                        <div class="grid min-w-0 gap-1 sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-4">
+                            <dt class="font-medium text-ui-muted">Código interno</dt>
+                            <dd class="m-0 min-w-0 font-mono break-all">@Producto.CodigoInterno</dd>
+                        </div>
+                        <div class="grid min-w-0 gap-1 sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-4">
+                            <dt class="font-medium text-ui-muted">Código de barras</dt>
+                            <dd class="m-0 min-w-0 [overflow-wrap:anywhere]">@ProductoPresentacion.TextoOpcional(Producto.CodigoBarras)</dd>
+                        </div>
+                        <div class="grid min-w-0 gap-1 sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-4">
+                            <dt class="font-medium text-ui-muted">Categoría</dt>
+                            <dd class="m-0 min-w-0 [overflow-wrap:anywhere]">@Producto.Categoria</dd>
+                        </div>
+                        <div class="grid min-w-0 gap-1 sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-4">
+                            <dt class="font-medium text-ui-muted">Descripción</dt>
+                            <dd class="m-0 min-w-0 whitespace-pre-line [overflow-wrap:anywhere]">@ProductoPresentacion.TextoOpcional(Producto.Descripcion)</dd>
+                        </div>
+                    </dl>
+                </article>
+
+                <article class="ui-card grid min-w-0 gap-5 p-5 sm:p-6">
+                    <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink">Características</h2>
+                    <dl class="m-0 grid min-w-0 gap-4 text-sm leading-6 sm:grid-cols-2">
+                        <div class="grid min-w-0 gap-1">
+                            <dt class="font-medium text-ui-muted">Marca</dt><dd class="m-0 min-w-0 [overflow-wrap:anywhere]">@ProductoPresentacion.TextoOpcional(Producto.Marca)</dd>
+                        </div>
+                        <div class="grid min-w-0 gap-1">
+                            <dt class="font-medium text-ui-muted">Modelo</dt><dd class="m-0 min-w-0 [overflow-wrap:anywhere]">@ProductoPresentacion.TextoOpcional(Producto.Modelo)</dd>
+                        </div>
+                        <div class="grid min-w-0 gap-1">
+                            <dt class="font-medium text-ui-muted">Color</dt><dd class="m-0 min-w-0 [overflow-wrap:anywhere]">@ProductoPresentacion.TextoOpcional(Producto.Color)</dd>
+                        </div>
+                        <div class="grid min-w-0 gap-1">
+                            <dt class="font-medium text-ui-muted">Talla</dt><dd class="m-0 min-w-0 [overflow-wrap:anywhere]">@ProductoPresentacion.TextoOpcional(Producto.Talla)</dd>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(Producto.Presentacion))
+                        {
+                            <div class="grid min-w-0 gap-1">
+                                <dt class="font-medium text-ui-muted">Presentación</dt><dd class="m-0 min-w-0 [overflow-wrap:anywhere]">@Producto.Presentacion</dd>
+                            </div>
+                        }
+                        @if (Producto.ContenidoMl.HasValue)
+                        {
+                            <div class="grid min-w-0 gap-1">
+                                <dt class="font-medium text-ui-muted">Volumen</dt><dd class="m-0 min-w-0 tabular-nums">@Producto.ContenidoMl ml</dd>
+                            </div>
+                        }
+                        @if (Producto.PesoGramos.HasValue)
+                        {
+                            <div class="grid min-w-0 gap-1">
+                                <dt class="font-medium text-ui-muted">Peso</dt><dd class="m-0 min-w-0 tabular-nums">@Producto.PesoGramos g</dd>
+                            </div>
+                        }
+                    </dl>
+                </article>
+            </div>
+        </section>
+
+        <div class="grid min-w-0 grid-cols-2 gap-3 sm:flex sm:flex-wrap">
+            <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/productos">Volver</a>
+            <a class="ui-button bg-ui-accent text-white hover:bg-ui-accent-hover" href="/productos/@Id/editar">Editar producto</a>
         </div>
-        <div class="heading-actions">
-            <a class="secondary-button" href="/productos">Volver</a>
-            <a class="primary-button" href="/productos/@Id/editar">Editar producto</a>
-        </div>
-    </section>
-
-    <section class="product-summary" aria-label="Detalle del producto">
-        <article class="info-card reference-card">
-            <p class="info-label">Precio sugerido</p>
-            <p class="reference-price-hero">@ProductoPresentacion.PrecioSugerido(Producto.PrecioSugerido)</p>
-            <p class="info-help">Valor de referencia; el precio final pertenece a cada venta.</p>
-        </article>
-
-        <article class="info-card">
-            <h2>Identificación</h2>
-            <dl class="details-list">
-                <div>
-                    <dt>Código interno</dt>
-                    <dd><span class="code-value">@Producto.CodigoInterno</span></dd>
-                </div>
-                <div>
-                    <dt>Código de barras</dt>
-                    <dd>@ProductoPresentacion.TextoOpcional(Producto.CodigoBarras)</dd>
-                </div>
-                <div>
-                    <dt>Categoría</dt>
-                    <dd>@Producto.Categoria</dd>
-                </div>
-                <div>
-                    <dt>Descripción</dt>
-                    <dd class="preserve-lines">@ProductoPresentacion.TextoOpcional(Producto.Descripcion)</dd>
-                </div>
-            </dl>
-        </article>
-
-        <article class="info-card product-attributes-card">
-            <h2>Características</h2>
-            <dl class="details-list">
-                <div>
-                    <dt>Marca</dt>
-                    <dd>@ProductoPresentacion.TextoOpcional(Producto.Marca)</dd>
-                </div>
-                <div>
-                    <dt>Modelo</dt>
-                    <dd>@ProductoPresentacion.TextoOpcional(Producto.Modelo)</dd>
-                </div>
-                <div>
-                    <dt>Color</dt>
-                    <dd>@ProductoPresentacion.TextoOpcional(Producto.Color)</dd>
-                </div>
-                <div>
-                    <dt>Talla</dt>
-                    <dd>@ProductoPresentacion.TextoOpcional(Producto.Talla)</dd>
-                </div>
-            </dl>
-        </article>
-    </section>
-}
+    }
+</div>
 
 @code {
     [Parameter]

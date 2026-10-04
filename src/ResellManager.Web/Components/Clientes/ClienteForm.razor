@@ -1,52 +1,57 @@
-<EditForm Model="Modelo" OnValidSubmit="GuardarAsync" class="entity-form">
+<EditForm Model="Modelo" OnValidSubmit="GuardarAsync" class="entity-form grid min-w-0 gap-6">
     <DataAnnotationsValidator />
 
     @if (!string.IsNullOrWhiteSpace(ErrorMessage))
     {
-        <div class="mensaje-error" role="alert">@ErrorMessage</div>
+        <div class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger" role="alert">@ErrorMessage</div>
     }
 
-    <ValidationSummary class="validation-summary" role="alert" />
+    <ValidationSummary class="rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger empty:hidden [&_ul]:m-0 [&_ul]:pl-5" role="alert" />
 
-    <div class="form-grid">
-        <div class="form-field">
-            <label for="cliente-nombres">Nombres <span aria-hidden="true">*</span></label>
-            <InputText disabled="@Guardando" aria-describedby="cliente-nombres-validacion" aria-required="true" id="cliente-nombres" @bind-Value="Modelo.Nombres" autocomplete="given-name" />
-            <div id="cliente-nombres-validacion"><ValidationMessage For="() => Modelo.Nombres" /></div>
-        </div>
+    <div class="grid min-w-0 items-start gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+        <section class="ui-card grid min-w-0 gap-5 p-5 sm:p-6" aria-labelledby="cliente-contacto-titulo">
+            <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="cliente-contacto-titulo">Datos de contacto</h2>
+            <div class="grid min-w-0 gap-5 sm:grid-cols-2 xl:grid-cols-1">
+                <div class="grid min-w-0 content-start gap-2">
+                    <label class="text-sm font-medium" for="cliente-nombres">Nombres <span aria-hidden="true">*</span></label>
+                    <InputText class="ui-input" disabled="@Guardando" aria-describedby="cliente-nombres-validacion" aria-required="true" id="cliente-nombres" @bind-Value="Modelo.Nombres" autocomplete="given-name" />
+                    <div class="empty:hidden" id="cliente-nombres-validacion"><ValidationMessage For="() => Modelo.Nombres" /></div>
+                </div>
+                <div class="grid min-w-0 content-start gap-2">
+                    <label class="text-sm font-medium" for="cliente-apellidos">Apellidos</label>
+                    <InputText class="ui-input" disabled="@Guardando" aria-describedby="cliente-apellidos-validacion" id="cliente-apellidos" @bind-Value="Modelo.Apellidos" autocomplete="family-name" />
+                    <div class="empty:hidden" id="cliente-apellidos-validacion"><ValidationMessage For="() => Modelo.Apellidos" /></div>
+                </div>
+            </div>
+            <div class="grid min-w-0 gap-2">
+                <label class="text-sm font-medium" for="cliente-telefono">Teléfono <span aria-hidden="true">*</span></label>
+                <InputText class="ui-input" disabled="@Guardando" aria-describedby="cliente-telefono-validacion" aria-required="true" id="cliente-telefono" @bind-Value="Modelo.Telefono" inputmode="tel" autocomplete="tel" />
+                <div class="empty:hidden" id="cliente-telefono-validacion"><ValidationMessage For="() => Modelo.Telefono" /></div>
+            </div>
+            <div class="grid min-w-0 gap-2">
+                <label class="text-sm font-medium" for="cliente-direccion">Dirección</label>
+                <InputTextArea class="ui-input min-h-28 resize-y" disabled="@Guardando" aria-describedby="cliente-direccion-validacion" id="cliente-direccion" @bind-Value="Modelo.Direccion" rows="3" autocomplete="street-address" />
+                <div class="empty:hidden" id="cliente-direccion-validacion"><ValidationMessage For="() => Modelo.Direccion" /></div>
+            </div>
+        </section>
 
-        <div class="form-field">
-            <label for="cliente-apellidos">Apellidos</label>
-            <InputText disabled="@Guardando" aria-describedby="cliente-apellidos-validacion" id="cliente-apellidos" @bind-Value="Modelo.Apellidos" autocomplete="family-name" />
-            <div id="cliente-apellidos-validacion"><ValidationMessage For="() => Modelo.Apellidos" /></div>
-        </div>
-
-        <div class="form-field">
-            <label for="cliente-telefono">Teléfono <span aria-hidden="true">*</span></label>
-            <InputText disabled="@Guardando" aria-describedby="cliente-telefono-validacion" aria-required="true" id="cliente-telefono" @bind-Value="Modelo.Telefono" inputmode="tel" autocomplete="tel" />
-            <div id="cliente-telefono-validacion"><ValidationMessage For="() => Modelo.Telefono" /></div>
-        </div>
-
-        <div class="form-field form-field-wide">
-            <label for="cliente-direccion">Dirección</label>
-            <InputTextArea disabled="@Guardando" aria-describedby="cliente-direccion-validacion" id="cliente-direccion" @bind-Value="Modelo.Direccion" rows="3" autocomplete="street-address" />
-            <div id="cliente-direccion-validacion"><ValidationMessage For="() => Modelo.Direccion" /></div>
-        </div>
-
-        <div class="form-field form-field-wide">
-            <label for="cliente-observaciones">Observaciones</label>
-            <InputTextArea disabled="@Guardando" aria-describedby="cliente-observaciones-validacion" id="cliente-observaciones" @bind-Value="Modelo.Observaciones" rows="4" />
-            <div id="cliente-observaciones-validacion"><ValidationMessage For="() => Modelo.Observaciones" /></div>
-        </div>
+        <section class="ui-card grid min-w-0 gap-5 p-5 sm:p-6" aria-labelledby="cliente-notas-titulo">
+            <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="cliente-notas-titulo">Observaciones</h2>
+            <div class="grid min-w-0 gap-2">
+                <label class="text-sm font-medium" for="cliente-observaciones">Observaciones</label>
+                <InputTextArea class="ui-input min-h-36 resize-y" disabled="@Guardando" aria-describedby="cliente-observaciones-validacion" id="cliente-observaciones" @bind-Value="Modelo.Observaciones" rows="4" />
+                <div class="empty:hidden" id="cliente-observaciones-validacion"><ValidationMessage For="() => Modelo.Observaciones" /></div>
+            </div>
+        </section>
     </div>
 
-    <p class="required-note"><span aria-hidden="true">*</span> Campos obligatorios</p>
+    <p class="m-0 text-sm leading-6 text-ui-muted"><span aria-hidden="true">*</span> Campos obligatorios</p>
 
-    <div class="form-actions">
-        <button class="primary-button" type="submit" disabled="@Guardando">
+    <div class="grid grid-cols-2 gap-3 pb-[env(safe-area-inset-bottom)] sm:flex sm:flex-wrap">
+        <button class="ui-button bg-ui-accent text-white hover:bg-ui-accent-hover" type="submit" disabled="@Guardando">
             @(Guardando ? "Guardando..." : "Guardar cliente")
         </button>
-        <a class="secondary-button" href="@CancelarHref">Cancelar</a>
+        <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="@CancelarHref">Cancelar</a>
     </div>
 </EditForm>
 

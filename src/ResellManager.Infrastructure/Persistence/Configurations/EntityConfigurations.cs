@@ -63,6 +63,7 @@ internal sealed class ProductoConfiguration : IEntityTypeConfiguration<Producto>
         b.Property(x => x.ContenidoMl).HasColumnType("decimal(12,2)");
         b.Property(x => x.PesoGramos).HasColumnType("decimal(12,2)");
         b.Property(x => x.Presentacion).HasMaxLength(100);
+        b.Property(x => x.ImagenPrincipalRuta).HasMaxLength(250);
         b.Property(x => x.PrecioSugerido).HasColumnType("decimal(10,2)");
         b.HasOne(x => x.Categoria).WithMany(x => x.Productos).HasForeignKey(x => x.CategoriaId).OnDelete(DeleteBehavior.Restrict);
     }
@@ -76,6 +77,11 @@ internal sealed class CompraConfiguration : IEntityTypeConfiguration<Compra>
         b.Property(x => x.CodigoInterno).IsRequired().HasMaxLength(50);
         b.HasIndex(x => x.CodigoInterno).IsUnique();
         b.Property(x => x.Origen).IsRequired().HasConversion<string>().HasMaxLength(30);
+        b.Property(x => x.Moneda).IsRequired().HasConversion<string>().HasMaxLength(3).HasDefaultValue(ResellManager.Domain.Enums.MonedaCompra.GTQ);
+        b.Property(x => x.TipoCambio).HasPrecision(18, 8).HasDefaultValue(1m);
+        b.Property(x => x.TipoCambioReferencia).HasPrecision(18, 8);
+        b.Property(x => x.FuenteTipoCambio).HasMaxLength(120);
+        b.Property(x => x.TotalMonedaOrigen).HasColumnType("decimal(10,2)");
         b.Property(x => x.Total).HasColumnType("decimal(10,2)");
         b.Property(x => x.Observaciones).HasMaxLength(500);
         b.HasOne(x => x.Proveedor).WithMany(x => x.Compras).HasForeignKey(x => x.ProveedorId).OnDelete(DeleteBehavior.Restrict);
@@ -87,6 +93,7 @@ internal sealed class DetalleCompraConfiguration : IEntityTypeConfiguration<Deta
     public void Configure(EntityTypeBuilder<DetalleCompra> b)
     {
         b.ToTable("DetallesCompra"); b.HasKey(x => x.Id);
+        b.Property(x => x.CostoUnitarioMonedaOrigen).HasColumnType("decimal(10,2)");
         b.Property(x => x.CostoUnitario).HasColumnType("decimal(10,2)");
         b.HasOne(x => x.Compra).WithMany(x => x.Detalles).HasForeignKey(x => x.CompraId).OnDelete(DeleteBehavior.Cascade);
         b.HasOne(x => x.Producto).WithMany(x => x.DetallesCompra).HasForeignKey(x => x.ProductoId).OnDelete(DeleteBehavior.Restrict);

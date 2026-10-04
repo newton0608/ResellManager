@@ -1,65 +1,135 @@
 @using ResellManager.Domain.Enums
 @inject IServiceScopeFactory Scopes
 @inject ILogger<RecepcionCompras> Logger
-<section class="reception-by-purchase" aria-labelledby="titulo-recepcion">
-    <h2 id="titulo-recepcion">Recepción de mercancía</h2>
-    <p>Marca lo que llegó de cada compra. Las unidades no seleccionadas y las reservas se conservan.</p>
-    @if (Error is not null && Revision is null && UnidadPerdida is null) { <p class="mensaje-error" role="alert">@Error</p><button class="secondary-button" @onclick="CargarAsync">Reintentar</button> }
-    @if (Cargando) { <p role="status">Consultando compras pendientes...</p> }
-    @if (Exito is not null) { <p role="status">@Exito</p> }
+<section class="rm-inventory rm-inventory-reception reception-by-purchase grid min-w-0 gap-4" aria-labelledby="titulo-recepcion">
+    <div class="grid min-w-0 gap-2 px-1">
+        <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-recepcion">Recepción de mercancía</h2>
+        <p class="m-0 max-w-2xl text-sm leading-6 text-ui-muted">Marca lo que llegó de cada compra. Las unidades no seleccionadas y las reservas se conservan.</p>
+    </div>
+    @if (Error is not null && Revision is null && UnidadPerdida is null)
+    {
+        <div class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger" role="alert">
+            <div class="flex min-w-0 flex-wrap items-center justify-between gap-3">
+                <span class="min-w-0 [overflow-wrap:anywhere]">@Error</span>
+                <button class="ui-button min-w-0 border-ui-danger/30 bg-white text-ui-danger hover:bg-ui-danger/5" @onclick="CargarAsync">Reintentar</button>
+            </div>
+        </div>
+    }
+    @if (Cargando)
+    {
+        <div class="ui-card flex min-w-0 items-center gap-3 p-5 text-sm leading-6 text-ui-muted" role="status">
+            <span class="size-5 shrink-0 rounded-full border-[3px] border-solid border-ui-accent/20 border-t-ui-accent motion-safe:animate-spin" aria-hidden="true"></span>
+            Consultando compras pendientes...
+        </div>
+    }
+    @if (Exito is not null) { <p class="rounded-2xl border border-solid border-ui-success/20 bg-ui-success/5 px-4 py-3 text-sm leading-6 text-ui-success m-0" role="status">@Exito</p> }
     @foreach (var grupo in Grupos)
     {
-        <section class="form-panel" @key="grupo.Compra.CompraId">
-            <h3><button type="button" class="history-month-toggle" aria-expanded="@grupo.Abierta" @onclick="() => grupo.Abierta = !grupo.Abierta">@grupo.Compra.CodigoCompra · @grupo.Compra.Unidades.Count pendientes</button></h3>
+        <section class="ui-card grid min-w-0 gap-4 p-4 sm:p-5" @key="grupo.Compra.CompraId">
+            <h3 class="m-0 min-w-0">
+                <button type="button" class="ui-button grid w-full min-w-0 grid-cols-[minmax(0,1fr)_1.25rem] gap-3 border-ui-border bg-ui-canvas text-left text-ui-ink hover:bg-white" aria-expanded="@(grupo.Abierta ? "true" : "false")" @onclick="() => grupo.Abierta = !grupo.Abierta">
+                    <span class="grid min-w-0 gap-1">
+                        <span class="font-mono text-sm leading-6 [overflow-wrap:anywhere]">@grupo.Compra.CodigoCompra</span>
+                        <span class="text-xs font-medium leading-5 text-ui-muted">@grupo.Compra.Unidades.Count pendientes</span>
+                    </span>
+                    <svg class="size-5 shrink-0 text-ui-muted @(grupo.Abierta ?"rotate-90" : "")" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7" /></svg>
+                </button>
+            </h3>
             @if (grupo.Abierta)
             {
-                <p>Proveedor: @grupo.Compra.Proveedor</p>
-                <p>@InventarioPresentacion.Origen(grupo.Compra.Origen)</p>
-                <ul class="reception-units">
+                <div class="grid min-w-0 gap-3 sm:grid-cols-2">
+                    <p class="m-0 grid min-w-0 gap-1 text-sm leading-6 [overflow-wrap:anywhere]">
+                        <span class="text-xs font-medium text-ui-muted">Proveedor</span>
+                        <span class="font-semibold text-ui-ink">@grupo.Compra.Proveedor</span>
+                    </p>
+                    <p class="m-0 grid min-w-0 gap-1 text-sm leading-6">
+                        <span class="text-xs font-medium text-ui-muted">Origen</span>
+                        <span class="text-ui-ink">@InventarioPresentacion.Origen(grupo.Compra.Origen)</span>
+                    </p>
+                </div>
+                <ul class="reception-units m-0 grid min-w-0 list-none gap-3 p-0 lg:grid-cols-2">
                     @foreach (var unidad in grupo.Compra.Unidades)
                     {
-                        <li><label><input type="checkbox" checked="@grupo.Seleccionadas.Contains(unidad.Id)" disabled="@(Procesando || Revision is not null || UnidadPerdida is not null)"
-                            @onchange="e => Seleccionar(grupo, unidad.Id, e.Value)" />
-                            @unidad.Producto · @unidad.CodigoInterno · @InventarioPresentacion.Estado(unidad.Estado)</label>
+                        <li class="grid min-w-0 content-start gap-2">
+                            <label class="grid min-h-12 min-w-0 cursor-pointer grid-cols-[1.25rem_minmax(0,1fr)] items-start gap-3 rounded-2xl border border-solid border-ui-border bg-white p-3 transition-colors duration-150 hover:bg-ui-accent/5 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ui-accent has-checked:border-ui-accent has-checked:bg-ui-accent/5 has-disabled:cursor-not-allowed has-disabled:border-ui-border has-disabled:bg-ui-canvas motion-reduce:transition-none">
+                                <input class="m-0 mt-1 size-5 shrink-0 cursor-pointer accent-ui-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-accent disabled:cursor-not-allowed" type="checkbox" checked="@grupo.Seleccionadas.Contains(unidad.Id)" disabled="@(Procesando || Revision is not null || UnidadPerdida is not null)"
+                                       @onchange="e => Seleccionar(grupo, unidad.Id, e.Value)" />
+                                <span class="grid min-w-0 gap-2">
+                                    <strong class="min-w-0 text-sm font-semibold leading-6 text-ui-ink [overflow-wrap:anywhere]">@unidad.Producto</strong>
+                                    <span class="max-w-full font-mono text-xs leading-5 break-all text-ui-muted">@unidad.CodigoInterno</span>
+                                    <span class="flex min-w-0 flex-wrap items-center gap-2">
+                                        <span class="text-xs leading-5 text-ui-muted">Estado físico</span>
+                                        <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold leading-5 @InventarioPresentacion.ClaseEstado(unidad.Estado)">@InventarioPresentacion.Estado(unidad.Estado)</span>
+                                    </span>
+                                    @if (InventarioPresentacion.EstaReservada(unidad))
+                                    {
+                                        <span class="flex min-w-0 flex-wrap items-center gap-2">
+                                            <span class="text-xs leading-5 text-ui-muted">Reserva comercial</span>
+                                            <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold leading-5 reservation-badge">Reservada</span>
+                                        </span>
+                                    }
+                                </span>
+                            </label>
                             @if (InventarioPresentacion.PuedeMarcarPerdida(unidad))
                             {
-                                <button type="button" class="table-action button-link" disabled="@(Procesando || Revision is not null || UnidadPerdida is not null)"
-                                    @onclick="() => RevisarPerdida(unidad)">Marcar perdida</button>
+                                <button type="button" class="ui-button min-w-0 border-ui-danger/30 bg-white text-ui-danger hover:border-ui-danger hover:bg-ui-danger/5" disabled="@(Procesando || Revision is not null || UnidadPerdida is not null)"
+                                        @onclick="() => RevisarPerdida(unidad)">Marcar perdida</button>
                             }
                         </li>
                     }
                 </ul>
-                <div class="form-field">
-                    <label for="recepcion-fecha-@grupo.Compra.CompraId">Fecha de recepción</label>
-                    <input id="recepcion-fecha-@grupo.Compra.CompraId" type="date" @bind="grupo.Fecha" disabled="@(Procesando || Revision is not null || UnidadPerdida is not null)" />
+                <div class="grid min-w-0 gap-4 border-0 border-t border-solid border-ui-border pt-4 sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)] sm:items-end">
+                    <div class="grid min-w-0 gap-2">
+                        <label class="text-sm font-semibold text-ui-ink" for="recepcion-fecha-@grupo.Compra.CompraId">Fecha de recepción</label>
+                        <input class="ui-input" id="recepcion-fecha-@grupo.Compra.CompraId" type="date" @bind="grupo.Fecha" disabled="@(Procesando || Revision is not null || UnidadPerdida is not null)" />
+                    </div>
+                    <button class="ui-button min-w-0 bg-ui-accent text-white hover:bg-ui-accent-hover sm:justify-self-start" type="button" disabled="@(Procesando || Revision is not null || UnidadPerdida is not null || grupo.Seleccionadas.Count == 0)"
+                            @onclick="() => Revisar(grupo)">Confirmar recepción (@grupo.Seleccionadas.Count)</button>
                 </div>
-                <button class="primary-button" type="button" disabled="@(Procesando || Revision is not null || UnidadPerdida is not null || grupo.Seleccionadas.Count == 0)"
-                    @onclick="() => Revisar(grupo)">Confirmar recepción (@grupo.Seleccionadas.Count)</button>
             }
         </section>
     }
-    @if (!Cargando && Error is null && Grupos.Count == 0) { <p>No hay compras pendientes de recepción.</p> }
+    @if (!Cargando && Error is null && Grupos.Count == 0)
+    {
+        <p class="ui-card m-0 p-5 text-sm leading-6 text-ui-muted">No hay compras pendientes de recepción.</p>
+    }
 </section>
 @if (Revision is not null)
 {
-    <ConfirmacionOperacion Titulo="Confirmar recepción" TextoConfirmar="Recibir mercancía" TextoEditar="Cancelar"
-        Ocupado="Procesando" Error="@Error" OnEditar="Cerrar" OnConfirmar="ConfirmarAsync">
-        <p>Compra @Revision.Compra.CodigoCompra · @Revision.Compra.Proveedor</p>
-        <p>@Revision.Seleccionadas.Count unidades pasarán a Disponible el @Revision.Fecha.ToString("dd/MM/yyyy"). Sus reservas se conservan.</p>
-        <ul>@foreach(var unidad in Revision.Compra.Unidades.Where(x => Revision.Seleccionadas.Contains(x.Id))) { <li>@unidad.Producto · @unidad.CodigoInterno</li> }</ul>
-    </ConfirmacionOperacion>
+    <div class="rm-inventory">
+        <ConfirmacionOperacion Titulo="Confirmar recepción" TextoConfirmar="Recibir mercancía" TextoEditar="Cancelar"
+            Ocupado="Procesando" Error="@Error" OnEditar="Cerrar" OnConfirmar="ConfirmarAsync">
+            <div class="grid min-w-0 gap-3">
+                <p class="m-0 text-sm font-semibold leading-6 text-ui-ink [overflow-wrap:anywhere]">Compra @Revision.Compra.CodigoCompra · @Revision.Compra.Proveedor</p>
+                <p class="m-0 text-sm leading-6 text-ui-muted">@Revision.Seleccionadas.Count unidades pasarán a Disponible el @Revision.Fecha.ToString("dd/MM/yyyy"). Sus reservas se conservan.</p>
+                <ul class="rm-inventory-review-lines m-0 grid min-w-0 list-none gap-2 p-0">
+                    @foreach(var unidad in Revision.Compra.Unidades.Where(x => Revision.Seleccionadas.Contains(x.Id)))
+                    {
+                        <li class="grid min-w-0 gap-1 rounded-2xl bg-ui-canvas p-3 text-sm leading-6 text-ui-ink">
+                            <span class="font-medium [overflow-wrap:anywhere]">@unidad.Producto</span>
+                            <span class="font-mono text-xs leading-5 break-all text-ui-muted">@unidad.CodigoInterno</span>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </ConfirmacionOperacion>
+    </div>
 }
 @if (UnidadPerdida is not null)
 {
-    <ConfirmacionOperacion Titulo="Marcar unidad perdida" TextoConfirmar="Marcar perdida" TextoEditar="Cancelar"
-        Ocupado="Procesando" Error="@Error" OnEditar="CerrarPerdida" OnConfirmar="ConfirmarPerdidaAsync">
-        <p>@UnidadPerdida.Producto · @UnidadPerdida.CodigoInterno</p>
-        <p>La unidad quedará marcada como Perdida y dejará de estar pendiente de recepción. La compra y su costo se conservarán. Esta acción no puede revertirse en esta versión.</p>
-        @if (UnidadPerdida.DetallePedidoReservaId.HasValue)
-        {
-            <p>Esta unidad tiene una reserva activa. Al marcarla como perdida se liberará la reserva. El pedido se conservará y quedará nuevamente pendiente de asignar esa unidad.</p>
-        }
-    </ConfirmacionOperacion>
+    <div class="rm-inventory rm-inventory-loss">
+        <ConfirmacionOperacion Titulo="Marcar unidad perdida" TextoConfirmar="Marcar perdida" TextoEditar="Cancelar"
+            Ocupado="Procesando" Error="@Error" OnEditar="CerrarPerdida" OnConfirmar="ConfirmarPerdidaAsync">
+            <div class="grid min-w-0 gap-3">
+                <p class="m-0 text-sm font-semibold leading-6 text-ui-ink [overflow-wrap:anywhere]">@UnidadPerdida.Producto · @UnidadPerdida.CodigoInterno</p>
+                <p class="m-0 rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 p-3 text-sm leading-6 text-ui-danger">La unidad quedará marcada como Perdida y dejará de estar pendiente de recepción. La compra y su costo se conservarán. Esta acción no puede revertirse en esta versión.</p>
+                @if (UnidadPerdida.DetallePedidoReservaId.HasValue)
+                {
+                    <p class="m-0 text-sm leading-6 text-ui-muted">Esta unidad tiene una reserva activa. Al marcarla como perdida se liberará la reserva. El pedido se conservará y quedará nuevamente pendiente de asignar esa unidad.</p>
+                }
+            </div>
+        </ConfirmacionOperacion>
+    </div>
 }
 @code {
     private UnidadInventarioDto? UnidadPerdida;

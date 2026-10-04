@@ -5,7 +5,7 @@ namespace ResellManager.Application.DTOs;
 public sealed record DetalleCompraInput(
     int ProductoId,
     int Cantidad,
-    decimal CostoUnitario
+    decimal CostoUnitarioMonedaOrigen
 );
 
 public sealed record ComprobanteCompraInput(
@@ -24,7 +24,14 @@ public sealed record CompraInput(
     string? Observaciones,
     IReadOnlyCollection<DetalleCompraInput> Detalles,
     ComprobanteCompraInput? Comprobante
-);
+)
+{
+    public MonedaCompra Moneda { get; init; } = MonedaCompra.GTQ;
+    public decimal TipoCambio { get; init; } = 1m;
+    public decimal? TipoCambioReferencia { get; init; }
+    public DateOnly? FechaTipoCambioReferencia { get; init; }
+    public string? FuenteTipoCambio { get; init; }
+}
 
 public sealed record DetalleCompraDto(
     int Id,
@@ -33,7 +40,11 @@ public sealed record DetalleCompraDto(
     int Cantidad,
     decimal CostoUnitario,
     decimal Subtotal
-);
+)
+{
+    public decimal CostoUnitarioMonedaOrigen { get; init; }
+    public decimal SubtotalMonedaOrigen { get; init; }
+}
 
 public sealed record CompraDto(
     int Id,
@@ -48,6 +59,12 @@ public sealed record CompraDto(
     string? RutaComprobante
 )
 {
+    public MonedaCompra Moneda { get; init; } = MonedaCompra.GTQ;
+    public decimal TipoCambio { get; init; } = 1m;
+    public decimal? TipoCambioReferencia { get; init; }
+    public DateOnly? FechaTipoCambioReferencia { get; init; }
+    public string? FuenteTipoCambio { get; init; }
+    public decimal TotalMonedaOrigen { get; init; }
     public ResumenRecepcionCompraDto? Recepcion { get; init; }
 }
 

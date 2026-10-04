@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using ResellManager.Application.Interfaces;
 using ResellManager.Infrastructure.Persistence;
 using ResellManager.Infrastructure.Services;
@@ -42,8 +43,21 @@ public static class DependencyInjection
         services.AddScoped<IRecepcionCompraService, RecepcionCompraService>();
         services.AddScoped<ICategoriaService, CategoriaService>();
         services.AddScoped<IProductoService, ProductoService>();
+        services.AddScoped<ICatalogoPublicoService, CatalogoPublicoService>();
+        services.AddScoped<IAlmacenamientoImagenesProducto, AlmacenamientoImagenesProductoLocal>();
+        services.AddScoped<IProductoConImagenService, ProductoConImagenService>();
         services.AddScoped<IProveedorService, ProveedorService>();
         services.AddScoped<ICompraService, CompraService>();
+        services.AddMemoryCache();
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddHttpClient<ITipoCambioReferenciaService, TipoCambioReferenciaBanguatService>(client =>
+        {
+            client.Timeout = TipoCambioReferenciaBanguatService.TimeoutConsulta;
+        }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+        {
+            // Una redirección del proveedor no debe degradar HTTPS a HTTP.
+            AllowAutoRedirect = false
+        });
         services.AddScoped<IAlmacenamientoComprobantes, AlmacenamientoComprobantesLocal>();
         services.AddScoped<
             IRegistroCompraConComprobanteService,

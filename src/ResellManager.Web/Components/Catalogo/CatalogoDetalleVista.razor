@@ -1,0 +1,61 @@
+<div class="store-detail-back">
+    <a href="/catalogo" class="store-text-link">← Volver al catálogo</a>
+</div>
+@if (Cargando)
+{
+    <h1 class="store-section-title">Cargando producto…</h1>
+    <p class="store-loading" role="status" aria-live="polite"><span class="store-spinner" aria-hidden="true"></span>Estamos preparando el detalle.</p>
+}
+else if (NoDisponible)
+{
+    <CatalogoEstado Titulo="Este producto ya no está disponible" Mensaje="Puede que se haya vendido o reservado. Explora el catálogo para encontrar otros productos."
+                    EncabezadoPrincipal="true" MostrarRegreso="true" />
+}
+else if (Error is not null)
+{
+    <CatalogoEstado Titulo="No pudimos abrir este producto" Mensaje="@Error" EsError="true" EncabezadoPrincipal="true" OnAccion="OnReintentar" />
+}
+else if (Producto is not null)
+{
+    <article class="store-detail-grid" aria-labelledby="titulo-producto-publico">
+        <div class="store-detail-media">
+            <ImagenCatalogo ProductoId="Producto.Id" Nombre="@Producto.Nombre" TieneImagen="Producto.TieneImagenPrincipal" Prioritaria="true" />
+        </div>
+        <div class="store-detail-copy">
+            <a href="/catalogo?categoriaId=@Producto.CategoriaId" class="store-detail-category">@Producto.Categoria</a>
+            <h1 id="titulo-producto-publico" class="store-detail-title">@Producto.Nombre</h1>
+            <p class="store-detail-price">@CatalogoPresentacion.Precio(Producto.PrecioPublico)</p>
+            @if (Producto.Disponible)
+            {
+                <span class="store-availability">Disponible</span>
+            }
+            @if (!string.IsNullOrWhiteSpace(Producto.Descripcion))
+            {
+                <section class="store-detail-section" aria-labelledby="descripcion-producto-publico">
+                    <h2 id="descripcion-producto-publico">Sobre este producto</h2>
+                    <p class="store-detail-description">@Producto.Descripcion</p>
+                </section>
+            }
+            @if (CatalogoPresentacion.Caracteristicas(Producto).Any())
+            {
+                <section class="store-detail-section" aria-labelledby="caracteristicas-producto-publico">
+                    <h2 id="caracteristicas-producto-publico">Detalles que importan</h2>
+                    <dl class="store-detail-facts">
+                        @foreach (var dato in CatalogoPresentacion.Caracteristicas(Producto))
+                        {
+                            <div><dt>@dato.Etiqueta</dt><dd>@dato.Valor</dd></div>
+                        }
+                    </dl>
+                </section>
+            }
+        </div>
+    </article>
+}
+
+@code {
+    [Parameter] public ProductoCatalogoDetalleDto? Producto { get; set; }
+    [Parameter] public bool Cargando { get; set; }
+    [Parameter] public bool NoDisponible { get; set; }
+    [Parameter] public string? Error { get; set; }
+    [Parameter] public EventCallback OnReintentar { get; set; }
+}

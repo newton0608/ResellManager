@@ -283,6 +283,40 @@ public sealed class CatalogoModuloIntegracionTests : PruebaWebAislada
         Assert.True(productoService.ObtenerFueInvocado);
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("productos/7/imagen-principal-privada.jpg")]
+    public async Task ProductoDetalle_UsaImagenAutenticadaExistenteSinExponerRutaDeAlmacenamiento(string? rutaImagen)
+    {
+        using var aplicacion = factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureTestServices(services =>
+            {
+                services.RemoveAll<IProductoService>();
+                services.AddSingleton<IProductoService>(new ProductoServiceFalso(rutaImagen));
+            });
+        });
+        using var cliente = CrearCliente(aplicacion);
+        await IniciarSesionAsync(cliente);
+
+        var detalle = WebUtility.HtmlDecode(await cliente.GetStringAsync("/productos/7"));
+
+        if (rutaImagen is null)
+        {
+            Assert.DoesNotContain("src=\"/productos/7/imagen\"", detalle);
+            Assert.Contains("Sin imagen principal", detalle);
+        }
+        else
+        {
+            var imagen = Regex.Match(detalle, "<img[^>]+src=\"/productos/7/imagen\"[^>]*>");
+            Assert.True(imagen.Success);
+            Assert.Contains("alt=\"Blusa Nike negra\"", imagen.Value);
+            Assert.DoesNotContain(rutaImagen, detalle);
+        }
+        Assert.Contains("Valor de referencia; el precio final pertenece a cada venta.", detalle);
+        Assert.Contains("href=\"/productos/7/editar\"", detalle);
+    }
+
     [Fact]
     public async Task ProductoNuevo_SinCategorias_ExplicaBloqueoYEnlazaACategorias()
     {
@@ -376,7 +410,7 @@ public sealed class CatalogoModuloIntegracionTests : PruebaWebAislada
         }
     }
 
-    private sealed class ProductoServiceFalso : IProductoService
+    private sealed class ProductoServiceFalso(string? rutaImagen = null) : IProductoService
     {
         private readonly ProductoDto producto =
             new(
@@ -391,7 +425,8 @@ public sealed class CatalogoModuloIntegracionTests : PruebaWebAislada
                 "M",
                 250m,
                 3,
-                "Ropa de prueba");
+                "Ropa de prueba",
+                ImagenPrincipalRuta: rutaImagen);
 
         public bool ListarFueInvocado { get; private set; }
         public bool ObtenerFueInvocado { get; private set; }

@@ -1,0 +1,12 @@
+{
+  "name": "resellmanager",
+  "private": true,
+  "scripts": {
+    "css:watch": "node --import ./scripts/tailwind-resolver.mjs ./node_modules/@tailwindcss/cli/dist/index.mjs -i ./src/ResellManager.Web/Styles/tailwind.css -o ./src/ResellManager.Web/wwwroot/css/tailwind.css --watch",
+    "css:build": "node --import ./scripts/tailwind-resolver.mjs ./node_modules/@tailwindcss/cli/dist/index.mjs -i ./src/ResellManager.Web/Styles/tailwind.css -o ./src/ResellManager.Web/wwwroot/css/tailwind.css --minify"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "4.3.3",
+    "tailwindcss": "4.3.3"
+  }
+}

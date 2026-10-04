@@ -104,6 +104,21 @@ public interface IAlmacenamientoComprobantes
     );
 }
 
+public interface IAlmacenamientoImagenesProducto
+{
+    Task<ServiceResult<ImagenProductoPreparada>> PrepararAsync(Stream contenido, CancellationToken ct = default);
+    Task<ServiceResult<ImagenProductoGuardada>> ConfirmarAsync(ImagenProductoPreparada preparada, int productoId, CancellationToken ct = default);
+    Task<ServiceResult> EliminarTemporalAsync(string identificadorTemporal, CancellationToken ct = default);
+    Task<ServiceResult> EliminarAsync(string rutaRelativa, CancellationToken ct = default);
+    Task<ServiceResult<ImagenProductoLectura>> AbrirLecturaAsync(string rutaRelativa, CancellationToken ct = default);
+}
+
+public interface IProductoConImagenService
+{
+    Task<ServiceResult<ProductoDto>> CrearAsync(ProductoInput input, Stream? imagen, CancellationToken ct = default);
+    Task<ServiceResult<ProductoDto>> EditarAsync(int id, ProductoInput input, Stream? imagen, bool eliminarImagen, CancellationToken ct = default);
+}
+
 public interface IRegistroCompraConComprobanteService
 {
     Task<ServiceResult<CompraDto>> RegistrarAsync(

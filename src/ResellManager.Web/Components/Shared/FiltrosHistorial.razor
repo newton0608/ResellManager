@@ -1,23 +1,24 @@
-<form class="history-filter-form" @onsubmit="OnAplicar" @onsubmit:preventDefault aria-label="Filtrar historial">
+<form class="rm-history-filters ui-card m-0 grid min-w-0 max-w-full grid-cols-1 gap-4 p-4 sm:grid-cols-2 sm:p-5 xl:grid-cols-[repeat(auto-fit,minmax(min(100%,12rem),1fr))]"
+      @onsubmit="OnAplicar" @onsubmit:preventDefault aria-label="Filtrar historial">
     @if (MostrarBusqueda)
     {
-        <div class="form-field history-search">
-            <label for="@(Id + "-buscar")">Buscar</label>
-            <input id="@(Id + "-buscar")" type="search" placeholder="@Placeholder" @bind="Modelo.Termino" disabled="@Ocupado" />
+        <div class="grid min-w-0 gap-2 sm:col-span-2 xl:col-auto">
+            <label class="text-sm font-semibold text-ui-ink" for="@(Id + "-buscar")">Buscar</label>
+            <input class="ui-input" id="@(Id + "-buscar")" type="search" placeholder="@Placeholder" @bind="Modelo.Termino" disabled="@Ocupado" />
         </div>
     }
     @ChildContent
-    <div class="form-field">
-        <label for="@(Id + "-desde")">Desde</label>
-        <input id="@(Id + "-desde")" type="date" @bind="Modelo.Desde" disabled="@Ocupado" />
+    <div class="grid min-w-0 gap-2">
+        <label class="text-sm font-semibold text-ui-ink" for="@(Id + "-desde")">Desde</label>
+        <input class="ui-input" id="@(Id + "-desde")" type="date" @bind="Modelo.Desde" disabled="@Ocupado" />
     </div>
-    <div class="form-field">
-        <label for="@(Id + "-hasta")">Hasta</label>
-        <input id="@(Id + "-hasta")" type="date" @bind="Modelo.Hasta" disabled="@Ocupado" />
+    <div class="grid min-w-0 gap-2">
+        <label class="text-sm font-semibold text-ui-ink" for="@(Id + "-hasta")">Hasta</label>
+        <input class="ui-input" id="@(Id + "-hasta")" type="date" @bind="Modelo.Hasta" disabled="@Ocupado" />
     </div>
-    <div class="search-actions history-filter-actions">
-        <button class="primary-button" type="submit" disabled="@Ocupado">Aplicar</button>
-        <button class="secondary-button" type="button" disabled="@Ocupado" @onclick="OnLimpiar">Limpiar</button>
+    <div class="grid min-w-0 grid-cols-2 items-end gap-2 self-end sm:col-span-2 xl:col-auto">
+        <button class="ui-button bg-ui-accent text-white hover:bg-ui-accent-hover" type="submit" disabled="@Ocupado">Aplicar</button>
+        <button class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" type="button" disabled="@Ocupado" @onclick="OnLimpiar">Limpiar</button>
     </div>
 </form>
 

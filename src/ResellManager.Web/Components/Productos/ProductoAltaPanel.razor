@@ -1,13 +1,16 @@
 @inject ICategoriaService CategoriaService
 @inject IProductoService ProductoService
+@inject IProductoConImagenService ProductoConImagenService
 @inject ILogger<ProductoAltaPanel> Logger
 
-<section class="form-panel product-create-panel" aria-labelledby="titulo-alta-producto">
-    <h2 id="titulo-alta-producto" tabindex="-1" @ref="Titulo">Registrar producto para esta compra</h2>
-    <p>La compra permanece abierta. Al guardar se seleccionará este producto en el detalle de origen.</p>
+<section class="ui-card rm-product-form mb-4 min-w-0 max-w-full space-y-5 border-ui-accent/20 bg-ui-accent/5 p-4 sm:p-6" aria-labelledby="titulo-alta-producto">
+    <div class="space-y-2">
+        <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-accent" id="titulo-alta-producto" tabindex="-1" @ref="Titulo">Registrar producto para esta compra</h2>
+        <p class="m-0 text-sm leading-6 text-ui-muted">La compra permanece abierta. Al guardar se seleccionará este producto en el detalle de origen.</p>
+    </div>
     @if (Cargando)
     {
-        <p role="status">Cargando categorías...</p>
+        <p class="m-0 text-sm leading-6 text-ui-muted" role="status">Cargando categorías...</p>
     }
     else
     {
@@ -15,7 +18,7 @@
                       ErrorMessage="@Error" OnGuardar="GuardarAsync" OnCancelar="OnCancelar"
                       CategoriasEnOtraPestana="true" />
     }
-    <button class="secondary-button" type="button" disabled="@(Guardando || Cargando)"
+    <button class="ui-button w-full border-ui-control bg-white text-ui-ink hover:bg-ui-canvas sm:w-auto" type="button" disabled="@(Guardando || Cargando)"
             @onclick="CargarCategoriasAsync">Actualizar categorías</button>
 </section>
 
@@ -61,7 +64,11 @@
         Error = null;
         try
         {
-            var resultado = await ProductoService.CrearAsync(modelo.ToInput());
+            await using var imagen = modelo.ImagenArchivo?.OpenReadStream(
+                ResellManager.Infrastructure.Storage.AlmacenamientoImagenesProductoLocal.TamanoMaximoBytes);
+            var resultado = imagen is null
+                ? await ProductoService.CrearAsync(modelo.ToInput())
+                : await ProductoConImagenService.CrearAsync(modelo.ToInput(), imagen);
             if (!resultado.IsSuccess || resultado.Value is null)
             {
                 Error = resultado.ErrorMessage ?? "No fue posible registrar el producto.";

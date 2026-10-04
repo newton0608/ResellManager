@@ -335,7 +335,7 @@ public sealed class PedidosUiIntegracionTests : PruebaWebAislada
         Assert.Contains("Otro", contenido);
         Assert.DoesNotContain("ID de cliente", contenido, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("ID de producto", contenido, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("order-line-grid", contenido);
+        Assert.Contains("xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]", contenido);
     }
 
     [Fact]

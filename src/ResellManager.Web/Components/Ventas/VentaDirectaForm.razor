@@ -8,135 +8,140 @@
 @inject NavigationManager Navigation
 @inject ILogger<VentaDirectaForm> Logger
 
+<div class="rm-sales rm-sale-form mx-auto grid min-w-0 max-w-5xl gap-6 pb-[max(1rem,env(safe-area-inset-bottom))]">
 @if (Cargando)
 {
-    <div class="loading-state" role="status" aria-live="polite">
-        <span class="spinner" aria-hidden="true"></span>
+    <div class="ui-card flex items-center gap-3 p-6 text-sm text-ui-muted" role="status" aria-live="polite">
+        <span class="size-5 shrink-0 rounded-full border-[3px] border-solid border-ui-accent/20 border-t-ui-accent motion-safe:animate-spin" aria-hidden="true"></span>
         Cargando clientes e inventario elegible...
     </div>
 }
 else if (!string.IsNullOrWhiteSpace(ErrorCarga))
 {
-    <section class="error-state" role="alert">
-        <h2>No fue posible preparar la venta directa</h2>
-        <p>@ErrorCarga</p>
-        <div class="form-actions">
-            <button class="primary-button" type="button" @onclick="CargarAsync">Reintentar</button>
-            <a class="secondary-button" href="/ventas">Volver a ventas</a>
+    <section class="ui-card grid min-w-0 gap-4 p-5 sm:p-6" role="alert">
+        <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink">No fue posible preparar la venta directa</h2>
+        <p class="m-0 text-sm leading-6 text-ui-muted">@ErrorCarga</p>
+        <div class="grid grid-cols-1 gap-3 sm:flex sm:flex-wrap">
+            <button class="ui-button bg-ui-accent text-white hover:bg-ui-accent-hover" type="button" @onclick="CargarAsync">Reintentar</button>
+            <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/ventas">Volver a ventas</a>
         </div>
     </section>
 }
 else
 {
-    <section class="direct-sale-intro" aria-labelledby="titulo-venta-directa">
-        <div>
-            <p class="eyebrow">Venta presencial</p>
-            <h2 id="titulo-venta-directa">Venta directa con pedido automático</h2>
-            <p>Se creará primero un pedido <strong>Venta directa</strong> y después la venta. No existen ventas sin pedido.</p>
+    <section class="ui-card grid min-w-0 gap-4 p-4 sm:flex sm:items-start sm:justify-between sm:p-6" aria-labelledby="titulo-venta-directa">
+        <div class="grid min-w-0 gap-2">
+            <p class="m-0 text-xs font-semibold tracking-wide text-ui-muted uppercase">Venta presencial</p>
+            <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-venta-directa">Venta directa con pedido automático</h2>
+            <p class="m-0 max-w-2xl text-sm leading-6 text-ui-muted">Se creará primero un pedido <strong>Venta directa</strong> y después la venta. No existen ventas sin pedido.</p>
         </div>
-        <span class="status-badge status-badge-neutral">Sin reserva intermedia</span>
+        <span class="inline-flex items-center rounded-full bg-ui-warning/5 px-3 py-1 text-xs font-semibold leading-5 text-ui-warning status-badge-neutral justify-self-start sm:shrink-0">Sin reserva intermedia</span>
     </section>
 
-        <EditForm Model="Modelo" OnValidSubmit="RevisarVentaDirectaAsync" class="entity-form direct-sale-form">
-            <DataAnnotationsValidator />
-            <ValidationSummary class="validation-summary" />
+    <EditForm Model="Modelo" OnValidSubmit="RevisarVentaDirectaAsync" class="entity-form grid min-w-0 gap-6">
+        <DataAnnotationsValidator />
+        <ValidationSummary class="validation-summary" />
 
-            @if (!string.IsNullOrWhiteSpace(ErrorGuardado))
+        @if (!string.IsNullOrWhiteSpace(ErrorGuardado))
+        {
+            @if (PedidoAutomaticoCreado is null)
             {
-                @if (PedidoAutomaticoCreado is null)
-                {
-                    <div class="mensaje-error" role="alert">@ErrorGuardado</div>
-                }
-                else
-                {
-                    <section class="direct-sale-partial-warning" role="alert">
-                        <div>
-                            <h3>El pedido existe, pero la venta no se registró</h3>
-                            <p>@ErrorGuardado</p>
-                            <p>El pedido permanece pendiente. Puedes reintentar aquí, o abrir el pedido para revisarlo o cancelarlo.</p>
-                        </div>
-                        <a class="secondary-button" href="/pedidos/@PedidoAutomaticoCreado.Id">Ver pedido @PedidoAutomaticoCreado.CodigoInterno</a>
-                    </section>
-                }
+                <div class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger" role="alert">@ErrorGuardado</div>
             }
+            else
+            {
+                <section class="grid min-w-0 gap-4 rounded-3xl border border-solid border-ui-warning/20 bg-ui-warning/5 p-4 text-ui-warning sm:p-5" role="alert">
+                    <div class="grid min-w-0 gap-2">
+                        <h3 class="m-0 text-base font-semibold leading-6">El pedido existe, pero la venta no se registró</h3>
+                        <p class="m-0 text-sm leading-6 [overflow-wrap:anywhere]">@ErrorGuardado</p>
+                        <p class="m-0 text-sm leading-6">El pedido permanece pendiente. Puedes reintentar aquí, o abrir el pedido para revisarlo o cancelarlo.</p>
+                    </div>
+                    <a class="ui-button min-w-0 border-ui-control bg-white text-ui-ink hover:bg-ui-canvas sm:justify-self-start" href="/pedidos/@PedidoAutomaticoCreado.Id"><span class="min-w-0 [overflow-wrap:anywhere]">Ver pedido @PedidoAutomaticoCreado.CodigoInterno</span></a>
+                </section>
+            }
+        }
 
-            <section class="form-panel" aria-label="Datos generales de la venta directa">
-                <div class="form-grid">
-                    <div class="form-field">
-                        <ClienteBuscador Id="venta-directa-cliente" Seleccionado="ClienteSeleccionado"
-                            Deshabilitado="@(Registrando || RevisandoVenta || PedidoAutomaticoCreado is not null)" OnSeleccionado="ElegirCliente" />
-                        <ValidationMessage id="venta-directa-cliente-error" For="() => Modelo.ClienteId" />
-                    </div>
-                    <div class="form-field">
-                        <label for="venta-directa-fecha">Fecha <span aria-hidden="true">*</span></label>
-                        <InputDate id="venta-directa-fecha" @bind-Value="Modelo.Fecha" disabled="@(Registrando || PedidoAutomaticoCreado is not null)" />
-                    </div>
-                    <div class="form-field form-field-wide">
-                        <label for="venta-directa-observaciones">Observaciones</label>
-                        <InputTextArea id="venta-directa-observaciones"
-                                       @bind-Value="Modelo.Observaciones"
-                                       rows="3" maxlength="500" aria-describedby="venta-directa-observaciones-error"
-                                       disabled="@(Registrando || PedidoAutomaticoCreado is not null)" />
-                        <ValidationMessage id="venta-directa-observaciones-error" For="() => Modelo.Observaciones" />
-                    </div>
+        <section class="ui-card grid min-w-0 gap-5 p-4 sm:p-6" aria-label="Datos generales de la venta directa">
+            <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink">Información general</h2>
+            <div class="grid min-w-0 gap-4 sm:grid-cols-2">
+                <div class="grid min-w-0 gap-2 [&>label]:text-sm [&>label]:font-semibold">
+                    <ClienteBuscador Id="venta-directa-cliente" Seleccionado="ClienteSeleccionado"
+                        Deshabilitado="@(Registrando || RevisandoVenta || PedidoAutomaticoCreado is not null)" OnSeleccionado="ElegirCliente" />
+                    <ValidationMessage id="venta-directa-cliente-error" For="() => Modelo.ClienteId" />
                 </div>
-            </section>
-
-            <section class="form-panel" aria-label="Buscar y agregar artículos">
-                <UnidadBuscador @key="@($"buscador-{RevisionBuscador}")" Id="directa-unidad" Excluir="@Unidades.Select(x => x.Unidad.Id).ToArray()"
-                    Deshabilitado="@(Registrando || RevisandoVenta || AgregandoUnidad || PedidoAutomaticoCreado is not null)" OnSeleccionado="AgregarUnidadAsync" />
-                <h2>Artículos agregados a la venta</h2>
-                @if (Unidades.Count == 0) { <p>Busca una unidad disponible y agrégala a la venta.</p> }
-                @foreach (var detalle in Unidades)
-                {
-                    <article class="order-line-editor" @key="@($"unidad-{detalle.Unidad.Id}")">
-                        <h3>@detalle.Unidad.Producto</h3>
-                        <p class="code-value">@detalle.Unidad.CodigoInterno</p>
-                        <div class="form-field">
-                            <label for="precio-directo-@detalle.Unidad.Id">Precio final</label>
-                            <input inputmode="decimal" data-select-once="true" id="precio-directo-@detalle.Unidad.Id" type="number" step="0.01" min="0" @bind="detalle.PrecioFinal"
-                                disabled="@(Registrando || RevisandoVenta || PedidoAutomaticoCreado is not null)" />
-                        </div>
-                        <button type="button" class="inline-button" disabled="@(Registrando || RevisandoVenta || PedidoAutomaticoCreado is not null)"
-                            @onclick="() => QuitarUnidad(detalle)">Quitar artículo</button>
-                    </article>
-                }
-            </section>
-
-            <div class="form-actions sale-submit-actions">
-                <button class="primary-button" type="submit" disabled="@(Registrando || RevisandoVenta || AgregandoUnidad || Seleccionadas.Count == 0)">
-                    @(Registrando
-                        ? "Registrando..."
-                        : PedidoAutomaticoCreado is null
-                            ? "Revisar venta"
-                            : "Revisar reintento de venta")
-                </button>
-                <a class="secondary-button" href="/ventas">Cancelar</a>
+                <div class="grid min-w-0 gap-2 [&>label]:text-sm [&>label]:font-semibold">
+                    <label for="venta-directa-fecha">Fecha <span aria-hidden="true">*</span></label>
+                    <InputDate class="ui-input" id="venta-directa-fecha" @bind-Value="Modelo.Fecha" disabled="@(Registrando || PedidoAutomaticoCreado is not null)" />
+                </div>
+                <div class="grid min-w-0 gap-2 [&>label]:text-sm [&>label]:font-semibold sm:col-span-2">
+                    <label for="venta-directa-observaciones">Observaciones</label>
+                    <InputTextArea class="ui-input" id="venta-directa-observaciones"
+                                   @bind-Value="Modelo.Observaciones"
+                                   rows="3" maxlength="500" aria-describedby="venta-directa-observaciones-error"
+                                   disabled="@(Registrando || PedidoAutomaticoCreado is not null)" />
+                    <ValidationMessage id="venta-directa-observaciones-error" For="() => Modelo.Observaciones" />
+                </div>
             </div>
-        </EditForm>
+        </section>
+
+        <section class="ui-card grid min-w-0 gap-5 p-4 sm:p-6" aria-label="Buscar y agregar artículos">
+            <UnidadBuscador @key="@($"buscador-{RevisionBuscador}")" Id="directa-unidad" Excluir="@Unidades.Select(x => x.Unidad.Id).ToArray()"
+                Deshabilitado="@(Registrando || RevisandoVenta || AgregandoUnidad || PedidoAutomaticoCreado is not null)" OnSeleccionado="AgregarUnidadAsync" />
+            <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink">Artículos agregados a la venta</h2>
+            @if (Unidades.Count == 0) { <p class="m-0 rounded-2xl bg-ui-canvas p-4 text-sm leading-6 text-ui-muted">Busca una unidad disponible y agrégala a la venta.</p> }
+            @foreach (var detalle in Unidades)
+            {
+                <article class="grid min-w-0 gap-4 rounded-2xl border border-solid border-ui-border bg-ui-canvas p-4 sm:grid-cols-[minmax(0,1fr)_10rem] sm:p-5 xl:grid-cols-[minmax(0,1fr)_12rem_auto] xl:items-end" @key="@($"unidad-{detalle.Unidad.Id}")">
+                    <div class="grid min-w-0 gap-2 xl:self-center">
+                        <h3 class="m-0 text-base font-semibold leading-6 text-ui-ink [overflow-wrap:anywhere]">@detalle.Unidad.Producto</h3>
+                        <p class="m-0 font-mono text-xs leading-5 text-ui-muted [overflow-wrap:anywhere]">@detalle.Unidad.CodigoInterno</p>
+                    </div>
+                    <div class="grid min-w-0 gap-2 [&>label]:text-sm [&>label]:font-semibold">
+                        <label for="precio-directo-@detalle.Unidad.Id">Precio final</label>
+                        <input class="ui-input" inputmode="decimal" data-select-once="true" id="precio-directo-@detalle.Unidad.Id" type="number" step="0.01" min="0" @bind="detalle.PrecioFinal"
+                            disabled="@(Registrando || RevisandoVenta || PedidoAutomaticoCreado is not null)" />
+                    </div>
+                    <button type="button" class="ui-button min-w-0 border-ui-danger/30 bg-white text-ui-danger hover:bg-ui-danger/5 sm:col-span-2 xl:col-auto" disabled="@(Registrando || RevisandoVenta || PedidoAutomaticoCreado is not null)"
+                        @onclick="() => QuitarUnidad(detalle)">Quitar artículo</button>
+                </article>
+            }
+        </section>
+
+        <div class="grid grid-cols-1 gap-3 sm:flex sm:flex-wrap">
+            <button class="ui-button bg-ui-accent text-white hover:bg-ui-accent-hover" type="submit" disabled="@(Registrando || RevisandoVenta || AgregandoUnidad || Seleccionadas.Count == 0)">
+                @(Registrando
+                    ? "Registrando..."
+                    : PedidoAutomaticoCreado is null
+                        ? "Revisar venta"
+                        : "Revisar reintento de venta")
+            </button>
+            <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/ventas">Cancelar</a>
+        </div>
+    </EditForm>
 }
 
 @if (RevisandoVenta)
 {
     <ConfirmacionOperacion Titulo="Confirmar venta directa" TextoConfirmar="Confirmar venta"
                            Ocupado="Registrando" Error="@ErrorGuardado" OnEditar="EditarVentaAsync" OnConfirmar="ConfirmarVentaAsync">
-        <p>Cliente: @ClientePresentacion.NombreCompleto(Clientes.First(x => x.Id == Modelo.ClienteId))</p>
-        <p>Venta directa · Presencial · @Modelo.Fecha.ToString("dd/MM/yyyy")</p>
-        <ul>
+        <p class="m-0 text-base font-semibold leading-6 text-ui-ink [overflow-wrap:anywhere]">Cliente: @ClientePresentacion.NombreCompleto(Clientes.First(x => x.Id == Modelo.ClienteId))</p>
+        <p class="m-0 text-sm leading-6 text-ui-muted">Venta directa · Presencial · @Modelo.Fecha.ToString("dd/MM/yyyy")</p>
+        <ul class="rm-sale-review-lines m-0 grid min-w-0 list-none gap-2 p-0">
             @foreach (var detalle in Seleccionadas)
             {
-                <li>@detalle.Unidad.Producto · @detalle.Unidad.CodigoInterno:
-                    1 × @VentaPresentacion.Moneda(detalle.PrecioFinal) = @VentaPresentacion.Moneda(detalle.PrecioFinal)</li>
+                <li class="rounded-2xl bg-ui-canvas p-3 text-sm leading-6 text-ui-ink [overflow-wrap:anywhere]">@detalle.Unidad.Producto · @detalle.Unidad.CodigoInterno:
+                    1 × <span class="inline-block max-w-full [overflow-wrap:anywhere]">@VentaPresentacion.Moneda(detalle.PrecioFinal)</span> = <span class="inline-block max-w-full [overflow-wrap:anywhere]">@VentaPresentacion.Moneda(detalle.PrecioFinal)</span></li>
             }
         </ul>
-        <p><strong>Total: @VentaPresentacion.Moneda(Seleccionadas.Sum(x => x.PrecioFinal))</strong></p>
-        <p>Saldo estimado: @ClientePresentacion.Moneda(Clientes.First(x => x.Id == Modelo.ClienteId).Saldo + Seleccionadas.Sum(x => x.PrecioFinal)). Los abonos se registran por separado.</p>
+        <p class="m-0 rounded-2xl bg-ui-canvas p-4 text-lg leading-7 text-ui-ink"><strong>Total: <span class="inline-block max-w-full [overflow-wrap:anywhere]">@VentaPresentacion.Moneda(Seleccionadas.Sum(x => x.PrecioFinal))</span></strong></p>
+        <p class="m-0 text-sm leading-6 text-ui-muted">Saldo estimado: <span class="inline-block max-w-full [overflow-wrap:anywhere]">@ClientePresentacion.Moneda(Clientes.First(x => x.Id == Modelo.ClienteId).Saldo + Seleccionadas.Sum(x => x.PrecioFinal))</span>. Los abonos se registran por separado.</p>
         @if (PedidoAutomaticoCreado is not null)
         {
-            <p>Se reutilizará el pedido @PedidoAutomaticoCreado.CodigoInterno. Los datos ya registrados en él no se pueden editar aquí.</p>
+            <p class="m-0 text-sm leading-6 text-ui-muted [overflow-wrap:anywhere]">Se reutilizará el pedido @PedidoAutomaticoCreado.CodigoInterno. Los datos ya registrados en él no se pueden editar aquí.</p>
         }
     </ConfirmacionOperacion>
 }
+</div>
 
 @code {
     private bool RevisandoVenta { get; set; }

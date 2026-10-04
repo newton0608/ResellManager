@@ -1,0 +1,17 @@
+<a href="/catalogo" aria-label="Virtuosa Store, inicio del catálogo" class="store-brand">
+    @if (!string.IsNullOrWhiteSpace(LogoHorizontalUrl))
+    {
+        <img src="/branding/virtuosa/icon-white.jpg" alt="" class="store-brand-icon store-brand-icon--mobile" width="1254" height="1254" />
+        <img src="@LogoHorizontalUrl" alt="Virtuosa Store" class="store-brand-horizontal" />
+    }
+    else
+    {
+        <img src="/branding/virtuosa/icon-white.jpg" alt="" class="store-brand-icon" width="1254" height="1254" />
+        <span class="store-brand-wordmark" aria-hidden="true">Virtuosa<small>STORE</small></span>
+    }
+</a>
+
+@code {
+    // Accept an official transparent horizontal export when one is available.
+    [Parameter] public string? LogoHorizontalUrl { get; set; }
+}

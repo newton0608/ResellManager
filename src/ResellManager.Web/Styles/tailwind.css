@@ -1,0 +1,83 @@
+/* Preflight stays disabled. Utilities and the shared design system are unlayered. */
+@layer theme;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" source(none);
+@import "./storefront.css";
+
+/* Paths are relative to this file, independent of the CLI working directory. */
+@source "../**/*.{razor,cshtml,html,cs,js}";
+@source not "../bin";
+@source not "../obj";
+@source not "../wwwroot/vendor";
+
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --color-ui-canvas: #f2f2f7;
+  --color-ui-ink: #1c1c1e;
+  --color-ui-muted: #63636b;
+  --color-ui-border: rgb(60 60 67 / 12%);
+  --color-ui-control: #8e8e93;
+  --color-ui-accent: #0066d6;
+  --color-ui-accent-hover: #0056b5;
+  --color-ui-success: #16743a;
+  --color-ui-danger: #c62821;
+  --color-ui-warning: #995000;
+  --shadow-ui-card: 0 2px 8px rgb(28 28 30 / 3%), 0 12px 32px rgb(28 28 30 / 3%);
+  --shadow-ui-sheet: 0 16px 64px rgb(28 28 30 / 16%);
+}
+
+@utility ui-button {
+  @apply inline-flex min-h-12 min-w-12 items-center justify-center gap-2 rounded-2xl border border-solid border-transparent px-4 py-3 text-center text-sm font-semibold leading-5 no-underline transition-colors duration-150 touch-manipulation;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-accent disabled:cursor-not-allowed disabled:border-ui-border disabled:bg-ui-canvas disabled:text-ui-muted disabled:opacity-100 disabled:shadow-none motion-reduce:transition-none;
+}
+
+@utility ui-card {
+  @apply rounded-3xl border border-solid border-ui-border bg-white shadow-ui-card;
+}
+
+@utility ui-input {
+  @apply box-border min-h-12 min-w-0 w-full max-w-full rounded-2xl border border-solid border-ui-control bg-white px-3 py-3 text-base leading-6 text-ui-ink transition-colors duration-150;
+  @apply placeholder:text-ui-muted hover:border-ui-ink focus:border-ui-accent focus:shadow-none focus:outline-2 focus:outline-offset-2 focus:outline-ui-accent disabled:cursor-not-allowed disabled:border-ui-border disabled:bg-ui-canvas disabled:text-ui-muted motion-reduce:transition-none;
+}
+
+/* Keep the native iOS date picker within its available width. */
+.ui-input[type="date"] { inline-size: 100%; max-inline-size: 100%; min-inline-size: 0; }
+.ui-input[type="date"]::-webkit-datetime-edit { min-width: 0; padding: 0; }
+.ui-input[type="date"]::-webkit-date-and-time-value { min-width: 0; text-align: left; }
+/* iOS adds date padding to its intrinsic width even with border-box.
+   Keep spacing in the value, preserving the native picker.
+   https://bugs.webkit.org/show_bug.cgi?id=301648 */
+@supports (-webkit-touch-callout: none) {
+  .ui-input[type="date"] { padding-inline: 0; }
+  .ui-input[type="date"]::-webkit-date-and-time-value {
+    box-sizing: border-box; max-inline-size: 100%; padding-inline: .75rem;
+  }
+}
+
+/* Classes emitted by Blazor validation need styling without Preflight. */
+.validation-message { @apply mt-1 block text-sm leading-5 text-ui-danger; }
+:is(.validation-summary, .validation-summary-errors) { @apply m-0 text-sm leading-6 text-ui-danger; }
+:is(.validation-summary, .validation-summary-errors) ul { @apply m-0 pl-5; }
+:is(.validation-summary, .validation-summary-errors):empty { display: none; }
+.ui-input.invalid { @apply border-ui-danger; }
+/* .valid keeps the normal ui-input appearance; invalid fields retain visible focus. */
+
+/* Semantic states are emitted by presentation helpers; physical state and reserve stay separate. */
+:is(.status-badge-neutral, .inventory-status-purchased, .inventory-status-neutral, .no-reservation-badge) { @apply border-ui-border bg-ui-canvas text-ui-muted; }
+:is(.status-badge-payment, .purchase-origin-import, .order-status-confirmed, .inventory-status-transit, .reservation-badge) { @apply border-ui-accent/20 bg-ui-accent/5 text-ui-accent; }
+:is(.purchase-origin-received, .order-status-completed, .sale-status-registered, .inventory-status-available, .inventory-status-delivered) { @apply border-ui-success/20 bg-ui-success/5 text-ui-success; }
+:is(.purchase-origin-catalog, .order-status-pending, .inventory-status-sold) { @apply border-ui-warning/20 bg-ui-warning/5 text-ui-warning; }
+:is(.order-status-canceled, .sale-status-canceled, .inventory-status-lost) { @apply border-ui-danger/20 bg-ui-danger/5 text-ui-danger; }
+.sale-mode-active:not(:disabled) { @apply border-ui-accent/20 bg-ui-accent/5 text-ui-accent; }
+.rm-inventory-loss .rm-operation-confirm:not(:disabled) { @apply border-ui-danger bg-ui-danger text-white; }
+.rm-inventory-loss .rm-operation-confirm:hover:not(:disabled) { @apply border-ui-danger bg-ui-danger/90; }
+
+/* Compact camera window: natural video geometry keeps html5-qrcode's crop aligned. */
+.rm-barcode-scanner .barcode-camera-window { @apply relative min-w-0 w-full; aspect-ratio: 2 / 1; max-height: 14rem; }
+.rm-barcode-scanner .barcode-camera-feed { position: absolute !important; inset-inline: 0; top: 50%; transform: translateY(-50%); width: 100%; }
+.rm-barcode-scanner .barcode-camera-feed video { display: block; width: 100%; max-width: 100%; height: auto; }
+/* JS controls photo/live sections; hidden must win over layout utilities. */
+.rm-barcode-scanner [hidden] { display: none; }
+.rm-barcode-scanner [data-barcode-photo]:has([data-barcode-result]:not([hidden])) [data-barcode-capture] {
+  @apply border-ui-control bg-white text-ui-ink hover:bg-ui-canvas;
+}

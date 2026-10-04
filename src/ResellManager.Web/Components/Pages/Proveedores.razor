@@ -5,107 +5,102 @@
 
 <PageTitle>Proveedores | ResellManager</PageTitle>
 
-<section class="page-heading" aria-labelledby="titulo-proveedores">
-    <div>
-        <p class="eyebrow">Abastecimiento</p>
-        <h1 id="titulo-proveedores">Proveedores</h1>
-        <p class="page-lead">Consulta los proveedores disponibles para registrar compras reales.</p>
-    </div>
-    <a class="primary-button" href="/proveedores/nuevo">Nuevo proveedor</a>
-</section>
-
-@if (!string.IsNullOrWhiteSpace(MensajeExito))
-{
-    <div class="mensaje-exito" role="status">@MensajeExito</div>
-}
-
-<form class="search-panel" @onsubmit="CargarAsync" @onsubmit:preventDefault>
-    <div class="search-field">
-        <label for="buscar-proveedor">Buscar proveedor</label>
-        <input id="buscar-proveedor" type="search" placeholder="Nombre o teléfono"
-               @bind="Termino" @bind:event="oninput" disabled="@Cargando" />
-    </div>
-    <div class="search-actions">
-        <button class="primary-button" type="submit" disabled="@Cargando">Buscar</button>
-        <button class="secondary-button" type="button" disabled="@Cargando" @onclick="LimpiarAsync">Limpiar</button>
-    </div>
-</form>
-
-@if (!string.IsNullOrWhiteSpace(ErrorMessage))
-{
-    <div class="mensaje-error alert-with-action" role="alert">
-        <span>@ErrorMessage</span>
-        <button class="inline-button" type="button" disabled="@Cargando" @onclick="CargarAsync">Reintentar</button>
-    </div>
-}
-
-@if (Cargando)
-{
-    <div class="loading-state" role="status" aria-live="polite">
-        <span class="spinner" aria-hidden="true"></span>
-        Cargando proveedores...
-    </div>
-}
-else if (string.IsNullOrWhiteSpace(ErrorMessage) && ProveedoresRegistrados.Count == 0)
-{
-    <section class="empty-state" aria-labelledby="titulo-sin-proveedores">
-        <span class="empty-state-icon" aria-hidden="true"><NavIcon Name="truck" /></span>
-        <h2 id="titulo-sin-proveedores">@(BusquedaActiva ? "No se encontraron proveedores" : "Aún no hay proveedores")</h2>
-        <p>@(BusquedaActiva ? "Prueba otro nombre o teléfono, o limpia la búsqueda." : "Registra el primer proveedor para asociarlo con una compra.")</p>
-        <a class="primary-button" href="/proveedores/nuevo">Registrar proveedor</a>
+<div class="rm-providers min-w-0 space-y-6 pb-[env(safe-area-inset-bottom)]">
+    <section class="flex items-start justify-between gap-4" aria-labelledby="titulo-proveedores">
+        <div class="min-w-0 space-y-2">
+            <p class="m-0 text-xs font-semibold tracking-wide text-ui-muted uppercase">Abastecimiento</p>
+            <h1 class="m-0 text-3xl font-bold tracking-tight text-ui-ink sm:text-4xl" id="titulo-proveedores">Proveedores</h1>
+            <p class="m-0 max-w-2xl text-sm leading-6 text-ui-muted">Consulta los proveedores disponibles para registrar compras reales.</p>
+        </div>
+        <a class="ui-button shrink-0 bg-ui-accent text-white hover:bg-ui-accent-hover" href="/proveedores/nuevo">
+            <svg class="size-5 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
+            <span class="sr-only sm:not-sr-only">Nuevo proveedor</span>
+        </a>
     </section>
-}
-else if (string.IsNullOrWhiteSpace(ErrorMessage))
-{
-    <section class="data-panel" aria-labelledby="titulo-listado-proveedores">
-        <div class="data-panel-heading">
-            <h2 id="titulo-listado-proveedores">Directorio de proveedores</h2>
-            <span>@ProveedoresRegistrados.Count @(ProveedoresRegistrados.Count == 1 ? "proveedor" : "proveedores")</span>
-        </div>
 
-        <div class="desktop-table">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th scope="col">Nombre</th>
-                        <th scope="col">País</th>
-                        <th scope="col">Teléfono</th>
-                        <th scope="col">Descripción</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var proveedor in ProveedoresRegistrados)
-                    {
-                        <tr>
-                            <td><strong>@proveedor.Nombre</strong></td>
-                            <td>@TextoOpcional(proveedor.CodigoPais)</td>
-                            <td>@TextoOpcional(proveedor.Telefono)</td>
-                            <td>@TextoOpcional(proveedor.Descripcion)</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+    @if (!string.IsNullOrWhiteSpace(MensajeExito))
+    {
+        <div class="rounded-2xl border border-solid border-ui-success/20 bg-ui-success/5 px-4 py-3 text-sm leading-6 text-ui-success" role="status">@MensajeExito</div>
+    }
 
-        <div class="mobile-card-list">
-            @foreach (var proveedor in ProveedoresRegistrados)
-            {
-                <article class="entity-card provider-card">
-                    <div class="entity-card-heading">
-                        <div>
-                            <h3>@proveedor.Nombre</h3>
-                            <p class="entity-card-subtitle">@TextoOpcional(proveedor.CodigoPais)</p>
-                        </div>
-                    </div>
-                    <dl class="inventory-card-details">
-                        <div><dt>Teléfono</dt><dd>@TextoOpcional(proveedor.Telefono)</dd></div>
-                        <div><dt>Descripción</dt><dd>@TextoOpcional(proveedor.Descripcion)</dd></div>
-                    </dl>
-                </article>
-            }
+    <form class="ui-card grid min-w-0 gap-4 p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end sm:p-5" @onsubmit="CargarAsync" @onsubmit:preventDefault>
+        <div class="grid min-w-0 gap-2">
+            <label class="text-sm font-medium text-ui-ink" for="buscar-proveedor">Buscar proveedor</label>
+            <div class="relative min-w-0">
+                <svg class="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-ui-muted" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 4 4" /></svg>
+                <input class="ui-input pl-11" id="buscar-proveedor" type="search" placeholder="Nombre o teléfono"
+                       @bind="Termino" @bind:event="oninput" disabled="@Cargando" />
+            </div>
         </div>
-    </section>
-}
+        <div class="grid grid-cols-2 gap-2">
+            <button class="ui-button bg-ui-accent text-white hover:bg-ui-accent-hover" type="submit" disabled="@Cargando">Buscar</button>
+            <button class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" type="button" disabled="@Cargando" @onclick="LimpiarAsync">Limpiar</button>
+        </div>
+    </form>
+
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger grid min-w-0 gap-3 sm:flex sm:items-center sm:justify-between" role="alert">
+            <span class="min-w-0 [overflow-wrap:anywhere]">@ErrorMessage</span>
+            <button class="ui-button border-ui-danger/30 bg-white text-ui-danger hover:bg-ui-danger/5" type="button" disabled="@Cargando" @onclick="CargarAsync">Reintentar</button>
+        </div>
+    }
+
+    @if (Cargando)
+    {
+        <div class="ui-card flex items-center gap-3 p-6 text-sm text-ui-muted" role="status" aria-live="polite">
+            <span class="size-5 shrink-0 rounded-full border-[3px] border-solid border-ui-accent/20 border-t-ui-accent motion-safe:animate-spin" aria-hidden="true"></span>
+            Cargando proveedores...
+        </div>
+    }
+    else if (string.IsNullOrWhiteSpace(ErrorMessage) && ProveedoresRegistrados.Count == 0)
+    {
+        <section class="empty-state ui-card min-w-0 p-6 text-center text-ui-muted sm:p-8" aria-labelledby="titulo-sin-proveedores">
+            <div class="grid justify-items-center gap-4">
+                <span class="inline-flex size-12 items-center justify-center rounded-2xl bg-ui-accent/10 text-ui-accent" aria-hidden="true"><NavIcon Name="truck" /></span>
+                <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-sin-proveedores">@(BusquedaActiva ? "No se encontraron proveedores" : "Aún no hay proveedores")</h2>
+                <p class="m-0 max-w-md text-sm leading-6 text-ui-muted">@(BusquedaActiva ? "Prueba otro nombre o teléfono, o limpia la búsqueda." : "Registra el primer proveedor para asociarlo con una compra.")</p>
+                <a class="ui-button bg-ui-accent text-white hover:bg-ui-accent-hover" href="/proveedores/nuevo">Registrar proveedor</a>
+            </div>
+        </section>
+    }
+    else if (string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <section class="min-w-0 space-y-4" aria-labelledby="titulo-listado-proveedores">
+            <div class="flex flex-wrap items-center justify-between gap-2 px-1">
+                <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-listado-proveedores">Directorio de proveedores</h2>
+                <span class="text-sm text-ui-muted">@ProveedoresRegistrados.Count @(ProveedoresRegistrados.Count == 1 ? "proveedor" : "proveedores")</span>
+            </div>
+
+            <ul class="rm-provider-desktop-table rm-provider-mobile-card-list m-0 grid min-w-0 list-none gap-3 p-0" role="list">
+                @foreach (var proveedor in ProveedoresRegistrados)
+                {
+                    <li class="ui-card min-w-0">
+                        <article class="grid min-w-0 gap-4 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.8fr)] lg:items-start" aria-label="@proveedor.Nombre">
+                            <div class="grid min-w-0 grid-cols-[3rem_minmax(0,1fr)] items-start gap-3">
+                                <span class="flex size-12 items-center justify-center rounded-2xl bg-ui-canvas text-ui-muted" aria-hidden="true"><NavIcon Name="truck" /></span>
+                                <div class="min-w-0 space-y-1">
+                                    <h3 class="m-0 text-base font-semibold leading-6 text-ui-ink [overflow-wrap:anywhere]">@proveedor.Nombre</h3>
+                                    <p class="m-0 text-sm leading-6 text-ui-muted [overflow-wrap:anywhere]"><span class="sr-only">País: </span>@TextoOpcional(proveedor.CodigoPais)</p>
+                                </div>
+                            </div>
+                            <dl class="m-0 grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+                                <div class="min-w-0 space-y-1">
+                                    <dt class="text-xs font-medium text-ui-muted">Teléfono</dt>
+                                    <dd class="m-0 text-sm leading-6 text-ui-ink [overflow-wrap:anywhere]">@TextoOpcional(proveedor.Telefono)</dd>
+                                </div>
+                                <div class="min-w-0 space-y-1">
+                                    <dt class="text-xs font-medium text-ui-muted">Descripción</dt>
+                                    <dd class="m-0 text-sm leading-6 text-ui-muted [overflow-wrap:anywhere]">@TextoOpcional(proveedor.Descripcion)</dd>
+                                </div>
+                            </dl>
+                        </article>
+                    </li>
+                }
+            </ul>
+        </section>
+    }
+</div>
 
 @code {
     private IReadOnlyList<ProveedorDto> ProveedoresRegistrados { get; set; } = [];

@@ -6,6 +6,8 @@ using ResellManager.Application.Interfaces;
 using ResellManager.Infrastructure;
 using ResellManager.Infrastructure.Storage;
 using ResellManager.Web.Components;
+using ResellManager.Web.Catalogo;
+using ResellManager.Web.Endpoints;
 using ResellManager.Web.Identity;
 using ResellManager.Web.Hosting;
 using ResellManager.Web.Inicializacion;
@@ -39,6 +41,8 @@ builder.Services.AddRateLimiter(options =>
 });
 
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddScoped<ICatalogoPublicoClient, CatalogoPublicoClient>();
+builder.Services.AddScoped<BusquedaTiendaEstado>();
 
 builder.Services.AddSingleton<IEmailSender<IdentityUser>, NoOpEmailSender>();
 
@@ -66,6 +70,25 @@ builder.Services.AddOptions<AlmacenamientoComprobantesOptions>()
         options.DirectorioBase = directorioComprobantes;
     });
 
+builder.Services.AddOptions<AlmacenamientoImagenesProductoOptions>()
+    .Configure<IConfiguration, IWebHostEnvironment>((options, configuracion, entorno) =>
+    {
+        var configurado = configuracion[$"{AlmacenamientoImagenesProductoOptions.Seccion}:DirectorioBase"]
+            ?? "App_Data/productos";
+        var directorio = Path.IsPathRooted(configurado)
+            ? Path.GetFullPath(configurado)
+            : Path.GetFullPath(Path.Combine(entorno.ContentRootPath, configurado));
+        var publico = Path.GetFullPath(entorno.WebRootPath
+            ?? Path.Combine(entorno.ContentRootPath, "wwwroot"));
+        var comparacion = OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        if (directorio.Equals(publico, comparacion)
+            || directorio.StartsWith(Path.TrimEndingDirectorySeparator(publico)
+                + Path.DirectorySeparatorChar, comparacion))
+            throw new InvalidOperationException("El almacenamiento de imágenes debe estar fuera de wwwroot.");
+        options.DirectorioBase = directorio;
+    });
+
 builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.ConfigureApplicationCookie(options =>
@@ -85,6 +108,7 @@ var app = builder.Build();
 
 // Validar la configuración definitiva del host antes de abrir SQLite o crear usuarios.
 _ = app.Services.GetRequiredService<IOptions<AlmacenamientoComprobantesOptions>>().Value;
+_ = app.Services.GetRequiredService<IOptions<AlmacenamientoImagenesProductoOptions>>().Value;
 _ = app.Services.GetRequiredService<IOptions<ForwardedHeadersOptions>>().Value;
 _ = app.Services.GetRequiredService<IOptions<Microsoft.AspNetCore.DataProtection.KeyManagement.KeyManagementOptions>>().Value;
 await app.InicializarBaseDatosAsync();
@@ -133,9 +157,10 @@ app.UseAuthorization();
 app.UseAntiforgery();
 
 app.MapGet("/health", () => Results.Text("OK")).AllowAnonymous();
+app.MapCatalogoPublico();
 
 app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
+    .AddInteractiveServerRenderMode(options => options.ContentSecurityFrameAncestorsPolicy = "'none'");
 
 app.MapPost("/account/login", async (
     [Microsoft.AspNetCore.Mvc.FromForm] string correo,
@@ -197,6 +222,24 @@ app.MapGet(
         }
     )
     .RequireAuthorization();
+
+app.MapGet("/productos/{productoId:int}/imagen", async (
+    int productoId,
+    IProductoService productos,
+    IAlmacenamientoImagenesProducto almacenamiento,
+    HttpContext contexto,
+    CancellationToken ct) =>
+{
+    var producto = await productos.ObtenerPorIdAsync(productoId, ct);
+    if (!producto.IsSuccess || string.IsNullOrWhiteSpace(producto.Value?.ImagenPrincipalRuta))
+        return Results.NotFound();
+    var imagen = await almacenamiento.AbrirLecturaAsync(producto.Value.ImagenPrincipalRuta, ct);
+    if (!imagen.IsSuccess || imagen.Value is null)
+        return Results.NotFound();
+    contexto.Response.Headers.CacheControl = "private, no-store";
+    contexto.Response.Headers.XContentTypeOptions = "nosniff";
+    return Results.File(imagen.Value.Contenido, imagen.Value.ContentType);
+}).RequireAuthorization();
 
 app.Run();
 

@@ -1,0 +1,33 @@
+@using ResellManager.Web.Components.Catalogo
+@inherits LayoutComponentBase
+
+<HeadContent>
+    <link rel="icon" type="image/jpeg" href="/branding/virtuosa/icon-wine.jpg" />
+</HeadContent>
+<a class="store-skip-link" href="#contenido-principal">Ir al contenido principal</a>
+<div class="storefront flex min-h-screen flex-col">
+    <header class="store-header">
+        <div class="store-shell store-header-inner">
+            <MarcaTienda />
+            <div class="store-header-search"><BuscadorTienda @rendermode="InteractiveServer" /></div>
+            <nav class="store-header-nav" aria-label="Navegación del catálogo">
+                <a href="/catalogo" class="store-nav-link" aria-current="@(EsCatalogo ? "page" : null)">Catálogo</a>
+            </nav>
+            @* Future store actions, such as a cart, belong beside this navigation. *@
+        </div>
+    </header>
+    <main id="contenido-principal" tabindex="-1" class="store-shell store-main">
+        @Body
+    </main>
+    <footer class="store-footer">
+        <div class="store-shell store-footer-inner">
+            <span class="store-footer-brand"><img src="/branding/virtuosa/icon-white.jpg" alt="" width="1254" height="1254" /> Virtuosa Store</span>
+            <span>Ropa, accesorios, perfumes y más.</span>
+        </div>
+    </footer>
+</div>
+
+@code {
+    [Inject] private NavigationManager Navegacion { get; set; } = null!;
+    private bool EsCatalogo => new Uri(Navegacion.Uri).AbsolutePath.TrimEnd('/') == "/catalogo";
+}

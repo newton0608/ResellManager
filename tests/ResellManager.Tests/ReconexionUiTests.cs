@@ -26,7 +26,10 @@ public sealed class ReconexionUiTests
                      "components-reconnect-max-retries", "reconnect-retry", "reconnect-reload" })
             Assert.Single(Regex.Matches(html, $"id=\"{id}\""));
 
-        Assert.Contains("class=\"components-reconnect-hide\"", html);
+        var clases = Regex.Match(html, "<dialog[^>]*class=\"([^\"]+)\"")
+            .Groups[1].Value.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        Assert.Contains("components-reconnect-hide", clases);
+        Assert.Contains("ui-card", clases);
         Assert.Contains("data-permanent", html);
         Assert.Contains("role=\"status\"", html);
         Assert.Contains("role=\"alert\"", html);

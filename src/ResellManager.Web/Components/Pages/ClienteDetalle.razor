@@ -6,82 +6,83 @@
 
 <PageTitle>Detalle de cliente | ResellManager</PageTitle>
 
-@if (Cargando)
-{
-    <div class="loading-state" role="status" aria-live="polite">
-        <span class="spinner" aria-hidden="true"></span>
-        Cargando detalle del cliente...
-    </div>
-}
-else if (!string.IsNullOrWhiteSpace(ErrorCarga) || Cliente is null || SaldoActual is null)
-{
-    <section class="error-state" role="alert">
-        <p class="eyebrow">Clientes</p>
-        <h1>No fue posible abrir el cliente</h1>
-        <p>@(ErrorCarga ?? "Cliente no encontrado.")</p>
-        <div class="form-actions">
-            <button class="primary-button" type="button" @onclick="CargarAsync">Reintentar</button>
-            <a class="secondary-button" href="/clientes">Volver a clientes</a>
+<div class="min-w-0 space-y-6 pb-[env(safe-area-inset-bottom)]">
+    @if (Cargando)
+    {
+        <div class="ui-card flex items-center gap-3 p-6 text-sm text-ui-muted" role="status" aria-live="polite">
+            <span class="size-5 shrink-0 rounded-full border-[3px] border-solid border-ui-accent/20 border-t-ui-accent motion-safe:animate-spin" aria-hidden="true"></span>
+            Cargando detalle del cliente...
         </div>
-    </section>
-}
-else
-{
-    <section class="page-heading detail-heading" aria-labelledby="titulo-detalle-cliente">
-        <div>
-            <p class="eyebrow">Clientes</p>
-            <h1 id="titulo-detalle-cliente">@ClientePresentacion.NombreCompleto(Cliente)</h1>
-            <p class="page-lead">Información, saldo actual e historial del cliente.</p>
-        </div>
-        <div class="heading-actions">
-            <a class="secondary-button" href="/clientes">Volver</a>
-            <a class="primary-button" href="/clientes/@Id/editar">Editar cliente</a>
-        </div>
-    </section>
-
-    <nav class="form-actions customer-operation-actions" aria-label="Operaciones del cliente">
-        <a class="primary-button" href="/pagos?cliente=@Id">Registrar abono</a>
-        <a class="secondary-button" href="/pedidos/nuevo?cliente=@Id">Nuevo pedido</a>
-        <a class="secondary-button" href="@($"/ventas/nueva?modo=directa&cliente={Id}")">Venta directa</a>
-    </nav>
-    <section class="customer-summary" aria-label="Resumen del cliente">
-        <article class="info-card balance-card">
-            <p class="info-label">Saldo actual</p>
-            <p class="balance-hero">@ClientePresentacion.Moneda(SaldoActual.Value)</p>
-            <p class="info-help">Total pendiente después de ventas y pagos.</p>
-        </article>
-
-        <article class="info-card">
-            <h2>Datos de contacto</h2>
-            <dl class="details-list">
-                <div>
-                    <dt>Teléfono</dt>
-                    <dd><a class="contact-link" href="tel:@Cliente.Telefono">@Cliente.Telefono</a></dd>
-                </div>
-                <div>
-                    <dt>Dirección</dt>
-                    <dd>@TextoOpcional(Cliente.Direccion)</dd>
-                </div>
-                <div>
-                    <dt>Observaciones</dt>
-                    <dd class="preserve-lines">@TextoOpcional(Cliente.Observaciones)</dd>
-                </div>
-            </dl>
-        </article>
-    </section>
-
-    <PendientesCliente ClienteId="Id" />
-    <section class="history-section" aria-labelledby="titulo-historial">
-        <div class="section-heading">
-            <div>
-                <p class="eyebrow">Actividad</p>
-                <h2 id="titulo-historial">Historial del cliente</h2>
+    }
+    else if (!string.IsNullOrWhiteSpace(ErrorCarga) || Cliente is null || SaldoActual is null)
+    {
+        <section class="ui-card grid gap-4 border-ui-danger/20 p-5 sm:p-6" role="alert">
+            <p class="m-0 text-xs font-semibold tracking-wide text-ui-muted uppercase">Clientes</p>
+            <h1 class="m-0 text-3xl font-bold tracking-tight text-ui-ink">No fue posible abrir el cliente</h1>
+            <p class="m-0 text-sm leading-6 text-ui-muted">@(ErrorCarga ?? "Cliente no encontrado.")</p>
+            <div class="grid gap-3 sm:flex sm:flex-wrap">
+                <button class="ui-button bg-ui-accent text-white hover:bg-ui-accent-hover" type="button" @onclick="CargarAsync">Reintentar</button>
+                <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/clientes">Volver a clientes</a>
             </div>
-        </div>
+        </section>
+    }
+    else
+    {
+        <section class="grid min-w-0 gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start" aria-labelledby="titulo-detalle-cliente">
+            <div class="min-w-0 space-y-2">
+                <p class="m-0 text-xs font-semibold tracking-wide text-ui-muted uppercase">Clientes</p>
+                <h1 class="m-0 text-3xl font-bold tracking-tight text-ui-ink [overflow-wrap:anywhere] sm:text-4xl" id="titulo-detalle-cliente">@ClientePresentacion.NombreCompleto(Cliente)</h1>
+                <p class="m-0 max-w-2xl text-sm leading-6 text-ui-muted">Información, saldo actual e historial del cliente.</p>
+            </div>
+            <div class="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+                <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/clientes">Volver</a>
+                <a class="ui-button bg-ui-accent text-white hover:bg-ui-accent-hover" href="/clientes/@Id/editar">Editar cliente</a>
+            </div>
+        </section>
 
-        <HistorialCliente ClienteId="Id" @key="Id" />
-    </section>
-}
+        <nav class="grid min-w-0 gap-2 sm:flex sm:flex-wrap" aria-label="Operaciones del cliente">
+            <a class="ui-button bg-ui-accent text-white hover:bg-ui-accent-hover" href="/pagos?cliente=@Id">Registrar abono</a>
+            <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/pedidos/nuevo?cliente=@Id">Nuevo pedido</a>
+            <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="@($"/ventas/nueva?modo=directa&cliente={Id}")">Venta directa</a>
+        </nav>
+        <section class="grid min-w-0 items-start gap-4 xl:grid-cols-[minmax(0,.7fr)_minmax(0,1.3fr)]" aria-label="Resumen del cliente">
+            <article class="ui-card grid min-w-0 gap-3 p-5 sm:p-6">
+                <p class="m-0 text-xs font-semibold tracking-wide text-ui-muted uppercase">Saldo actual</p>
+                <p class="m-0 text-3xl font-bold tracking-tight text-ui-ink tabular-nums [overflow-wrap:anywhere] sm:text-4xl">@ClientePresentacion.Moneda(SaldoActual.Value)</p>
+                <p class="m-0 text-sm leading-6 text-ui-muted">Total pendiente después de ventas y pagos.</p>
+            </article>
+
+            <article class="ui-card grid min-w-0 gap-5 p-5 sm:p-6">
+                <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink">Datos de contacto</h2>
+                <dl class="m-0 grid min-w-0 gap-4">
+                    <div class="grid min-w-0 gap-1 sm:grid-cols-[7rem_minmax(0,1fr)] sm:items-center sm:gap-4">
+                        <dt class="text-sm font-medium text-ui-muted">Teléfono</dt>
+                        <dd class="m-0 min-w-0">
+                            <a class="inline-flex min-h-12 max-w-full items-center rounded-xl text-base text-ui-accent no-underline [overflow-wrap:anywhere] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-accent" href="tel:@Cliente.Telefono">@Cliente.Telefono</a>
+                        </dd>
+                    </div>
+                    <div class="grid min-w-0 gap-1 sm:grid-cols-[7rem_minmax(0,1fr)] sm:gap-4">
+                        <dt class="text-sm font-medium text-ui-muted">Dirección</dt>
+                        <dd class="m-0 min-w-0 text-sm leading-6 text-ui-ink [overflow-wrap:anywhere]">@TextoOpcional(Cliente.Direccion)</dd>
+                    </div>
+                    <div class="grid min-w-0 gap-1 sm:grid-cols-[7rem_minmax(0,1fr)] sm:gap-4">
+                        <dt class="text-sm font-medium text-ui-muted">Observaciones</dt>
+                        <dd class="m-0 min-w-0 text-sm leading-6 whitespace-pre-line text-ui-ink [overflow-wrap:anywhere]">@TextoOpcional(Cliente.Observaciones)</dd>
+                    </div>
+                </dl>
+            </article>
+        </section>
+
+        <PendientesCliente ClienteId="Id" />
+        <section class="min-w-0 space-y-4" aria-labelledby="titulo-historial">
+            <div class="space-y-2 px-1">
+                <p class="m-0 text-xs font-semibold tracking-wide text-ui-muted uppercase">Actividad</p>
+                <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-historial">Historial del cliente</h2>
+            </div>
+            <HistorialCliente ClienteId="Id" @key="Id" />
+        </section>
+    }
+</div>
 
 @code {
     [Parameter]
