@@ -72,10 +72,10 @@
 .rm-inventory-loss .rm-operation-confirm:not(:disabled) { @apply border-ui-danger bg-ui-danger text-white; }
 .rm-inventory-loss .rm-operation-confirm:hover:not(:disabled) { @apply border-ui-danger bg-ui-danger/90; }
 
-/* Compact camera window: natural video geometry keeps html5-qrcode's crop aligned. */
+/* Quagga's disposable camera document keeps the natural video geometry. */
 .rm-barcode-scanner .barcode-camera-window { @apply relative min-w-0 w-full; aspect-ratio: 2 / 1; max-height: 14rem; }
 .rm-barcode-scanner .barcode-camera-feed { position: absolute !important; inset-inline: 0; top: 50%; transform: translateY(-50%); width: 100%; }
-.rm-barcode-scanner .barcode-camera-feed video { display: block; width: 100%; max-width: 100%; height: auto; }
+.rm-barcode-scanner .barcode-camera-feed iframe { display: block; width: 100%; max-width: 100%; border: 0; }
 /* JS controls photo/live sections; hidden must win over layout utilities. */
 .rm-barcode-scanner [hidden] { display: none; }
 .rm-barcode-scanner [data-barcode-photo]:has([data-barcode-result]:not([hidden])) [data-barcode-capture] {

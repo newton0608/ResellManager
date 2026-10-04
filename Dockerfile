@@ -2,7 +2,7 @@ FROM node:24-bookworm-slim AS css
 WORKDIR /src
 COPY package.json package-lock.json ./
 RUN npm ci --include=dev
-COPY scripts/tailwind-resolver.mjs ./scripts/tailwind-resolver.mjs
+COPY scripts/tailwind-resolver.mjs scripts/sync-scanner-vendor.mjs ./scripts/
 COPY src/ResellManager.Web/ ./src/ResellManager.Web/
 RUN npm run css:build
 
@@ -11,6 +11,7 @@ WORKDIR /src
 COPY Directory.Build.props ./
 COPY src/ ./src/
 COPY --from=css /src/src/ResellManager.Web/wwwroot/css/tailwind.css ./src/ResellManager.Web/wwwroot/css/tailwind.css
+COPY --from=css /src/src/ResellManager.Web/wwwroot/vendor/quagga2/ ./src/ResellManager.Web/wwwroot/vendor/quagga2/
 RUN dotnet restore src/ResellManager.Web/ResellManager.Web.csproj
 RUN dotnet publish src/ResellManager.Web/ResellManager.Web.csproj -c Release --no-restore -o /out /p:UseAppHost=false
 
