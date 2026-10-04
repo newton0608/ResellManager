@@ -1,19 +1,20 @@
 @page "/compras/nueva"
 @rendermode InteractiveServer
 @using ResellManager.Domain.Enums
+@implements IDisposable
 @inject IRegistroCompraConComprobanteService RegistroCompraService
+@inject ITipoCambioReferenciaService TipoCambioReferenciaService
 @inject NavigationManager Navigation
 @inject ILogger<CompraNueva> Logger
 
 <PageTitle>Nueva compra | ResellManager</PageTitle>
 
-<section class="page-heading" aria-labelledby="titulo-nueva-compra">
-    <div>
-        <p class="eyebrow">Compras</p>
-        <h1 id="titulo-nueva-compra">Nueva compra</h1>
-        <p class="page-lead">Registra productos, costos y un comprobante opcional. El código interno se genera automáticamente.</p>
-    </div>
-</section>
+<div class="rm-purchases rm-purchase-form mx-auto grid min-w-0 max-w-5xl gap-6 pb-[max(1rem,env(safe-area-inset-bottom))]">
+    <section class="grid gap-2" aria-labelledby="titulo-nueva-compra">
+        <p class="m-0 text-xs font-semibold tracking-wide text-ui-muted uppercase">Compras</p>
+        <h1 class="m-0 text-3xl font-bold tracking-tight text-ui-ink sm:text-4xl" id="titulo-nueva-compra">Nueva compra</h1>
+        <p class="m-0 max-w-2xl text-sm leading-6 text-ui-muted">Registra productos, costos y un comprobante opcional. El código interno se genera automáticamente.</p>
+    </section>
 
     @if (AltaProveedor)
     {
@@ -25,216 +26,307 @@
     }
     @if (ConfirmacionProducto is not null)
     {
-        <p class="mensaje-exito" role="status">@ConfirmacionProducto</p>
+        <p class="rounded-2xl border border-solid border-ui-success/20 bg-ui-success/5 px-4 py-3 text-sm leading-6 text-ui-success" role="status">@ConfirmacionProducto</p>
     }
-    <section class="form-panel purchase-form-panel" aria-label="Formulario de compra">
-        <EditForm Model="Modelo" OnValidSubmit="RevisarCompra" class="entity-form">
+
+    <section class="min-w-0" aria-label="Formulario de compra">
+        <EditForm Model="Modelo" OnValidSubmit="RevisarCompra" class="entity-form grid min-w-0 gap-6">
             <DataAnnotationsValidator />
-            <fieldset class="purchase-fields" disabled="@(Guardando || AltaAbierta)">
-
-            @if (!string.IsNullOrWhiteSpace(ErrorGuardado))
-            {
-                <div class="mensaje-error" role="alert">@ErrorGuardado</div>
-            }
-
-            <ValidationSummary class="validation-summary" />
-
-            <div class="form-grid">
-                <div class="form-field">
-                    <label for="compra-fecha">Fecha de compra <span aria-hidden="true">*</span></label>
-                    <InputDate id="compra-fecha" @bind-Value="Modelo.FechaCompra" />
-                </div>
-
-                <div class="form-field">
-                    <label for="compra-origen">Origen <span aria-hidden="true">*</span></label>
-                    <select id="compra-origen" value="@Modelo.Origen" @onchange="CambiarOrigen">
-                        @foreach (var origen in Enum.GetValues<OrigenCompra>())
-                        {
-                            <option value="@origen">@CompraPresentacion.Origen(origen)</option>
-                        }
-                    </select>
-                </div>
-
-                <div class="form-field">
-                    <ProveedorBuscador Seleccionado="ProveedorSeleccionado" Deshabilitado="@(Guardando || AltaAbierta)"
-                                       OnSeleccionado="SeleccionarProveedor" OnAgregar="AbrirAltaProveedor" />
-                    <ValidationMessage For="() => Modelo.ProveedorId" />
-                </div>
-
-                @if (RequiereFechaIngreso)
+            <fieldset class="m-0 grid min-w-0 max-w-full gap-6 border-0 p-0" disabled="@(Guardando || AltaAbierta)">
+                @if (!string.IsNullOrWhiteSpace(ErrorGuardado))
                 {
-                    <div class="form-field">
-                        <label for="compra-ingreso">Fecha de ingreso <span aria-hidden="true">*</span></label>
-                        <InputDate id="compra-ingreso" @bind-Value="Modelo.FechaIngreso" />
-                        <p class="field-help">La mercancía ya está recibida y quedará disponible.</p>
-                    </div>
+                    <div class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger" role="alert">@ErrorGuardado</div>
                 }
+                <ValidationSummary class="validation-summary" />
 
-                <div class="form-field form-field-wide">
-                    <label for="compra-observaciones">Observaciones</label>
-                    <InputTextArea id="compra-observaciones" @bind-Value="Modelo.Observaciones" rows="3" />
-                    <ValidationMessage For="() => Modelo.Observaciones" />
-                </div>
-            </div>
-
-            @if (Modelo.Origen == OrigenCompra.Importacion)
-            {
-                <div class="origin-guidance purchase-import-guidance">
-                    <strong>Importación</strong>
-                    <span>Las unidades se crean como Compradas, sin fecha de ingreso. La recepción se registra después en Inventario.</span>
-                </div>
-            }
-            else if (Modelo.Origen == OrigenCompra.Catalogo)
-            {
-                <div class="origin-guidance catalog-origin-guidance">
-                    <strong>Catálogo</strong>
-                    <span>Se registran los detalles y costos, sin crear unidades de inventario.</span>
-                </div>
-            }
-
-            <section class="order-lines-editor purchase-lines-editor" aria-labelledby="titulo-detalles-compra">
-                <div class="data-panel-heading">
-                    <div>
-                        <h2 id="titulo-detalles-compra">Productos de la compra</h2>
-                        <p>Revisa cantidades y costos; el total se confirma al registrar la compra.</p>
+                <section class="ui-card grid min-w-0 gap-5 p-4 sm:p-6" aria-labelledby="titulo-informacion-compra">
+                    <div class="grid gap-1">
+                        <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-informacion-compra">Información general</h2>
+                        <p class="m-0 text-sm leading-6 text-ui-muted">Fecha, origen y proveedor de la compra.</p>
                     </div>
-                    <button class="secondary-button" type="button" disabled="@Guardando" @onclick="AgregarFila">Agregar producto</button>
-                </div>
-
-                <div class="order-lines-list">
-                    @for (var index = 0; index < Modelo.Detalles.Count; index++)
-                    {
-                        var detalle = Modelo.Detalles[index];
-                        var numero = index + 1;
-                        <article class="order-line-editor" @key="detalle">
-                            <div class="order-line-heading">
-                                <h3>Detalle @numero</h3>
-                                <button class="table-action button-link" type="button"
-                                        disabled="@(Guardando || Modelo.Detalles.Count == 1)"
-                                        aria-label="Quitar detalle @numero"
-                                        @onclick="() => QuitarFila(detalle)">Quitar</button>
-                            </div>
-                            <div class="purchase-line-grid">
-                                <ProductoBuscador Id="@($"producto-compra-{numero}")"
-                                                  Seleccionado="detalle.ProductoSeleccionado"
-                                                  Deshabilitado="@(Guardando || AltaAbierta)"
-                                                  OnSeleccionado="producto => SeleccionarProducto(detalle, producto)"
-                                                  OnRegistrar="() => AbrirAlta(detalle)" />
-                                <div class="form-field">
-                                    <label for="cantidad-compra-@numero">Cantidad <span aria-hidden="true">*</span></label>
-                                    <input inputmode="numeric" data-select-once="true" id="cantidad-compra-@numero" type="number" min="1" step="1" @bind="detalle.Cantidad" />
-                                </div>
-                                <div class="form-field">
-                                    <label for="costo-compra-@numero">Costo unitario <span aria-hidden="true">*</span></label>
-                                    <input inputmode="decimal" data-select-once="true" id="costo-compra-@numero" type="number" min="0" step="0.01" @bind="detalle.CostoUnitario" />
-                                </div>
-                                <div class="purchase-line-subtotal">
-                                    <span>Subtotal</span>
-                                    <strong>@CompraPresentacion.Moneda(detalle.Subtotal)</strong>
-                                </div>
-                            </div>
-                        </article>
-                    }
-                </div>
-
-                <div class="purchase-total-preview">
-                    <span>Total visual</span>
-                    <strong>@CompraPresentacion.Moneda(Modelo.TotalVisual)</strong>
-                </div>
-            </section>
-
-            <section class="receipt-upload-panel" aria-labelledby="titulo-adjuntar-comprobante">
-                <div class="receipt-upload-heading">
-                    <div>
-                        <h2 id="titulo-adjuntar-comprobante">Comprobante opcional</h2>
-                        <p>Adjunta una imagen JPG, JPEG, PNG, WebP o un PDF de hasta 10 MB.</p>
-                    </div>
-                    <label class="receipt-toggle">
-                        <InputCheckbox @bind-Value="Modelo.AdjuntarComprobante" disabled="@Guardando" />
-                        Adjuntar comprobante
-                    </label>
-                </div>
-
-                @if (Modelo.AdjuntarComprobante)
-                {
-                    <div class="receipt-upload-body">
-                        @if (!string.IsNullOrWhiteSpace(ErrorArchivo))
-                        {
-                            <div class="mensaje-error" role="alert">@ErrorArchivo</div>
-                        }
-
-                        <div class="form-grid">
-                            <div class="form-field">
-                                <label for="comprobante-numero">Número de documento</label>
-                                <InputText id="comprobante-numero" @bind-Value="Modelo.NumeroDocumento" autocomplete="off" />
-                                <p class="field-help">Factura, recibo u otra referencia externa. Es opcional.</p>
-                                <ValidationMessage For="() => Modelo.NumeroDocumento" />
-                            </div>
-
-                            <div class="form-field">
-                                <label for="comprobante-fecha">Fecha del comprobante <span aria-hidden="true">*</span></label>
-                                <InputDate id="comprobante-fecha" @bind-Value="Modelo.FechaComprobante" />
-                            </div>
-
-                            <div class="form-field form-field-wide">
-                                <label for="comprobante-archivo">Archivo <span aria-hidden="true">*</span></label>
-                                <InputFile id="comprobante-archivo"
-                                           OnChange="SeleccionarArchivo"
-                                           accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
-                                           disabled="@Guardando" />
-                                @if (ArchivoSeleccionado is not null)
+                    <div class="grid min-w-0 gap-4 sm:grid-cols-2">
+                        <div class="grid min-w-0 gap-2">
+                            <label class="text-sm font-medium" for="compra-fecha">Fecha de compra <span aria-hidden="true">*</span></label>
+                            <InputDate class="ui-input" id="compra-fecha" @bind-Value="Modelo.FechaCompra" @bind-Value:after="ConsultarReferenciaAsync" />
+                        </div>
+                        <div class="grid min-w-0 gap-2">
+                            <label class="text-sm font-medium" for="compra-origen">Origen <span aria-hidden="true">*</span></label>
+                            <select class="ui-input" id="compra-origen" value="@Modelo.Origen" @onchange="CambiarOrigen">
+                                @foreach (var origen in Enum.GetValues<OrigenCompra>())
                                 {
-                                    <p class="selected-file" role="status">
-                                        <strong>@ArchivoSeleccionado.Name</strong>
-                                        <span>@FormatoTamano(ArchivoSeleccionado.Size)</span>
-                                    </p>
+                                    <option value="@origen">@CompraPresentacion.Origen(origen)</option>
                                 }
+                            </select>
+                        </div>
+                        <div class="grid min-w-0 gap-2 sm:col-span-2">
+                            <label class="text-sm font-medium" for="compra-moneda">Moneda <span aria-hidden="true">*</span></label>
+                            <select class="ui-input" id="compra-moneda" value="@Modelo.Moneda" @onchange="CambiarMonedaAsync">
+                                <option value="GTQ">GTQ — Quetzal</option>
+                                <option value="USD">USD — Dólar estadounidense</option>
+                            </select>
+                            @if (Modelo.Origen == OrigenCompra.Importacion && Modelo.Moneda == MonedaCompra.GTQ)
+                            {
+                                <p class="m-0 text-xs leading-5 text-ui-muted">Si el proveedor cobra en dólares, puedes seleccionar USD. El origen y la moneda son independientes.</p>
+                            }
+                        </div>
+                        <div class="grid min-w-0 gap-2 sm:col-span-2">
+                            <ProveedorBuscador Seleccionado="ProveedorSeleccionado" Deshabilitado="@(Guardando || AltaAbierta)"
+                                               OnSeleccionado="SeleccionarProveedor" OnAgregar="AbrirAltaProveedor" />
+                            <ValidationMessage For="() => Modelo.ProveedorId" />
+                        </div>
+                        @if (RequiereFechaIngreso)
+                        {
+                            <div class="grid min-w-0 gap-2">
+                                <label class="text-sm font-medium" for="compra-ingreso">Fecha de ingreso <span aria-hidden="true">*</span></label>
+                                <InputDate class="ui-input" id="compra-ingreso" @bind-Value="Modelo.FechaIngreso" />
+                                <p class="m-0 text-sm leading-6 text-ui-muted">La mercancía ya está recibida y quedará disponible.</p>
                             </div>
-
-                            <div class="form-field form-field-wide">
-                                <label for="comprobante-observaciones">Observaciones del comprobante</label>
-                                <InputTextArea id="comprobante-observaciones" @bind-Value="Modelo.ObservacionesComprobante" rows="3" />
-                                <ValidationMessage For="() => Modelo.ObservacionesComprobante" />
-                            </div>
+                        }
+                        <div class="grid min-w-0 gap-2 sm:col-span-2">
+                            <label class="text-sm font-medium" for="compra-observaciones">Observaciones</label>
+                            <InputTextArea class="ui-input" id="compra-observaciones" @bind-Value="Modelo.Observaciones" rows="3" />
+                            <ValidationMessage For="() => Modelo.Observaciones" />
                         </div>
                     </div>
+                    @if (Modelo.Origen == OrigenCompra.Importacion)
+                    {
+                        <div class="grid min-w-0 gap-1 rounded-2xl border border-solid border-ui-warning/20 bg-ui-warning/5 px-4 py-3 text-sm leading-6 text-ui-warning">
+                            <strong>Importación</strong>
+                            <span>Las unidades se crean como Compradas, sin fecha de ingreso. La recepción se registra después en Inventario.</span>
+                        </div>
+                    }
+                    else if (Modelo.Origen == OrigenCompra.Catalogo)
+                    {
+                        <div class="grid min-w-0 gap-1 rounded-2xl border border-solid border-ui-accent/20 bg-ui-accent/5 px-4 py-3 text-sm leading-6 text-ui-accent">
+                            <strong>Catálogo</strong>
+                            <span>Se registran los detalles y costos, sin crear unidades de inventario.</span>
+                        </div>
+                    }
+                </section>
+
+                @if (EsUsd)
+                {
+                    <section class="ui-card grid min-w-0 gap-4 p-4 sm:p-6" aria-labelledby="titulo-moneda-compra">
+                        <div class="grid min-w-0 gap-1">
+                            <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-moneda-compra">USD — Dólar estadounidense</h2>
+                            <p class="m-0 text-sm leading-6 text-ui-muted">Ingresa los costos en dólares. El inventario y la utilidad se registrarán usando el costo convertido a GTQ.</p>
+                        </div>
+                        <div class="grid min-w-0 gap-4 sm:grid-cols-2">
+                            <div class="grid min-w-0 content-start gap-1 rounded-2xl bg-ui-canvas p-4" role="status" aria-live="polite" aria-busy="@ConsultandoReferencia.ToString().ToLowerInvariant()">
+                                <span class="text-xs font-medium leading-5 text-ui-muted">Referencia Banco de Guatemala</span>
+                                @if (ConsultandoReferencia)
+                                {
+                                    <span class="text-sm leading-6 text-ui-muted">Consultando referencia…</span>
+                                }
+                                else if (Modelo.Referencia is { } referencia)
+                                {
+                                    <strong class="text-base leading-6 tabular-nums [overflow-wrap:anywhere]">@CompraPresentacion.TipoCambio(referencia.Valor) por US$1</strong>
+                                    <span class="text-xs leading-5 text-ui-muted">Vigente: @referencia.FechaEfectiva.ToString("dd/MM/yyyy")</span>
+                                    <span class="text-xs leading-5 text-ui-muted">Es una sugerencia; puedes usar el costo real de tu conversión.</span>
+                                }
+                                else
+                                {
+                                    <span class="text-sm leading-6 text-ui-muted">@(ErrorReferencia ?? MensajeReferenciaNoDisponible)</span>
+                                }
+                            </div>
+                            <div class="grid min-w-0 content-start gap-2">
+                                <label class="text-sm font-medium" for="compra-tipo-cambio">Tipo de cambio usado <span aria-hidden="true">*</span></label>
+                                <InputNumber class="ui-input" id="compra-tipo-cambio" inputmode="decimal" min="0" step="any" @bind-Value="Modelo.TipoCambio" @bind-Value:after="Modelo.MarcarTipoCambioManual" @oninput="Modelo.MarcarTipoCambioManual" />
+                                <ValidationMessage For="() => Modelo.TipoCambio" />
+                                <p class="m-0 text-xs leading-5 text-ui-muted">GTQ por US$1. Usa el tipo de cambio que realmente pagaste.</p>
+                                @if (Modelo.Referencia is { } referenciaDisponible && Modelo.TipoCambio != referenciaDisponible.Valor)
+                                {
+                                    <button class="ui-button justify-start border-ui-control bg-white text-ui-accent hover:bg-ui-canvas" type="button" @onclick="Modelo.UsarReferencia">Usar referencia</button>
+                                }
+                            </div>
+                        </div>
+                    </section>
                 }
-            </section>
 
-            <p class="required-note"><span aria-hidden="true">*</span> Campos obligatorios</p>
+                <section class="ui-card grid min-w-0 gap-5 p-4 sm:p-6" aria-labelledby="titulo-detalles-compra">
+                    <div class="grid min-w-0 gap-4 sm:flex sm:items-center sm:justify-between">
+                        <div class="grid min-w-0 gap-1">
+                            <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-detalles-compra">Productos de la compra</h2>
+                            <p class="m-0 text-sm leading-6 text-ui-muted">Revisa cantidades y costos; el total se confirma al registrar la compra.</p>
+                        </div>
+                        <button class="ui-button shrink-0 border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" type="button" disabled="@Guardando" @onclick="AgregarFila">Agregar producto</button>
+                    </div>
+                    <div class="grid min-w-0 gap-4">
+                        @for (var index = 0; index < Modelo.Detalles.Count; index++)
+                        {
+                            var detalle = Modelo.Detalles[index];
+                            var numero = index + 1;
+                            <article class="grid min-w-0 gap-4 rounded-2xl border border-solid border-ui-border p-3 sm:p-4" @key="detalle">
+                                <div class="flex items-center justify-between gap-3">
+                                    <h3 class="m-0 text-base font-semibold leading-6 text-ui-ink">Detalle @numero</h3>
+                                    <button class="ui-button border-ui-danger/30 bg-white text-ui-danger hover:bg-ui-danger/5" type="button"
+                                            disabled="@(Guardando || Modelo.Detalles.Count == 1)"
+                                            aria-label="Quitar detalle @numero"
+                                            @onclick="() => QuitarFila(detalle)">Quitar</button>
+                                </div>
+                                <div class="grid min-w-0 grid-cols-2 items-start gap-3 xl:grid-cols-[minmax(0,1fr)_7rem_9rem_8rem]">
+                                    <div class="col-span-2 min-w-0 xl:col-span-1">
+                                        <ProductoBuscador Id="@($"producto-compra-{numero}")"
+                                                          Seleccionado="detalle.ProductoSeleccionado"
+                                                          Deshabilitado="@(Guardando || AltaAbierta)"
+                                                          OnSeleccionado="producto => SeleccionarProducto(detalle, producto)"
+                                                          OnRegistrar="() => AbrirAlta(detalle)" />
+                                    </div>
+                                    <div class="grid min-w-0 gap-2">
+                                        <label class="text-sm font-medium" for="cantidad-compra-@numero">Cantidad <span aria-hidden="true">*</span></label>
+                                        <input class="ui-input" inputmode="numeric" data-select-once="true" id="cantidad-compra-@numero" type="number" min="1" step="1" @bind="detalle.Cantidad" @bind:event="oninput" />
+                                    </div>
+                                    <div class="grid min-w-0 gap-2">
+                                        <label class="text-sm font-medium" for="costo-compra-@numero">Costo unitario (@(EsUsd ? "US$" : "Q")) <span aria-hidden="true">*</span></label>
+                                        <input class="ui-input" inputmode="decimal" data-select-once="true" id="costo-compra-@numero" type="number" min="0" step="0.01" @bind="detalle.CostoUnitarioMonedaOrigen" @bind:event="oninput" />
+                                        @if (EsUsd)
+                                        {
+                                            <span class="text-xs leading-5 text-ui-muted tabular-nums">≈ @EquivalenteUnitario(detalle)</span>
+                                        }
+                                    </div>
+                                    <div class="col-span-2 flex min-w-0 items-center justify-between gap-2 rounded-2xl bg-ui-canvas px-3 py-3 xl:col-span-1 xl:grid xl:gap-1">
+                                        <span class="text-xs leading-5 text-ui-muted">Subtotal</span>
+                                        <div class="grid min-w-0 gap-1 text-right xl:text-left">
+                                            <strong class="min-w-0 text-base leading-6 tabular-nums [overflow-wrap:anywhere]">@SubtotalOrigen(detalle)</strong>
+                                            @if (EsUsd)
+                                            {
+                                                <span class="text-xs leading-5 text-ui-muted tabular-nums [overflow-wrap:anywhere]">≈ @EquivalenteSubtotal(detalle)</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </article>
+                        }
+                    </div>
+                    <div class="flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-2xl bg-ui-canvas p-4">
+                        <span class="text-sm font-medium text-ui-muted">@(EsUsd ? "Total compra" : "Total visual")</span>
+                        <div class="grid min-w-0 gap-1 text-right">
+                            <strong class="min-w-0 text-2xl font-semibold tracking-tight text-ui-ink tabular-nums [overflow-wrap:anywhere]">@CompraPresentacion.MonedaOrigen(Modelo.TotalVisualMonedaOrigen, Modelo.Moneda)</strong>
+                            @if (EsUsd)
+                            {
+                                <span class="text-sm leading-6 text-ui-muted tabular-nums [overflow-wrap:anywhere]">Equivalente @CompraPresentacion.Equivalente(Modelo.TotalVisualGtq)</span>
+                            }
+                        </div>
+                    </div>
+                </section>
 
-            <div class="form-actions purchase-submit-actions">
-                <button class="primary-button" type="submit"
-                        disabled="@(Guardando || AltaAbierta)">
-                    @(Guardando ? "Registrando y procesando..." : "Revisar compra")
-                </button>
-                <a class="secondary-button" href="/compras">Cancelar</a>
-            </div>
+                <section class="ui-card grid min-w-0 gap-5 p-4 sm:p-6" aria-labelledby="titulo-adjuntar-comprobante">
+                    <div class="grid min-w-0 gap-4 sm:flex sm:items-center sm:justify-between">
+                        <div class="grid min-w-0 gap-1">
+                            <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-adjuntar-comprobante">Comprobante opcional</h2>
+                            <p class="m-0 text-sm leading-6 text-ui-muted">Adjunta una imagen JPG, JPEG, PNG, WebP o un PDF de hasta 10 MB.</p>
+                        </div>
+                        <label class="rm-receipt-toggle ui-button shrink-0 justify-start border-ui-control bg-ui-canvas text-left text-ui-ink has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ui-accent has-disabled:cursor-not-allowed has-disabled:border-ui-border has-disabled:text-ui-muted">
+                            <InputCheckbox class="m-0 size-5 shrink-0 accent-ui-accent" @bind-Value="Modelo.AdjuntarComprobante" disabled="@Guardando" />
+                            Adjuntar comprobante
+                        </label>
+                    </div>
+                    @if (Modelo.AdjuntarComprobante)
+                    {
+                        <div class="grid min-w-0 gap-4">
+                            @if (!string.IsNullOrWhiteSpace(ErrorArchivo))
+                            {
+                                <div class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger" role="alert">@ErrorArchivo</div>
+                            }
+                            <div class="grid min-w-0 gap-4 sm:grid-cols-2">
+                                <div class="grid min-w-0 gap-2">
+                                    <label class="text-sm font-medium" for="comprobante-numero">Número de documento</label>
+                                    <InputText class="ui-input" id="comprobante-numero" @bind-Value="Modelo.NumeroDocumento" autocomplete="off" />
+                                    <p class="m-0 text-sm leading-6 text-ui-muted">Factura, recibo u otra referencia externa. Es opcional.</p>
+                                    <ValidationMessage For="() => Modelo.NumeroDocumento" />
+                                </div>
+                                <div class="grid min-w-0 gap-2">
+                                    <label class="text-sm font-medium" for="comprobante-fecha">Fecha del comprobante <span aria-hidden="true">*</span></label>
+                                    <InputDate class="ui-input" id="comprobante-fecha" @bind-Value="Modelo.FechaComprobante" />
+                                </div>
+                                <div class="grid min-w-0 gap-3 sm:col-span-2">
+                                    <label class="text-sm font-medium" for="comprobante-archivo">Archivo <span aria-hidden="true">*</span></label>
+                                    <InputFile class="ui-input cursor-pointer p-0 text-sm file:mr-3 file:min-h-12 file:cursor-pointer file:border-0 file:border-r file:border-solid file:border-ui-border file:bg-ui-canvas file:px-4 file:py-3 file:text-sm file:font-semibold file:text-ui-ink"
+                                               id="comprobante-archivo"
+                                               OnChange="SeleccionarArchivo"
+                                               accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
+                                               disabled="@Guardando" />
+                                    @if (ArchivoSeleccionado is not null)
+                                    {
+                                        <p class="m-0 grid min-w-0 gap-1 rounded-2xl border border-solid border-ui-border bg-ui-canvas px-4 py-3 text-sm leading-6" role="status">
+                                            <strong class="min-w-0 font-medium [overflow-wrap:anywhere]">@ArchivoSeleccionado.Name</strong>
+                                            <span class="text-ui-muted">@FormatoTamano(ArchivoSeleccionado.Size)</span>
+                                        </p>
+                                    }
+                                </div>
+                                <div class="grid min-w-0 gap-2 sm:col-span-2">
+                                    <label class="text-sm font-medium" for="comprobante-observaciones">Observaciones del comprobante</label>
+                                    <InputTextArea class="ui-input" id="comprobante-observaciones" @bind-Value="Modelo.ObservacionesComprobante" rows="3" />
+                                    <ValidationMessage For="() => Modelo.ObservacionesComprobante" />
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </section>
+
+                <p class="m-0 text-xs leading-5 text-ui-muted"><span aria-hidden="true">*</span> Campos obligatorios</p>
+                <div class="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
+                    <button class="ui-button bg-ui-accent text-white hover:bg-ui-accent-hover" type="submit" disabled="@(Guardando || AltaAbierta)">
+                        @(Guardando ? "Registrando y procesando..." : "Revisar compra")
+                    </button>
+                    <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/compras">Cancelar</a>
+                </div>
             </fieldset>
         </EditForm>
     </section>
 
-@if (RevisandoCompra)
-{
-    <ConfirmacionOperacion Titulo="Revisar compra" TextoConfirmar="Confirmar compra" Ocupado="Guardando"
-                           Error="@ErrorGuardado" OnEditar="EditarCompra" OnConfirmar="ConfirmarCompraAsync">
-        <dl>
-            <dt>Proveedor</dt><dd>@ProveedorSeleccionado?.Nombre</dd>
-            <dt>Origen</dt><dd>@CompraPresentacion.Origen(Modelo.Origen)</dd>
-            <dt>Fecha de compra</dt><dd>@Modelo.FechaCompra.ToString("dd/MM/yyyy")</dd>
-            <dt>Fecha de ingreso</dt><dd>@(Modelo.FechaIngreso?.ToString("dd/MM/yyyy") ?? "Pendiente / no aplica")</dd>
-        </dl>
-        <ul>
-            @foreach (var detalle in Modelo.Detalles)
-            {
-                <li><strong>@detalle.ProductoSeleccionado?.Nombre</strong>: @detalle.Cantidad × @CompraPresentacion.Moneda(detalle.CostoUnitario) = @CompraPresentacion.Moneda(detalle.Subtotal)</li>
-            }
-        </ul>
-        <p><strong>Total: @CompraPresentacion.Moneda(Modelo.TotalVisual)</strong></p>
-        <p>Comprobante: @(Modelo.AdjuntarComprobante ? ArchivoSeleccionado?.Name : "Sin archivo adjunto")</p>
-        <p>La compra y sus unidades se registrarán únicamente al confirmar.</p>
-    </ConfirmacionOperacion>
-}
+    @if (RevisandoCompra)
+    {
+        <ConfirmacionOperacion Titulo="Revisar compra" TextoConfirmar="Confirmar compra" Ocupado="Guardando"
+                               Error="@ErrorGuardado" OnEditar="EditarCompra" OnConfirmar="ConfirmarCompraAsync">
+            <div class="grid min-w-0 gap-4 text-sm leading-6 text-ui-ink">
+                <dl class="m-0 grid min-w-0 gap-3 sm:grid-cols-2">
+                    <div class="min-w-0"><dt class="text-xs text-ui-muted">Proveedor</dt><dd class="m-0 font-medium">@ProveedorSeleccionado?.Nombre</dd></div>
+                    <div class="min-w-0"><dt class="text-xs text-ui-muted">Origen</dt><dd class="m-0 font-medium">@CompraPresentacion.Origen(Modelo.Origen)</dd></div>
+                    <div class="min-w-0"><dt class="text-xs text-ui-muted">Fecha de compra</dt><dd class="m-0 font-medium">@Modelo.FechaCompra.ToString("dd/MM/yyyy")</dd></div>
+                    <div class="min-w-0"><dt class="text-xs text-ui-muted">Fecha de ingreso</dt><dd class="m-0 font-medium">@(Modelo.FechaIngreso?.ToString("dd/MM/yyyy") ?? "Pendiente / no aplica")</dd></div>
+                    @if (EsUsd)
+                    {
+                        <div class="min-w-0"><dt class="text-xs text-ui-muted">Moneda</dt><dd class="m-0 font-medium">USD</dd></div>
+                        <div class="min-w-0"><dt class="text-xs text-ui-muted">Tipo de cambio usado</dt><dd class="m-0 font-medium [overflow-wrap:anywhere]">@CompraPresentacion.TipoCambio(Modelo.TipoCambio) por US$1</dd></div>
+                        @if (Modelo.Referencia is { } referencia)
+                        {
+                            <div class="min-w-0"><dt class="text-xs text-ui-muted">Referencia Banguat</dt><dd class="m-0 font-medium">@CompraPresentacion.TipoCambio(referencia.Valor)</dd></div>
+                            <div class="min-w-0"><dt class="text-xs text-ui-muted">Fecha efectiva</dt><dd class="m-0 font-medium">@referencia.FechaEfectiva.ToString("dd/MM/yyyy")</dd></div>
+                        }
+                    }
+                </dl>
+                <ul class="rm-purchase-review-lines m-0 grid min-w-0 list-none gap-3 p-0">
+                    @foreach (var detalle in Modelo.Detalles)
+                    {
+                        <li class="grid min-w-0 gap-1 rounded-2xl bg-ui-canvas p-3">
+                            <strong>@detalle.ProductoSeleccionado?.Nombre</strong>
+                            <span class="min-w-0 text-ui-muted [overflow-wrap:anywhere]">@detalle.Cantidad × @CompraPresentacion.MonedaOrigen(detalle.CostoUnitarioMonedaOrigen, Modelo.Moneda) = @SubtotalOrigen(detalle)</span>
+                            @if (EsUsd)
+                            {
+                                <span class="min-w-0 text-ui-muted [overflow-wrap:anywhere]">Equivalente GTQ: @EquivalenteSubtotal(detalle) · Costo unitario GTQ: @EquivalenteUnitario(detalle)</span>
+                            }
+                        </li>
+                    }
+                </ul>
+                <p class="m-0 flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-ui-canvas p-4">
+                    <span class="text-ui-muted">@(EsUsd ? "Total moneda origen" : "Total")</span>
+                    <strong class="text-xl tracking-tight tabular-nums [overflow-wrap:anywhere]">@CompraPresentacion.MonedaOrigen(Modelo.TotalVisualMonedaOrigen, Modelo.Moneda)</strong>
+                </p>
+                @if (EsUsd)
+                {
+                    <p class="m-0 flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-ui-canvas p-4">
+                        <span class="text-ui-muted">Total registrado en GTQ</span>
+                        <strong class="text-xl tracking-tight tabular-nums [overflow-wrap:anywhere]">@CompraPresentacion.Equivalente(Modelo.TotalVisualGtq)</strong>
+                    </p>
+                    <p class="m-0 text-ui-muted">El inventario y la utilidad se registrarán usando el costo convertido a GTQ.</p>
+                }
+                <p class="m-0">Comprobante: @(Modelo.AdjuntarComprobante ? ArchivoSeleccionado?.Name : "Sin archivo adjunto")</p>
+                <p class="m-0 text-ui-muted">La compra y sus unidades se registrarán únicamente al confirmar.</p>
+            </div>
+        </ConfirmacionOperacion>
+    }
+</div>
 
 @code {
     private readonly string CodigoInterno = CodigosInternos.CrearCodigoCompra();
@@ -249,6 +341,84 @@
     private bool Guardando { get; set; }
     private string? ErrorGuardado { get; set; }
     private string? ErrorArchivo { get; set; }
+    private const string MensajeReferenciaNoDisponible = "No pudimos consultar la referencia del Banco de Guatemala. Ingresa el tipo de cambio manualmente.";
+    private bool EsUsd => Modelo.Moneda == MonedaCompra.USD;
+    private bool ConsultandoReferencia { get; set; }
+    private string? ErrorReferencia { get; set; }
+    private CancellationTokenSource? ConsultaReferencia;
+    private long VersionConsulta;
+    private bool Eliminado;
+
+    private async Task CambiarMonedaAsync(ChangeEventArgs evento)
+    {
+        if (Guardando || !Enum.TryParse<MonedaCompra>(evento.Value?.ToString(), out var moneda) || !Enum.IsDefined(moneda)) return;
+        Modelo.CambiarMoneda(moneda);
+        await ConsultarReferenciaAsync();
+    }
+
+    private async Task ConsultarReferenciaAsync()
+    {
+        var version = ++VersionConsulta;
+        ConsultaReferencia?.Cancel();
+        ConsultaReferencia?.Dispose();
+        ConsultaReferencia = null;
+        ConsultandoReferencia = false;
+        ErrorReferencia = null;
+        Modelo.PrepararConsultaReferencia();
+        if (!EsUsd || Eliminado) return;
+
+        var fecha = Modelo.FechaCompra;
+        using var cancelacion = new CancellationTokenSource();
+        ConsultaReferencia = cancelacion;
+        ConsultandoReferencia = true;
+        try
+        {
+            var resultado = await TipoCambioReferenciaService.ConsultarAsync(MonedaCompra.USD, fecha, cancelacion.Token);
+            if (Eliminado || version != VersionConsulta || !EsUsd || fecha != Modelo.FechaCompra) return;
+            if (resultado.Disponible && resultado.Referencia is { } referencia)
+            {
+                Modelo.ActualizarReferencia(referencia);
+                if (Modelo.Referencia is null) ErrorReferencia = MensajeReferenciaNoDisponible;
+            }
+            else ErrorReferencia = MensajeReferenciaNoDisponible;
+        }
+        catch (OperationCanceledException) when (cancelacion.IsCancellationRequested) { }
+        catch (Exception ex)
+        {
+            if (Eliminado || version != VersionConsulta) return;
+            Logger.LogWarning(ex, "No fue posible consultar la referencia de compra para {FechaCompra}.", fecha);
+            ErrorReferencia = MensajeReferenciaNoDisponible;
+        }
+        finally
+        {
+            if (version == VersionConsulta)
+            {
+                ConsultandoReferencia = false;
+                ConsultaReferencia = null;
+            }
+        }
+    }
+
+    private string EquivalenteUnitario(DetalleCompraFormModel detalle) =>
+        CompraPresentacion.Equivalente(Modelo.TipoCambio > 0 ? detalle.CostoUnitarioGtq(Modelo.TipoCambio) : null);
+
+    private string EquivalenteSubtotal(DetalleCompraFormModel detalle) =>
+        CompraPresentacion.Equivalente(Modelo.TipoCambio > 0 ? detalle.SubtotalGtq(Modelo.TipoCambio) : null);
+
+    private string SubtotalOrigen(DetalleCompraFormModel detalle)
+    {
+        try { return CompraPresentacion.MonedaOrigen(detalle.Subtotal, Modelo.Moneda); }
+        catch (OverflowException) { return "—"; }
+    }
+
+    public void Dispose()
+    {
+        Eliminado = true;
+        VersionConsulta++;
+        ConsultaReferencia?.Cancel();
+        ConsultaReferencia?.Dispose();
+        ConsultaReferencia = null;
+    }
 
     private bool RequiereFechaIngreso =>
         Modelo.Origen is OrigenCompra.CompraLocal or OrigenCompra.EnvioHermano;
@@ -420,8 +590,18 @@
             return "Selecciona un producto válido en cada detalle.";
         if (Modelo.Detalles.Any(x => x.Cantidad <= 0))
             return "La cantidad de cada detalle debe ser mayor que cero.";
-        if (Modelo.Detalles.Any(x => x.CostoUnitario < 0))
+        if (!Enum.IsDefined(Modelo.Moneda))
+            return "Selecciona una moneda válida.";
+        if (Modelo.Moneda == MonedaCompra.GTQ && Modelo.TipoCambio != 1m)
+            return "El tipo de cambio para GTQ debe ser 1.";
+        if (EsUsd && Modelo.TipoCambio <= 0m)
+            return "Ingresa un tipo de cambio usado mayor que cero.";
+        if (Modelo.Detalles.Any(x => x.CostoUnitarioMonedaOrigen < 0))
             return "El costo unitario no puede ser negativo.";
+        if (Modelo.Detalles.Any(x => decimal.Round(x.CostoUnitarioMonedaOrigen, 2) != x.CostoUnitarioMonedaOrigen))
+            return "El costo unitario debe tener como máximo dos decimales.";
+        if (Modelo.TotalVisualMonedaOrigen is null || Modelo.TotalVisualGtq is null)
+            return "Los importes de la compra exceden el máximo permitido.";
         if (RequiereFechaIngreso && !Modelo.FechaIngreso.HasValue)
             return "La fecha de ingreso es obligatoria para mercancía recibida.";
         if (Modelo.AdjuntarComprobante && !string.IsNullOrWhiteSpace(ErrorArchivo))

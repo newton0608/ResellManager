@@ -276,6 +276,20 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
                     b.Property<DateOnly>("FechaCompra")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateOnly?>("FechaTipoCambioReferencia")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FuenteTipoCambio")
+                        .HasMaxLength(120)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Moneda")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(3)
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue("GTQ");
+
                     b.Property<string>("Observaciones")
                         .HasMaxLength(500)
                         .HasColumnType("TEXT");
@@ -288,7 +302,20 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
                     b.Property<int>("ProveedorId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<decimal>("TipoCambio")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 8)
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue(1m);
+
+                    b.Property<decimal?>("TipoCambioReferencia")
+                        .HasPrecision(18, 8)
+                        .HasColumnType("TEXT");
+
                     b.Property<decimal>("Total")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<decimal>("TotalMonedaOrigen")
                         .HasColumnType("decimal(10,2)");
 
                     b.HasKey("Id");
@@ -347,6 +374,9 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<decimal>("CostoUnitario")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<decimal>("CostoUnitarioMonedaOrigen")
                         .HasColumnType("decimal(10,2)");
 
                     b.Property<int>("ProductoId")

@@ -401,16 +401,16 @@ public sealed class DashboardUiTests
         );
 
         Assert.Contains("IDashboardService", home, StringComparison.Ordinal);
-        Assert.Contains("id=\"titulo-dashboard\">Inicio", home, StringComparison.Ordinal);
+        HtmlPrueba.TituloPrincipal(home, "titulo-dashboard", "Inicio");
         Assert.Contains("id=\"titulo-resumen\">Resumen", home, StringComparison.Ordinal);
         Assert.Contains("Total por cobrar", home, StringComparison.Ordinal);
         Assert.Contains("Inventario al costo", home, StringComparison.Ordinal);
         Assert.Contains("Pendiente de entregar", home, StringComparison.Ordinal);
         Assert.Contains("Dashboard.PendientesEntrega", home, StringComparison.Ordinal);
         Assert.Contains("Acciones rápidas", home, StringComparison.Ordinal);
-        Assert.Contains("href=\"/pagos\">Registrar abono", home, StringComparison.Ordinal);
-        Assert.Contains("href=\"/pedidos/nuevo\">Registrar pedido", home, StringComparison.Ordinal);
-        Assert.Contains("href=\"/clientes\">Buscar cliente", home, StringComparison.Ordinal);
+        HtmlPrueba.Enlace(home, "/pagos", "Registrar abono");
+        HtmlPrueba.Enlace(home, "/pedidos/nuevo", "Registrar pedido");
+        HtmlPrueba.Enlace(home, "/clientes", "Buscar cliente");
         Assert.Contains("href=\"/clientes?saldo=pendiente\"", home, StringComparison.Ordinal);
         Assert.Contains("href=\"/inventario?estado=vendida\"", home, StringComparison.Ordinal);
         Assert.Contains("href=\"/inventario?estado=disponible\"", home, StringComparison.Ordinal);
@@ -420,8 +420,8 @@ public sealed class DashboardUiTests
         Assert.Contains("Últimos pagos", home, StringComparison.Ordinal);
         Assert.Contains("Últimas ventas", home, StringComparison.Ordinal);
         Assert.Contains("type=\"date\"", home, StringComparison.Ordinal);
-        Assert.Contains("desktop-table", home, StringComparison.Ordinal);
-        Assert.Contains("mobile-card-list", home, StringComparison.Ordinal);
+        Assert.Matches(@"<div class=""(?=[^""]*\brm-desktop-list\b)(?=[^""]*\bhidden\b)(?=[^""]*\bmd:block\b)[^""]*""", home);
+        Assert.Matches(@"<div class=""(?=[^""]*\brm-mobile-list\b)(?=[^""]*\bgrid\b)(?=[^""]*\bmd:hidden\b)[^""]*""", home);
         Assert.DoesNotContain("Panel en preparación", home, StringComparison.Ordinal);
         Assert.DoesNotContain("subió", home, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("DbContext", home, StringComparison.Ordinal);
@@ -440,15 +440,18 @@ public sealed class DashboardUiTests
                 "OperacionServices.cs"
             )
         );
-        var css = File.ReadAllText(
-            Path.Combine(raiz, "src", "ResellManager.Web", "wwwroot", "app.css")
+        var home = File.ReadAllText(
+            Path.Combine(raiz, "src", "ResellManager.Web", "Components", "Pages", "Home.razor")
         );
 
         Assert.DoesNotContain("Task.WhenAll", servicio, StringComparison.Ordinal);
-        Assert.Contains("dashboard-metrics", css, StringComparison.Ordinal);
-        Assert.Contains("dashboard-period-form", css, StringComparison.Ordinal);
-        Assert.Contains("@media (max-width: 47.99rem)", css, StringComparison.Ordinal);
-        Assert.Contains("@media (max-width: 30rem)", css, StringComparison.Ordinal);
+        Assert.Contains("grid-cols-2", home, StringComparison.Ordinal);
+        Assert.Contains("xl:grid-cols-4", home, StringComparison.Ordinal);
+        Assert.Contains("md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]", home, StringComparison.Ordinal);
+        Assert.Contains("md:block", home, StringComparison.Ordinal);
+        Assert.Contains("md:hidden", home, StringComparison.Ordinal);
+        Assert.Contains("class=\"ui-input\"", home, StringComparison.Ordinal);
+        Assert.Contains("type=\"date\"", home, StringComparison.Ordinal);
     }
 
     private static string BuscarRaizRepositorio()

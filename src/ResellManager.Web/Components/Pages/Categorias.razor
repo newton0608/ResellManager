@@ -5,94 +5,77 @@
 
 <PageTitle>Categorías | ResellManager</PageTitle>
 
-<section class="page-heading" aria-labelledby="titulo-categorias">
-    <div>
-        <p class="eyebrow">Catálogo</p>
-        <h1 id="titulo-categorias">Categorías</h1>
-        <p class="page-lead">Organiza las definiciones de productos con categorías reales del catálogo.</p>
-    </div>
-    <a class="primary-button" href="/categorias/nueva">Nueva categoría</a>
-</section>
-
-@if (!string.IsNullOrWhiteSpace(MensajeExito))
-{
-    <div class="mensaje-exito" role="status">@MensajeExito</div>
-}
-
-@if (!string.IsNullOrWhiteSpace(ErrorMessage))
-{
-    <div class="mensaje-error alert-with-action" role="alert">
-        <span>@ErrorMessage</span>
-        <button class="inline-button" type="button" @onclick="CargarCategoriasAsync">Reintentar</button>
-    </div>
-}
-
-@if (Cargando)
-{
-    <div class="loading-state" role="status" aria-live="polite">
-        <span class="spinner" aria-hidden="true"></span>
-        Cargando categorías...
-    </div>
-}
-else if (string.IsNullOrWhiteSpace(ErrorMessage) && CategoriasEncontradas.Count == 0)
-{
-    <section class="empty-state" aria-labelledby="titulo-sin-categorias">
-        <span class="empty-state-icon" aria-hidden="true"><NavIcon Name="grid" /></span>
-        <h2 id="titulo-sin-categorias">Aún no hay categorías</h2>
-        <p>Crea la primera categoría para poder clasificar productos.</p>
-        <a class="primary-button" href="/categorias/nueva">Crear categoría</a>
+<div class="rm-categories min-w-0 space-y-6 pb-4">
+    <section class="flex items-start justify-between gap-4" aria-labelledby="titulo-categorias">
+        <div class="min-w-0 space-y-2">
+            <p class="m-0 text-xs font-semibold tracking-wide text-ui-muted uppercase">Catálogo</p>
+            <h1 class="m-0 text-3xl font-bold tracking-tight text-ui-ink sm:text-4xl" id="titulo-categorias">Categorías</h1>
+            <p class="m-0 max-w-2xl text-sm leading-6 text-ui-muted">Organiza las definiciones de productos con categorías reales del catálogo.</p>
+        </div>
+        <a class="ui-button shrink-0 bg-ui-accent text-white hover:bg-ui-accent-hover" href="/categorias/nueva">
+            <svg class="size-5 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
+            <span class="sr-only sm:not-sr-only">Nueva categoría</span>
+        </a>
     </section>
-}
-else if (string.IsNullOrWhiteSpace(ErrorMessage))
-{
-    <section class="data-panel" aria-labelledby="titulo-listado-categorias">
-        <div class="data-panel-heading">
-            <h2 id="titulo-listado-categorias">Listado de categorías</h2>
-            <span>@CategoriasEncontradas.Count @(CategoriasEncontradas.Count == 1 ? "categoría" : "categorías")</span>
-        </div>
 
-        <div class="desktop-table">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th scope="col">Nombre</th>
-                        <th scope="col">Observaciones</th>
-                        <th scope="col" class="actions-cell">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var categoria in CategoriasEncontradas)
-                    {
-                        <tr>
-                            <td><strong>@categoria.Nombre</strong></td>
-                            <td>@TextoOpcional(categoria.Observaciones)</td>
-                            <td class="actions-cell">
-                                <a class="table-action" href="/categorias/@categoria.Id/editar">Editar</a>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+    @if (!string.IsNullOrWhiteSpace(MensajeExito))
+    {
+        <div class="rounded-2xl border border-solid border-ui-success/20 bg-ui-success/5 px-4 py-3 text-sm leading-6 text-ui-success" role="status">@MensajeExito</div>
+    }
 
-        <div class="mobile-card-list">
-            @foreach (var categoria in CategoriasEncontradas)
-            {
-                <article class="entity-card">
-                    <div class="entity-card-heading">
-                        <div>
-                            <h3>@categoria.Nombre</h3>
-                            <p class="entity-card-subtitle preserve-lines">@TextoOpcional(categoria.Observaciones)</p>
-                        </div>
-                    </div>
-                    <div class="entity-card-actions">
-                        <a class="secondary-button" href="/categorias/@categoria.Id/editar">Editar</a>
-                    </div>
-                </article>
-            }
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger" role="alert">
+            <div class="grid min-w-0 gap-3 sm:flex sm:items-center sm:justify-between">
+                <span class="min-w-0 [overflow-wrap:anywhere]">@ErrorMessage</span>
+                <button class="ui-button shrink-0 border-ui-danger/30 bg-white text-ui-danger hover:bg-ui-danger/5" type="button" @onclick="CargarCategoriasAsync">Reintentar</button>
+            </div>
         </div>
-    </section>
-}
+    }
+
+    @if (Cargando)
+    {
+        <div class="ui-card flex items-center gap-3 p-6 text-sm text-ui-muted" role="status" aria-live="polite">
+            <span class="size-5 shrink-0 rounded-full border-[3px] border-solid border-ui-accent/20 border-t-ui-accent motion-safe:animate-spin" aria-hidden="true"></span>
+            Cargando categorías...
+        </div>
+    }
+    else if (string.IsNullOrWhiteSpace(ErrorMessage) && CategoriasEncontradas.Count == 0)
+    {
+        <section class="empty-state ui-card min-w-0 p-6 text-center text-ui-muted sm:p-8" aria-labelledby="titulo-sin-categorias">
+            <div class="grid justify-items-center gap-4">
+                <span class="inline-flex size-12 items-center justify-center rounded-2xl bg-ui-accent/10 text-ui-accent" aria-hidden="true"><NavIcon Name="grid" /></span>
+                <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-sin-categorias">Aún no hay categorías</h2>
+                <p class="m-0 max-w-md text-sm leading-6 text-ui-muted">Crea la primera categoría para poder clasificar productos.</p>
+                <a class="ui-button bg-ui-accent text-white hover:bg-ui-accent-hover" href="/categorias/nueva">Crear categoría</a>
+            </div>
+        </section>
+    }
+    else if (string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <section class="min-w-0 space-y-4" aria-labelledby="titulo-listado-categorias">
+            <div class="flex flex-wrap items-center justify-between gap-2 px-1">
+                <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-listado-categorias">Listado de categorías</h2>
+                <span class="text-sm text-ui-muted">@CategoriasEncontradas.Count @(CategoriasEncontradas.Count == 1 ? "categoría" : "categorías")</span>
+            </div>
+            <ul class="m-0 list-none space-y-3 p-0" role="list">
+                @foreach (var categoria in CategoriasEncontradas)
+                {
+                    <li class="ui-card min-w-0">
+                        <article class="grid min-w-0 gap-4 p-4 sm:grid-cols-[minmax(0,.85fr)_minmax(0,1.15fr)_auto] sm:items-center sm:gap-5 sm:p-5">
+                            <h3 class="m-0 min-w-0 text-base font-semibold leading-6 text-ui-ink [overflow-wrap:anywhere]">@categoria.Nombre</h3>
+                            <div class="min-w-0 space-y-1">
+                                <p class="m-0 text-xs font-medium leading-5 text-ui-muted">Observaciones</p>
+                                <p class="m-0 min-w-0 text-sm leading-6 whitespace-pre-line text-ui-muted [overflow-wrap:anywhere]">@TextoOpcional(categoria.Observaciones)</p>
+                            </div>
+                            <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/categorias/@categoria.Id/editar">Editar</a>
+                        </article>
+                    </li>
+                }
+            </ul>
+        </section>
+    }
+</div>
 
 @code {
     private IReadOnlyList<CategoriaDto> CategoriasEncontradas { get; set; } = [];

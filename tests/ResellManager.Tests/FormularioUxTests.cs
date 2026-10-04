@@ -41,10 +41,10 @@ public sealed class FormularioUxTests
         Assert.Contains(esperado, html);
         if (ruta == "/")
         {
-            Assert.Contains("href=\"/pagos\">Registrar abono", html);
-            Assert.Contains("href=\"/ventas/nueva?modo=directa\">Venta directa", html);
-            Assert.Contains("href=\"/pedidos/nuevo\">Registrar pedido", html);
-            Assert.Contains("href=\"/clientes\">Buscar cliente", html);
+            HtmlPrueba.Enlace(html, "/pagos", "Registrar abono");
+            HtmlPrueba.Enlace(html, "/ventas/nueva?modo=directa", "Venta directa");
+            HtmlPrueba.Enlace(html, "/pedidos/nuevo", "Registrar pedido");
+            HtmlPrueba.Enlace(html, "/clientes", "Buscar cliente");
             Assert.Contains("Pendiente de entregar", html);
             Assert.DoesNotContain("Pedidos activos", html);
         }
@@ -87,9 +87,9 @@ public sealed class FormularioUxTests
         Assert.Equal(HttpStatusCode.OK, respuesta.StatusCode);
         var html = WebUtility.HtmlDecode(await respuesta.Content.ReadAsStringAsync());
 
-        Assert.Contains("class=\"entity-form\"", html);
+        Assert.Matches("class=\"entity-form(?: [^\"]*)?\"", html);
         Assert.DoesNotContain("ErrorGuardado", html);
-        Assert.DoesNotContain("class=\"mensaje-error\"", html);
+        Assert.DoesNotMatch("class=\"mensaje-error(?: [^\"]*)?\"", html);
         Assert.DoesNotContain("class=\"validation-message\"", html);
         if (ruta == "/productos/nuevo")
         {
@@ -151,7 +151,7 @@ public sealed class FormularioUxTests
         Assert.False(Obtener<bool>(pagina, "Guardando"));
         var htmlError = await RenderizarFormularioAsync(formulario, modelo,
             Obtener<string?>(pagina, "ErrorGuardado"), categorias);
-        Assert.Contains($"<div class=\"mensaje-error\" role=\"alert\">{mensajeEsperado}</div>", htmlError);
+        Assert.Matches($"<div class=\"mensaje-error(?: [^\"]*)?\" role=\"alert\">{Regex.Escape(mensajeEsperado)}</div>", htmlError);
         Assert.DoesNotContain("ErrorGuardado", htmlError);
         if (producto) Assert.Contains("Escanear código de barras con la cámara", htmlError);
 
@@ -163,7 +163,7 @@ public sealed class FormularioUxTests
             navigation.Uri);
         var htmlCorrecto = await RenderizarFormularioAsync(formulario, modelo,
             Obtener<string?>(pagina, "ErrorGuardado"), categorias);
-        Assert.DoesNotContain("class=\"mensaje-error\"", htmlCorrecto);
+        Assert.DoesNotMatch("class=\"mensaje-error(?: [^\"]*)?\"", htmlCorrecto);
 
         if (producto)
         {

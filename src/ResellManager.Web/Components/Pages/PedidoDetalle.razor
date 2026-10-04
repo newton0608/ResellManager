@@ -10,235 +10,238 @@
 
 <PageTitle>@(Pedido is null ? "Pedido" : Pedido.CodigoInterno) | ResellManager</PageTitle>
 
-@if (Cargando)
-{
-    <div class="loading-state" role="status" aria-live="polite">
-        <span class="spinner" aria-hidden="true"></span>
-        Cargando pedido y reservas...
-    </div>
-}
-else if (!string.IsNullOrWhiteSpace(ErrorCarga) || Pedido is null)
-{
-    <section class="error-state" role="alert">
-        <h1>No fue posible abrir el pedido</h1>
-        <p>@(ErrorCarga ?? "Pedido no encontrado.")</p>
-        <div class="form-actions">
-            <button class="primary-button" type="button" @onclick="CargarAsync">Reintentar</button>
-            <a class="secondary-button" href="/pedidos">Volver a pedidos</a>
-        </div>
-    </section>
-}
-else
-{
-    <section class="page-heading detail-heading" aria-labelledby="titulo-pedido">
-        <div>
-            <p class="eyebrow">Detalle de pedido</p>
-            <h1 id="titulo-pedido" class="code-value">@Pedido.CodigoInterno</h1>
-            <p class="page-lead">@Pedido.Fecha.ToString("dd/MM/yyyy") · <a class="contact-link" href="/clientes/@Pedido.ClienteId">@Pedido.Cliente</a></p>
-        </div>
-        <div class="heading-actions">
-            @if (Pedido.VentaId.HasValue)
-            {
-                <a class="primary-button" href="/ventas/@Pedido.VentaId">Ver venta</a>
-            }
-            else if (EsModificable)
-            {
-                <a class="primary-button" href="/ventas/nueva?pedido=@Pedido.Id">Registrar venta</a>
-            }
-            <span class="order-status @PedidoPresentacion.ClaseEstado(Pedido.Estado)">@PedidoPresentacion.Estado(Pedido.Estado)</span>
-            @if (PuedeCancelarPedido)
-            {
-                <button class="danger-button" type="button" disabled="@Procesando"
-                        @onclick="CancelarPedidoAsync">
-                    @(CancelandoPedido ? "Cancelando..." : "Cancelar pedido")
-                </button>
-            }
-            <a class="secondary-button" href="/pedidos">Volver</a>
-        </div>
-    </section>
-
-    @if (!string.IsNullOrWhiteSpace(MensajeExito))
+<div class="rm-orders grid min-w-0 gap-6 pb-4">
+    @if (Cargando)
     {
-        <div class="mensaje-exito" role="status">@MensajeExito</div>
+        <div class="ui-card flex items-center gap-3 p-6 text-sm text-ui-muted" role="status" aria-live="polite">
+            <span class="size-5 shrink-0 rounded-full border-[3px] border-solid border-ui-accent/20 border-t-ui-accent motion-safe:animate-spin" aria-hidden="true"></span>
+            Cargando pedido y reservas...
+        </div>
     }
-    @if (!string.IsNullOrWhiteSpace(ErrorOperacion))
+    else if (!string.IsNullOrWhiteSpace(ErrorCarga) || Pedido is null)
     {
-        <div class="mensaje-error" role="alert">@ErrorOperacion</div>
+        <section class="ui-card grid min-w-0 gap-4 p-6 text-center sm:p-8" role="alert">
+            <h1 class="m-0 text-2xl font-semibold tracking-tight text-ui-ink">No fue posible abrir el pedido</h1>
+            <p class="m-0 text-sm leading-6 text-ui-muted">@(ErrorCarga ?? "Pedido no encontrado.")</p>
+            <div class="grid gap-3 sm:flex sm:justify-center">
+                <button class="ui-button bg-ui-accent text-white hover:bg-ui-accent-hover" type="button" @onclick="CargarAsync">Reintentar</button>
+                <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/pedidos">Volver a pedidos</a>
+            </div>
+        </section>
     }
-
-    <section class="order-summary" aria-label="Resumen del pedido">
-        <article class="info-card">
-            <p class="eyebrow">Información</p>
-            <dl class="details-list">
-                <div><dt>Cliente</dt><dd>@Pedido.Cliente</dd></div>
-                <div><dt>Tipo</dt><dd>@PedidoPresentacion.Tipo(Pedido.TipoPedido)</dd></div>
-                <div><dt>Canal</dt><dd>@PedidoPresentacion.Canal(Pedido.CanalVenta)</dd></div>
-                <div><dt>Estado</dt><dd>@PedidoPresentacion.Estado(Pedido.Estado)</dd></div>
-                <div><dt>Fecha</dt><dd>@Pedido.Fecha.ToString("dd/MM/yyyy")</dd></div>
-                <div>
-                    <dt>Venta</dt>
-                    <dd>@(VentaVinculada is not null ? VentaPresentacion.Estado(VentaVinculada.Estado) : "Sin venta registrada")</dd>
+    else
+    {
+        <section class="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start" aria-labelledby="titulo-pedido">
+            <div class="grid min-w-0 gap-2">
+                <p class="m-0 text-xs font-semibold tracking-wide text-ui-muted uppercase">Detalle de pedido</p>
+                <h1 id="titulo-pedido" class="m-0 text-2xl font-bold tracking-tight break-all text-ui-ink sm:text-3xl">@Pedido.CodigoInterno</h1>
+                <p class="m-0 flex min-w-0 flex-wrap items-center gap-x-2 text-sm leading-6 text-ui-muted">
+                    @Pedido.Fecha.ToString("dd/MM/yyyy") ·
+                    <a class="inline-flex min-h-12 max-w-full items-center rounded-xl font-medium text-ui-accent no-underline [overflow-wrap:anywhere] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-accent" href="/clientes/@Pedido.ClienteId">@Pedido.Cliente</a>
+                </p>
+            </div>
+            <div class="grid min-w-0 gap-3 xl:justify-items-end">
+                <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold leading-5 justify-self-start xl:justify-self-end @PedidoPresentacion.ClaseEstado(Pedido.Estado)">@PedidoPresentacion.Estado(Pedido.Estado)</span>
+                <div class="grid min-w-0 grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+                    @if (Pedido.VentaId.HasValue)
+                    {
+                        <a class="ui-button col-span-2 bg-ui-accent text-white hover:bg-ui-accent-hover" href="/ventas/@Pedido.VentaId">Ver venta</a>
+                    }
+                    else if (EsModificable)
+                    {
+                        <a class="ui-button col-span-2 bg-ui-accent text-white hover:bg-ui-accent-hover" href="/ventas/nueva?pedido=@Pedido.Id">Registrar venta</a>
+                    }
+                    @if (PuedeCancelarPedido)
+                    {
+                        <button class="ui-button min-w-0 border-ui-danger/30 bg-white text-ui-danger hover:border-ui-danger hover:bg-ui-danger/5" type="button" disabled="@Procesando"
+                                @onclick="CancelarPedidoAsync">
+                            @(CancelandoPedido ? "Cancelando..." : "Cancelar pedido")
+                        </button>
+                    }
+                    <a class="ui-button min-w-0 border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/pedidos">Volver</a>
                 </div>
-                <div><dt>Observaciones</dt><dd>@(string.IsNullOrWhiteSpace(Pedido.Observaciones) ? "Sin observaciones" : Pedido.Observaciones)</dd></div>
-            </dl>
-        </article>
-        <article class="info-card order-total-card">
-            <p class="eyebrow">Total estimado</p>
-            <strong>@PedidoPresentacion.Moneda(PedidoPresentacion.Total(Pedido))</strong>
-            <span>@Pedido.Detalles.Count @(Pedido.Detalles.Count == 1 ? "detalle" : "detalles") · @Pedido.Detalles.Sum(x => x.Cantidad) unidades solicitadas</span>
-            @if (Pedido.TipoPedido == TipoPedido.Catalogo)
-            {
-                <p>Pedido de catálogo: no utiliza ni reserva unidades físicas de inventario.</p>
-            }
-        </article>
-    </section>
+            </div>
+        </section>
 
-    <section class="data-panel order-detail-panel" aria-labelledby="titulo-detalles-pedido">
-        <div class="data-panel-heading">
-            <div>
-                <h2 id="titulo-detalles-pedido">Detalles y reservas</h2>
-                <p>@(Pedido.TipoPedido == TipoPedido.Catalogo
+        @if (!string.IsNullOrWhiteSpace(MensajeExito))
+        {
+            <div class="rounded-2xl border border-solid border-ui-success/20 bg-ui-success/5 px-4 py-3 text-sm leading-6 text-ui-success" role="status">@MensajeExito</div>
+        }
+        @if (!string.IsNullOrWhiteSpace(ErrorOperacion))
+        {
+            <div class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger" role="alert">@ErrorOperacion</div>
+        }
+
+        <section class="grid min-w-0 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]" aria-label="Resumen del pedido">
+            <article class="ui-card grid min-w-0 gap-4 p-4 sm:p-5">
+                <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink">Información</h2>
+                <dl class="m-0 grid min-w-0 gap-4 text-sm leading-6 sm:grid-cols-2 [&_dt]:text-xs [&_dt]:leading-5 [&_dt]:text-ui-muted [&_dd]:m-0 [&_dd]:font-medium [&_dd]:text-ui-ink [&_dd]:[overflow-wrap:anywhere]">
+                    <div class="grid min-w-0 gap-1 sm:col-span-2"><dt>Cliente</dt><dd>@Pedido.Cliente</dd></div>
+                    <div class="grid min-w-0 gap-1"><dt>Tipo</dt><dd>@PedidoPresentacion.Tipo(Pedido.TipoPedido)</dd></div>
+                    <div class="grid min-w-0 gap-1"><dt>Canal</dt><dd>@PedidoPresentacion.Canal(Pedido.CanalVenta)</dd></div>
+                    <div class="grid min-w-0 gap-1"><dt>Estado</dt><dd>@PedidoPresentacion.Estado(Pedido.Estado)</dd></div>
+                    <div class="grid min-w-0 gap-1"><dt>Fecha</dt><dd>@Pedido.Fecha.ToString("dd/MM/yyyy")</dd></div>
+                    <div class="grid min-w-0 gap-1 sm:col-span-2">
+                        <dt>Venta</dt>
+                        <dd>@(VentaVinculada is not null ? VentaPresentacion.Estado(VentaVinculada.Estado) : "Sin venta registrada")</dd>
+                    </div>
+                    <div class="grid min-w-0 gap-1 sm:col-span-2"><dt>Observaciones</dt><dd>@(string.IsNullOrWhiteSpace(Pedido.Observaciones) ? "Sin observaciones" : Pedido.Observaciones)</dd></div>
+                </dl>
+            </article>
+            <article class="ui-card grid min-w-0 content-start gap-3 p-4 sm:p-5">
+                <p class="m-0 text-xs font-semibold tracking-wide text-ui-muted uppercase">Total estimado</p>
+                <strong class="text-3xl font-bold leading-9 tracking-tight text-ui-ink tabular-nums [overflow-wrap:anywhere]">@PedidoPresentacion.Moneda(PedidoPresentacion.Total(Pedido))</strong>
+                <span class="text-sm leading-6 text-ui-muted">@Pedido.Detalles.Count @(Pedido.Detalles.Count == 1 ? "detalle" : "detalles") · @Pedido.Detalles.Sum(x => x.Cantidad) unidades solicitadas</span>
+                @if (Pedido.TipoPedido == TipoPedido.Catalogo)
+                {
+                    <p class="m-0 rounded-2xl bg-ui-canvas p-3 text-sm leading-6 text-ui-muted">Pedido de catálogo: no utiliza ni reserva unidades físicas de inventario.</p>
+                }
+            </article>
+        </section>
+
+        <section class="grid min-w-0 gap-4" aria-labelledby="titulo-detalles-pedido">
+            <div class="grid min-w-0 gap-1 px-1">
+                <h2 id="titulo-detalles-pedido" class="m-0 text-xl font-semibold tracking-tight text-ui-ink">Detalles y reservas</h2>
+                <p class="m-0 text-sm leading-6 text-ui-muted">@(Pedido.TipoPedido == TipoPedido.Catalogo
                     ? "Los detalles de catálogo se gestionan solo por producto y cantidad."
                     : "El estado físico de cada unidad se muestra separado de su reserva.")</p>
             </div>
-        </div>
 
-        <div class="order-detail-list">
-            @foreach (var detalle in Pedido.Detalles)
-            {
-                var reservas = ReservasDe(detalle);
-                var opciones = OpcionesPara(detalle);
-                <article class="order-detail-item">
-                    <header class="order-detail-heading">
-                        <div>
-                            <h3>@detalle.Producto</h3>
-                            @if (!string.IsNullOrWhiteSpace(detalle.Observaciones))
-                            {
-                                <p>@detalle.Observaciones</p>
-                            }
-                        </div>
-                        <strong>@PedidoPresentacion.Moneda(detalle.Subtotal)</strong>
-                    </header>
-
-                    <dl class="order-detail-values">
-                        <div><dt>Cantidad</dt><dd>@detalle.Cantidad</dd></div>
-                        <div><dt>Precio unitario</dt><dd>@PedidoPresentacion.Moneda(detalle.PrecioUnitario)</dd></div>
-                        <div><dt>Subtotal</dt><dd>@PedidoPresentacion.Moneda(detalle.Subtotal)</dd></div>
-                    </dl>
-
-                    @if (Pedido.TipoPedido != TipoPedido.Catalogo)
-                    {
-                        <section class="reservation-section" aria-label="Reservas para @detalle.Producto">
-                            <div class="reservation-heading">
-                                <div>
-                                    <h4>Unidades reservadas</h4>
-                                    <span>@reservas.Count de @detalle.Cantidad</span>
-                                </div>
-                            </div>
-
-                            @if (reservas.Count == 0)
-                            {
-                                <p class="reservation-empty">Este detalle todavía no tiene unidades reservadas.</p>
-                            }
-                            else
-                            {
-                                <div class="reservation-list">
-                                    @foreach (var unidad in reservas)
-                                    {
-                                        <article class="reservation-card">
-                                            <div>
-                                                <strong class="code-value">@unidad.CodigoInterno</strong>
-                                                <span>Reservada para este pedido</span>
-                                            </div>
-                                            <div class="inventory-badge-group">
-                                                <span class="inventory-badge @InventarioPresentacion.ClaseEstado(unidad.Estado)">@InventarioPresentacion.Estado(unidad.Estado)</span>
-                                                <span class="inventory-badge reservation-badge">Reservada</span>
-                                            </div>
-                                            @if (EsModificable)
-                                            {
-                                                <button class="table-action button-link" type="button"
-                                                        disabled="@Procesando"
-                                                        @onclick="() => CancelarReservaAsync(unidad)">
-                                                    @(UnidadProcesandoId == unidad.Id ? "Liberando..." : "Cancelar reserva")
-                                                </button>
-                                            }
-                                        </article>
-                                    }
-                                </div>
-                            }
-
-                            @if (EsModificable && reservas.Count < detalle.Cantidad)
-                            {
-                                @if (opciones.Count > 0)
+            <div class="grid min-w-0 gap-4">
+                @foreach (var detalle in Pedido.Detalles)
+                {
+                    var reservas = ReservasDe(detalle);
+                    var opciones = OpcionesPara(detalle);
+                    <article class="ui-card grid min-w-0 gap-4 p-4 sm:p-5">
+                        <header class="grid min-w-0 gap-2 sm:flex sm:items-start sm:justify-between sm:gap-5">
+                            <div class="grid min-w-0 gap-1">
+                                <h3 class="m-0 text-base font-semibold leading-6 text-ui-ink [overflow-wrap:anywhere]">@detalle.Producto</h3>
+                                @if (!string.IsNullOrWhiteSpace(detalle.Observaciones))
                                 {
-                                    <div class="reservation-picker">
-                                        <div class="form-field">
-                                            <label for="unidad-detalle-@detalle.Id">Unidad compatible</label>
-                                            <select id="unidad-detalle-@detalle.Id"
-                                                    value="@UnidadSeleccionada(detalle.Id)"
-                                                    @onchange="evento => SeleccionarUnidad(detalle.Id, evento.Value?.ToString())">
-                                                <option value="0">Selecciona una unidad</option>
-                                                @foreach (var unidad in opciones)
-                                                {
-                                                    <option value="@unidad.Id">@unidad.CodigoInterno · @InventarioPresentacion.Estado(unidad.Estado)</option>
-                                                }
-                                            </select>
-                                        </div>
-                                        <button class="primary-button" type="button"
-                                                disabled="@(Procesando || UnidadSeleccionada(detalle.Id) == 0)"
-                                                @onclick="() => ReservarAsync(detalle)">
-                                            @(DetalleProcesandoId == detalle.Id ? "Reservando..." : "Reservar unidad")
-                                        </button>
-                                    </div>
+                                    <p class="m-0 text-sm leading-6 text-ui-muted [overflow-wrap:anywhere]">@detalle.Observaciones</p>
+                                }
+                            </div>
+                            <strong class="text-lg leading-7 text-ui-ink tabular-nums [overflow-wrap:anywhere] sm:shrink-0">@PedidoPresentacion.Moneda(detalle.Subtotal)</strong>
+                        </header>
+
+                        <dl class="m-0 grid min-w-0 grid-cols-2 gap-3 rounded-2xl bg-ui-canvas p-3 text-sm leading-6 sm:grid-cols-3 [&_dt]:text-xs [&_dt]:leading-5 [&_dt]:text-ui-muted [&_dd]:m-0 [&_dd]:font-medium [&_dd]:text-ui-ink [&_dd]:tabular-nums [&_dd]:[overflow-wrap:anywhere]">
+                            <div class="grid min-w-0 gap-1"><dt>Cantidad</dt><dd>@detalle.Cantidad</dd></div>
+                            <div class="grid min-w-0 gap-1"><dt>Precio unitario</dt><dd>@PedidoPresentacion.Moneda(detalle.PrecioUnitario)</dd></div>
+                            <div class="grid min-w-0 gap-1"><dt>Subtotal</dt><dd>@PedidoPresentacion.Moneda(detalle.Subtotal)</dd></div>
+                        </dl>
+
+                        @if (Pedido.TipoPedido != TipoPedido.Catalogo)
+                        {
+                            <section class="grid min-w-0 gap-4 border-0 border-t border-solid border-ui-border pt-4" aria-label="Reservas para @detalle.Producto">
+                                <div class="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                                    <h4 class="m-0 text-sm font-semibold text-ui-ink">Unidades reservadas</h4>
+                                    <span class="text-sm text-ui-muted">@reservas.Count de @detalle.Cantidad</span>
+                                </div>
+
+                                @if (reservas.Count == 0)
+                                {
+                                    <p class="m-0 rounded-2xl bg-ui-canvas p-3 text-sm leading-6 text-ui-muted">Este detalle todavía no tiene unidades reservadas.</p>
                                 }
                                 else
                                 {
-                                    <p class="reservation-empty">No hay unidades compatibles sin reserva. Pueden reservarse unidades compradas, en tránsito o disponibles.</p>
+                                    <div class="grid min-w-0 gap-3">
+                                        @foreach (var unidad in reservas)
+                                        {
+                                            <article class="grid min-w-0 gap-3 rounded-2xl border border-solid border-ui-border p-3 sm:flex sm:flex-wrap sm:items-center sm:justify-between">
+                                                <div class="grid min-w-0 gap-1">
+                                                    <strong class="max-w-full font-mono text-sm leading-6 break-all text-ui-ink">@unidad.CodigoInterno</strong>
+                                                    <span class="text-xs leading-5 text-ui-muted">Reservada para este pedido</span>
+                                                </div>
+                                                <div class="flex min-w-0 flex-wrap items-center gap-2">
+                                                    <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold leading-5 @InventarioPresentacion.ClaseEstado(unidad.Estado)">@InventarioPresentacion.Estado(unidad.Estado)</span>
+                                                    <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold leading-5 reservation-badge">Reservada</span>
+                                                </div>
+                                                @if (EsModificable)
+                                                {
+                                                    <button class="ui-button min-w-0 border-ui-danger/30 bg-white text-ui-danger hover:border-ui-danger hover:bg-ui-danger/5" type="button"
+                                                            disabled="@Procesando"
+                                                            @onclick="() => CancelarReservaAsync(unidad)">
+                                                        @(UnidadProcesandoId == unidad.Id ? "Liberando..." : "Cancelar reserva")
+                                                    </button>
+                                                }
+                                            </article>
+                                        }
+                                    </div>
                                 }
-                            }
-                            else if (reservas.Count >= detalle.Cantidad)
-                            {
-                                <p class="reservation-complete">La cantidad solicitada ya está totalmente reservada.</p>
-                            }
-                        </section>
-                    }
-                </article>
-            }
-        </div>
-    </section>
 
-    @if (EsModificable)
-    {
-        <details class="form-panel add-order-line">
-            <summary>Agregar otro producto al pedido</summary>
-            <div class="add-order-line-body">
-                <p>Agrega un producto adicional. Los productos ya registrados se conservan.</p>
-                <div class="order-line-grid">
-                    <div class="form-field order-product-field">
-                        <ProductoBuscador Id="nuevo-detalle-producto" Seleccionado="NuevoDetalle.ProductoSeleccionado" Deshabilitado="Procesando" OnSeleccionado="ElegirProductoNuevo" />
-                    </div>
-                    <div class="form-field">
-                        <label for="nuevo-detalle-cantidad">Cantidad</label>
-                        <input inputmode="numeric" data-select-once="true" id="nuevo-detalle-cantidad" type="number" min="1" step="1" @bind="NuevoDetalle.Cantidad" />
-                    </div>
-                    <div class="form-field">
-                        <label for="nuevo-detalle-precio">Precio unitario</label>
-                        <input inputmode="decimal" data-select-once="true" id="nuevo-detalle-precio" type="number" min="0" step="0.01" @bind="NuevoDetalle.PrecioUnitario" />
-                    </div>
-                    <div class="form-field order-line-note">
-                        <label for="nuevo-detalle-observaciones">Observaciones</label>
-                        <input id="nuevo-detalle-observaciones" maxlength="500" @bind="NuevoDetalle.Observaciones" />
-                    </div>
-                </div>
-                <div class="form-actions">
-                    <button class="primary-button" type="button" disabled="@Procesando" @onclick="AgregarDetalleAsync">
-                        @(AgregandoDetalle ? "Agregando..." : "Agregar detalle")
-                    </button>
-                </div>
+                                @if (EsModificable && reservas.Count < detalle.Cantidad)
+                                {
+                                    @if (opciones.Count > 0)
+                                    {
+                                        <div class="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+                                            <div class="grid min-w-0 gap-2">
+                                                <label class="text-sm font-semibold text-ui-ink" for="unidad-detalle-@detalle.Id">Unidad compatible</label>
+                                                <select class="ui-input" id="unidad-detalle-@detalle.Id"
+                                                        value="@UnidadSeleccionada(detalle.Id)"
+                                                        @onchange="evento => SeleccionarUnidad(detalle.Id, evento.Value?.ToString())">
+                                                    <option value="0">Selecciona una unidad</option>
+                                                    @foreach (var unidad in opciones)
+                                                    {
+                                                        <option value="@unidad.Id">@unidad.CodigoInterno · @InventarioPresentacion.Estado(unidad.Estado)</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                            <button class="ui-button bg-ui-accent text-white hover:bg-ui-accent-hover" type="button"
+                                                    disabled="@(Procesando || UnidadSeleccionada(detalle.Id) == 0)"
+                                                    @onclick="() => ReservarAsync(detalle)">
+                                                @(DetalleProcesandoId == detalle.Id ? "Reservando..." : "Reservar unidad")
+                                            </button>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <p class="m-0 rounded-2xl bg-ui-canvas p-3 text-sm leading-6 text-ui-muted">No hay unidades compatibles sin reserva. Pueden reservarse unidades compradas, en tránsito o disponibles.</p>
+                                    }
+                                }
+                                else if (reservas.Count >= detalle.Cantidad)
+                                {
+                                    <p class="m-0 rounded-2xl border border-solid border-ui-success/20 bg-ui-success/5 p-3 text-sm leading-6 text-ui-success">La cantidad solicitada ya está totalmente reservada.</p>
+                                }
+                            </section>
+                        }
+                    </article>
+                }
             </div>
-        </details>
+        </section>
+
+        @if (EsModificable)
+        {
+            <details class="ui-card min-w-0 p-4 sm:p-5">
+                <summary class="min-h-12 cursor-pointer rounded-xl py-3 text-sm font-semibold leading-6 text-ui-ink touch-manipulation focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-accent">Agregar otro producto al pedido</summary>
+                <div class="grid min-w-0 gap-4 pt-4">
+                    <p class="m-0 text-sm leading-6 text-ui-muted">Agrega un producto adicional. Los productos ya registrados se conservan.</p>
+                    <div class="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_8rem_10rem]">
+                        <div class="grid min-w-0 gap-2 [&>label]:text-sm [&>label]:font-semibold sm:col-span-2 xl:col-span-1">
+                            <ProductoBuscador Id="nuevo-detalle-producto" Seleccionado="NuevoDetalle.ProductoSeleccionado" Deshabilitado="Procesando" OnSeleccionado="ElegirProductoNuevo" />
+                        </div>
+                        <div class="grid min-w-0 gap-2">
+                            <label class="text-sm font-semibold text-ui-ink" for="nuevo-detalle-cantidad">Cantidad</label>
+                            <input class="ui-input" inputmode="numeric" data-select-once="true" id="nuevo-detalle-cantidad" type="number" min="1" step="1" @bind="NuevoDetalle.Cantidad" />
+                        </div>
+                        <div class="grid min-w-0 gap-2">
+                            <label class="text-sm font-semibold text-ui-ink" for="nuevo-detalle-precio">Precio unitario</label>
+                            <input class="ui-input" inputmode="decimal" data-select-once="true" id="nuevo-detalle-precio" type="number" min="0" step="0.01" @bind="NuevoDetalle.PrecioUnitario" />
+                        </div>
+                        <div class="grid min-w-0 gap-2 sm:col-span-2 xl:col-span-3">
+                            <label class="text-sm font-semibold text-ui-ink" for="nuevo-detalle-observaciones">Observaciones</label>
+                            <input class="ui-input" id="nuevo-detalle-observaciones" maxlength="500" @bind="NuevoDetalle.Observaciones" />
+                        </div>
+                    </div>
+                    <div class="grid gap-3 sm:flex sm:flex-wrap">
+                        <button class="ui-button bg-ui-accent text-white hover:bg-ui-accent-hover" type="button" disabled="@Procesando" @onclick="AgregarDetalleAsync">
+                            @(AgregandoDetalle ? "Agregando..." : "Agregar detalle")
+                        </button>
+                    </div>
+                </div>
+            </details>
+        }
     }
-}
+</div>
 
 @code {
     [Parameter]

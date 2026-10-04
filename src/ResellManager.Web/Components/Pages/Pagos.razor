@@ -8,228 +8,241 @@
 
 <PageTitle>Pagos y abonos | ResellManager</PageTitle>
 
-<section class="page-heading" aria-labelledby="titulo-pagos">
-    <div>
-        <p class="eyebrow">Cobros</p>
-        <h1 id="titulo-pagos">Pagos y abonos</h1>
-        <p class="page-lead">Registra pagos globales del cliente y consulta su saldo actual e historial.</p>
-    </div>
-</section>
-
-@if (CargandoClientes)
-{
-    <div class="loading-state" role="status" aria-live="polite">
-        <span class="spinner" aria-hidden="true"></span>
-        Cargando clientes...
-    </div>
-}
-else if (!string.IsNullOrWhiteSpace(ErrorCarga))
-{
-    <section class="error-state" role="alert">
-        <h2>No fue posible cargar pagos</h2>
-        <p>@ErrorCarga</p>
-        <button class="primary-button" type="button" @onclick="CargarClientesAsync">Reintentar</button>
+<div class="rm-payments min-w-0 space-y-6 pb-[env(safe-area-inset-bottom)]">
+    <section class="min-w-0 space-y-2" aria-labelledby="titulo-pagos">
+        <p class="m-0 text-xs font-semibold tracking-wide text-ui-muted uppercase">Cobros</p>
+        <h1 class="m-0 text-3xl font-bold tracking-tight text-ui-ink sm:text-4xl" id="titulo-pagos">Pagos y abonos</h1>
+        <p class="m-0 max-w-2xl text-sm leading-6 text-ui-muted">Registra pagos globales del cliente y consulta su saldo actual e historial.</p>
     </section>
-}
-else
-{
-    @if (!string.IsNullOrWhiteSpace(MensajeExito))
+
+    @if (CargandoClientes)
     {
-        <div class="mensaje-exito" role="status">@MensajeExito</div>
-    }
-    @if (!string.IsNullOrWhiteSpace(ErrorOperacion))
-    {
-        <div class="mensaje-error alert-with-action" role="alert">
-            <span>@ErrorOperacion</span>
-            @if (ClienteSeleccionado is not null && !SaldoActual.HasValue)
-            {
-                <button class="inline-button" type="button" disabled="@(CargandoCliente || Registrando)" @onclick="RecargarClienteAsync">Reintentar saldo e historial</button>
-            }
+        <div class="ui-card flex items-center gap-3 p-6 text-sm text-ui-muted" role="status" aria-live="polite">
+            <span class="size-5 shrink-0 rounded-full border-[3px] border-solid border-ui-accent/20 border-t-ui-accent motion-safe:animate-spin" aria-hidden="true"></span>
+            Cargando clientes...
         </div>
     }
-
-    <section class="form-panel payment-customer-picker" aria-label="Buscar cliente para registrar abono">
-        <ClienteBuscador Seleccionado="ClienteSeleccionado" Deshabilitado="@(CargandoCliente || CargandoHistorial || Registrando || RevisandoPago)"
-                         OnSeleccionado="SeleccionarClienteAsync" />
-    </section>
-
-    @if (ClienteSeleccionado is null)
+    else if (!string.IsNullOrWhiteSpace(ErrorCarga))
     {
-        <section class="empty-state" aria-labelledby="titulo-sin-clientes-pago">
-            <span class="empty-state-icon" aria-hidden="true"><NavIcon Name="users" /></span>
-            <h2 id="titulo-sin-clientes-pago">Busca y selecciona un cliente</h2>
-            <p>Consulta su saldo antes de registrar un abono. Si aún no existe, regístralo desde Clientes.</p>
-            <a class="secondary-button" href="/clientes">Ir a clientes</a>
+        <section class="ui-card grid min-w-0 gap-4 border-ui-danger/20 p-5 sm:p-6" role="alert">
+            <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink">No fue posible cargar pagos</h2>
+            <p class="m-0 text-sm leading-6 text-ui-muted [overflow-wrap:anywhere]">@ErrorCarga</p>
+            <button class="ui-button justify-self-start bg-ui-accent text-white hover:bg-ui-accent-hover" type="button" @onclick="CargarClientesAsync">Reintentar</button>
         </section>
     }
-    else if (CargandoCliente)
+    else
     {
-        <div class="loading-state" role="status" aria-live="polite">
-            <span class="spinner" aria-hidden="true"></span>
-            Consultando saldo e historial...
-        </div>
-    }
-    else if (ClienteSeleccionado is not null && SaldoActual.HasValue)
-    {
-        <section class="payment-layout">
-            <div>
-                <article class="info-card balance-card payment-balance-card" aria-labelledby="titulo-saldo-cliente">
-                    <span class="info-label">Saldo actual</span>
-                    <h2 id="titulo-saldo-cliente">@ClientePresentacion.NombreCompleto(ClienteSeleccionado)</h2>
-                    <strong class="balance-hero">@ClientePresentacion.Moneda(SaldoActual.Value)</strong>
-                    <p class="field-help">El pago reducirá la deuda global del cliente; no se asigna a una venta específica.</p>
-                </article>
-
-                <section class="form-panel payment-form-panel" aria-labelledby="titulo-registrar-pago">
-                    <h2 id="titulo-registrar-pago">Registrar pago o abono</h2>
-                    <EditForm Model="Modelo" OnValidSubmit="RevisarPago" class="entity-form">
-                        <DataAnnotationsValidator />
-                        <ValidationSummary class="validation-summary" />
-                        <div class="form-grid">
-                            <div class="form-field">
-                                <label for="pago-fecha">Fecha <span aria-hidden="true">*</span></label>
-                                <InputDate id="pago-fecha" @bind-Value="Modelo.Fecha" />
-                            </div>
-                            <div class="form-field">
-                                <label for="pago-monto">Monto <span aria-hidden="true">*</span></label>
-                                <InputNumber inputmode="decimal" data-select-once="true" id="pago-monto" @bind-Value="Modelo.Monto" min="0.01" step="0.01" aria-describedby="pago-monto-error" />
-                                <ValidationMessage id="pago-monto-error" For="() => Modelo.Monto" />
-                                <p class="field-help">Máximo disponible: @ClientePresentacion.Moneda(SaldoActual.Value)</p>
-                            </div>
-                            <div class="form-field">
-                                <label for="pago-metodo">Método de pago <span aria-hidden="true">*</span></label>
-                                <InputSelect id="pago-metodo" @bind-Value="Modelo.MetodoPago">
-                                    @foreach (var metodo in Enum.GetValues<MetodoPago>())
-                                    {
-                                        <option value="@metodo">@PagoPresentacion.Metodo(metodo)</option>
-                                    }
-                                </InputSelect>
-                            </div>
-                            <div class="form-field">
-                                <label for="pago-referencia">Referencia</label>
-                                <InputText id="pago-referencia" @bind-Value="Modelo.Referencia" autocomplete="off" aria-describedby="pago-referencia-error" />
-                                <ValidationMessage id="pago-referencia-error" For="() => Modelo.Referencia" />
-                            </div>
-                            <div class="form-field form-field-wide">
-                                <label for="pago-observaciones">Observaciones</label>
-                                <InputTextArea id="pago-observaciones" @bind-Value="Modelo.Observaciones" rows="3" aria-describedby="pago-observaciones-error" />
-                                <ValidationMessage id="pago-observaciones-error" For="() => Modelo.Observaciones" />
-                            </div>
-                        </div>
-                        <div class="form-actions">
-                            <button class="primary-button" type="submit" disabled="@(Registrando || CargandoHistorial || SaldoActual.Value <= 0)">
-                                @(Registrando ? "Registrando..." : "Revisar abono")
-                            </button>
-                        </div>
-                    </EditForm>
-                    @if (SaldoActual.Value <= 0)
-                    {
-                        <p class="payment-no-debt" role="status">Este cliente no tiene deuda pendiente. No necesita registrar otro pago.</p>
-                    }
-                </section>
+        @if (!string.IsNullOrWhiteSpace(MensajeExito))
+        {
+            <div class="rounded-2xl border border-solid p-4 text-sm leading-6 [overflow-wrap:anywhere] @(SaldoActual.HasValue ?"border-ui-success/20 bg-ui-success/5 text-ui-success" : "border-ui-warning/20 bg-ui-warning/5 text-ui-warning")" role="status" aria-live="polite">@MensajeExito</div>
+        }
+        @if (!string.IsNullOrWhiteSpace(ErrorOperacion))
+        {
+            <div class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger grid min-w-0 gap-3 sm:flex sm:flex-wrap sm:items-center sm:justify-between" role="alert">
+                <span class="min-w-0 [overflow-wrap:anywhere]">@ErrorOperacion</span>
+                @if (ClienteSeleccionado is not null && !SaldoActual.HasValue)
+                {
+                    <button class="ui-button border-ui-danger/30 bg-white text-ui-danger hover:bg-ui-danger/5" type="button" disabled="@(CargandoCliente || Registrando)" @onclick="RecargarClienteAsync">Reintentar saldo e historial</button>
+                }
             </div>
+        }
 
-            <section class="data-panel payment-history" aria-labelledby="titulo-historial-pagos">
-                <div class="data-panel-heading">
-                    <h2 id="titulo-historial-pagos">Historial de pagos</h2>
-                    <span>@Historial.Count @(Historial.Count == 1 ? "pago" : "pagos")</span>
-                </div>
-                <div class="payment-history-body">
-                <FiltrosHistorial Id="historial-pagos" Modelo="Filtros" MostrarBusqueda="false"
-                                  Ocupado="@(CargandoHistorial || CargandoCliente || Registrando || RevisandoPago)"
-                                  OnAplicar="AplicarFiltrosAsync" OnLimpiar="LimpiarFiltrosAsync" />
-                <p class="field-help">El filtro solo limita el historial. El saldo actual incluye todas las operaciones.</p>
-                @if (ErrorHistorial is not null)
-                {
-                    <p class="mensaje-error" role="alert">@ErrorHistorial</p>
-                }
-                else if (CargandoHistorial)
-                {
-                    <p role="status">Consultando historial...</p>
-                }
-                else if (Historial.Count == 0)
-                {
-                    <div class="empty-state payment-history-empty">
-                        <h3>@(Filtros.Activo ? "No hay pagos en este período" : "Aún no hay pagos")</h3>
-                        <p>Los abonos registrados para este cliente aparecerán aquí.</p>
-                    </div>
-                }
-                else
-                {
-                    <div class="desktop-table payment-desktop-table">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th scope="col">Fecha</th>
-                                    <th scope="col" class="numeric-cell">Monto</th>
-                                    <th scope="col">Método</th>
-                                    <th scope="col">Referencia</th>
-                                    <th scope="col">Observaciones</th>
-                                </tr>
-                            </thead>
-                            @foreach (var grupo in Grupos)
-                            {
-                            <tbody>
-                                <tr class="history-month-row"><th scope="rowgroup" colspan="5"><button class="history-month-toggle" type="button" aria-expanded="@Meses.Abierto(grupo.Anio, grupo.Mes)" @onclick="() => Meses.Alternar(grupo.Anio, grupo.Mes)"><span aria-hidden="true">@(Meses.Abierto(grupo.Anio, grupo.Mes) ? "▼" : "▶")</span> @grupo.Titulo</button></th></tr>
-                                @foreach (var pago in Meses.Abierto(grupo.Anio, grupo.Mes) ? grupo.Registros : Array.Empty<PagoDto>())
-                                {
-                                    <tr>
-                                        <td>@pago.Fecha.ToString("dd/MM/yyyy")</td>
-                                        <td class="numeric-cell"><span class="transaction-amount">@ClientePresentacion.Moneda(pago.Monto)</span></td>
-                                        <td>@PagoPresentacion.Metodo(pago.MetodoPago)</td>
-                                        <td>@(pago.Referencia ?? "—")</td>
-                                        <td>@(pago.Observaciones ?? "—")</td>
-                                    </tr>
-                                }
-                            </tbody>
-                            }
-                        </table>
-                    </div>
-                    <div class="mobile-card-list payment-mobile-cards">
-                        @foreach (var grupo in Grupos)
-                        {
-                        <h3 class="history-month-title"><button class="history-month-toggle" type="button" aria-expanded="@Meses.Abierto(grupo.Anio, grupo.Mes)" @onclick="() => Meses.Alternar(grupo.Anio, grupo.Mes)"><span aria-hidden="true">@(Meses.Abierto(grupo.Anio, grupo.Mes) ? "▼" : "▶")</span> @grupo.Titulo</button></h3>
-                        @foreach (var pago in Meses.Abierto(grupo.Anio, grupo.Mes) ? grupo.Registros : Array.Empty<PagoDto>())
-                        {
-                            <article class="entity-card payment-card">
-                                <div class="entity-card-heading">
-                                    <div>
-                                        <h3>@PagoPresentacion.Metodo(pago.MetodoPago)</h3>
-                                        <p class="entity-card-subtitle">@pago.Fecha.ToString("dd/MM/yyyy")</p>
-                                    </div>
-                                    <strong class="transaction-amount">@ClientePresentacion.Moneda(pago.Monto)</strong>
-                                </div>
-                                <dl class="sale-detail-values">
-                                    <div><dt>Referencia</dt><dd>@(pago.Referencia ?? "—")</dd></div>
-                                    <div><dt>Observaciones</dt><dd>@(pago.Observaciones ?? "—")</dd></div>
-                                </dl>
-                            </article>
-                        }
-                        }
-                    </div>
-                }
+        <section class="ui-card min-w-0 p-5 sm:p-6" aria-label="Buscar cliente para registrar abono">
+            <ClienteBuscador Seleccionado="ClienteSeleccionado" Deshabilitado="@(CargandoCliente || CargandoHistorial || Registrando || RevisandoPago)"
+                             OnSeleccionado="SeleccionarClienteAsync" />
+        </section>
+
+        @if (ClienteSeleccionado is null)
+        {
+            <section class="empty-state ui-card min-w-0 p-6 text-center text-ui-muted sm:p-8" aria-labelledby="titulo-sin-clientes-pago">
+                <div class="grid min-w-0 justify-items-center gap-4">
+                    <span class="inline-flex size-12 items-center justify-center rounded-2xl bg-ui-accent/10 text-ui-accent" aria-hidden="true"><NavIcon Name="users" /></span>
+                    <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-sin-clientes-pago">Busca y selecciona un cliente</h2>
+                    <p class="m-0 max-w-md text-sm leading-6 text-ui-muted">Consulta su saldo antes de registrar un abono. Si aún no existe, regístralo desde Clientes.</p>
+                    <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/clientes">Ir a clientes</a>
                 </div>
             </section>
-        </section>
-    }
-}
+        }
+        else if (CargandoCliente)
+        {
+            <div class="ui-card flex items-center gap-3 p-6 text-sm text-ui-muted" role="status" aria-live="polite">
+                <span class="size-5 shrink-0 rounded-full border-[3px] border-solid border-ui-accent/20 border-t-ui-accent motion-safe:animate-spin" aria-hidden="true"></span>
+                Consultando saldo e historial...
+            </div>
+        }
+        else if (ClienteSeleccionado is not null && SaldoActual.HasValue)
+        {
+            <section class="grid min-w-0 items-start gap-6 xl:grid-cols-[minmax(0,.95fr)_minmax(0,1.05fr)]">
+                <div class="grid min-w-0 gap-4">
+                    <article class="ui-card grid min-w-0 gap-3 p-5 sm:p-6" aria-labelledby="titulo-saldo-cliente">
+                        <p class="m-0 text-xs font-semibold tracking-wide text-ui-muted uppercase">Saldo actual</p>
+                        <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink [overflow-wrap:anywhere]" id="titulo-saldo-cliente">@ClientePresentacion.NombreCompleto(ClienteSeleccionado)</h2>
+                        <p class="m-0 text-3xl font-bold tracking-tight text-ui-ink tabular-nums [overflow-wrap:anywhere] sm:text-4xl">@ClientePresentacion.Moneda(SaldoActual.Value)</p>
+                        <p class="m-0 text-sm leading-6 text-ui-muted">El pago reducirá la deuda global del cliente; no se asigna a una venta específica.</p>
+                    </article>
 
-@if (RevisandoPago && ClienteSeleccionado is not null && SaldoActual.HasValue)
-{
-    <ConfirmacionOperacion Titulo="Revisar abono" TextoConfirmar="Confirmar abono" Ocupado="Registrando"
-                           Error="@ErrorOperacion" OnEditar="EditarPago" OnConfirmar="ConfirmarPagoAsync">
-        <p><strong>@ClientePresentacion.NombreCompleto(ClienteSeleccionado)</strong></p>
-        <dl>
-            <dt>Saldo actual</dt><dd>@ClientePresentacion.Moneda(SaldoActual.Value)</dd>
-            <dt>Monto del abono</dt><dd>@ClientePresentacion.Moneda(Modelo.Monto)</dd>
-            <dt>Saldo después del abono</dt><dd>@ClientePresentacion.Moneda(SaldoActual.Value - Modelo.Monto)</dd>
-            <dt>Fecha</dt><dd>@Modelo.Fecha.ToString("dd/MM/yyyy")</dd>
-            <dt>Método</dt><dd>@PagoPresentacion.Metodo(Modelo.MetodoPago)</dd>
-            <dt>Referencia</dt><dd>@(Modelo.Referencia ?? "Sin referencia")</dd>
-        </dl>
-        <p>El sistema volverá a validar el saldo al confirmar.</p>
-    </ConfirmacionOperacion>
-}
+                    <section class="ui-card grid min-w-0 gap-5 p-5 sm:p-6" aria-labelledby="titulo-registrar-pago">
+                        <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-registrar-pago">Registrar pago o abono</h2>
+                        <EditForm Model="Modelo" OnValidSubmit="RevisarPago" class="rm-payment-form grid min-w-0 gap-5">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary class="rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger empty:hidden [&_ul]:m-0 [&_ul]:pl-5" role="alert" />
+                            <div class="grid min-w-0 gap-5 sm:grid-cols-2">
+                                <div class="grid min-w-0 gap-2">
+                                    <label class="text-sm font-medium" for="pago-fecha">Fecha <span aria-hidden="true">*</span></label>
+                                    <InputDate class="ui-input" id="pago-fecha" @bind-Value="Modelo.Fecha" />
+                                </div>
+                                <div class="grid min-w-0 gap-2">
+                                    <label class="text-sm font-medium" for="pago-monto">Monto <span aria-hidden="true">*</span></label>
+                                    <InputNumber class="ui-input" inputmode="decimal" data-select-once="true" id="pago-monto" @bind-Value="Modelo.Monto" min="0.01" step="0.01" aria-describedby="pago-monto-error pago-monto-maximo" />
+                                    <ValidationMessage id="pago-monto-error" For="() => Modelo.Monto" />
+                                    <p class="m-0 text-sm leading-6 text-ui-muted [overflow-wrap:anywhere]" id="pago-monto-maximo">Máximo disponible: @ClientePresentacion.Moneda(SaldoActual.Value)</p>
+                                </div>
+                                <div class="grid min-w-0 gap-2">
+                                    <label class="text-sm font-medium" for="pago-metodo">Método de pago <span aria-hidden="true">*</span></label>
+                                    <InputSelect class="ui-input" id="pago-metodo" @bind-Value="Modelo.MetodoPago">
+                                        @foreach (var metodo in Enum.GetValues<MetodoPago>())
+                                        {
+                                            <option value="@metodo">@PagoPresentacion.Metodo(metodo)</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                                <div class="grid min-w-0 gap-2">
+                                    <label class="text-sm font-medium" for="pago-referencia">Referencia</label>
+                                    <InputText class="ui-input" id="pago-referencia" @bind-Value="Modelo.Referencia" autocomplete="off" aria-describedby="pago-referencia-error" />
+                                    <ValidationMessage id="pago-referencia-error" For="() => Modelo.Referencia" />
+                                </div>
+                                <div class="grid min-w-0 gap-2 sm:col-span-2">
+                                    <label class="text-sm font-medium" for="pago-observaciones">Observaciones</label>
+                                    <InputTextArea class="ui-input min-h-28 resize-y" id="pago-observaciones" @bind-Value="Modelo.Observaciones" rows="3" aria-describedby="pago-observaciones-error" />
+                                    <ValidationMessage id="pago-observaciones-error" For="() => Modelo.Observaciones" />
+                                </div>
+                            </div>
+                            <div class="grid gap-3 sm:flex sm:flex-wrap">
+                                <button class="ui-button w-full bg-ui-accent text-white hover:bg-ui-accent-hover sm:w-auto" type="submit" disabled="@(Registrando || CargandoHistorial || SaldoActual.Value <= 0)">
+                                    @(Registrando ? "Registrando..." : "Revisar abono")
+                                </button>
+                            </div>
+                        </EditForm>
+                        @if (SaldoActual.Value <= 0)
+                        {
+                            <p class="m-0 rounded-2xl border border-solid border-ui-success/20 bg-ui-success/5 p-4 text-sm leading-6 text-ui-success" role="status">Este cliente no tiene deuda pendiente. No necesita registrar otro pago.</p>
+                        }
+                    </section>
+                </div>
+
+                <section class="ui-card grid min-w-0 gap-5 p-5 sm:p-6" aria-labelledby="titulo-historial-pagos">
+                    <div class="flex min-w-0 flex-wrap items-start justify-between gap-2">
+                        <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-historial-pagos">Historial de pagos</h2>
+                        <span class="rounded-full bg-ui-canvas px-3 py-1 text-xs font-semibold leading-5 text-ui-muted">@Historial.Count @(Historial.Count == 1 ? "pago" : "pagos")</span>
+                    </div>
+                    <div class="grid min-w-0 gap-3">
+                        <FiltrosHistorial Id="historial-pagos" Modelo="Filtros" MostrarBusqueda="false"
+                                          Ocupado="@(CargandoHistorial || CargandoCliente || Registrando || RevisandoPago)"
+                                          OnAplicar="AplicarFiltrosAsync" OnLimpiar="LimpiarFiltrosAsync" />
+                        <p class="m-0 text-sm leading-6 text-ui-muted">El filtro solo limita el historial. El saldo actual incluye todas las operaciones.</p>
+                    </div>
+                    @if (ErrorHistorial is not null)
+                    {
+                        <p class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger m-0" role="alert">@ErrorHistorial</p>
+                    }
+                    else if (CargandoHistorial)
+                    {
+                        <div class="flex items-center gap-3 text-sm text-ui-muted" role="status" aria-live="polite">
+                            <span class="size-5 shrink-0 rounded-full border-[3px] border-solid border-ui-accent/20 border-t-ui-accent motion-safe:animate-spin" aria-hidden="true"></span>
+                            Consultando historial...
+                        </div>
+                    }
+                    else if (Historial.Count == 0)
+                    {
+                        <div class="grid min-w-0 justify-items-center gap-3 rounded-2xl bg-ui-canvas p-5 text-center">
+                            <h3 class="m-0 text-base font-semibold text-ui-ink">@(Filtros.Activo ? "No hay pagos en este período" : "Aún no hay pagos")</h3>
+                            <p class="m-0 max-w-md text-sm leading-6 text-ui-muted">Los abonos registrados para este cliente aparecerán aquí.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="grid min-w-0 gap-4">
+                            @foreach (var grupo in Grupos)
+                            {
+                                <section class="grid min-w-0 gap-3" aria-label="@grupo.Titulo">
+                                    <h3 class="m-0">
+                                        <button class="ui-button w-full justify-between border-ui-border bg-ui-canvas text-left text-ui-ink hover:bg-white" type="button"
+                                                aria-expanded="@(Meses.Abierto(grupo.Anio, grupo.Mes) ? "true" : "false")" @onclick="() => Meses.Alternar(grupo.Anio, grupo.Mes)">
+                                            <span class="min-w-0 [overflow-wrap:anywhere]">@grupo.Titulo</span>
+                                            <svg class="size-5 shrink-0 @(Meses.Abierto(grupo.Anio, grupo.Mes) ?"rotate-90" : "")" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7" /></svg>
+                                        </button>
+                                    </h3>
+                                    <ul class="payment-desktop-table payment-mobile-cards m-0 grid min-w-0 list-none gap-3 pl-0" role="list">
+                                        @foreach (var pago in Meses.Abierto(grupo.Anio, grupo.Mes) ? grupo.Registros : Array.Empty<PagoDto>())
+                                        {
+                                            <li class="min-w-0">
+                                                <article class="grid min-w-0 gap-3 rounded-2xl border border-solid border-ui-border p-4">
+                                                    <div class="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+                                                        <div class="min-w-0 space-y-1">
+                                                            <p class="m-0 text-xl font-semibold tracking-tight text-ui-accent tabular-nums [overflow-wrap:anywhere]">@ClientePresentacion.Moneda(pago.Monto)</p>
+                                                            <time class="block text-xs leading-5 text-ui-muted" datetime="@pago.Fecha.ToString("yyyy-MM-dd")">@pago.Fecha.ToString("dd/MM/yyyy")</time>
+                                                        </div>
+                                                        <span class="inline-flex items-center rounded-full bg-ui-warning/5 px-3 py-1 text-xs font-semibold leading-5 text-ui-warning status-badge-payment justify-self-start sm:justify-self-end">@PagoPresentacion.Metodo(pago.MetodoPago)</span>
+                                                    </div>
+                                                    <dl class="m-0 grid min-w-0 gap-3 text-sm leading-6">
+                                                        <div class="grid min-w-0 gap-1 sm:grid-cols-[6rem_minmax(0,1fr)] sm:gap-3">
+                                                            <dt class="text-ui-muted">Referencia</dt>
+                                                            <dd class="m-0 min-w-0 [overflow-wrap:anywhere] @(pago.Referencia is null ?"text-ui-muted" : "text-ui-ink")">@(pago.Referencia ?? "—")</dd>
+                                                        </div>
+                                                        <div class="grid min-w-0 gap-1 sm:grid-cols-[6rem_minmax(0,1fr)] sm:gap-3">
+                                                            <dt class="text-ui-muted">Observaciones</dt>
+                                                            <dd class="m-0 min-w-0 whitespace-pre-line [overflow-wrap:anywhere] @(pago.Observaciones is null ?"text-ui-muted" : "text-ui-ink")">@(pago.Observaciones ?? "—")</dd>
+                                                        </div>
+                                                    </dl>
+                                                </article>
+                                            </li>
+                                        }
+                                    </ul>
+                                </section>
+                            }
+                        </div>
+                    }
+                </section>
+            </section>
+        }
+    }
+
+    @if (RevisandoPago && ClienteSeleccionado is not null && SaldoActual.HasValue)
+    {
+        <ConfirmacionOperacion Titulo="Revisar abono" TextoConfirmar="Confirmar abono" Ocupado="Registrando"
+                               Error="@ErrorOperacion" OnEditar="EditarPago" OnConfirmar="ConfirmarPagoAsync">
+            <div class="rm-payment-review grid min-w-0 gap-4">
+                <p class="m-0 text-base font-semibold text-ui-ink [overflow-wrap:anywhere]">@ClientePresentacion.NombreCompleto(ClienteSeleccionado)</p>
+                <dl class="m-0 grid min-w-0 gap-3 sm:grid-cols-3">
+                    <div class="grid min-w-0 gap-2 rounded-2xl border border-solid border-ui-border bg-ui-canvas p-4">
+                        <dt class="text-xs font-semibold leading-5 text-ui-muted">Saldo actual</dt>
+                        <dd class="m-0 text-xl font-semibold tracking-tight text-ui-ink tabular-nums [overflow-wrap:anywhere]">@ClientePresentacion.Moneda(SaldoActual.Value)</dd>
+                    </div>
+                    <div class="grid min-w-0 gap-2 rounded-2xl border border-solid border-ui-accent/20 bg-ui-accent/5 p-4">
+                        <dt class="text-xs font-semibold leading-5 text-ui-accent">Monto del abono</dt>
+                        <dd class="m-0 text-xl font-semibold tracking-tight text-ui-accent tabular-nums [overflow-wrap:anywhere]">@ClientePresentacion.Moneda(Modelo.Monto)</dd>
+                    </div>
+                    <div class="grid min-w-0 gap-2 rounded-2xl border border-solid border-ui-success/20 bg-ui-success/5 p-4">
+                        <dt class="text-xs font-semibold leading-5 text-ui-success">Saldo después del abono</dt>
+                        <dd class="m-0 text-xl font-semibold tracking-tight text-ui-success tabular-nums [overflow-wrap:anywhere]">@ClientePresentacion.Moneda(SaldoActual.Value - Modelo.Monto)</dd>
+                    </div>
+                </dl>
+                <dl class="m-0 grid min-w-0 gap-3 text-sm leading-6 sm:grid-cols-2">
+                    <div class="grid min-w-0 gap-1">
+                        <dt class="text-ui-muted">Fecha</dt><dd class="m-0 text-ui-ink">@Modelo.Fecha.ToString("dd/MM/yyyy")</dd>
+                    </div>
+                    <div class="grid min-w-0 gap-1">
+                        <dt class="text-ui-muted">Método</dt><dd class="m-0 text-ui-ink">@PagoPresentacion.Metodo(Modelo.MetodoPago)</dd>
+                    </div>
+                    <div class="grid min-w-0 gap-1 sm:col-span-2">
+                        <dt class="text-ui-muted">Referencia</dt><dd class="m-0 text-ui-ink [overflow-wrap:anywhere]">@(Modelo.Referencia ?? "Sin referencia")</dd>
+                    </div>
+                </dl>
+                <p class="m-0 text-sm leading-6 text-ui-muted">El sistema volverá a validar el saldo al confirmar.</p>
+            </div>
+        </ConfirmacionOperacion>
+    }
+</div>
 
 @code {
     [SupplyParameterFromQuery(Name = "desde")] public string? DesdeConsulta { get; set; }

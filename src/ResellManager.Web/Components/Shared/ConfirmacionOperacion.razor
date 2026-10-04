@@ -1,17 +1,18 @@
 @implements IAsyncDisposable
 @inject IJSRuntime JS
 
-<dialog class="operation-review" @ref="Dialogo" aria-labelledby="@TituloId"
+<dialog class="operation-review ui-card box-border m-auto min-w-0 w-[min(38rem,calc(100%_-_2rem))] max-w-[calc(100%_-_2rem)] max-h-[calc(100dvh_-_2rem)] overflow-y-auto p-5 text-ui-ink shadow-ui-sheet backdrop:bg-ui-ink/40 sm:p-6"
+        @ref="Dialogo" aria-labelledby="@TituloId"
         aria-busy="@Bloqueado.ToString().ToLowerInvariant()" data-ocupado="@Bloqueado.ToString().ToLowerInvariant()">
-    <h2 id="@TituloId">@Titulo</h2>
-    <div class="operation-review-content">@ChildContent</div>
+    <h2 class="m-0 mb-4 text-xl font-semibold tracking-tight text-ui-ink [overflow-wrap:anywhere]" id="@TituloId">@Titulo</h2>
+    <div class="operation-review-content grid min-w-0 gap-3 text-sm leading-6 [overflow-wrap:anywhere]">@ChildContent</div>
     @if (!string.IsNullOrWhiteSpace(Error))
     {
-        <p class="mensaje-error" role="alert">@Error</p>
+        <p class="mensaje-error m-0 mt-4 rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger [overflow-wrap:anywhere]" role="alert">@Error</p>
     }
-    <div class="form-actions operation-review-actions">
-        <button class="secondary-button" type="button" disabled="@Bloqueado" @onclick="EditarAsync">@TextoEditar</button>
-        <button class="primary-button" type="button" disabled="@Bloqueado" @onclick="ConfirmarAsync">
+    <div class="mt-5 grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
+        <button class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" type="button" disabled="@Bloqueado" @onclick="EditarAsync">@TextoEditar</button>
+        <button class="rm-operation-confirm ui-button bg-ui-accent text-white hover:bg-ui-accent-hover" type="button" disabled="@Bloqueado" @onclick="ConfirmarAsync">
             @(Bloqueado ? "Procesando..." : TextoConfirmar)
         </button>
     </div>

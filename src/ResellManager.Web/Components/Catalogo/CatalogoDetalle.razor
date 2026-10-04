@@ -1,0 +1,73 @@
+@page "/catalogo/{ProductoId:int}"
+@attribute [AllowAnonymous]
+@layout CatalogoLayout
+@rendermode InteractiveServer
+@implements IDisposable
+@inject ICatalogoPublicoClient Cliente
+@inject ILogger<CatalogoDetalle> Logger
+
+<PageTitle>@(Producto?.Nombre ?? "Producto") | Virtuosa Store</PageTitle>
+<CatalogoDetalleVista Producto="Producto" Cargando="Cargando" NoDisponible="NoDisponible" Error="@Error" OnReintentar="CargarAsync" />
+
+@code {
+    [Parameter] public int ProductoId { get; set; }
+    private ProductoCatalogoDetalleDto? Producto { get; set; }
+    private bool Cargando { get; set; } = true;
+    private bool NoDisponible { get; set; }
+    private string? Error { get; set; }
+    private int? Anterior;
+    private bool Pendiente;
+    private bool Descartado;
+    private CancellationTokenSource? Solicitud;
+
+    protected override void OnParametersSet()
+    {
+        if (Anterior == ProductoId) return;
+        Anterior = ProductoId;
+        Solicitud?.Cancel();
+        Producto = null;
+        Cargando = true;
+        NoDisponible = false;
+        Error = null;
+        Pendiente = true;
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!Pendiente) return;
+        Pendiente = false;
+        await CargarAsync();
+        if (!Descartado) StateHasChanged();
+    }
+    private async Task CargarAsync()
+    {
+        if (Descartado) return;
+        Solicitud?.Cancel();
+        using var actual = new CancellationTokenSource();
+        Solicitud = actual;
+        Cargando = true;
+        Error = null;
+        NoDisponible = false;
+        try
+        {
+            var encontrado = await Cliente.ObtenerDetalleAsync(ProductoId, actual.Token);
+            actual.Token.ThrowIfCancellationRequested();
+            Producto = encontrado;
+            NoDisponible = encontrado is null;
+        }
+        catch (OperationCanceledException) when (actual.IsCancellationRequested) { }
+        catch (Exception ex)
+        {
+            if (!actual.IsCancellationRequested)
+            {
+                Logger.LogError(ex, "No fue posible consultar el detalle público del producto {ProductoId}.", ProductoId);
+                Producto = null;
+                Error = "No pudimos abrir el producto. Intenta de nuevo en un momento.";
+            }
+        }
+        finally
+        {
+            if (ReferenceEquals(Solicitud, actual)) { Solicitud = null; Cargando = false; }
+        }
+    }
+    public void Dispose() { Descartado = true; Solicitud?.Cancel(); }
+}

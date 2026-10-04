@@ -1,23 +1,42 @@
 @inject IServiceScopeFactory Scopes
 @inject ILogger<PendientesCliente> Logger
-<section class="form-panel" aria-labelledby="titulo-pendientes-cliente">
-    <h2 id="titulo-pendientes-cliente"><button type="button" class="history-month-toggle" aria-expanded="@Abierta" @onclick="() => Abierta = !Abierta"><span aria-hidden="true">@(Abierta ? "▼" : "▶")</span> Reservas y entregas pendientes (@Unidades.Count)</button></h2>
-    @if (Cargando) { <p role="status">Consultando unidades...</p> }
-    else if (Error is not null) { <p class="mensaje-error" role="alert">@Error</p><button class="secondary-button" @onclick="CargarAsync">Reintentar</button> }
-    else if (Abierta && Unidades.Count == 0) { <p>No hay reservas ni entregas físicas pendientes.</p> }
+
+<section class="ui-card grid min-w-0 gap-4 p-4 sm:p-5" aria-labelledby="titulo-pendientes-cliente">
+    <h2 class="m-0" id="titulo-pendientes-cliente">
+        <button type="button" class="ui-button w-full justify-between border-ui-border bg-ui-canvas text-left text-base text-ui-ink hover:bg-ui-accent/5" aria-expanded="@(Abierta ? "true" : "false")" @onclick="() => Abierta = !Abierta">
+            <span class="min-w-0 [overflow-wrap:anywhere]">Reservas y entregas pendientes (@Unidades.Count)</span>
+            <svg class="size-5 shrink-0 text-ui-muted transition-transform duration-150 motion-reduce:transition-none @(Abierta ?"rotate-90" : "")" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7" /></svg>
+        </button>
+    </h2>
+    @if (Cargando)
+    {
+        <p class="m-0 px-1 text-sm leading-6 text-ui-muted" role="status">Consultando unidades...</p>
+    }
+    else if (Error is not null)
+    {
+        <p class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger" role="alert">@Error</p>
+        <button class="ui-button justify-self-start border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" @onclick="CargarAsync">Reintentar</button>
+    }
+    else if (Abierta && Unidades.Count == 0)
+    {
+        <p class="m-0 px-1 text-sm leading-6 text-ui-muted">No hay reservas ni entregas físicas pendientes.</p>
+    }
     else if (Abierta)
     {
-        @foreach (var unidad in Unidades)
-        {
-            <article class="order-line-editor">
-                <h3>@unidad.Producto</h3>
-                <p class="code-value">@unidad.CodigoUnidad</p>
-                <p>@InventarioPresentacion.Estado(unidad.Estado) · @(unidad.PendienteEntrega ? "Pendiente de entrega" : "Reservada")</p>
-                <a class="contact-link" href="/pedidos/@unidad.PedidoId">Ver pedido @unidad.CodigoPedido</a>
-            </article>
-        }
+        <div class="grid min-w-0 gap-3 sm:grid-cols-2">
+            @foreach (var unidad in Unidades)
+            {
+                <article class="grid min-w-0 content-start gap-2 rounded-2xl border border-solid border-ui-border p-4">
+                    <h3 class="m-0 text-base font-semibold leading-6 text-ui-ink [overflow-wrap:anywhere]">@unidad.Producto</h3>
+                    <p class="m-0 text-xs leading-5 text-ui-muted"><span class="inline-block max-w-full font-mono break-all">@unidad.CodigoUnidad</span></p>
+                    <p class="m-0 text-sm leading-6 text-ui-muted">@InventarioPresentacion.Estado(unidad.Estado) · @(unidad.PendienteEntrega ? "Pendiente de entrega" : "Reservada")</p>
+                    <a class="ui-button mt-1 border-ui-control bg-white text-ui-ink [overflow-wrap:anywhere] hover:bg-ui-canvas" href="/pedidos/@unidad.PedidoId">Ver pedido @unidad.CodigoPedido</a>
+                </article>
+            }
+        </div>
     }
 </section>
+
 @code {
     [Parameter] public int ClienteId { get; set; }
     private int? Cargado;

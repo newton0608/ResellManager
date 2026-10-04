@@ -1,167 +1,197 @@
-<EditForm Model="Modelo" OnValidSubmit="GuardarAsync" class="entity-form">
+<EditForm Model="Modelo" OnValidSubmit="GuardarAsync" class="entity-form grid min-w-0 gap-6">
     <DataAnnotationsValidator />
 
     @if (!string.IsNullOrWhiteSpace(ErrorMessage))
     {
-        <div class="mensaje-error" role="alert">@ErrorMessage</div>
+        <div class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger" role="alert">@ErrorMessage</div>
     }
 
     @if (Categorias.Count == 0)
     {
-        <div class="catalog-warning" role="status">
+        <div class="ui-card grid gap-3 border-ui-warning/20 bg-ui-warning/5 p-5 text-sm leading-6 text-ui-warning sm:p-6" role="status">
             <div>
                 <strong>No hay categorías disponibles.</strong>
-                <p>Crea una categoría antes de registrar un producto.</p>
+                <p class="mt-1 mb-0">Crea una categoría antes de registrar un producto.</p>
             </div>
-            <a class="secondary-button" href="/categorias"
-               target="@(CategoriasEnOtraPestana ? "_blank" : null)" rel="@(CategoriasEnOtraPestana ? "noopener" : null)">Ir a categorías</a>
+            <a class="ui-button justify-self-start border-ui-control bg-white text-ui-ink hover:bg-ui-canvas"
+               target="@(CategoriasEnOtraPestana ? "_blank" : null)" rel="@(CategoriasEnOtraPestana ? "noopener" : null)" href="/categorias">Ir a categorías</a>
             @if (CategoriasEnOtraPestana)
             {
-                <p>Se abrirá otra pestaña. Conserva esta compra abierta y después actualiza las categorías.</p>
+                <p class="m-0">Se abrirá otra pestaña. Conserva esta compra abierta y después actualiza las categorías.</p>
             }
         </div>
     }
 
-    <ValidationSummary class="validation-summary" role="alert" />
+    <ValidationSummary class="rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger empty:hidden [&_ul]:m-0 [&_ul]:pl-5" role="alert" />
 
-    <div class="form-grid">
-        <div class="form-field">
-            <label for="producto-codigo-barras">Código de barras</label>
-            <div class="barcode-input-row">
-                <InputText disabled="@Guardando" aria-describedby="producto-codigo-barras-validacion" id="producto-codigo-barras" @bind-Value="Modelo.CodigoBarras" inputmode="numeric" autocomplete="off" />
-                <BarcodeScanner Disabled="@Guardando" OnDetected="CodigoEscaneado" />
-            </div>
-            <div id="producto-codigo-barras-validacion"><ValidationMessage For="() => Modelo.CodigoBarras" /></div>
-        </div>
-
-        <div class="form-field form-field-wide">
-            <label for="producto-nombre">Nombre <span aria-hidden="true">*</span></label>
-            <InputText disabled="@Guardando" aria-describedby="producto-nombre-validacion" aria-required="true" id="producto-nombre" @bind-Value="Modelo.Nombre" autocomplete="off" />
-            <div id="producto-nombre-validacion"><ValidationMessage For="() => Modelo.Nombre" /></div>
-        </div>
-
-        <div class="form-field form-field-wide">
-            <label for="producto-descripcion">Descripción</label>
-            <InputTextArea disabled="@Guardando" aria-describedby="producto-descripcion-validacion" id="producto-descripcion" @bind-Value="Modelo.Descripcion" rows="3" />
-            <div id="producto-descripcion-validacion"><ValidationMessage For="() => Modelo.Descripcion" /></div>
-        </div>
-
-        <div class="form-field">
-            <label for="producto-marca">Marca</label>
-            <InputText disabled="@Guardando" aria-describedby="producto-marca-validacion" id="producto-marca" @bind-Value="Modelo.Marca" autocomplete="off" />
-            <div id="producto-marca-validacion"><ValidationMessage For="() => Modelo.Marca" /></div>
-        </div>
-
-        <div class="form-field">
-            <label for="producto-modelo">Modelo</label>
-            <InputText disabled="@Guardando" aria-describedby="producto-modelo-validacion" id="producto-modelo" @bind-Value="Modelo.Modelo" autocomplete="off" />
-            <div id="producto-modelo-validacion"><ValidationMessage For="() => Modelo.Modelo" /></div>
-        </div>
-
-        <div class="form-field">
-            <label for="producto-color">Color</label>
-            <InputText disabled="@Guardando" aria-describedby="producto-color-validacion" id="producto-color" @bind-Value="Modelo.Color" autocomplete="off" />
-            <div id="producto-color-validacion"><ValidationMessage For="() => Modelo.Color" /></div>
-        </div>
-
-        <div class="form-field">
-            <label for="producto-talla">Talla</label>
-            <InputText disabled="@Guardando" aria-describedby="producto-talla-validacion" id="producto-talla" @bind-Value="Modelo.Talla" autocomplete="off" />
-            <div id="producto-talla-validacion"><ValidationMessage For="() => Modelo.Talla" /></div>
-        </div>
-
-        <div class="form-field">
-            <label for="producto-precio-sugerido">Precio sugerido <span aria-hidden="true">*</span></label>
-            <InputNumber inputmode="decimal" data-select-once="true" disabled="@Guardando" aria-describedby="producto-precio-sugerido-validacion" aria-required="true" id="producto-precio-sugerido" @bind-Value="Modelo.PrecioSugerido" min="0" step="0.01" />
-            <div id="producto-precio-sugerido-validacion"><ValidationMessage For="() => Modelo.PrecioSugerido" /></div>
-            <p class="field-help">Valor de referencia; el precio final se define al vender.</p>
-        </div>
-
-        <div class="form-field">
-            <label for="producto-categoria">Categoría <span aria-hidden="true">*</span></label>
-            <InputSelect aria-describedby="producto-categoria-validacion" aria-required="true" id="producto-categoria" @bind-Value="Modelo.CategoriaId" disabled="@(Guardando || Categorias.Count == 0)">
-                <option value="0">Selecciona una categoría</option>
-                @foreach (var categoria in Categorias)
-                {
-                    <option value="@categoria.Id">@categoria.Nombre</option>
-                }
-            </InputSelect>
-            <div id="producto-categoria-validacion"><ValidationMessage For="() => Modelo.CategoriaId" /></div>
-        </div>
-        <div class="form-field">
-            <label for="producto-volumen">Volumen</label>
-            <div class="product-measure-row">
-                <input id="producto-volumen" type="number" inputmode="decimal" min="0" step="any"
-                       disabled="@(Guardando || Modelo.Peso.HasValue)" aria-describedby="producto-volumen-validacion producto-medidas-ayuda"
-                       @bind="Modelo.Volumen" @bind:event="oninput" />
-                <select aria-label="Unidad de volumen" disabled="@(Guardando || Modelo.Peso.HasValue)"
-                        @bind="Modelo.VolumenUnidad">
-                    <option value="@UnidadVolumen.Ml">ml</option>
-                    <option value="@UnidadVolumen.L">L</option>
-                </select>
-            </div>
-            <div id="producto-volumen-validacion"><ValidationMessage For="() => Modelo.Volumen" /></div>
-        </div>
-
-        <div class="form-field">
-            <label for="producto-peso">Peso</label>
-            <div class="product-measure-row">
-                <input id="producto-peso" type="number" inputmode="decimal" min="0" step="any"
-                       disabled="@(Guardando || Modelo.Volumen.HasValue)" aria-describedby="producto-peso-validacion producto-medidas-ayuda"
-                       @bind="Modelo.Peso" @bind:event="oninput" />
-                <select aria-label="Unidad de peso" disabled="@(Guardando || Modelo.Volumen.HasValue)"
-                        @bind="Modelo.PesoUnidad">
-                    <option value="@UnidadPeso.G">g</option>
-                    <option value="@UnidadPeso.Kg">kg</option>
-                    <option value="@UnidadPeso.Lb">lb</option>
-                </select>
-            </div>
-            <div id="producto-peso-validacion"><ValidationMessage For="() => Modelo.Peso" /></div>
-        </div>
-
-        <p id="producto-medidas-ayuda" class="field-help form-field-wide">Indica volumen o peso, nunca ambos. Deja la medida vacía para habilitar la otra.</p>
-
-        <div class="form-field form-field-wide">
-            <label for="producto-presentacion">Presentación</label>
-            <InputText disabled="@Guardando" aria-describedby="producto-presentacion-validacion" id="producto-presentacion"
-                       @bind-Value="Modelo.Presentacion" maxlength="100" autocomplete="off" />
-            <div id="producto-presentacion-validacion"><ValidationMessage For="() => Modelo.Presentacion" /></div>
-        </div>
-        <div class="form-field form-field-wide">
-            <label for="producto-imagen">Imagen principal (opcional)</label>
-            <InputFile @key="VersionSelectorImagen" id="producto-imagen"
-                       OnChange="SeleccionarImagenAsync"
-                       accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
-                       disabled="@Guardando" />
-            <p class="field-help">JPEG, PNG o WebP; máximo 8 MB. En móvil puedes elegir cámara o galería.</p>
-            @if (!string.IsNullOrWhiteSpace(ErrorImagen))
-            {
-                <p class="mensaje-error" role="alert">@ErrorImagen</p>
-            }
-            @if (VistaPrevia is not null || (Modelo.ImagenPrincipalRuta is not null && !Modelo.EliminarImagenPrincipal))
-            {
-                <div class="product-image-preview" style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;margin-top:0.75rem">
-                    <img src="@(VistaPrevia ?? $"/productos/{ProductoId}/imagen")" alt="Vista previa de la imagen principal" style="width:120px;height:120px;object-fit:contain;border-radius:0.5rem" />
-                    <button class="secondary-button" type="button" disabled="@Guardando"
-                            @onclick="QuitarImagen">Eliminar imagen</button>
+    <div class="grid min-w-0 items-start gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+        <div class="grid min-w-0 gap-4">
+            <section class="ui-card grid min-w-0 gap-5 p-5 sm:p-6" aria-labelledby="producto-datos-titulo">
+                <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="producto-datos-titulo">Datos del producto</h2>
+                <div class="grid min-w-0 gap-2">
+                    <label class="text-sm font-medium" for="producto-nombre">Nombre <span aria-hidden="true">*</span></label>
+                    <InputText class="ui-input" disabled="@Guardando" aria-describedby="producto-nombre-validacion" aria-required="true" id="producto-nombre" @bind-Value="Modelo.Nombre" autocomplete="off" />
+                    <div class="empty:hidden" id="producto-nombre-validacion"><ValidationMessage For="() => Modelo.Nombre" /></div>
                 </div>
-            }
+
+                <div class="grid min-w-0 gap-2">
+                    <label class="text-sm font-medium" for="producto-codigo-barras">Código de barras</label>
+                    <div class="grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+                        <InputText class="ui-input" disabled="@Guardando" aria-describedby="producto-codigo-barras-validacion" id="producto-codigo-barras" @bind-Value="Modelo.CodigoBarras" inputmode="numeric" autocomplete="off" />
+                        <BarcodeScanner Disabled="@Guardando" OnDetected="CodigoEscaneado" />
+                    </div>
+                    <div class="empty:hidden" id="producto-codigo-barras-validacion"><ValidationMessage For="() => Modelo.CodigoBarras" /></div>
+                </div>
+
+                <div class="grid min-w-0 gap-2">
+                    <label class="text-sm font-medium" for="producto-categoria">Categoría <span aria-hidden="true">*</span></label>
+                    <InputSelect class="ui-input" aria-describedby="producto-categoria-validacion" aria-required="true" id="producto-categoria" @bind-Value="Modelo.CategoriaId" disabled="@(Guardando || Categorias.Count == 0)">
+                        <option value="0">Selecciona una categoría</option>
+                        @foreach (var categoria in Categorias)
+                        {
+                            <option value="@categoria.Id">@categoria.Nombre</option>
+                        }
+                    </InputSelect>
+                    <div class="empty:hidden" id="producto-categoria-validacion"><ValidationMessage For="() => Modelo.CategoriaId" /></div>
+                </div>
+
+                <div class="grid min-w-0 gap-2">
+                    <label class="text-sm font-medium" for="producto-descripcion">Descripción</label>
+                    <InputTextArea class="ui-input min-h-28 resize-y" disabled="@Guardando" aria-describedby="producto-descripcion-validacion" id="producto-descripcion" @bind-Value="Modelo.Descripcion" rows="3" />
+                    <div class="empty:hidden" id="producto-descripcion-validacion"><ValidationMessage For="() => Modelo.Descripcion" /></div>
+                </div>
+            </section>
+
+            <section class="ui-card grid min-w-0 gap-5 p-5 sm:p-6" aria-labelledby="producto-caracteristicas-titulo">
+                <div class="space-y-1">
+                    <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="producto-caracteristicas-titulo">Características</h2>
+                    <p class="m-0 text-sm leading-6 text-ui-muted">Información adicional para identificar el artículo.</p>
+                </div>
+                <div class="grid min-w-0 gap-5 sm:grid-cols-2">
+                    <div class="grid min-w-0 content-start gap-2">
+                        <label class="text-sm font-medium" for="producto-marca">Marca</label>
+                        <InputText class="ui-input" disabled="@Guardando" aria-describedby="producto-marca-validacion" id="producto-marca" @bind-Value="Modelo.Marca" autocomplete="off" />
+                        <div class="empty:hidden" id="producto-marca-validacion"><ValidationMessage For="() => Modelo.Marca" /></div>
+                    </div>
+                    <div class="grid min-w-0 content-start gap-2">
+                        <label class="text-sm font-medium" for="producto-modelo">Modelo</label>
+                        <InputText class="ui-input" disabled="@Guardando" aria-describedby="producto-modelo-validacion" id="producto-modelo" @bind-Value="Modelo.Modelo" autocomplete="off" />
+                        <div class="empty:hidden" id="producto-modelo-validacion"><ValidationMessage For="() => Modelo.Modelo" /></div>
+                    </div>
+                    <div class="grid min-w-0 content-start gap-2">
+                        <label class="text-sm font-medium" for="producto-color">Color</label>
+                        <InputText class="ui-input" disabled="@Guardando" aria-describedby="producto-color-validacion" id="producto-color" @bind-Value="Modelo.Color" autocomplete="off" />
+                        <div class="empty:hidden" id="producto-color-validacion"><ValidationMessage For="() => Modelo.Color" /></div>
+                    </div>
+                    <div class="grid min-w-0 content-start gap-2">
+                        <label class="text-sm font-medium" for="producto-talla">Talla</label>
+                        <InputText class="ui-input" disabled="@Guardando" aria-describedby="producto-talla-validacion" id="producto-talla" @bind-Value="Modelo.Talla" autocomplete="off" />
+                        <div class="empty:hidden" id="producto-talla-validacion"><ValidationMessage For="() => Modelo.Talla" /></div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div class="grid min-w-0 gap-4">
+            <section class="ui-card grid min-w-0 gap-5 p-5 sm:p-6" aria-labelledby="producto-presentacion-titulo">
+                <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="producto-presentacion-titulo">Presentación y precio</h2>
+                <div class="grid min-w-0 gap-2">
+                    <label class="text-sm font-medium" for="producto-precio-sugerido">Precio sugerido <span aria-hidden="true">*</span></label>
+                    <InputNumber class="ui-input" inputmode="decimal" data-select-once="true" disabled="@Guardando" aria-describedby="producto-precio-sugerido-validacion" aria-required="true" id="producto-precio-sugerido" @bind-Value="Modelo.PrecioSugerido" min="0" step="0.01" />
+                    <div class="empty:hidden" id="producto-precio-sugerido-validacion"><ValidationMessage For="() => Modelo.PrecioSugerido" /></div>
+                    <p class="m-0 text-sm leading-5 text-ui-muted">Valor de referencia; el precio final se define al vender.</p>
+                </div>
+
+                <div class="grid min-w-0 gap-2">
+                    <label class="text-sm font-medium" for="producto-presentacion">Presentación</label>
+                    <InputText class="ui-input" disabled="@Guardando" aria-describedby="producto-presentacion-validacion" id="producto-presentacion"
+                               @bind-Value="Modelo.Presentacion" maxlength="100" autocomplete="off" />
+                    <div class="empty:hidden" id="producto-presentacion-validacion"><ValidationMessage For="() => Modelo.Presentacion" /></div>
+                </div>
+
+                <div class="grid min-w-0 gap-5 sm:grid-cols-2 xl:grid-cols-1">
+                    <div class="grid min-w-0 content-start gap-2">
+                        <label class="text-sm font-medium" for="producto-volumen">Volumen</label>
+                        <div class="grid min-w-0 grid-cols-[minmax(0,1fr)_5rem] gap-2">
+                            <input class="ui-input" id="producto-volumen" type="number" inputmode="decimal" min="0" step="any"
+                                   disabled="@(Guardando || Modelo.Peso.HasValue)" aria-describedby="producto-volumen-validacion producto-medidas-ayuda"
+                                   @bind="Modelo.Volumen" @bind:event="oninput" />
+                            <select class="ui-input" aria-label="Unidad de volumen" disabled="@(Guardando || Modelo.Peso.HasValue)"
+                                    @bind="Modelo.VolumenUnidad">
+                                <option value="@UnidadVolumen.Ml">ml</option>
+                                <option value="@UnidadVolumen.L">L</option>
+                            </select>
+                        </div>
+                        <div class="empty:hidden" id="producto-volumen-validacion"><ValidationMessage For="() => Modelo.Volumen" /></div>
+                    </div>
+
+                    <div class="grid min-w-0 content-start gap-2">
+                        <label class="text-sm font-medium" for="producto-peso">Peso</label>
+                        <div class="grid min-w-0 grid-cols-[minmax(0,1fr)_5rem] gap-2">
+                            <input class="ui-input" id="producto-peso" type="number" inputmode="decimal" min="0" step="any"
+                                   disabled="@(Guardando || Modelo.Volumen.HasValue)" aria-describedby="producto-peso-validacion producto-medidas-ayuda"
+                                   @bind="Modelo.Peso" @bind:event="oninput" />
+                            <select class="ui-input" aria-label="Unidad de peso" disabled="@(Guardando || Modelo.Volumen.HasValue)"
+                                    @bind="Modelo.PesoUnidad">
+                                <option value="@UnidadPeso.G">g</option>
+                                <option value="@UnidadPeso.Kg">kg</option>
+                                <option value="@UnidadPeso.Lb">lb</option>
+                            </select>
+                        </div>
+                        <div class="empty:hidden" id="producto-peso-validacion"><ValidationMessage For="() => Modelo.Peso" /></div>
+                    </div>
+                </div>
+                <p class="m-0 text-sm leading-6 text-ui-muted" id="producto-medidas-ayuda">Indica volumen o peso, nunca ambos. Deja la medida vacía para habilitar la otra.</p>
+            </section>
+
+            <section class="ui-card grid min-w-0 gap-4 p-5 sm:p-6" aria-labelledby="producto-imagen-titulo">
+                <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="producto-imagen-titulo">Imagen del producto</h2>
+                @if (VistaPrevia is not null || (Modelo.ImagenPrincipalRuta is not null && !Modelo.EliminarImagenPrincipal))
+                {
+                    <div class="grid min-w-0 gap-3">
+                        <div class="flex aspect-[4/3] max-h-64 w-full items-center justify-center overflow-hidden rounded-2xl border border-solid border-ui-border bg-ui-canvas p-3">
+                            <img class="block size-full object-contain" src="@(VistaPrevia ?? $"/productos/{ProductoId}/imagen")" alt="Vista previa de la imagen principal" />
+                        </div>
+                        <button class="ui-button border-ui-danger/30 bg-white text-ui-danger hover:bg-ui-danger/5" type="button" disabled="@Guardando"
+                                @onclick="QuitarImagen">Eliminar imagen</button>
+                    </div>
+                }
+                else
+                {
+                    <div class="flex aspect-[4/3] max-h-52 w-full flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-ui-control bg-ui-canvas p-4 text-ui-muted" aria-hidden="true">
+                        <svg class="size-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3" /><circle cx="8" cy="8" r="1.5" /><path d="m21 15-5-5L5 21" /></svg>
+                        <span class="text-sm">Sin imagen seleccionada</span>
+                    </div>
+                }
+                <div class="grid min-w-0 gap-2">
+                    <label class="text-sm font-medium" for="producto-imagen">Imagen principal (opcional)</label>
+                    <InputFile class="ui-input cursor-pointer text-sm file:mr-3 file:min-h-11 file:rounded-xl file:border-0 file:bg-ui-canvas file:px-3 file:py-2 file:font-sans file:text-sm file:font-semibold file:text-ui-ink hover:file:bg-ui-accent/10 disabled:cursor-not-allowed" @key="VersionSelectorImagen" id="producto-imagen"
+                               OnChange="SeleccionarImagenAsync"
+                               accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                               disabled="@Guardando" />
+                    <p class="m-0 text-sm leading-6 text-ui-muted">JPEG, PNG o WebP; máximo 8 MB. En móvil puedes elegir cámara o galería.</p>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(ErrorImagen))
+                {
+                    <p class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger" role="alert">@ErrorImagen</p>
+                }
+            </section>
         </div>
     </div>
 
-    <p class="required-note"><span aria-hidden="true">*</span> Campos obligatorios</p>
+    <p class="m-0 px-1 text-sm leading-6 text-ui-muted"><span aria-hidden="true">*</span> Campos obligatorios</p>
 
-    <div class="form-actions">
-        <button class="primary-button" type="submit" disabled="@(!PuedeGuardar)">
+    <div class="ui-card grid gap-3 p-4 sm:flex sm:items-center sm:justify-end sm:p-5">
+        <button class="ui-button bg-ui-accent text-white hover:bg-ui-accent-hover" type="submit" disabled="@(!PuedeGuardar)">
             @(Guardando ? "Guardando..." : "Guardar producto")
         </button>
         @if (OnCancelar.HasDelegate)
         {
-            <button class="secondary-button" type="button" disabled="@Guardando" @onclick="OnCancelar">Cancelar</button>
+            <button class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" type="button" disabled="@Guardando" @onclick="OnCancelar">Cancelar</button>
         }
         else
         {
-            <a class="secondary-button" href="@CancelarHref">Cancelar</a>
+            <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="@CancelarHref">Cancelar</a>
         }
     </div>
 </EditForm>

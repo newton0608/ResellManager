@@ -10,6 +10,8 @@ namespace ResellManager.Infrastructure.Services;
 
 public sealed class CompraService(ResellManagerDbContext db) : ICompraService
 {
+    // Precisión monetaria vigente decimal(10,2); SQLite no impone este límite por sí mismo.
+    private const decimal MaxImporteMonetario = 99_999_999.99m;
     public async Task<ServiceResult<CompraDto>> RegistrarAsync(
         CompraInput input,
         CancellationToken ct = default
@@ -17,16 +19,36 @@ public sealed class CompraService(ResellManagerDbContext db) : ICompraService
     {
         if (string.IsNullOrWhiteSpace(input.CodigoInterno))
             return ServiceResult<CompraDto>.Failure("El código interno es obligatorio.");
+        if (!Enum.IsDefined(input.Moneda))
+            return ServiceResult<CompraDto>.Failure("La moneda de compra no es válida.");
+        if (!Enum.IsDefined(input.Origen))
+            return ServiceResult<CompraDto>.Failure("El origen de compra no es válido.");
+        if (input.Moneda == MonedaCompra.GTQ && input.TipoCambio != 1m)
+            return ServiceResult<CompraDto>.Failure("El tipo de cambio para GTQ debe ser exactamente 1.");
+        if (input.Moneda == MonedaCompra.USD && input.TipoCambio <= 0m)
+            return ServiceResult<CompraDto>.Failure("Ingresa un tipo de cambio mayor que cero para USD.");
+        if (input.TipoCambioReferencia is <= 0m)
+            return ServiceResult<CompraDto>.Failure("La referencia de tipo de cambio debe ser mayor que cero.");
+        if (input.FechaTipoCambioReferencia > input.FechaCompra)
+            return ServiceResult<CompraDto>.Failure("La referencia no puede ser posterior a la fecha de compra.");
+        if (input.FuenteTipoCambio?.Trim().Length > 120)
+            return ServiceResult<CompraDto>.Failure("La fuente de tipo de cambio excede la longitud permitida.");
         if (input.Detalles.Count == 0)
             return ServiceResult<CompraDto>.Failure("La compra debe incluir detalles.");
         if (!await db.Proveedores.AnyAsync(x => x.Id == input.ProveedorId, ct))
             return ServiceResult<CompraDto>.Failure("Proveedor no encontrado.");
         if (await db.Compras.AnyAsync(x => x.CodigoInterno == input.CodigoInterno.Trim(), ct))
             return ServiceResult<CompraDto>.Failure("El código de compra ya está registrado.");
-        if (input.Detalles.Any(x => x.Cantidad <= 0 || x.CostoUnitario < 0))
+        if (input.Detalles.Any(x => x.Cantidad <= 0 || x.CostoUnitarioMonedaOrigen < 0))
             return ServiceResult<CompraDto>.Failure(
                 "La cantidad y el costo de los detalles no son válidos."
             );
+
+        if (input.Detalles.Any(x => decimal.Round(x.CostoUnitarioMonedaOrigen, 2) != x.CostoUnitarioMonedaOrigen))
+            return ServiceResult<CompraDto>.Failure("El costo unitario debe tener como máximo dos decimales.");
+
+        if (input.Detalles.Any(x => x.CostoUnitarioMonedaOrigen > MaxImporteMonetario))
+            return ServiceResult<CompraDto>.Failure("El costo unitario excede el rango monetario permitido.");
 
         var productIds = input.Detalles.Select(x => x.ProductoId).Distinct().ToArray();
         if (await db.Productos.CountAsync(x => productIds.Contains(x.Id), ct) != productIds.Length)
@@ -48,6 +70,26 @@ public sealed class CompraService(ResellManagerDbContext db) : ICompraService
                 "La importación debe registrar su ingreso mediante la recepción de mercancía."
             );
 
+        // SQLite no impone la precisión declarada: la conversión y su rango se validan aquí.
+        decimal[] costosGtq;
+        decimal totalGtq;
+        decimal totalMonedaOrigen;
+        try
+        {
+            costosGtq = input.Detalles.Select(x => ConversionMonedaCompra.CostoUnitarioGtq(
+                x.CostoUnitarioMonedaOrigen, input.TipoCambio)).ToArray();
+            totalGtq = input.Detalles.Select((x, i) => x.Cantidad * costosGtq[i]).Sum();
+            totalMonedaOrigen = input.Detalles.Sum(x => x.Cantidad * x.CostoUnitarioMonedaOrigen);
+        }
+        catch (OverflowException)
+        {
+            return ServiceResult<CompraDto>.Failure("Los importes o el tipo de cambio exceden el rango permitido.");
+        }
+
+        if (costosGtq.Any(x => x > MaxImporteMonetario)
+            || totalGtq > MaxImporteMonetario || totalMonedaOrigen > MaxImporteMonetario)
+            return ServiceResult<CompraDto>.Failure("Los importes de compra exceden el rango monetario permitido.");
+
         await using var transaction = await db.Database.BeginTransactionAsync(ct);
         var compra = new Compra
         {
@@ -56,7 +98,13 @@ public sealed class CompraService(ResellManagerDbContext db) : ICompraService
             Origen = input.Origen,
             ProveedorId = input.ProveedorId,
             Observaciones = input.Observaciones?.Trim(),
-            Total = input.Detalles.Sum(x => x.Cantidad * x.CostoUnitario),
+            Moneda = input.Moneda,
+            TipoCambio = input.TipoCambio,
+            TipoCambioReferencia = input.Moneda == MonedaCompra.USD ? input.TipoCambioReferencia : null,
+            FechaTipoCambioReferencia = input.Moneda == MonedaCompra.USD ? input.FechaTipoCambioReferencia : null,
+            FuenteTipoCambio = input.Moneda == MonedaCompra.USD ? input.FuenteTipoCambio?.Trim() : null,
+            TotalMonedaOrigen = totalMonedaOrigen,
+            Total = totalGtq,
         };
 
         var generaInventario = input.Origen != OrigenCompra.Catalogo;
@@ -73,7 +121,8 @@ public sealed class CompraService(ResellManagerDbContext db) : ICompraService
             {
                 ProductoId = item.ProductoId,
                 Cantidad = item.Cantidad,
-                CostoUnitario = item.CostoUnitario,
+                CostoUnitarioMonedaOrigen = item.CostoUnitarioMonedaOrigen,
+                CostoUnitario = costosGtq[detailNumber - 1],
             };
 
             if (generaInventario)
@@ -88,7 +137,7 @@ public sealed class CompraService(ResellManagerDbContext db) : ICompraService
                                 estadoInicial == EstadoUnidadInventario.Disponible
                                     ? input.FechaIngreso
                                     : null,
-                            Costo = item.CostoUnitario,
+                            Costo = detalle.CostoUnitario,
                             ProductoId = item.ProductoId,
                         }
                     );
@@ -207,11 +256,21 @@ public sealed class CompraService(ResellManagerDbContext db) : ICompraService
                     d.Cantidad,
                     d.CostoUnitario,
                     d.Cantidad * d.CostoUnitario
-                ))
+                )
+                {
+                    CostoUnitarioMonedaOrigen = d.CostoUnitarioMonedaOrigen,
+                    SubtotalMonedaOrigen = d.Cantidad * d.CostoUnitarioMonedaOrigen,
+                })
                 .ToList(),
             x.Comprobante?.RutaDocumento
         )
         {
+            Moneda = x.Moneda,
+            TipoCambio = x.TipoCambio,
+            TipoCambioReferencia = x.TipoCambioReferencia,
+            FechaTipoCambioReferencia = x.FechaTipoCambioReferencia,
+            FuenteTipoCambio = x.FuenteTipoCambio,
+            TotalMonedaOrigen = x.TotalMonedaOrigen,
             Recepcion = x.Origen == OrigenCompra.Importacion
                 ? new ResumenRecepcionCompraDto(
                     x.Detalles.Sum(d => d.UnidadesInventario.Count),

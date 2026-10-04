@@ -34,3 +34,6 @@ tests
 .agents
 **/appsettings.Development.json
 **/key-*.xml
+
+# Rebuilt in the Node stage; do not copy a stale local CSS build.
+src/ResellManager.Web/wwwroot/css/tailwind.css

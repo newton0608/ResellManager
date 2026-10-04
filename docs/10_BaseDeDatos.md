@@ -5,7 +5,7 @@ Este documento describe el modelo lógico de base de datos de ResellManager V1.
 El diagrama se encuentra en:
 `docs/diagrams/09_BaseDeDatos.drawio`
 
-El DER y el diagrama de clases están sincronizados con los contratos vigentes descritos aquí y en la configuración EF.
+Los contratos vigentes se describen aquí y en la configuración EF; la ampliación GTQ/USD de Compras se detalla en [monedas de compra](28_MonedasDeCompra.md).
 
 ## Notas generales
 
@@ -55,3 +55,6 @@ El DER y el diagrama de clases están sincronizados con los contratos vigentes d
 - En inventario físico, el costo proviene de `UnidadInventario.Costo`, generado desde el detalle de compra.
 - En catálogo, el costo utilizado por la venta se conserva en `DetalleVenta.CostoUnitario`.
 - La utilidad se calcula con `PrecioFinal - CostoUnitario` para ventas registradas.
+## Moneda de origen en compras
+
+GTQ es la moneda base. Compra y DetalleCompra conservan costos originales GTQ/USD y el tipo aplicado congelado; Total, CostoUnitario y UnidadInventario.Costo siguen siendo GTQ. La migración preserva todos los importes históricos. Consulta [contratos y compatibilidad](28_MonedasDeCompra.md).

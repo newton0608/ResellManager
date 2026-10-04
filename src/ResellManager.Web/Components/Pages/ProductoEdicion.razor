@@ -9,44 +9,44 @@
 
 <PageTitle>@(EsEdicion ? "Editar producto" : "Nuevo producto") | ResellManager</PageTitle>
 
-<section class="page-heading" aria-labelledby="titulo-formulario-producto">
-    <div>
-        <p class="eyebrow">Productos</p>
-        <h1 id="titulo-formulario-producto">@(EsEdicion ? "Editar producto" : "Nuevo producto")</h1>
-        <p class="page-lead">@(EsEdicion ? "Actualiza la definición y el precio sugerido del producto." : "Registra una definición de producto; las unidades físicas se administran por separado.")</p>
-    </div>
-</section>
+<div class="mx-auto min-w-0 max-w-5xl space-y-6 pb-[env(safe-area-inset-bottom)]">
+    <section class="space-y-2" aria-labelledby="titulo-formulario-producto">
+        <p class="m-0 text-xs font-semibold tracking-wide text-ui-muted uppercase">Productos</p>
+        <h1 class="m-0 text-3xl font-bold tracking-tight text-ui-ink sm:text-4xl" id="titulo-formulario-producto">@(EsEdicion ? "Editar producto" : "Nuevo producto")</h1>
+        <p class="m-0 max-w-2xl text-sm leading-6 text-ui-muted">@(EsEdicion ? "Actualiza la definición y el precio sugerido del producto." : "Registra una definición de producto; las unidades físicas se administran por separado.")</p>
+    </section>
 
-@if (Cargando)
-{
-    <div class="loading-state" role="status" aria-live="polite">
-        <span class="spinner" aria-hidden="true"></span>
-        Cargando producto y categorías...
-    </div>
-}
-else if (!string.IsNullOrWhiteSpace(ErrorCarga))
-{
-    <section class="error-state" role="alert">
-        <h2>No fue posible abrir el formulario</h2>
-        <p>@ErrorCarga</p>
-        <div class="form-actions">
-            <button class="primary-button" type="button" @onclick="CargarAsync">Reintentar</button>
-            <a class="secondary-button" href="/productos">Volver a productos</a>
+    @if (Cargando)
+    {
+        <div class="ui-card flex items-center gap-3 p-6 text-sm text-ui-muted" role="status" aria-live="polite">
+            <span class="size-5 shrink-0 rounded-full border-[3px] border-solid border-ui-accent/20 border-t-ui-accent motion-safe:animate-spin" aria-hidden="true"></span>
+            Cargando producto y categorías...
         </div>
-    </section>
-}
-else
-{
-    <section class="form-panel" aria-label="Formulario de producto">
-        <ProductoForm Modelo="Modelo"
-                      Categorias="CategoriasDisponibles"
-                      Guardando="Guardando"
-                      ProductoId="Id"
-                      ErrorMessage="@ErrorGuardado"
-                      OnGuardar="GuardarAsync"
-                      CancelarHref="@CancelarHref" />
-    </section>
-}
+    }
+    else if (!string.IsNullOrWhiteSpace(ErrorCarga))
+    {
+        <section class="ui-card space-y-4 border-ui-danger/20 p-5 sm:p-6" role="alert">
+            <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink">No fue posible abrir el formulario</h2>
+            <p class="m-0 text-sm leading-6 text-ui-muted">@ErrorCarga</p>
+            <div class="grid gap-3 sm:flex sm:flex-wrap">
+                <button class="ui-button bg-ui-accent text-white hover:bg-ui-accent-hover" type="button" @onclick="CargarAsync">Reintentar</button>
+                <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/productos">Volver a productos</a>
+            </div>
+        </section>
+    }
+    else
+    {
+        <section class="rm-product-form min-w-0" aria-label="Formulario de producto">
+            <ProductoForm Modelo="Modelo"
+                          Categorias="CategoriasDisponibles"
+                          Guardando="Guardando"
+                          ProductoId="Id"
+                          ErrorMessage="@ErrorGuardado"
+                          OnGuardar="GuardarAsync"
+                          CancelarHref="@CancelarHref" />
+        </section>
+    }
+</div>
 
 @code {
     [Parameter]

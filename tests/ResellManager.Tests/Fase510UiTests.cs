@@ -87,7 +87,7 @@ public sealed class Fase510UiTests
             var html = await ObtenerPaginaAsync(cliente, ruta);
             Assert.True(html.Contains(mensaje, StringComparison.Ordinal),
                 $"{ruta}: {string.Join(" | ", Regex.Matches(html, "<h[12][^>]*>(.*?)</h[12]>").Select(x => x.Groups[1].Value))}");
-            var vacio = Regex.Match(html, "<section class=\"empty-state\"[\\s\\S]*?</section>");
+            var vacio = Regex.Match(html, "<section class=\"empty-state(?: [^\"]*)?\"[\\s\\S]*?</section>");
             Assert.True(vacio.Success, ruta);
             Assert.Contains($"href=\"{destino}\"", vacio.Value);
             Assert.DoesNotContain("<table", html);

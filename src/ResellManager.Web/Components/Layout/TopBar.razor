@@ -1,37 +1,41 @@
-<header class="topbar">
-    <div class="topbar-start">
-        <button class="icon-button menu-button" type="button" popovertarget="navegacion-movil"
-                popovertargetaction="show" aria-controls="navegacion-movil" aria-label="Abrir menú">
-            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-        </button>
-        <span class="topbar-title">Panel de administración</span>
-    </div>
+<header class="sticky top-0 z-20 border-0 border-b border-solid border-ui-border bg-white/85 backdrop-blur-xl">
+    <div class="mx-auto flex min-h-18 w-full max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-10">
+        <div class="flex min-w-0 items-center gap-3">
+            <button class="ui-button size-12 shrink-0 border-ui-border bg-white p-0 text-ui-ink hover:bg-ui-canvas lg:hidden" type="button" popovertarget="navegacion-movil"
+                    popovertargetaction="show" aria-controls="navegacion-movil" aria-label="Abrir menú">
+                <svg class="size-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+            </button>
+            <img src="branding/resellmanager-logo-dark.png" alt="ResellManager"
+                 class="block h-8 w-32 shrink-0 object-cover lg:hidden" width="1536" height="1024" />
+            <span class="hidden text-sm font-medium text-ui-muted lg:inline">Panel de administración</span>
+        </div>
 
-    <AuthorizeView>
-        <Authorized Context="estadoAutenticacion">
-            <div class="session-area">
-                <div class="user-summary" title="@estadoAutenticacion.User.Identity?.Name">
-                    <span class="user-avatar" aria-hidden="true">@GetInitial(estadoAutenticacion.User.Identity?.Name)</span>
-                    <span class="user-copy">
-                        <small>Sesión iniciada</small>
-                        <strong>@estadoAutenticacion.User.Identity?.Name</strong>
-                    </span>
+        <AuthorizeView>
+            <Authorized Context="estadoAutenticacion">
+                <div class="flex min-w-0 items-center gap-2 sm:gap-4">
+                    <div class="flex min-w-0 items-center gap-3" title="@estadoAutenticacion.User.Identity?.Name">
+                        <span class="hidden size-10 shrink-0 items-center justify-center rounded-full bg-ui-accent/10 text-sm font-semibold text-ui-accent sm:inline-flex" aria-hidden="true">@GetInitial(estadoAutenticacion.User.Identity?.Name)</span>
+                        <span class="hidden min-w-0 max-w-48 leading-tight md:grid">
+                            <small class="text-xs text-ui-muted">Sesión iniciada</small>
+                            <strong class="mt-1 truncate text-sm font-semibold">@estadoAutenticacion.User.Identity?.Name</strong>
+                        </span>
+                    </div>
+                    <form class="m-0 shrink-0" method="post" action="/account/logout" data-enhance="false">
+                        <AntiforgeryToken />
+                        <input type="hidden" name="confirmacion" value="true" />
+                        <button class="ui-button size-12 border-ui-border bg-white p-0 text-ui-muted hover:bg-ui-canvas hover:text-ui-ink sm:w-auto sm:px-4" type="submit">
+                            <svg class="size-5 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10 17l5-5-5-5M15 12H3M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                            </svg>
+                            <span class="sr-only sm:not-sr-only">Cerrar sesión</span>
+                        </button>
+                    </form>
                 </div>
-                <form method="post" action="/account/logout" data-enhance="false">
-                    <AntiforgeryToken />
-                    <input type="hidden" name="confirmacion" value="true" />
-                    <button class="logout-button" type="submit">
-                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M10 17l5-5-5-5M15 12H3M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-                        </svg>
-                        <span>Cerrar sesión</span>
-                    </button>
-                </form>
-            </div>
-        </Authorized>
-    </AuthorizeView>
+            </Authorized>
+        </AuthorizeView>
+    </div>
 </header>
 
 @code {
