@@ -17,8 +17,10 @@ La ampliación hacia una tienda está [planeada para V2.4](../19_V2_Pendientes.m
   que gestiona artículos bajo pedido sin inventario físico.
 - [Dominios](../deployment/domains.md) distingue `virtuosagt.com` (público),
   `app.resellmanager.tech` (administración) y `preview.newtonlab.dev` (pruebas).
-  `/producto/{id}` es la ruta canónica deseada, **pendiente** en el código;
-  hoy las páginas usan `/catalogo` y `/catalogo/{id}`.
+  En producción, `/` y `/producto/{id}` son las URLs públicas operativas mediante
+  redirects/rewrites de Caddy. El código Blazor sigue declarando `/catalogo` y
+  `/catalogo/{id}`; preview conserva esas rutas. No confundir routing externo
+  con un `@page /producto/{id}` inexistente.
 
 ## Dónde trabajar y validar
 
