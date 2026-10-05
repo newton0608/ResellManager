@@ -15,6 +15,9 @@ Categoría es un maestro configurable, no un enum.
   a WebP procesado, almacenamiento administrado y compensación ante fallos.
 - [Scanner](../29_BarcodeScanner.md): contrato, vendor fijado, pruebas JS/ópticas
   y validación física pendiente. No extrapoles emulación a iPhone real.
+- [Búsqueda asistida por código de barras](productos-lookup-codigo-barras.md):
+  especificación aprobada para consulta local + proveedores externos, revisión
+  antes de aplicar datos y guardado manual. **Implementación pendiente.**
 - No existe estado activo ni desactivación/reactivación de Producto. La política
   acordada es no eliminar físicamente productos desde la aplicación, tengan o no
   historial: siempre se prevé **Desactivar / Reactivar**. La
