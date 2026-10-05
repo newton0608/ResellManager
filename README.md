@@ -100,7 +100,7 @@ npm run css:build
 dotnet publish src/ResellManager.Web/ResellManager.Web.csproj -c Release
 ```
 
-El Dockerfile usa una etapa `node:24-bookworm-slim`, instala las versiones del lockfile con `npm ci --include=dev` y ejecuta `npm run css:build`. La etapa SDK .NET 10 copia ese CSS antes de `dotnet publish`; la imagen final sigue basada en ASP.NET Core 10 y recibe solo la aplicación publicada, sin Node, npm ni `node_modules`. `.dockerignore` excluye el CSS compilado local para construirlo siempre desde las fuentes.
+El Dockerfile usa una etapa `node:24-bookworm-slim`, instala las versiones del lockfile con `npm ci --include=dev` y ejecuta `npm run css:build`. css:build también sincroniza el bundle local de Quagga2 1.11.0 y su licencia desde el paquete npm fijado. La etapa SDK .NET 10 copia ese CSS y el vendor generado antes de `dotnet publish`; la imagen final sigue basada en ASP.NET Core 10 y recibe solo la aplicación publicada, sin Node, npm ni `node_modules`. `.dockerignore` excluye el CSS compilado local para construirlo siempre desde las fuentes.
 
 ```bash
 docker build -t resellmanager:local .
@@ -130,3 +130,7 @@ El layout, la navegación, la topbar y el dashboard usan utilities de Tailwind c
 En móvil se mantiene el menú nativo `popover`, con cierre al navegar, controles de al menos 44–48 px y márgenes reducidos. El dashboard presenta los canales como cards en móvil y los movimientos recientes como cards en todas las resoluciones. Solo la topbar y el fondo del menú utilizan blur; las transiciones respetan `prefers-reduced-motion`.
 
 El [soporte GTQ/USD en compras](docs/28_MonedasDeCompra.md) conserva GTQ como moneda base de inventario, ventas, utilidad, pagos y Dashboard. Banguat ofrece una sugerencia opcional; el tipo aplicado queda congelado al registrar la compra.
+
+## Scanner de códigos de producto
+
+El scanner usa Quagga2 1.11.0 local para EAN-13/EAN-8/UPC-A/UPC-E/CODE-128, con foto local y doble confirmación en vivo. Consulta [su documentación técnica y validación pendiente en iPhone/Safari](docs/29_BarcodeScanner.md).

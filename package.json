@@ -3,9 +3,13 @@
   "private": true,
   "scripts": {
     "css:watch": "node --import ./scripts/tailwind-resolver.mjs ./node_modules/@tailwindcss/cli/dist/index.mjs -i ./src/ResellManager.Web/Styles/tailwind.css -o ./src/ResellManager.Web/wwwroot/css/tailwind.css --watch",
-    "css:build": "node --import ./scripts/tailwind-resolver.mjs ./node_modules/@tailwindcss/cli/dist/index.mjs -i ./src/ResellManager.Web/Styles/tailwind.css -o ./src/ResellManager.Web/wwwroot/css/tailwind.css --minify"
+    "css:build": "npm run scanner:vendor && node --import ./scripts/tailwind-resolver.mjs ./node_modules/@tailwindcss/cli/dist/index.mjs -i ./src/ResellManager.Web/Styles/tailwind.css -o ./src/ResellManager.Web/wwwroot/css/tailwind.css --minify",
+    "scanner:vendor": "node ./scripts/sync-scanner-vendor.mjs",
+    "test:js": "node --test tests/barcode-scanner.test.mjs tests/ResellManager.Tests/*.test.cjs",
+    "qa:scanner": "node tests/barcode-scanner.browser.mjs"
   },
   "devDependencies": {
+    "@ericblade/quagga2": "1.11.0",
     "@tailwindcss/cli": "4.3.3",
     "tailwindcss": "4.3.3"
   }
