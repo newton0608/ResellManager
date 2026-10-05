@@ -1,5 +1,7 @@
 # Despliegue V1 — Runbook operativo
 
+> Configuración versionada revisada el 05/10/2026: el Dockerfile actual usa SDK/runtime .NET 10 sobre Ubuntu Noble/glibc y etapa Node 24 para CSS/vendor. La evidencia operativa del 21/09/2026 se conserva; no demuestra la versión desplegada hoy. Hosts y previews: [Dominios](domains.md).
+
 ## Estado y límites
 
 ResellManager está en producción. Esta revisión documental del 21/09/2026 toma como referencia versionada `v1.0.1` y separa las fuentes de evidencia:
@@ -14,7 +16,7 @@ ResellManager está en producción. Esta revisión documental del 21/09/2026 tom
 
 La existencia de los tags no demuestra qué imagen ejecuta el VPS. Restore probado no equivale a rollback de aplicación validado ni certifica todos los controles. Las cuentas actuales no implican roles/permisos finos o concurrencia fuerte V2.
 
-La referencia funcional vigente es [Alcance V1](14_Alcance_V1.md). [Cierre V1, sección 19](18_Fase510_CierreV1.md#19-cierre-operativo-reservas-recepción-y-actividad-del-cliente-13092026) conserva evidencia histórica (405 tests .NET, 17 JS y build sin errores/warnings); esos resultados no sustituyen pruebas en el VPS ni QA visual real. Esta sincronización no agrega migraciones ni cambios de esquema.
+La referencia funcional vigente es [Alcance V1](../14_Alcance_V1.md). [Cierre V1, sección 19](../18_Fase510_CierreV1.md#19-cierre-operativo-reservas-recepción-y-actividad-del-cliente-13092026) conserva evidencia histórica (405 tests .NET, 17 JS y build sin errores/warnings); esos resultados no sustituyen pruebas en el VPS ni QA visual real. Esta sincronización no agrega migraciones ni cambios de esquema.
 
 ## Arquitectura de operación V1
 
@@ -38,7 +40,7 @@ Program.cs registra Forwarded Headers antes de HSTS, redirección y autenticaci�
 
 Configurar el procesamiento de `X-Forwarded-Proto` y `X-Forwarded-For` antes de redirección HTTPS y autenticación. Definir explícitamente el proxy o red de confianza de Caddy según la topología real de Compose y un límite acorde a los saltos reales; restringir hosts aceptados. No aceptar cabeceras de cualquier origen ni vaciar listas de confianza como atajo.
 
-Probar que ASP.NET Core reconoce el esquema HTTPS externo, que login/logout y antiforgery funcionan, que las cookies de sesión recibidas por HTTPS son seguras y que no hay bucles de redirección. La cookie usa CookieSecurePolicy.Always en Production y SameAsRequest en Development; conserva HttpOnly, SameSite=Lax, expiración de ocho horas, sliding expiration y lockout. Incluir pruebas de cabeceras falsificadas desde fuentes no confiables. Consultar [configuración de proxies ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/proxy-load-balancer?view=aspnetcore-8.0) y [restricción de proxies desconocidos en .NET 8](https://learn.microsoft.com/en-us/dotnet/core/compatibility/aspnet-core/8.0/forwarded-headers-unknown-proxies).
+Probar que ASP.NET Core reconoce el esquema HTTPS externo, que login/logout y antiforgery funcionan, que las cookies de sesión recibidas por HTTPS son seguras y que no hay bucles de redirección. La cookie usa CookieSecurePolicy.Always en Production y SameAsRequest en Development; conserva HttpOnly, SameSite=Lax, expiración de ocho horas, sliding expiration y lockout. Incluir pruebas de cabeceras falsificadas desde fuentes no confiables. Consultar [configuración de proxies ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/proxy-load-balancer?view=aspnetcore-10.0) y [restricción de proxies desconocidos en .NET 8](https://learn.microsoft.com/en-us/dotnet/core/compatibility/aspnet-core/8.0/forwarded-headers-unknown-proxies).
 
 ## Persistencia, permisos y configuración
 
@@ -47,6 +49,7 @@ Conservar y verificar estos montajes persistentes en la instalación operativa y
 | Recurso | Requisito |
 | --- | --- |
 | SQLite | Directorio persistente privado y ruta absoluta en `ConnectionStrings__ResellManager`. Montar el directorio, no solo el archivo, para permitir archivos auxiliares de SQLite. No dejar la BD en la capa efímera del contenedor. |
+| Imágenes de producto | Directorio privado persistente `AlmacenamientoImagenesProducto__DirectorioBase`; publicar únicamente mediante endpoints controlados por ID. Incluir `productos/` junto a SQLite en backup y restore. |
 | Comprobantes | Directorio privado persistente mediante `AlmacenamientoComprobantes__DirectorioBase`, fuera de `wwwroot`. Conservar estructura y rutas relativas registradas en la BD; nunca servir este volumen como archivos estáticos desde Caddy. |
 | Data Protection | Configurar y verificar el key ring en un volumen persistente, con identidad de aplicación estable entre recreaciones. No depender de un directorio efímero ni eliminar claves antiguas. Evaluar protección en reposo; conservar también los medios necesarios para descifrarlas durante restauración. |
 | Caddy | Conservar su estado/certificados en almacenamiento persistente y restringido, con renovación comprobada. |
@@ -74,8 +77,8 @@ Backup manual y restore real fueron realizados y verificados según la confirmac
 
 ### Automatización instalada y fuentes versionadas
 
-- Fuente: [scripts/backup-v1.sh](../scripts/backup-v1.sh). Su copia operativa es `/opt/resellmanager/backup.sh`; esa es la ruta de `ExecStart` del servicio. Conservar la correspondencia entre la copia instalada y la versión revisada.
-- Unidades: [resellmanager-backup.service](../deploy/systemd/resellmanager-backup.service) (`Type=oneshot`, requiere Docker) y [resellmanager-backup.timer](../deploy/systemd/resellmanager-backup.timer).
+- Fuente: [scripts/backup-v1.sh](../../scripts/backup-v1.sh). Su copia operativa es `/opt/resellmanager/backup.sh`; esa es la ruta de `ExecStart` del servicio. Conservar la correspondencia entre la copia instalada y la versión revisada.
+- Unidades: [resellmanager-backup.service](../../deploy/systemd/resellmanager-backup.service) (`Type=oneshot`, requiere Docker) y [resellmanager-backup.timer](../../deploy/systemd/resellmanager-backup.timer).
 - Programación: `OnCalendar=*-*-* 03:30:00 America/Guatemala`, con `RandomizedDelaySec=10m`; la ejecución diaria ocurre alrededor de las 03:30, con hasta diez minutos de demora adicional. `Persistent=true` permite recuperar una activación de calendario perdida mientras el timer estuvo inactivo.
 - El script exige root y necesita Bash, Docker Compose, `flock`, Python 3, `tar`, `sha256sum` y `curl`, además de las utilidades de shell usadas. Comprueba que exista `reselladmin` antes de detener la aplicación.
 
@@ -168,7 +171,7 @@ Los reinicios interrumpen circuitos InteractiveServer y pueden perder formulario
 
 Completado según la fuente indicada en «Estado y límites»:
 
-- [x] Dockerfile multi-stage .NET 8, Compose, Caddyfile y hosting explícito versionados.
+- [x] Dockerfile multi-stage .NET 10 (configuración actual), Compose, Caddyfile y hosting explícito versionados.
 - [x] Producción, dominio y HTTPS funcionando; cuentas Identity separadas y pruebas funcionales de cliente, compra y venta directa, según confirmación operativa.
 - [x] Tags `v1.0.0` y `v1.0.1` existentes; la corrección de claves duplicadas de Blazor en venta directa está incluida en `v1.0.1`.
 - [x] Backup manual y restore real realizados y verificados, según confirmación operativa.
@@ -184,12 +187,12 @@ Pendientes confirmados y controles cuya evidencia detallada aún debe verificars
 - [ ] Verificar persistencia de SQLite, comprobantes, Data Protection y Caddy, con permisos mínimos y secretos externos.
 - [ ] Verificar retirada de credenciales temporales de bootstrap.
 - [ ] Auditar paquetes NuGet directos y transitivos por vulnerabilidades, incluidas dependencias nativas; registrar y resolver hallazgos. Un build exitoso no sustituye esa auditoría.
-- [ ] Verificar runtime/patch .NET, Ubuntu y componentes base soportados en la instalación y en cada actualización. El proyecto usa `net8.0`: .NET 8 termina soporte el **10/11/2026**; mantener un plan de migración antes de ese límite. Esta fase documental no implementa la migración a .NET 10. Revalidar la [política oficial de soporte .NET](https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core).
+- [ ] Verificar runtime/patch .NET, Ubuntu y componentes base soportados en la instalación y en cada actualización. El proyecto actual usa `net10.0`; la migración ya está integrada en Git. Comprobar el runtime efectivo y la imagen desplegada, sin inferirlos de la versión del código. Revalidar la [política oficial de soporte .NET](https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core).
 - [ ] Registrar pruebas de build/tests .NET y JS de la versión candidata y del runtime Linux, incluido procesamiento de imágenes/comprobantes.
 - [ ] Completar o incorporar evidencia de QA móvil/escritorio y pruebas detalladas detrás del proxy real; las pruebas funcionales confirmadas no cubren automáticamente todos esos criterios.
 - [ ] Verificar rotación/retención de logs y definir alertas operativas mínimas.
 
-Las casillas de implementación no certifican los controles del VPS. [ROADMAP](../ROADMAP.md) resume versiones futuras; [V2](19_V2_Pendientes.md) y [V3](20_V3_Pendientes.md) siguen pendientes y no se implementan en este runbook.
+Las casillas de implementación no certifican los controles del VPS. [ROADMAP](../../ROADMAP.md) resume versiones futuras; [V2](../19_V2_Pendientes.md) y [V3](../20_V3_Pendientes.md) siguen pendientes y no se implementan en este runbook.
 
 ## Construcción y arranque en Ubuntu
 
@@ -199,8 +202,9 @@ Procedimiento para nuevas instalaciones o recreaciones planificadas; no describe
 docker build --pull -t resellmanager:v1 .
 ```
 
-El runtime copia solo el resultado de publish Release, usa ASP.NET Core .NET 8 sobre Debian/glibc
-y ejecuta como el usuario app (UID/GID 1654 de la imagen .NET 8). El proyecto ya incluye
+El runtime copia solo el resultado de publish Release, usa ASP.NET Core .NET 10 sobre Ubuntu Noble/glibc
+y ejecuta como el usuario app mediante `USER $APP_UID`. Verificar el UID/GID
+de la imagen efectiva antes de aplicar los ejemplos de permisos siguientes. El proyecto ya incluye
 SkiaSharp.NativeAssets.Linux.NoDependencies; no se cambian dependencias ni reglas de comprobantes.
 La prueba real de procesamiento de imágenes en Linux requiere evidencia específica; las pruebas funcionales confirmadas no la acreditan por sí solas.
 Compose fija Caddy en `caddy:2.11.4-alpine`, sin actualización automática. Registrar además el digest de las imágenes .NET y Caddy utilizadas y conservar las imágenes para rollback.
@@ -230,7 +234,7 @@ este Compose confía solo en la IP de Caddy. Se sustituyen las entradas implíci
 se limita a un salto y únicamente se procesan X-Forwarded-For y X-Forwarded-Proto.
 No configurar ASPNETCORE_FORWARDEDHEADERS_ENABLED ni mecanismos alternativos que amplíen esa confianza.
 
-Usar los directorios existentes del VPS bajo `/opt/resellmanager/data/`; no crear otra estructura bajo `/srv`. Deben permitir lectura/escritura al UID/GID del usuario `app` de la imagen (1654:1654 actualmente; verificar si cambia la imagen), incluidos los archivos ya existentes. Comprobar o ajustar los directorios sin borrar su contenido:
+Usar los directorios existentes del VPS bajo `/opt/resellmanager/data/`; no crear otra estructura bajo `/srv`. Deben permitir lectura/escritura al UID/GID del usuario `app` de la imagen (1654:1654 en la referencia histórica; verificar la imagen efectiva), incluidos los archivos ya existentes. Comprobar o ajustar los directorios sin borrar su contenido:
 
 ```bash
 sudo install -d -m 0700 -o 1654 -g 1654 /opt/resellmanager/data/database /opt/resellmanager/data/comprobantes /opt/resellmanager/data/dataprotection /opt/resellmanager/data/productos

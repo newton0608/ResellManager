@@ -1,6 +1,6 @@
 # V2 — Pendientes y mejoras futuras
 
-Este documento reúne decisiones funcionales y técnicas que quedan explícitamente fuera de V1 y se consideran para una V2 posterior.
+Este documento reúne planificación posterior al alcance original V1. Algunas piezas se adelantaron y ya existen en la base auditada el 05/10/2026; se distingue su estado para no repetir implementaciones.
 
 La intención es evitar que V2 se convierta en una sola entrega demasiado grande. Por ello se divide conceptualmente en cuatro bloques:
 
@@ -19,7 +19,7 @@ Objetivo: reducir tiempo operativo y mejorar los flujos más frecuentes sin camb
 
 ## Imágenes de productos
 
-Previsto para V2.1, no implementado en V1: permitir una foto principal y evaluar múltiples fotos por producto.
+**Foto principal ya implementada**: [contrato actual](24_ImagenPrincipalProducto.md). La evaluación de múltiples fotos y ampliaciones posteriores sigue planeada. Los puntos siguientes conservan el alcance considerado originalmente y no implican que toda esa ampliación exista.
 
 - Mostrar imágenes en Producto e Inventario; evaluar su uso en Venta Directa y buscadores y reutilizarlas en la tienda pública V2.4.
 - Usar almacenamiento persistente; no guardar imágenes en la base de datos como blobs por defecto. Evaluar object storage para producción.
@@ -28,11 +28,11 @@ Previsto para V2.1, no implementado en V1: permitir una foto principal y evaluar
 - Mostrar un fallback cuando no exista imagen.
 - Validar contenido, permisos de acceso y privacidad; evitar exponer archivos no autorizados.
 
-Esta planificación no añade columnas, migraciones ni almacenamiento de imágenes a V1.
+La foto principal tiene implementación y migración existentes; no volver a crearlas siguiendo esta planificación. Múltiples imágenes/object storage siguen pendientes.
 
 ## Lectura de códigos de barras con la cámara
 
-La captura de `Producto.CodigoBarras` con la cámara durante el alta y edición de Producto se implementará en **V1.1**. La integración operativa del lector en Venta Directa, Inventario y búsquedas permanece planificada para **V2.1**.
+La captura de `Producto.CodigoBarras` con cámara durante alta/edición ya está implementada; el motor vigente y sus límites se documentan en [Scanner](29_BarcodeScanner.md). La integración operativa del lector en Venta Directa, Inventario y búsquedas permanece planificada para **V2.1**.
 
 ### Objetivo
 
@@ -209,7 +209,7 @@ Estas operaciones deben respetar reservas, inventario, ventas existentes y estad
 
 ## Desactivación segura de clientes y productos
 
-Definir borrado lógico o desactivación en lugar de eliminación física cuando existan relaciones históricas.
+**Decisión de dirección aceptada; implementación pendiente.** Usar desactivación/reactivación en lugar de borrado físico para clientes/productos con historial, según [decisión 025](11_DecisionesDeDiseño.md#025-preservar-clientes-y-productos-con-historial). Faltan reglas concretas de elegibilidad y efecto en operaciones; no existe estado activo en las entidades actuales.
 
 Clientes y productos con ventas, pedidos, pagos, compras u otros movimientos no deben desaparecer del historial.
 
@@ -312,7 +312,7 @@ Alcance inicial:
 
 No se requieren inicialmente pago en línea, cuentas completas de cliente, promociones complejas, integración WhatsApp ni logística avanzada. Pueden evaluarse después; no son requisitos de la tienda básica V2.4.
 
-Esta etapa es planificación: no crea rutas públicas ni cambia autenticación o reglas operativas en V1.
+**Estado actual:** catálogo, categorías derivadas del listado, búsqueda, detalle, imagen y disponibilidad de lectura ya existen: [Catálogo público](modules/catalogo.md). La evolución hacia carrito/selección y pedidos web sigue siendo planificación V2.4. No está implementada ni autorizada por este roadmap; pagos online tampoco existen. Dominios y ruta canónica pendiente se describen en [Dominios](deployment/domains.md).
 
 ---
 

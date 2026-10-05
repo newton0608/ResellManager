@@ -51,7 +51,7 @@ Esta mejora queda planificada para una fase posterior a la UI completa y antes d
 
 La eliminación de clientes se deja fuera de la V1 porque un cliente puede estar relacionado con ventas, pagos, pedidos e historial. Eliminar físicamente el registro podría romper trazabilidad o referencias históricas.
 
-Para V2 se deberá diseñar primero una regla segura. Opciones a evaluar:
+Actualización 05/10/2026: la dirección para clientes/productos con historial es desactivación/reactivación, según [decisión 025](11_DecisionesDeDiseño.md#025-preservar-clientes-y-productos-con-historial), todavía sin implementación. Las opciones siguientes conservan el análisis original; no autorizan un DELETE físico:
 
 - desactivación lógica del cliente en lugar de borrado físico;
 - impedir eliminación cuando existan ventas, pagos o pedidos relacionados;

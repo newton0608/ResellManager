@@ -1,10 +1,10 @@
 # Medidas y presentación de producto
 
-**Estado: modelo, contratos, validación, persistencia y UI administrativa implementados; presentación en tienda pendiente. V1.1.0 aún no publicada.**
+**Estado al 05/10/2026: modelo, contratos, validación, persistencia y UI administrativa implementados; incluidos en el tag v1.1.0. El catálogo público actual muestra ml, gramos y Presentacion; equivalencias visuales adicionales pendientes.**
 
-La fase técnica se implementó después del cierre documental de V1.0.1. La entrega funcional tipo **V1.1.0** y su fecha de publicación siguen pendientes de confirmar. Los campos, la validación del servidor, las restricciones de persistencia y los controles administrativos ya existen; la presentación pública sigue pendiente.
+La fase técnica se implementó después de V1.0.1; existe `v1.1.0` (`832c172`, 27/09/2026). La presentación pública actual está en CatalogoPresentacion.cs y en los DTOs de detalle. La existencia del tag no certifica cuándo se desplegó.
 
-Este documento registra el diseño y el estado de su implementación. No modifica el modelo vigente de V1.0.1 ni acredita una funcionalidad liberada. La presentación pública se aplicará cuando se implemente la tienda virtual, prevista en [V2.4](19_V2_Pendientes.md#v24--canal-público--tienda-en-línea); no adelanta esa tienda a V1.1.
+Se conserva el diseño original y su validación. Los apartados de modelo/reglas describen requisitos ya implementados; la sección de equivalencias futuras sigue siendo una propuesta, no el formato público actual. La tienda con carrito/pedidos continúa planeada en [V2.4](19_V2_Pendientes.md#v24--canal-público--tienda-en-línea).
 
 ## Propósito
 
@@ -192,9 +192,9 @@ Presentacion = "Set de 3 piezas"
 
 ## Decisiones todavía abiertas y actualización posterior
 
-- Confirmar la versión exacta de entrega; la previsión es una mejora funcional tipo V1.1.0 tras el cierre documental de V1.0.1.
+- Versión de entrega identificada en Git: tag v1.1.0; la versión desplegada requiere evidencia operativa.
 - Definir el redondeo y formato visual exactos de las medidas y equivalencias en la futura tienda.
 
 La documentación del modelo implementado, requisitos/reglas vigentes, DER, diagrama de clases y changelog se actualizarán cuando corresponda a la implementación y liberación real. Este diseño no presenta los campos como disponibles en V1.0.1.
 
-La entrada de planificación se encuentra en [ROADMAP](../ROADMAP.md). La mejora administrativa está implementada en el desarrollo de V1.1, aún sin publicación; no se incorpora artificialmente al alcance de V2. La tienda básica permanece planificada en V2.4.
+La entrada de planificación se encuentra en [ROADMAP](../ROADMAP.md). La mejora administrativa está etiquetada en v1.1.0; no se incorpora artificialmente al alcance de V2. El catálogo de lectura ya existe y la tienda ampliada permanece planificada en V2.4.

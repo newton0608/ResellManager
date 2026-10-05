@@ -1,8 +1,8 @@
-# Virtuosa Store: identidad pública y preparación de dominio
+# Virtuosa Store: identidad pública
 
 Virtuosa Store es la identidad de la tienda pública de ResellManager. Las vistas `/catalogo` y `/catalogo/{productoId}` consumen el catálogo del mismo backend y el mismo inventario. El sistema administrativo conserva su identidad visual `ui-*`; los estilos de la tienda se definen con tokens y componentes `store-*`. La tienda solo presenta datos comerciales que devuelve la API pública; no calcula disponibilidad ni modifica inventario.
 
-Esta etapa prepara la interfaz para funcionar en un dominio propio. No cambia el proxy, DNS, Caddy, el backend ni la base de datos. Las URL usadas por la UI son relativas al origen que sirve la página.
+La interfaz está implementada y preparada para servirse desde el dominio público confirmado. No cambia el proxy, DNS, Caddy, el backend ni la base de datos. Las URL usadas por la UI son relativas al origen que sirve la página.
 
 ## Logos originales
 
@@ -27,24 +27,22 @@ La tienda usa estas lecturas existentes:
 
 El buscador del encabezado usa el debounce de 300 ms del modelo actual en el listado; desde el detalle navega al catálogo filtrado al enviarse. La API decide qué productos siguen disponibles. El filtro de categorías usa los nombres e identificadores que recibe del listado público. Las imágenes proceden del endpoint público por ID; las rutas privadas del servidor y el endpoint administrativo de imágenes no se publican. No hay rutas de carrito, checkout, pagos ni pedidos online.
 
-## Topología futura de dominios
+## Dominios y frontera pública
 
-| Host externo | Destino previsto | Rutas visibles |
-| --- | --- | --- |
-| `resellmanager.tech` | Administración de ResellManager | Aplicación administrativa y sus endpoints actuales, protegidos por Identity según corresponda. |
-| Dominio futuro de Virtuosa Store | **La misma instancia** ASP.NET Core y la misma base de datos/almacenamiento de imágenes | Catálogo, API pública de catálogo y recursos indispensables para renderizarlo. |
+La fuente canónica de hosts, rutas existentes, URL deseada y límites de evidencia
+es [Dominios](deployment/domains.md). El dominio público confirmado es
+`virtuosagt.com`, la administración permanece en `app.resellmanager.tech` y
+`preview.newtonlab.dev` se usa para pruebas. No se migra administración a
+`resellmanager.tech`. `/producto/{id}` sigue pendiente en el código.
 
-El proxy deberá terminar TLS para ambos hosts y reenviar cada uno a la **misma aplicación interna**, manteniendo `Host` y el esquema externo correctos. La configuración de `AllowedHosts` del entorno productivo tendrá que aceptar ambos dominios, y las cabeceras reenviadas seguirán confiándose solo al proxy conocido. El host administrativo puede abrir la tienda en `/catalogo`; en el dominio de Virtuosa, la raíz `/` podrá redirigir a `/catalogo` en el proxy cuando se haga el despliegue, sin codificar nombres de host en los componentes.
-
-Para limitar la superficie del dominio público, el proxy deberá enrutar las páginas `/catalogo` y sus detalles, las tres lecturas de `/api/catalogo/productos` y los recursos estáticos que consume la aplicación: `branding/virtuosa/*`, `app.css`, `css/tailwind.css`, `ResellManager.Web.styles.css`, `app.js`, `form-feedback.js`, `reconnect.js`, `catalogo-publico.js`, `_framework/*` y, si aparecen dependencias de componentes, `_content/*`. El renderizado `InteractiveServer` necesita también el circuito de Blazor (`/_blazor`, incluida negociación, WebSocket y reconexión); una regla que acepte solo GET a HTML e imágenes rompería la búsqueda y los filtros. El documento HTML actual carga algunos recursos compartidos con la administración; son archivos estáticos, no endpoints de datos administrativos.
-
-Las rutas de administración, autenticación, comprobantes y sus API no deben enrutarse en el dominio público. La autorización de ASP.NET Core sigue protegiéndolas incluso detrás del proxy: la configuración por host añade una frontera de routing, no reemplaza Identity. Comprobar en un entorno de preparación los enlaces directos, los fallos 404 de producto/imagen, la conexión interactiva y la denegación de las rutas privadas desde el dominio público. Mantener las cookies de autenticación restringidas a su host y revisar cualquier política CSP de conexiones WebSocket al añadir el segundo dominio.
-
-La configuración versionada actual de despliegue documenta `app.resellmanager.tech`; el destino administrativo solicitado aquí es `resellmanager.tech`. Antes de cambiar el enrutamiento real habrá que decidir la transición de host y actualizar la configuración productiva, certificados, `AllowedHosts` y pruebas operativas. **Este documento no cambia esa configuración.**
+La especificación de proxy/AllowedHosts/TLS y circuito Blazor pertenece a
+Deployment, no a identidad visual ni reglas de negocio. El catálogo conserva
+lecturas y enlaces relativos al origen; cualquier cambio de routing debe
+preservar las pruebas en preview y proteger rutas privadas.
 
 ## Puntos para la siguiente etapa
 
 - Incorporar una exportación horizontal transparente y un favicon optimizado proporcionados o aprobados por la marca en la carpeta indicada.
-- Configurar y probar ambos hosts en el proxy, DNS y TLS con el mismo backend y los mismos volúmenes persistentes; no crear otro servicio de catálogo ni otra base de datos.
+- Verificar configuración efectiva de los hosts y preview según [Dominios](deployment/domains.md); no crear otro inventario ni otra base para el catálogo.
 - Revisar la calidad de nombres, descripciones y fotografías comerciales, porque provienen de los datos actuales del producto.
 - Evaluar carga inicial/SEO y paginación si el catálogo crece. La UI actual necesita conexión de Blazor para cargar productos y el filtro de categorías deriva del listado público completo.

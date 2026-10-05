@@ -4,7 +4,7 @@ La primera vista pública permite explorar productos disponibles en `/catalogo` 
 
 El backend se incorporó en `9a119bb` y esta primera UI en `c345ad6`, sobre `feature/tailwind-ui`.
 
-> Esta página documenta la primera iteración visual. La identidad pública vigente y su despliegue futuro se describen en [27_VirtuosaStore.md](27_VirtuosaStore.md).
+> Registro de la primera iteración visual, no especificación del diseño final. La identidad pública vigente se describe en [Virtuosa Store](27_VirtuosaStore.md), y los dominios/ruta canónica pendiente en [Dominios](deployment/domains.md). El estado integrado está en [Catálogo](modules/catalogo.md).
 
 ## Componentes y responsabilidades
 

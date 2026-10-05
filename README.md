@@ -2,7 +2,12 @@
 
 Aplicación web para administrar inventario, clientes, ventas y cuentas por cobrar de un negocio de reventa.
 
+Para trabajar con agentes, comienza por [AGENTS.md](AGENTS.md) y consulta el
+[índice de documentación](docs/README.md) según el área de la tarea.
+
 ## Estado del proyecto
+
+La base auditada el 05/10/2026 corresponde al tag `v1.2.1` (`835a487`); main y develop estaban sincronizadas. También existen `v1.1.0` y `v1.2.0`. El código usa .NET 10 y ya incluye medidas/presentación, imagen principal, catálogo público, compras GTQ/USD y scanner Quagga2. Esto describe el repositorio, no acredita la imagen exacta desplegada.
 
 ResellManager V1 implementa autenticación privada, clientes, productos/categorías, proveedores, compras y comprobantes privados, inventario/recepción, pedidos y reservas, ventas, pagos y Dashboard. La Fase 5.10 cerró consistencia y UX sin incorporar funcionalidades grandes ni concurrencia fuerte V2.
 
@@ -12,9 +17,9 @@ ResellManager está en producción, con dominio y HTTPS funcionando y cuentas Id
 
 Existen los tags `v1.0.0` (`3f2d264`) y `v1.0.1` (`97da64e`); este último incluye la corrección de claves duplicadas de Blazor en venta directa. La existencia de un tag no identifica por sí sola la imagen o commit que ejecuta el VPS. Véase el [changelog](CHANGELOG.md).
 
-El [runbook operativo V1](docs/21_Despliegue_V1.md) distingue configuración versionada y evidencia operativa. Se probaron backup manual y restore real; el timer systemd está instalado, activo y ya ejecutó correctamente, con retención automática. Las copias permanecen en el mismo VPS. Siguen pendientes la copia automática externa a Raspberry/otro equipo y la validación completa del rollback de versión de aplicación.
+El [runbook operativo V1](docs/deployment/deployment.md) distingue configuración versionada y evidencia operativa. Se probaron backup manual y restore real; el timer systemd está instalado, activo y ya ejecutó correctamente, con retención automática. Las copias permanecen en el mismo VPS. Siguen pendientes la copia automática externa a Raspberry/otro equipo y la validación completa del rollback de versión de aplicación.
 
-El [backend del catálogo público](docs/25_CatalogoPublicoBackend.md) ofrece lecturas comerciales de productos con inventario físico libre mediante `/api/catalogo/productos`, incluido detalle e imagen pública controlada. La [primera UI pública](docs/26_CatalogoPublicoUI.md) está disponible sin sesión en `/catalogo` y `/catalogo/{productoId}`, con búsqueda, filtro por categoría, precios en quetzales y diseño responsive integrado con Tailwind. La administración conserva su autenticación y los flujos del negocio permanecen intactos. La [identidad de Virtuosa Store y la preparación del dominio propio](docs/27_VirtuosaStore.md) documentan los logos originales, los estilos `store-*` y el routing futuro hacia la misma aplicación.
+El [backend del catálogo público](docs/25_CatalogoPublicoBackend.md) ofrece lecturas comerciales de productos con inventario físico libre mediante `/api/catalogo/productos`, incluido detalle e imagen pública controlada. La [primera UI pública](docs/26_CatalogoPublicoUI.md) está disponible sin sesión en `/catalogo` y `/catalogo/{productoId}`, con búsqueda, filtro por categoría, precios en quetzales y diseño responsive integrado con Tailwind. La administración conserva su autenticación y los flujos del negocio permanecen intactos. La [identidad de Virtuosa Store](docs/27_VirtuosaStore.md) documenta logos y estilos `store-*`. El dominio público confirmado es `https://virtuosagt.com`; administración usa `https://app.resellmanager.tech` y preview `https://preview.newtonlab.dev`. La URL deseada `/producto/{id}` todavía no existe en el código; rutas, evidencia operativa y pendientes se separan en [Dominios](docs/deployment/domains.md). No hay carrito, checkout ni pedidos web.
 
 ## Estructura
 
@@ -34,15 +39,15 @@ Las dependencias respetan la dirección de la arquitectura:
 
 ## Tecnologías
 
-- .NET 8
+- .NET 10
 - ASP.NET Core Blazor Web App (renderizado interactivo de servidor)
-- Entity Framework Core 8
+- Entity Framework Core 10
 - SQLite
 - ASP.NET Core Identity
 
 ## Requisitos
 
-- [.NET SDK 8.0](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [.NET SDK 10.0](https://dotnet.microsoft.com/download/dotnet/10.0)
 
 ## Compilar y ejecutar
 
@@ -61,13 +66,13 @@ Para crear la primera cuenta, configura `UsuarioInicial:Correo` y `UsuarioInicia
 
 Los comprobantes se guardan en `App_Data` por defecto, fuera de `wwwroot`. `AlmacenamientoComprobantes__DirectorioBase` permite una carpeta privada distinta; respalda esa carpeta junto con SQLite y, en producción, el key ring persistente de Data Protection. La ruta `/comprobantes/{compraId}` exige sesión autenticada. El informe de cierre conserva la preparación pendiente en aquella fase; la operación posterior se describe en el runbook. Este repositorio no despliega a producción automáticamente.
 
-Para construir y ejecutar la imagen .NET 8 con Caddy, consulta el
-[runbook de despliegue V1](docs/21_Despliegue_V1.md#construcción-y-arranque-en-ubuntu).
+Para construir y ejecutar la imagen .NET 10 con Caddy, consulta el
+[runbook de despliegue V1](docs/deployment/deployment.md#construcción-y-arranque-en-ubuntu).
 Incluye configuración externa, permisos, backups y restauración, hechos operativos confirmados y verificaciones pendientes.
 
 ## Tailwind CSS v4 (infraestructura)
 
-Se conservan `wwwroot/app.css` y los estilos aislados de Blazor para los módulos pendientes de migración. La fuente `src/ResellManager.Web/Styles/tailwind.css` importa únicamente `theme.css` y `utilities.css`, sin Preflight ni reset global, siguiendo la [documentación de Tailwind v4](https://tailwindcss.com/docs/preflight#disabling-preflight). En `Components/App.razor`, el CSS compilado se carga después de `app.css` y de los estilos aislados. Las utilities se importan sin capa para que puedan sobrescribir las reglas legacy al migrar un componente; no se usa `important`. Los controles compartidos se adaptan únicamente dentro de `.rm-ui`.
+`wwwroot/app.css` conserva las bases globales y estados de reconexión; los componentes administrativos usan el sistema compartido Tailwind. La fuente `src/ResellManager.Web/Styles/tailwind.css` importa únicamente `theme.css` y `utilities.css`, sin Preflight ni reset global, siguiendo la [documentación de Tailwind v4](https://tailwindcss.com/docs/preflight#disabling-preflight). En `Components/App.razor`, el CSS compilado se carga después de `app.css`. Las utilities se importan sin capa; `Styles/storefront.css` define los estilos públicos `store-*` y los componentes administrativos reutilizan `ui-*`. No se agrega un reset global.
 
 Tailwind y su CLI están fijados en `4.3.3`. Los scripts precargan `scripts/tailwind-resolver.mjs`: en rutas que contienen `#` (como `D:\C#\...`), resuelve los dos imports CSS del paquete con Node mediante el hook `__tw_resolve` de Tailwind. Esto evita que `enhanced-resolve` entregue rutas con bytes NUL y mantiene la CLI oficial para build/watch; en Docker, cuya ruta no contiene `#`, se usa el resolutor normal. Este hook es interno: verifica esta compatibilidad al actualizar Tailwind.
 
@@ -119,13 +124,13 @@ Los assets entregados se conservan como copias exactas en `src/ResellManager.Web
 | `resellmanager-logo-dark-stacked` | 4 | 5 | Variante vertical oscura conservada. |
 | `resellmanager-logo-light-stacked` | 5 | 1 | Variante vertical clara conservada. |
 
-Los logos horizontales ya incluyen el nombre; se retira el texto provisional que aparecía junto al símbolo R. En los logos, Tailwind controla el tamaño, la adaptación al ancho disponible y `object-fit: cover`: el encuadre oculta los márgenes exteriores del lienzo y mantiene la proporción del dibujo. El favicon se declara en `Components/App.razor` como `branding/resellmanager-icon.png`.
+Los logos horizontales ya incluyen el nombre; se retira el texto provisional que aparecía junto al símbolo R. Los componentes controlan tamaño y adaptación de los logos; conservar los assets originales y comprobar el encuadre del componente afectado. El favicon se declara en `Components/App.razor` como `branding/resellmanager-icon.png`.
 
 ## Interfaz base
 
 El layout, la navegación, la topbar y el dashboard usan utilities de Tailwind con superficies blancas, fondo `#F2F2F7`, esquinas redondeadas y sombras suaves. La fuente es `-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`, sin descargas. Los tokens `ui-*` se definen con `@theme` en `Styles/tailwind.css`; el azul `#0066D6` y el secundario `#63636B` mejoran el contraste de textos pequeños.
 
-`ui-button`, `ui-card` y `ui-input` son utilities compartidas. Los nombres legacy de botones, cards, inputs/selects, badges y mensajes reutilizan estas reglas con `@apply` dentro de `.rm-ui`, sin migrar el marcado de Productos, Clientes, Compras, Pedidos o Ventas. Se conserva el CSS legacy, incluidos los ajustes del selector de fechas nativo de iOS.
+`ui-button`, `ui-card` y `ui-input` son utilities compartidas. Los módulos administrativos ya fueron migrados a controles compartidos y Tailwind; se conserva CSS base, incluido el tratamiento del selector nativo de fechas iOS. El catálogo utiliza la identidad `store-*` descrita en su guía.
 
 En móvil se mantiene el menú nativo `popover`, con cierre al navegar, controles de al menos 44–48 px y márgenes reducidos. El dashboard presenta los canales como cards en móvil y los movimientos recientes como cards en todas las resoluciones. Solo la topbar y el fondo del menú utilizan blur; las transiciones respetan `prefers-reduced-motion`.
 
