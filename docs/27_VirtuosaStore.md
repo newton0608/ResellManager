@@ -29,16 +29,18 @@ El buscador del encabezado usa el debounce de 300 ms del modelo actual en el lis
 
 ## Dominios y frontera pública
 
-La fuente canónica de hosts, rutas existentes, URL deseada y límites de evidencia
-es [Dominios](deployment/domains.md). El dominio público confirmado es
+La fuente canónica de hosts, rutas y evidencia es
+[Dominios](deployment/domains.md). El dominio público operativo es
 `virtuosagt.com`, la administración permanece en `app.resellmanager.tech` y
 `preview.newtonlab.dev` se usa para pruebas. No se migra administración a
-`resellmanager.tech`. `/producto/{id}` sigue pendiente en el código.
+`resellmanager.tech`.
 
-La especificación de proxy/AllowedHosts/TLS y circuito Blazor pertenece a
-Deployment, no a identidad visual ni reglas de negocio. El catálogo conserva
-lecturas y enlaces relativos al origen; cualquier cambio de routing debe
-preservar las pruebas en preview y proteger rutas privadas.
+En producción, `/` sirve el catálogo y `/producto/{id}` es la URL pública limpia.
+Caddy la reescribe a la ruta Blazor interna `/catalogo/{id}`; el código no declara
+`@page /producto/{id}`. `/catalogo` redirige a `/` y el host `www` redirige al
+canónico. La especificación de proxy/AllowedHosts/TLS y circuito Blazor pertenece
+a Deployment. Cualquier cambio futuro debe preservar preview y proteger rutas
+privadas.
 
 ## Puntos para la siguiente etapa
 
