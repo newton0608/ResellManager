@@ -12,8 +12,10 @@ alta, edición, búsqueda por nombre/teléfono, listado y detalle con saldo/acti
   los pendientes actuales y el saldo no se limitan a esos meses.
 - No existe `Cliente.CodigoInterno`, estado activo ni operación de borrar,
   desactivar o reactivar en `IClienteService`.
-- La intención de desactivar/reactivar conservando historial está **pendiente de
-  implementación**; véase [decisión 025](../11_DecisionesDeDiseño.md#025-preservar-clientes-y-productos-con-historial).
+- La política acordada es no eliminar físicamente clientes desde la aplicación,
+  tengan o no historial: la operación prevista es **Desactivar / Reactivar**.
+  Sigue **pendiente de implementación**; véase
+  [decisión 025](../11_DecisionesDeDiseño.md#025-preservar-clientes-y-productos-con-historial).
 
 ## Dónde trabajar y validar
 

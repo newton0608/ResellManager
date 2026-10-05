@@ -209,9 +209,9 @@ Estas operaciones deben respetar reservas, inventario, ventas existentes y estad
 
 ## Desactivación segura de clientes y productos
 
-**Decisión de dirección aceptada; implementación pendiente.** Usar desactivación/reactivación en lugar de borrado físico para clientes/productos con historial, según [decisión 025](11_DecisionesDeDiseño.md#025-preservar-clientes-y-productos-con-historial). Faltan reglas concretas de elegibilidad y efecto en operaciones; no existe estado activo en las entidades actuales.
+**Decisión de dirección aceptada; implementación pendiente.** Clientes y productos no se eliminan físicamente desde la aplicación, tengan o no historial; la operación prevista siempre es desactivación/reactivación, según [decisión 025](11_DecisionesDeDiseño.md#025-preservar-clientes-y-productos-con-historial). No existe estado activo en las entidades actuales.
 
-Clientes y productos con ventas, pedidos, pagos, compras u otros movimientos no deben desaparecer del historial.
+Falta definir el tratamiento de deuda, reservas u operaciones activas, qué operaciones admiten maestros inactivos, búsquedas/listados, efecto público e inventario, y reglas exactas de reactivación.
 
 ## Evolución futura del canal Web
 

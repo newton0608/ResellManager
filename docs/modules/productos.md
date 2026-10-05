@@ -15,7 +15,9 @@ Categoría es un maestro configurable, no un enum.
   a WebP procesado, almacenamiento administrado y compensación ante fallos.
 - [Scanner](../29_BarcodeScanner.md): contrato, vendor fijado, pruebas JS/ópticas
   y validación física pendiente. No extrapoles emulación a iPhone real.
-- No existe estado activo ni desactivación/reactivación de Producto. La
+- No existe estado activo ni desactivación/reactivación de Producto. La política
+  acordada es no eliminar físicamente productos desde la aplicación, tengan o no
+  historial: siempre se prevé **Desactivar / Reactivar**. La
   [decisión 025](../11_DecisionesDeDiseño.md#025-preservar-clientes-y-productos-con-historial)
   todavía no está implementada. Quitar la imagen no equivale a borrar Producto.
 

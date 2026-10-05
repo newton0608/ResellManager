@@ -76,8 +76,8 @@ integre esta rama; no se añadieron stubs duplicados.
 | ROADMAP/medidas decían V1.1 sin publicación; Git contiene v1.1.0, v1.2.0 y v1.2.1 | Registrar tags/fechas; distinguir existencia en Git de despliegue y GitHub Releases. |
 | V2 presentaba foto principal/scanner/catálogo enteramente futuros | Marcar piezas implementadas y conservar ampliaciones pendientes (múltiples fotos, scanner operativo, tienda transaccional). |
 | Virtuosa duplicaba instrucciones de proxy y proponía administración en resellmanager.tech | Concentrar hosts/routing en Deployment; administración confirmada en app.resellmanager.tech. |
-| Dominio público sin nombre, frente a virtuosagt.com confirmado | Registrar dominio real por confirmación del responsable, sin certificar configuración externa. |
-| URL deseada /producto/{id} frente a @page /catalogo/{ProductoId:int} | Distinguir objetivo pendiente y ruta implementada; no modificar routing. |
+| Dominio público sin nombre, frente a virtuosagt.com confirmado | Registrar dominio real; una verificación operativa posterior el 05/10/2026 confirmó HTTPS y routing efectivo. |
+| URL pública /producto/{id} frente a @page /catalogo/{ProductoId:int} | Distinguir capas: /producto/{id} está operativo por rewrite externo de Caddy; Blazor conserva /catalogo/{id}. |
 | «Catálogo» para abastecimiento bajo pedido y catálogo web | Separar explícitamente ambos contratos. |
 | DELETE/desactivación como opciones abiertas; no hay estado activo | Registrar dirección 025 pendiente de implementación; preservar preguntas del análisis. |
 | Guías de fases con cifras de pruebas, trabajo sin commit y UI antigua | Marcar evidencia histórica y enlazar estado integrado; no inventar pruebas actuales. |
@@ -88,13 +88,17 @@ integre esta rama; no se añadieron stubs duplicados.
 
 - Landed cost: levantamiento pendiente, sin gastos/reglas de reparto, entidades,
   migraciones o versión definitiva.
-- Desactivación: dirección confirmada para clientes/productos con historial;
-  elegibilidad, deuda/reservas, búsquedas, efecto público, reactivación y registros
-  sin movimientos todavía necesitan definición. No se generaliza a otros maestros.
-- Ruta pública canónica: `/producto/{id}` deseada, sin implementar aliases,
-  redirects, canonical SEO o routing por host en esta tarea.
-- Configuración real de dominios/preview, versiones desplegadas y copia instalada
-  del backup: falta inspección/evidencia del entorno externo.
+- Desactivación: clientes y productos no se eliminan físicamente desde la
+  aplicación, tengan o no historial. Sigue pendiente definir deuda/reservas,
+  operaciones nuevas, búsquedas, efecto público/inventario y reactivación. No se
+  generaliza a otros maestros.
+- Ruta pública: `/producto/{id}` quedó verificada como URL operativa mediante
+  rewrite externo; Blazor conserva `/catalogo/{id}`. Canonical SEO adicional
+  sigue siendo una tarea separada.
+- Dominios/preview: la verificación operativa posterior confirmó
+  `virtuosagt.com`, redirección `www`, 404 de rutas administrativas y preview.
+  Sigue pendiente alinear completamente la configuración efectiva de Caddy con
+  la configuración versionada del repositorio y documentar/versionar esa deuda.
 - Tienda V2.4: carrito/pedidos y operaciones transaccionales futuros, no existentes.
 - Comisiones por proveedor/categoría, devoluciones, roles y concurrencia fuerte:
   no se resuelven por documentación. Se mantienen sus pendientes previos.
