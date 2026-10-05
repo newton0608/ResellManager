@@ -1,59 +1,87 @@
 # Dominios, catálogo y previews
 
-**Actualizado: 05/10/2026.** Los dominios siguientes fueron confirmados por el
-responsable en la solicitud de esta auditoría. La configuración externa efectiva
-del VPS no se inspeccionó; no se certifican DNS, TLS ni reglas del proxy desde Git.
+**Actualizado: 05/10/2026.** Además de la auditoría del repositorio, se verificó
+operacionalmente el routing público del VPS. Esta guía distingue explícitamente
+el comportamiento externo efectivo del routing que declara Blazor y de la
+configuración que hoy está versionada en Git.
 
-| Host | Uso confirmado | Evidencia versionada / límites |
+| Host | Estado operativo verificado | Límite / fuente |
 | --- | --- | --- |
-| `https://virtuosagt.com` | Dominio público real de Virtuosa Store | No aparece en Caddyfile/Compose versionados; no inferir el routing externo. |
-| `https://app.resellmanager.tech` | Sistema administrativo | Host presente en Caddyfile y runbook. |
-| `https://preview.newtonlab.dev` | Previews/pruebas, incluido catálogo | No tiene configuración propia versionada en este repositorio. Debe seguir siendo compatible. |
+| `https://virtuosagt.com` | HTTPS activo; `/` sirve el catálogo público. | Routing efectivo verificado en el VPS. |
+| `https://www.virtuosagt.com` | Redirige al host canónico `https://virtuosagt.com/`. | Redirect externo de Caddy. |
+| `https://app.resellmanager.tech` | Sistema administrativo sigue operativo. | Host administrativo separado. |
+| `https://preview.newtonlab.dev` | `/catalogo` y su API pública siguen operativos para pruebas. | Preview conserva las rutas Blazor originales. |
 
 `resellmanager.tech` no sustituye al host administrativo confirmado
-`app.resellmanager.tech`. No hay una transición de administración a otro host
-aprobada por este trabajo.
+`app.resellmanager.tech`. No hay una transición de administración a otro host.
 
-## Rutas existentes y objetivo pendiente
+## Routing externo frente a routing Blazor
 
-| Contrato | Estado en el repositorio |
-| --- | --- |
-| `/catalogo` y `/catalogo/{ProductoId:int}` | Páginas anónimas existentes. Enlaces actuales relativos al origen. |
-| `/api/catalogo/productos`, `/{id}` y `/{id}/imagen` bajo ese prefijo | API pública de lectura existente. |
-| `https://virtuosagt.com/producto/{id}` | **URL canónica deseada; pendiente de implementación/verificación de routing.** No existe un `@page /producto/...` en la base auditada. |
+La aplicación Blazor sigue declarando:
 
-La raíz del dominio público, redirects, aliases, metadatos canonical y eventual
-compatibilidad con `/catalogo/{id}` requieren una tarea específica; no se deducen
-de la URL deseada. En preview deben seguir funcionando catálogo, detalle, API,
-imágenes y circuito Blazor sin codificar el dominio productivo en las lecturas.
+- `/catalogo`
+- `/catalogo/{ProductoId:int}`
+
+El dominio público expone externamente:
+
+- `https://virtuosagt.com/` → catálogo;
+- `https://virtuosagt.com/producto/{id}` → detalle limpio;
+- `https://virtuosagt.com/catalogo` → redirect a `/`;
+- `https://virtuosagt.com/catalogo/{id}` → redirect a `/producto/{id}`;
+- `https://www.virtuosagt.com/*` → redirect al host canónico.
+
+La URL `/producto/{id}` **es operativa**, pero no existe como `@page` en el
+código Blazor. Caddy la reescribe internamente a `/catalogo/{id}`. Por tanto,
+documentar la URL limpia no autoriza a afirmar que se implementó un alias en
+Razor ni a cambiar los componentes sin una tarea específica.
+
+La API pública conserva `/api/catalogo/productos`, su detalle e imagen. La UI
+usa rutas relativas al origen para que producción y preview puedan compartir el
+mismo código.
+
+## Frontera pública verificada
+
+En la comprobación operativa del 05/10/2026:
+
+- el catálogo y sus assets/API respondieron correctamente por
+  `virtuosagt.com`;
+- rutas administrativas probadas como `/login`, `/clientes`, `/compras`,
+  `/ventas` y `/productos` respondieron 404 desde el host público;
+- `preview.newtonlab.dev/catalogo` siguió funcionando;
+- TLS del dominio público fue válido.
+
+El routing por host reduce la superficie pública, pero no sustituye Identity para
+las rutas privadas del sistema administrativo.
+
+## Deuda de infraestructura/versionado
+
+La configuración efectiva de Caddy que habilita el dominio público y sus rewrites
+fue aplicada y verificada en el VPS. Sin embargo, el estado operativo no estaba
+completamente representado por la configuración versionada en la rama remota del
+repositorio durante esta verificación. No asumir que clonar el repositorio y
+levantar su Caddyfile reproduce automáticamente el routing público actual.
+
+Antes de modificar o desplegar infraestructura, comparar la configuración
+versionada con la efectiva y resolver esa deuda sin borrar `preview.newtonlab.dev`
+ni afectar `app.resellmanager.tech`.
 
 ## Separación y operación
 
 La [decisión 026](../11_DecisionesDeDiseño.md#026-separar-dominios-público-y-administrativo)
-mantiene las identidades pública/privada sobre los servicios y datos existentes.
-El dominio público debe ofrecer catálogo y recursos necesarios sin habilitar
-rutas administrativas, autenticación o comprobantes. Identity sigue siendo
-autoridad para rutas privadas; el routing por host no reemplaza autorización.
+mantiene las identidades pública/privada sobre los mismos servicios, base de
+datos y volúmenes. No se crea otro inventario ni otro backend para Virtuosa.
 
-En una tarea de deployment revisar la configuración **efectiva** y el
-[runbook](deployment.md): `AllowedHosts`, TLS, proxy confiable, recursos estáticos
-y `/_blazor` (negociación/WebSocket/reconexión). La UI es InteractiveServer;
-permitir únicamente HTML e imágenes no basta.
+En una tarea de deployment revisar también el [runbook](deployment.md):
+`AllowedHosts`, TLS, proxy confiable, recursos estáticos y `/_blazor`
+(negociación/WebSocket/reconexión). La UI es InteractiveServer.
 
-La topología prevista reutiliza la misma aplicación interna y los mismos datos/
-volúmenes para ambos dominios, sin un servicio paralelo de catálogo. Mantener
-el Host externo y el esquema HTTPS correctos, confiar solo en el proxy conocido
-y aceptar los hosts necesarios mediante configuración del entorno.
+Inventario de recursos a conservar en el host público:
+`branding/virtuosa/*`, `app.css`, `css/tailwind.css`, `app.js`,
+`form-feedback.js`, `reconnect.js`, `catalogo-publico.js`, `_framework/*`
+y el circuito `/_blazor`. Si una versión incorpora `_content/*` o CSS aislado,
+publicar solo lo que consuma realmente.
 
-Inventario de recursos para revisar contra el HTML efectivo: `branding/virtuosa/*`,
-`app.css`, `css/tailwind.css`, `app.js`, `form-feedback.js`, `reconnect.js`,
-`catalogo-publico.js`, `_framework/*` y el circuito `/_blazor`. Si una versión
-incorpora recursos `_content/*` o CSS aislado, incluir únicamente los que consume;
-no copiar una allowlist antigua sin comprobarla. Conservar cookies de Identity
-restringidas a su host y revisar CSP/conexiones WebSocket al configurar dominios.
-
-Antes de cerrar cambios de routing, probar ambos hosts y preview con datos
-aislados, enlaces directos/404, imágenes ausentes, filtros/reconexión y denegación
-de rutas privadas desde el host público. Registrar entorno, commit y evidencia.
-No ejecutar cambios de Caddy, DNS, Docker o DeployManager por una tarea de catálogo
-que no incluya despliegue.
+Antes de cerrar nuevos cambios de routing, probar producción y preview con
+enlaces directos/404, imágenes, filtros/reconexión y denegación de rutas privadas.
+Registrar entorno, commit y evidencia. Una tarea de catálogo no autoriza por sí
+sola cambios de Caddy, DNS, Docker o DeployManager.
