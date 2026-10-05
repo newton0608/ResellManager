@@ -1,8 +1,10 @@
 # Seguridad de producción — checklist viva
 
+> Revisión documental 05/10/2026: .NET 10 y catálogo público ya están implementados. La confirmación operativa histórica se conserva por separado. Consultar [Dominios](domains.md) para hosts y frontera pública; no se inspeccionó el VPS en esta auditoría.
+
 ## Objetivo
 
-Este documento mantiene una lista de controles de seguridad y operación para ResellManager. No sustituye pruebas, auditorías ni el [runbook de despliegue V1](21_Despliegue_V1.md). Debe actualizarse cuando cambie la arquitectura (multiusuario, API pública, tienda, pagos, correo, IA, PostgreSQL, etc.).
+Este documento mantiene una lista de controles de seguridad y operación para ResellManager. No sustituye pruebas, auditorías ni el [runbook de despliegue V1](deployment.md). Debe actualizarse cuando cambie la arquitectura (multiusuario, API pública, tienda, pagos, correo, IA, PostgreSQL, etc.).
 
 Referencia histórica del paquete: rama `chore/v1-production-deploy`, hosting y hardening del login, headers, versión de Caddy y bind mounts, incorporados en `v1.0.1`. Implementado en código no significa validado en el VPS.
 
@@ -25,7 +27,7 @@ Existen `v1.0.0 → 3f2d264` y `v1.0.1 → 97da64e`, pero no prueban qué imagen
 | 1 | RLS en tablas expuestas o control equivalente | ⚪ / 🔵 | SQLite no se expone al cliente y V1 no es multi-tenant. La autorización vive en servidor. Revaluar con PostgreSQL/API/tienda/multiusuario. |
 | 2 | Cada fila con dueño cuando corresponda | ⚪ / 🔵 | Los datos actuales pertenecen al negocio y son compartidos. Incorporar ownership/tenant solo donde exista una frontera real de usuario/empresa. |
 | 3 | Campos que el cliente no puede escribir | ✅ / 🟡 | Mantener DTO/InputModels y validación de casos de uso; evitar binding directo de entidades persistentes desde entrada no confiable. |
-| 4 | Devolver solo los campos necesarios | ✅ / 🔵 | No existe una API JSON pública general. Una futura API/tienda debe exponer DTOs mínimos. |
+| 4 | Devolver solo los campos necesarios | ✅ / 🔵 | El catálogo expone DTOs comerciales mínimos, sin entidades/DTOs administrativos ni costos/clientes. Mantener esa lista explícita al ampliar la API; véase [backend público](../25_CatalogoPublicoBackend.md). |
 | 5 | Claves públicas pueden exponerse; secretos jamás | ✅ | Secretos solo en servidor/configuración privada. Nunca incluir credenciales, tokens privados, claves de firma o bootstrap en repo, imagen, JS o logs. |
 | 6 | Lo que llega a la app cliente no es secreto | ✅ | Cualquier HTML/JS/CSS/configuración enviada al navegador se considera pública. Blazor Server reduce código cliente, pero no cambia esta regla. |
 | 7 | Ante una clave filtrada: rotar/revocar antes de purgar | ✅ | Una credencial filtrada se considera comprometida. Primero revocar/rotar; luego limpiar historial, logs o artefactos si procede. |
@@ -52,7 +54,7 @@ Existen `v1.0.0 → 3f2d264` y `v1.0.1 → 97da64e`, pero no prueban qué imagen
 
 ### Backups y recuperación
 
-El [runbook operativo](21_Despliegue_V1.md#respaldo-y-restauración) documenta `scripts/backup-v1.sh`, su copia `/opt/resellmanager/backup.sh` y el servicio/timer systemd instalados. El timer está activo y ya ejecutó correctamente; backup manual y restore real también están probados según confirmación operativa.
+El [runbook operativo](deployment.md#respaldo-y-restauración) documenta `scripts/backup-v1.sh`, su copia `/opt/resellmanager/backup.sh` y el servicio/timer systemd instalados. El timer está activo y ya ejecutó correctamente; backup manual y restore real también están probados según confirmación operativa.
 
 La retención automática conserva la unión de 7 copias más recientes, una por cada una de las 4 semanas ISO más recientes disponibles y una por cada uno de los 3 meses más recientes disponibles; no implica exactamente 14 archivos. Actualmente las copias permanecen en el mismo VPS y todavía no existe copia automática externa a Raspberry/otro equipo.
 
@@ -126,7 +128,7 @@ Estado: ✅ política definida; procedimientos concretos se agregan cuando exist
 
 ### Bien resuelto
 
-- Dockerfile multi-stage y runtime .NET 8 no-root.
+- Dockerfile multi-stage y runtime .NET 10 no-root (configuración actual).
 - ResellManager no publica `8080` al host; solo Caddy publica 80/443.
 - Proxy confiable explícito: solo procesa `X-Forwarded-For` y `X-Forwarded-Proto`, con `ForwardLimit = 1`; Production falla si no se configura proxy/red válida.
 - Cookie de autenticación `Secure` en Production, `HttpOnly` y `SameSite=Lax`.
@@ -151,7 +153,7 @@ Estado: ✅ política definida; procedimientos concretos se agregan cuando exist
 6. **Validar red Docker elegida** y que la IP real de Caddy coincide con `ReverseProxy__KnownProxy`.
 7. **Verificar desde Internet** que `8080` y SQLite no son accesibles.
 8. **Retirar `UsuarioInicial__Correo` y `UsuarioInicial__Contrasena`** inmediatamente después del bootstrap y recrear el contenedor.
-9. **Auditar paquetes NuGet directos/transitivos** y runtime de la instalación y de cada actualización; `net8.0` requiere plan de migración por fin de soporte el 10/11/2026.
+9. **Auditar paquetes NuGet directos/transitivos** y runtime de la instalación y de cada actualización; el código ya usa `net10.0`, pero la imagen efectiva y sus parches requieren evidencia operativa.
 10. **Reproducibilidad de imágenes**: Caddy está fijado en `2.11.4-alpine`; registrar además los digests de las imágenes usadas y conservar la desplegada/anterior para el ensayo real de rollback pendiente.
 11. **Data Protection en reposo**: las keys persistidas en filesystem no quedan cifradas automáticamente por esa configuración; proteger permisos, disco y backups y evaluar protección adicional si aumenta el riesgo.
 12. **Persistencia y recreaciones**: Compose usa `/opt/resellmanager/data/*` para la app y volúmenes nombrados para Caddy. Verificar escritura de los directorios/archivos por el UID/GID de `app` (1654:1654 en la imagen de referencia); no crear otra estructura en `/srv`. La carpeta `data/caddy` no sustituye los volúmenes nombrados. La indicación original de detener un Caddy de prueba correspondía a la transición inicial; no describe el estado productivo actual.
@@ -164,7 +166,7 @@ Revisar y ampliar esta checklist cuando aparezca cualquiera de estas superficies
 - PostgreSQL y/o RLS.
 - Múltiples empresas/tenants o propiedad por usuario.
 - Roles/permisos finos y 2FA.
-- API pública, CORS y tokens.
+- Ampliaciones de API pública, CORS y tokens (el catálogo de lectura ya existe).
 - Tienda pública, registro, CAPTCHA/anti-bot y rate limiting ampliado.
 - Pasarela de pagos y webhooks.
 - Email/SMS/push y cuotas de proveedores.

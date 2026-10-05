@@ -1,5 +1,15 @@
 # Reglas del Negocio
 
+Este documento reúne invariantes del flujo operativo implementado. No convierte
+propuestas futuras en comportamiento actual. Para monedas de compra consultar
+[GTQ/USD](../28_MonedasDeCompra.md); para publicación de Virtuosa Store,
+[backend público](../25_CatalogoPublicoBackend.md).
+
+«Catálogo» en las reglas de compra/pedido/venta significa el abastecimiento bajo
+pedido (`OrigenCompra.Catalogo` / `TipoPedido.Catalogo`), **no** el catálogo web
+de inventario libre. Las decisiones pendientes conservan ese estado en el
+[registro de decisiones](../11_DecisionesDeDiseño.md).
+
 ## UnidadInventario
 
 - Una `UnidadInventario` representa una unidad física real de un `Producto`.

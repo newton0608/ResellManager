@@ -2,10 +2,34 @@
 
 Este documento describe el modelo lógico de base de datos de ResellManager V1.
 
+Incluye contratos vigentes y sus ampliaciones enlazadas; el DER conserva el
+modelo base V1 y no debe suponerse actualizado con cada campo posterior. La
+fuente técnica del esquema implementado es
+[EntityConfigurations](../../src/ResellManager.Infrastructure/Persistence/Configurations/EntityConfigurations.cs)
+y el [snapshot/migraciones](../../src/ResellManager.Infrastructure/Persistence/Migrations/).
+
+## Ciclo de persistencia actual
+
+- [ResellManagerDbContext](../../src/ResellManager.Infrastructure/Persistence/ResellManagerDbContext.cs)
+  integra negocio e Identity sobre SQLite mediante EF Core 10; no hay una base
+  pública separada para la tienda.
+- [InicializadorBaseDatos](../../src/ResellManager.Web/Inicializacion/InicializadorBaseDatos.cs)
+  aplica las migraciones existentes al arrancar, antes e independientemente del
+  seed de usuario. Probar un arranque contra datos reales puede modificar esquema.
+- SQLite guarda referencias de archivos, no sus binarios. Comprobantes e
+  [imágenes](../24_ImagenPrincipalProducto.md) se administran fuera de wwwroot;
+  respaldo/restore debe cubrir datos y archivos juntos según el
+  [runbook](../deployment/deployment.md).
+- Hay restricciones de relación `Restrict`, `Cascade` y `SetNull` según entidad.
+  Las FK no implementan por sí mismas una política de borrado lógico.
+  Cliente/Producto no tienen estado activo, filtros de desactivación ni casos de
+  uso de reactivación; [decisión 025](../11_DecisionesDeDiseño.md#025-preservar-clientes-y-productos-con-historial)
+  sigue pendiente de implementación, sin migración definida.
+
 El diagrama se encuentra en:
 `docs/diagrams/09_BaseDeDatos.drawio`
 
-Los contratos vigentes se describen aquí y en la configuración EF; la ampliación GTQ/USD de Compras se detalla en [monedas de compra](28_MonedasDeCompra.md).
+Los contratos vigentes se describen aquí y en la configuración EF; la ampliación GTQ/USD de Compras se detalla en [monedas de compra](../28_MonedasDeCompra.md).
 
 ## Notas generales
 
@@ -57,4 +81,4 @@ Los contratos vigentes se describen aquí y en la configuración EF; la ampliaci
 - La utilidad se calcula con `PrecioFinal - CostoUnitario` para ventas registradas.
 ## Moneda de origen en compras
 
-GTQ es la moneda base. Compra y DetalleCompra conservan costos originales GTQ/USD y el tipo aplicado congelado; Total, CostoUnitario y UnidadInventario.Costo siguen siendo GTQ. La migración preserva todos los importes históricos. Consulta [contratos y compatibilidad](28_MonedasDeCompra.md).
+GTQ es la moneda base. Compra y DetalleCompra conservan costos originales GTQ/USD y el tipo aplicado congelado; Total, CostoUnitario y UnidadInventario.Costo siguen siendo GTQ. La migración preserva todos los importes históricos. Consulta [contratos y compatibilidad](../28_MonedasDeCompra.md).

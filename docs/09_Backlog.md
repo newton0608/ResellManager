@@ -1,6 +1,6 @@
 # Backlog
 
-V1 está en producción. Este backlog conserva entregas de fases y distingue ampliaciones posteriores; sus pendientes V2 no se consideran resueltos por el despliegue. El estado operativo vigente se mantiene en el [runbook V1](21_Despliegue_V1.md) y las versiones en el [changelog](../CHANGELOG.md).
+V1 está en producción. Este backlog conserva entregas de fases y distingue ampliaciones posteriores; sus pendientes V2 no se consideran resueltos por el despliegue. El estado operativo vigente se mantiene en el [runbook V1](deployment/deployment.md) y las versiones en el [changelog](../CHANGELOG.md).
 
 ## Backend V1 completado
 

@@ -10,13 +10,17 @@ El cierre funcional y técnico se conserva como registro histórico en [Cierre V
 
 Producción, dominio/HTTPS, cuentas Identity separadas y pruebas de cliente, compra y venta directa están confirmados operativamente. Backup manual y restore real fueron probados; el timer automático está activo y ya ejecutó correctamente, con retención. Las copias permanecen en el mismo VPS.
 
-Pendientes operativos V1: copia automática externa a Raspberry/otro equipo, validación completa del rollback de versión de aplicación y verificaciones de seguridad/QA todavía sin evidencia detallada incorporada. El [runbook V1](docs/21_Despliegue_V1.md) separa lo confirmado de lo pendiente; estas tareas no convierten el despliegue inicial en un evento futuro ni implementan V2/V3.
+Pendientes operativos V1: copia automática externa a Raspberry/otro equipo, validación completa del rollback de versión de aplicación y verificaciones de seguridad/QA todavía sin evidencia detallada incorporada. El [runbook V1](docs/deployment/deployment.md) separa lo confirmado de lo pendiente; estas tareas no convierten el despliegue inicial en un evento futuro ni implementan V2/V3.
 
 ## V1.1 — Mejoras de Producto
 
-**En desarrollo e integración; no publicada.** El modelo, la persistencia y la captura administrativa de volumen o peso opcionales y presentación comercial están implementados. La entrega funcional tipo V1.1.0 y su fecha de publicación siguen pendientes de confirmar.
+**Implementada y etiquetada en Git.** Existe `v1.1.0` (`832c172`, 27/09/2026); también `v1.2.0` (`7cca3e5`, 03/10/2026) y `v1.2.1` (`835a487`, tag del 05/10/2026 UTC; commit del 04/10/2026). Los tags no prueban la versión ejecutada en producción. Medidas/presentación administrativa y captura de código de barras existen en el código.
 
-Modelo propuesto, reglas y decisiones abiertas en [Medidas y presentación de producto](docs/23_MedidasYPresentacionProducto.md). V1.1 también incluye la captura de `Producto.CodigoBarras` con cámara durante alta y edición, conservando la entrada manual. La integración del lector en Venta Directa, Inventario y búsquedas permanece en V2.1. La presentación en tienda virtual corresponde al futuro canal V2.4.
+Modelo propuesto, reglas y decisiones abiertas en [Medidas y presentación de producto](docs/23_MedidasYPresentacionProducto.md). V1.1 también incluye la captura de `Producto.CodigoBarras` con cámara durante alta y edición, conservando la entrada manual. La integración del lector en Venta Directa, Inventario y búsquedas permanece en V2.1. El catálogo público actual ya muestra medidas canónicas y presentación; las equivalencias visuales adicionales siguen pendientes. La evolución a tienda transaccional permanece en V2.4.
+
+## Ampliaciones ya incorporadas al repositorio
+
+La base `v1.2.1` incorpora imagen principal, catálogo público de Virtuosa Store, compras GTQ/USD y hotfix del scanner. Consulta el [índice](docs/README.md) y el [changelog](CHANGELOG.md). No hay todavía carrito, checkout ni pedidos web; landed cost sigue en [análisis pendiente](docs/modules/landed-cost.md) y desactivación/reactivación en [decisión 025](docs/11_DecisionesDeDiseño.md#025-preservar-clientes-y-productos-con-historial).
 
 ## V2 — Evolución planificada
 
