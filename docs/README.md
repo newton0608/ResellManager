@@ -57,7 +57,7 @@ decisiones en lugar de abrir una segunda colección ADR con decisiones repetidas
 | [Entrevistas](13_Entrevistas.md) | Hallazgos originales; no tomar porcentajes/devoluciones como implementados. |
 | [Nomenclatura](15_Nomenclatura.md) / [glosario](16_Glosario.md) | Vocabulario y separación de conceptos. |
 | [Alcance V1](14_Alcance_V1.md) / [cierre V1](18_Fase510_CierreV1.md) | Alcance/evidencia de fases anteriores; no contienen todas las ampliaciones actuales. |
-| [Changelog](../CHANGELOG.md) | Tags/versiones y estado Unreleased; no certifica despliegue. |
+| [Changelog](../CHANGELOG.md) | Tags/versiones y estado Unreleased; no certifica despliegue. `.github/workflows/release.yml` publica GitHub Releases desde tags. |
 | [Diagramas](diagrams/) | Material editable conservado; contrastar contratos ampliados con código/configuración EF. |
 | [Auditoría documental 05/10/2026](documentation-audit.md) | Base, reorganización, contradicciones y límites de esta revisión. |
 
