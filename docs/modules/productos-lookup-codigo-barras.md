@@ -1,6 +1,6 @@
 # Búsqueda asistida de productos por código de barras
 
-**Estado: implementado en Agregar producto y validado con cámara física real. La combinación exacta dispositivo/navegador de esa prueba no quedó registrada; la regresión específica iPhone/Safari del hotfix conserva esa limitación en su guía.**
+**Estado: implementado en Agregar producto y validado físicamente con Brave en un iPhone 14 Plus. Esa prueba no certifica la regresión histórica específica de Safari; ver la guía del scanner.**
 
 Esta función reduce la captura manual al registrar productos nuevos. Reutiliza el
 scanner existente para consultar fuentes externas por código de barras, permite
@@ -567,7 +567,7 @@ scanner, dependencias ni infraestructura de despliegue; en ese punto todavía no
 
 Después del merge de la funcionalidad se validó el flujo contra Preview con proveedores y cámara reales:
 
-- el scanner en vivo detectó un código inmediatamente con hardware de cámara real;
+- el scanner en vivo detectó un código inmediatamente con **Brave en un iPhone 14 Plus**;
 - la búsqueda externa devolvió datos e imagen y la revisión/preview funcionó;
 - imágenes de muestra de Open Food Facts pudieron descargarse desde el VPS con respuesta `200 image/jpeg`;
 - el fix de redirecciones era correcto, pero no resolvía por sí solo el fallo de persistencia observado en Preview.
@@ -578,4 +578,4 @@ Se configuró Preview con `AlmacenamientoImagenesProducto__DirectorioBase=/data/
 
 Esta ruta es específica del despliegue de Preview. Producción conserva el contrato de Compose `/app/data/productos` con su bind de host; no copiar `/data/productos` a producción. Ver [Imagen principal](../24_ImagenPrincipalProducto.md) y [Dominios/Preview](../deployment/domains.md).
 
-La prueba física confirma funcionamiento con cámara real, pero no registró modelo exacto de dispositivo/navegador ni el código histórico que fallaba en v1.2.0. La afirmación más precisa es hardware real validado, no una certificación completa de Safari.
+La prueba física confirma funcionamiento en **iPhone 14 Plus + Brave**. No quedó registrado que se usara exactamente el código histórico que fallaba en v1.2.0 y no se repitió esa comprobación en Safari; por tanto no debe presentarse como certificación específica de Safari.
