@@ -13,7 +13,7 @@ Categoría es un maestro configurable, no un enum.
   opcionales, nunca ambos informados; presentación comercial independiente.
 - [Imagen principal](../24_ImagenPrincipalProducto.md): una referencia privada
   a WebP procesado, almacenamiento administrado y compensación ante fallos.
-- [Scanner](../29_BarcodeScanner.md): contrato, vendor fijado y pruebas JS/ópticas. Existe validación posterior con cámara física real; la combinación exacta dispositivo/navegador y la regresión Safari original no quedaron registradas.
+- [Scanner](../29_BarcodeScanner.md): contrato, vendor fijado y pruebas JS/ópticas. Existe validación física posterior en **iPhone 14 Plus + Brave**; la regresión histórica específica de Safari no quedó certificada por esa prueba.
 - [Búsqueda asistida por código de barras](productos-lookup-codigo-barras.md):
   consulta local + proveedores externos, revisión
   antes de aplicar datos y guardado manual. **Implementado en Agregar producto.**
