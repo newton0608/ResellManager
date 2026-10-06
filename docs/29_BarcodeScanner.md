@@ -223,11 +223,18 @@ No quedó registrado que esta comprobación usara exactamente el mismo código q
 
 ## Integración operativa V2.1
 
-**Implementado en la rama feature; QA físico operativo pendiente (06/10/2026).**
-`ProductoForm`, `VentaDirectaForm` e `Inventario` consumen el mismo
-`BarcodeScanner`, sin cambiar su contrato ni el motor óptico. Los dos consumidores
-operativos consultan sólo `IConsultaProductoCodigoBarras`; no invocan
-`IProductoLookupService` ni proveedores externos.
+**Implementación inicial en la rama feature; ajustes funcionales aprobados tras
+probar Preview pendientes (06/10/2026).** `ProductoForm`, `VentaDirectaForm`
+e `Inventario` ya consumen el mismo `BarcodeScanner`, sin cambiar su contrato
+ni el motor óptico. Venta Directa e Inventario consultan sólo
+`IConsultaProductoCodigoBarras`; no invocan `IProductoLookupService` ni
+proveedores externos.
+
+Antes del cierre, Venta Directa debe agrupar por lote de agregado con un solo
+Precio final por unidad y Nueva compra debe convertirse en consumidor del mismo
+scanner. En Compra la coincidencia sigue siendo local primero; sólo cuando el
+código no existe y la usuaria elige **Registrar producto** se reutiliza el alta
+asistida que puede consultar Open Facts/UPCitemdb.
 
 Cantidades, disponibilidad, navegación y evidencia actual están en el
 [contrato operativo](modules/scanner-operativo-v2-1.md#implementación-y-evidencia--06102026).
@@ -237,8 +244,8 @@ fallos/cancelación y revalidación con servicios locales. El nuevo
 con Playwright disponible usando las mismas variables del QA óptico.
 
 La validación física histórica de iPhone 14 Plus + Brave se conserva arriba:
-no se extrapola a Venta Directa/Inventario ni a Safari. Los nuevos flujos aún
-requieren la comprobación con cámara y dispositivo/navegador exactos.
+no se extrapola a Venta Directa/Inventario ni a Safari. La implementación final de Venta Directa, Inventario y Nueva compra requiere
+comprobación con cámara y registro de dispositivo/navegador exactos.
 
 ## Auditoría npm (2026-10-05)
 
