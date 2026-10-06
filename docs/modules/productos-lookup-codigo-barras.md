@@ -561,4 +561,21 @@ servidor, cadena 301→302→200 al guardar, ruta persistida, imágenes cargadas
 listado/detalle administrativos e `ImagenCatalogo` y mismo WebP en ambos
 endpoints. Se verificaron 404 públicos y ausencia en listado antes de registrar
 stock elegible. No se modificaron modelos, migraciones, reglas de publicación,
-scanner, dependencias ni infraestructura de despliegue; no se hizo despliegue ni merge.
+scanner, dependencias ni infraestructura de despliegue; en ese punto todavía no se había hecho despliegue ni merge.
+
+## Validación operativa y persistencia en Preview — 06/10/2026
+
+Después del merge de la funcionalidad se validó el flujo contra Preview con proveedores y cámara reales:
+
+- el scanner en vivo detectó un código inmediatamente con hardware de cámara real;
+- la búsqueda externa devolvió datos e imagen y la revisión/preview funcionó;
+- imágenes de muestra de Open Food Facts pudieron descargarse desde el VPS con respuesta `200 image/jpeg`;
+- el fix de redirecciones era correcto, pero no resolvía por sí solo el fallo de persistencia observado en Preview.
+
+La causa operativa restante estaba en la configuración de almacenamiento de Preview. DeployManager montaba su persistencia en `/data`, pero el proyecto no configuraba `AlmacenamientoImagenesProducto__DirectorioBase`. La aplicación caía entonces en su valor por defecto relativo a `App_Data/productos` bajo el directorio de la aplicación, que no era el volumen persistente/escribible previsto para ese contenedor.
+
+Se configuró Preview con `AlmacenamientoImagenesProducto__DirectorioBase=/data/productos` y se recreó el contenedor conservando el bind persistente de `/data`. El health check respondió 200 y una nueva alta asistida guardó correctamente la imagen externa; el detalle administrativo dejó de mostrar el fallback sin imagen.
+
+Esta ruta es específica del despliegue de Preview. Producción conserva el contrato de Compose `/app/data/productos` con su bind de host; no copiar `/data/productos` a producción. Ver [Imagen principal](../24_ImagenPrincipalProducto.md) y [Dominios/Preview](../deployment/domains.md).
+
+La prueba física confirma funcionamiento con cámara real, pero no registró modelo exacto de dispositivo/navegador ni el código histórico que fallaba en v1.2.0. La afirmación más precisa es hardware real validado, no una certificación completa de Safari.
