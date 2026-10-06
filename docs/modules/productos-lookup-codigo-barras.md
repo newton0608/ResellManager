@@ -1,6 +1,6 @@
 # Búsqueda asistida de productos por código de barras
 
-**Estado: implementado en Agregar producto. Validación física del scanner en iPhone/Safari pendiente, según su guía.**
+**Estado: implementado en Agregar producto y validado físicamente con Brave en un iPhone 14 Plus. Esa prueba no certifica la regresión histórica específica de Safari; ver la guía del scanner.**
 
 Esta función reduce la captura manual al registrar productos nuevos. Reutiliza el
 scanner existente para consultar fuentes externas por código de barras, permite
@@ -500,9 +500,7 @@ documentado en su [guía](../29_BarcodeScanner.md).
   .artifacts/producto-lookup-qa/; no se versionan datos de pruebas.
 - git diff --check: correcto.
 
-No se usó cámara física ni se hicieron consultas de producto a Internet en las
-pruebas. Sigue pendiente el QA físico de iPhone/Safari indicado en la guía del
-scanner. No se añadieron migraciones ni se desplegó la aplicación.
+No se usó cámara física ni se hicieron consultas de producto a Internet en **esta validación automatizada del 05/10**. Ese era el estado de la evidencia en ese momento; la validación operativa real del 06/10 se registra más abajo. No se añadieron migraciones en esta funcionalidad.
 
 ## Corrección de la preview externa (2026-10-05)
 
@@ -530,16 +528,13 @@ QA de Blazor en 320/390/768/1440 px con SQLite temporal, proveedores simulados e
 imágenes interceptadas localmente: carga de preview, quitar, deshacer, prioridad
 manual y ausencia de descarga del servidor hasta guardar. QA del scanner:
 80 comprobaciones y 28 decodificaciones ópticas, sin fallos. `git diff --check`
-correcto. Permanece pendiente la prueba física en iPhone/Safari; no se hicieron
-peticiones a proveedores reales, migraciones, despliegues ni merge.
+correcto. En **este seguimiento automatizado del 05/10** todavía no se hicieron
+peticiones a proveedores reales, migraciones, despliegues ni merge; la evidencia
+operativa posterior se registra más abajo.
 
 ## Guardado externo y redirecciones (2026-10-05)
 
-El fallo reproducible estaba en la descarga HTTP, antes de preparar y confirmar
-el WebP: el descargador rechazaba cualquier respuesta 3xx. El navegador seguía
-la redirección para mostrar revisión/preview, mientras `CrearAsistidoAsync`
-recibía una descarga fallida y guardaba con `ImagenPrincipalRuta = null` y el
-aviso previsto. El detalle mostraba entonces «Sin imagen principal».
+Se reprodujo un defecto real e independiente en la descarga HTTP: el descargador rechazaba cualquier respuesta 3xx antes de preparar y confirmar el WebP. Un navegador podía seguir esa redirección para mostrar revisión/preview mientras `CrearAsistidoAsync` recibía una descarga fallida y guardaba sin imagen. Se corrigió con seguimiento manual y validado de redirecciones. **Sin embargo, esta no fue la causa del fallo persistente observado después en Preview**: ese entorno continuó fallando incluso con URLs de imagen que respondían 200, y su causa operativa se documenta en la sección siguiente.
 
 El diagnóstico manual, separado de las pruebas automatizadas, confirmó un
 `301` legítimo de `https://world.openfoodfacts.org/images/products/...` hacia
@@ -566,4 +561,21 @@ servidor, cadena 301→302→200 al guardar, ruta persistida, imágenes cargadas
 listado/detalle administrativos e `ImagenCatalogo` y mismo WebP en ambos
 endpoints. Se verificaron 404 públicos y ausencia en listado antes de registrar
 stock elegible. No se modificaron modelos, migraciones, reglas de publicación,
-scanner, dependencias ni infraestructura de despliegue; no se hizo despliegue ni merge.
+scanner, dependencias ni infraestructura de despliegue; en ese punto todavía no se había hecho despliegue ni merge.
+
+## Validación operativa y persistencia en Preview — 06/10/2026
+
+Después del merge de la funcionalidad se validó el flujo contra Preview con proveedores y cámara reales:
+
+- el scanner en vivo detectó un código inmediatamente con **Brave en un iPhone 14 Plus**;
+- la búsqueda externa devolvió datos e imagen y la revisión/preview funcionó;
+- imágenes de muestra de Open Food Facts pudieron descargarse desde el VPS con respuesta `200 image/jpeg`;
+- el fix de redirecciones era correcto, pero no resolvía por sí solo el fallo de persistencia observado en Preview.
+
+La causa operativa restante estaba en la configuración de almacenamiento de Preview. DeployManager montaba su persistencia en `/data`, pero el proyecto no configuraba `AlmacenamientoImagenesProducto__DirectorioBase`. La aplicación caía entonces en su valor por defecto relativo a `App_Data/productos` bajo el directorio de la aplicación, que no era el volumen persistente/escribible previsto para ese contenedor.
+
+Se configuró Preview con `AlmacenamientoImagenesProducto__DirectorioBase=/data/productos` y se recreó el contenedor conservando el bind persistente de `/data`. El health check respondió 200 y una nueva alta asistida guardó correctamente la imagen externa; el detalle administrativo dejó de mostrar el fallback sin imagen.
+
+Esta ruta es específica del despliegue de Preview. Producción conserva el contrato de Compose `/app/data/productos` con su bind de host; no copiar `/data/productos` a producción. Ver [Imagen principal](../24_ImagenPrincipalProducto.md) y [Dominios/Preview](../deployment/domains.md).
+
+La prueba física confirma funcionamiento en **iPhone 14 Plus + Brave**. No quedó registrado que se usara exactamente el código histórico que fallaba en v1.2.0 y no se repitió esa comprobación en Safari; por tanto no debe presentarse como certificación específica de Safari.

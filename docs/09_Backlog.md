@@ -96,6 +96,8 @@ V1 está en producción. Este backlog conserva entregas de fases y distingue amp
 - [x] Registrar producto.
 - [x] Editar producto.
 - [x] Consultar detalle de producto.
+- [x] Ampliación posterior: capturar `CodigoBarras` con cámara en alta/edición mediante el scanner compartido, conservando entrada manual.
+- [x] Ampliación posterior: búsqueda asistida externa al agregar producto, con coincidencia local primero, revisión antes de importar, fallback Open Facts/UPCitemdb e imagen externa pendiente hasta el guardado.
 - [ ] V2: definir eliminación/desactivación segura de productos, preservando ventas, pedidos, compras e historial. Evaluar borrado lógico como alternativa preferente al borrado físico.
 
 ---

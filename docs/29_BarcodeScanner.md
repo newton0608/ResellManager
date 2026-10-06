@@ -213,7 +213,13 @@ Fuentes de API:
 [createImageBitmap/orientación](https://developer.mozilla.org/en-US/docs/Web/API/Window/createImageBitmap),
 [seguridad de captura en subframes WebKit](https://webkit.org/blog/7763/a-closer-look-into-webrtc/).
 
-Pendiente validación física en iPhone/Safari con el código real que fallaba en v1.2.0.
+En el cierre original del hotfix quedó pendiente la validación física en iPhone/Safari con el código real que fallaba en v1.2.0.
+
+### Validación física posterior — 06/10/2026
+
+Durante la validación operativa posterior se abrió el scanner en vivo contra Preview con **Brave en un iPhone 14 Plus** y el código fue detectado de inmediato; el flujo confirmó el valor y continuó correctamente hacia la búsqueda asistida de Producto. Esto cierra la incertidumbre de que el hotfix funcionara únicamente con canvas/fixtures.
+
+No quedó registrado que esta comprobación usara exactamente el mismo código que había fallado en v1.2.0 ni se repitió la prueba en Safari. Por ello la evidencia permite afirmar **scanner en vivo validado físicamente en iPhone 14 Plus + Brave**, pero no certificar específicamente la regresión histórica de Safari.
 
 ## Auditoría npm (2026-10-05)
 
