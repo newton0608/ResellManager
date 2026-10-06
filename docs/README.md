@@ -30,7 +30,7 @@ como tales en el [registro de decisiones](11_DecisionesDeDiseño.md).
 | EF / SQLite / archivos | [Persistencia](architecture/persistence.md) | Contratos del esquema y migraciones existentes. |
 | Clientes | [Módulo](modules/clientes.md) | Actividad/saldo; decisión 025 pendiente. |
 | Productos / categorías | [Módulo](modules/productos.md) | [Medidas](23_MedidasYPresentacionProducto.md), [imagen](24_ImagenPrincipalProducto.md), [scanner](29_BarcodeScanner.md), [lookup externo](modules/productos-lookup-codigo-barras.md). |
-| Compras / proveedores | [Módulo](modules/compras.md) | [Comprobantes](16_Fase58_ComprasYComprobantes.md), [GTQ/USD](28_MonedasDeCompra.md). |
+| Compras / proveedores | [Módulo](modules/compras.md) | [Comprobantes](16_Fase58_ComprasYComprobantes.md), [GTQ/USD](28_MonedasDeCompra.md), [scanner y alta contextual V2.1](modules/scanner-operativo-v2-1.md) implementados; QA físico final pendiente. |
 | Inventario | [Módulo](modules/inventario.md) | Reglas físicas, recepción y [scanner operativo V2.1](modules/scanner-operativo-v2-1.md) implementado; QA físico operativo pendiente. |
 | Pedidos / reservas | [Módulo](modules/pedidos.md) | [Códigos y canales](15_CodigosYCanalesVenta.md). |
 | Ventas / pagos / Dashboard | [Módulo](modules/ventas.md) | [Dashboard](17_Fase59_Dashboard.md), [scanner operativo V2.1](modules/scanner-operativo-v2-1.md) implementado; QA físico operativo pendiente. |

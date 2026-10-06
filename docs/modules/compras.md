@@ -14,13 +14,15 @@ GTQ continúa siendo la moneda base del resto del negocio.
   congelado, redondeo en backend, compatibilidad histórica y fallback manual.
 - Flete, courier, impuestos y prorrateo no están incluidos en esa conversión:
   [landed cost sigue en análisis](landed-cost.md).
-- **Scanner en Nueva compra aprobado para V2.1, implementación pendiente:** ver
+- **Scanner en Nueva compra implementado; QA físico pendiente:** ver
   [contrato operativo](scanner-operativo-v2-1.md#compras--integración-aprobada-tras-probar-preview).
   Un código local selecciona el Producto en el detalle y conserva el modelo
   Producto + Cantidad + Costo unitario. Si no existe, puede ofrecer **Registrar
   producto** reutilizando el alta asistida existente; sólo ese subflujo explícito
   puede consultar Open Facts/UPCitemdb. Al guardar, el Producto nuevo vuelve
   autoseleccionado al detalle original sin perder la Compra en preparación.
+  Cancelación/fallo conservan el formulario y el comprobante; evidencia en el
+  [cierre de ajustes](scanner-operativo-v2-1.md#ajustes-implementados-y-validados--06102026).
 
 ## Dónde trabajar y validar
 
@@ -35,7 +37,8 @@ GTQ continúa siendo la moneda base del resto del negocio.
   `Components/Compras/` y `Components/Proveedores/`, dentro de Web.
 - Pruebas existentes: `CompraInventarioTests`, `CompraMonedasTests`,
   `CompraMonedasMigracionTests`, `TipoCambioReferenciaBanguatTests`,
-  `CompraMonedaUiTests` y `Fase58AlmacenamientoComprobantesTests`, en
+  `CompraMonedaUiTests`, `Fase58AlmacenamientoComprobantesTests` y
+  [ScannerOperativoComprasTests](../../tests/ResellManager.Tests/ScannerOperativoComprasTests.cs), en
   [ResellManager.Tests](../../tests/ResellManager.Tests/).
 
 Las pruebas de Banguat usan respuestas falsas; no necesitan Internet.

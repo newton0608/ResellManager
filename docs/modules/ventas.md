@@ -17,14 +17,12 @@ el pedido técnico automáticamente. Las ventas son completas en sus artículos.
 - Venta Directa conserva dos operaciones (crear Pedido y registrar Venta);
   no presupongas atomicidad conjunta ni idempotencia distribuida. Las
   protecciones de concurrencia adicionales continúan en V2.3.
-- **Scanner operativo V2.1 en ajuste tras prueba de Preview:** [contrato
-  operativo](scanner-operativo-v2-1.md). La implementación inicial ya identifica
-  el Producto local, calcula unidades elegibles y agrega N unidades físicas.
-  Antes del cierre debe agrupar en formulario y revisión las unidades agregadas
-  en una misma acción como un lote visual con `×N`, códigos físicos y un solo
-  Precio final por unidad. Agregar el mismo Producto en otra acción crea otro
-  lote y puede usar otro precio. La persistencia continúa por unidad física; no
-  se introduce FIFO/LIFO, política de costo ni migración.
+- **Scanner operativo V2.1 y lotes implementados; QA físico pendiente:**
+  [contrato operativo](scanner-operativo-v2-1.md). Cada acción de agregado forma
+  un lote independiente con Producto `×N`, códigos físicos, precio por unidad y
+  subtotal en formulario/revisión. Editar el precio afecta sus N unidades; quitar
+  una conserva las restantes. La persistencia y la revalidación siguen por unidad
+  física, sin nueva política de selección/costo ni migración.
 
 ## Dónde trabajar y validar
 
@@ -39,6 +37,6 @@ Pruebas existentes en [ResellManager.Tests](../../tests/ResellManager.Tests/):
 `PagoBusquedaRevisionTests`, `DashboardTests`, `DashboardUxTests` y
 [ScannerOperativoTests](../../tests/ResellManager.Tests/ScannerOperativoTests.cs).
 La evidencia y el criterio físico pendiente del scanner se registran en el
-[contrato operativo](scanner-operativo-v2-1.md#implementación-y-evidencia--06102026).
+[contrato operativo](scanner-operativo-v2-1.md#ajustes-implementados-y-validados--06102026).
 Para cambios compartidos de dinero/inventario, ejecuta también la suite completa
 y revisa la [decisión 015](../11_DecisionesDeDiseño.md#015-el-saldo-requiere-endurecimiento-de-concurrencia-después-de-completar-la-ui).

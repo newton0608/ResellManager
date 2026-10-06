@@ -7,7 +7,7 @@ Documento de planificación; ninguna de estas funciones está implementada en V1
 Candidato principal para V3: contrastar existencias físicas con el inventario esperado.
 
 - Iniciar una sesión de conteo con un snapshot lógico del inventario esperado.
-- Buscar o escanear unidades y marcarlas como encontradas; puede aprovechar el scanner previsto en V2.
+- Buscar o escanear unidades y marcarlas como encontradas; puede aprovechar el [scanner compartido existente](29_BarcodeScanner.md).
 - Mostrar esperadas frente a encontradas y detectar faltantes/sobrantes.
 - Admitir conteos totales y parciales/cíclicos.
 - Revisar diferencias antes de modificar inventario, considerando movimientos ocurridos durante el conteo.

@@ -16,7 +16,7 @@ Pendientes operativos V1: copia automática externa a Raspberry/otro equipo, val
 
 **Implementada y etiquetada en Git.** Existe `v1.1.0` (`832c172`, 27/09/2026); también `v1.2.0` (`7cca3e5`, 03/10/2026) y `v1.2.1` (`835a487`, tag del 05/10/2026 UTC; commit del 04/10/2026). Los tags no prueban la versión ejecutada en producción. Medidas/presentación administrativa y captura de código de barras existen en el código.
 
-Modelo propuesto, reglas y decisiones abiertas en [Medidas y presentación de producto](docs/23_MedidasYPresentacionProducto.md). V1.1 también incluye la captura de `Producto.CodigoBarras` con cámara durante alta y edición, conservando la entrada manual. La base del lector en Venta Directa e Inventario está implementada en esta rama V2.1 y validada automáticamente. Tras probar Preview se aprobaron dos ajustes antes del cierre: agrupación por lote/precio en Venta Directa e integración en Nueva compra con alta asistida opcional para códigos nuevos. Después corresponde el QA físico final descrito en su [contrato](docs/modules/scanner-operativo-v2-1.md). El catálogo público actual ya muestra medidas canónicas y presentación; las equivalencias visuales adicionales siguen pendientes. La evolución a tienda transaccional permanece en V2.4.
+Modelo propuesto, reglas y decisiones abiertas en [Medidas y presentación de producto](docs/23_MedidasYPresentacionProducto.md). V1.1 también incluye la captura de `Producto.CodigoBarras` con cámara durante alta y edición, conservando la entrada manual. El lector en Venta Directa, Inventario y Nueva compra está implementado y validado automáticamente en esta rama V2.1, incluidos los ajustes aprobados tras Preview: lotes independientes por acción en Venta Directa y alta asistida explícita desde códigos nuevos en Compra. Queda el QA físico final descrito en su [contrato](docs/modules/scanner-operativo-v2-1.md). El catálogo público actual ya muestra medidas canónicas y presentación; las equivalencias visuales adicionales siguen pendientes. La evolución a tienda transaccional permanece en V2.4.
 
 ## Ampliaciones ya incorporadas al repositorio
 
@@ -24,7 +24,7 @@ La última base etiquetada, `v1.2.1`, incorpora imagen principal, catálogo púb
 
 ## V2 — Evolución planificada
 
-- V2.1: productividad y experiencia de uso; base del scanner operativo implementada, con agrupación de Venta Directa, consumidor de Nueva compra y QA físico final pendientes.
+- V2.1: productividad y experiencia de uso; scanner operativo, lotes de Venta Directa y consumidor de Nueva compra implementados. QA físico final pendiente.
 - V2.2: operación del negocio.
 - V2.3: escalabilidad y multiusuario.
 - V2.4: canal público / tienda en línea básica, con la misma fuente de inventario.

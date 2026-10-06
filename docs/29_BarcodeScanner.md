@@ -223,29 +223,25 @@ No quedó registrado que esta comprobación usara exactamente el mismo código q
 
 ## Integración operativa V2.1
 
-**Implementación inicial en la rama feature; ajustes funcionales aprobados tras
-probar Preview pendientes (06/10/2026).** `ProductoForm`, `VentaDirectaForm`
-e `Inventario` ya consumen el mismo `BarcodeScanner`, sin cambiar su contrato
-ni el motor óptico. Venta Directa e Inventario consultan sólo
-`IConsultaProductoCodigoBarras`; no invocan `IProductoLookupService` ni
-proveedores externos.
+**Implementación y ajustes aprobados tras Preview completados; QA físico final
+pendiente (06/10/2026).** `ProductoForm`, `VentaDirectaForm`, `Inventario` y
+`CompraNueva` reutilizan `BarcodeScanner` sin modificar su contrato ni el motor.
+Venta Directa muestra lotes por acción; Inventario navega al Producto; Compra
+selecciona el Producto en el detalle. El escaneo operativo consulta sólo datos
+locales. Únicamente **Registrar producto** explícito desde un código inexistente
+en Compra habilita el lookup y guardado asistidos existentes.
 
-Antes del cierre, Venta Directa debe agrupar por lote de agregado con un solo
-Precio final por unidad y Nueva compra debe convertirse en consumidor del mismo
-scanner. En Compra la coincidencia sigue siendo local primero; sólo cuando el
-código no existe y la usuaria elige **Registrar producto** se reutiliza el alta
-asistida que puede consultar Open Facts/UPCitemdb.
+Comportamiento, pruebas y límites actuales están en el
+[cierre de ajustes](modules/scanner-operativo-v2-1.md#ajustes-implementados-y-validados--06102026).
+`ScannerOperativoTests` conserva sus casos iniciales y amplía lotes, Compra,
+aceptación/cancelación del alta y autoselección sin perder datos ni comprobante.
+`npm run qa:scanner-operativo` comprueba 21 estados con markup/CSS reales a
+320/390/768/1440 px usando las mismas variables de Playwright del QA óptico.
 
-Cantidades, disponibilidad, navegación y evidencia actual están en el
-[contrato operativo](modules/scanner-operativo-v2-1.md#implementación-y-evidencia--06102026).
-`ScannerOperativoTests` prueba el callback real, selección, navegación,
-fallos/cancelación y revalidación con servicios locales. El nuevo
-`npm run qa:scanner-operativo` comprueba markup/CSS reales a 320/390/768/1440 px
-con Playwright disponible usando las mismas variables del QA óptico.
-
-La validación física histórica de iPhone 14 Plus + Brave se conserva arriba:
-no se extrapola a Venta Directa/Inventario ni a Safari. La implementación final de Venta Directa, Inventario y Nueva compra requiere
-comprobación con cámara y registro de dispositivo/navegador exactos.
+La evidencia histórica de iPhone 14 Plus + Brave se conserva arriba. La
+implementación final de Venta Directa, Inventario y Nueva compra aún requiere
+cámara física y registro de dispositivo, sistema y navegador/versiones exactos;
+no se extrapola la prueba previa de Producto.
 
 ## Auditoría npm (2026-10-05)
 

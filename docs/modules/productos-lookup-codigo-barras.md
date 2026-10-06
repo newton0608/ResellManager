@@ -1,6 +1,6 @@
 # Búsqueda asistida de productos por código de barras
 
-**Estado: implementado en Agregar producto y validado físicamente con Brave en un iPhone 14 Plus. Esa prueba no certifica la regresión histórica específica de Safari; ver la guía del scanner.**
+**Estado: implementado en Agregar producto y en el alta asistida explícita desde scanner de Nueva compra. La evidencia física de Brave en un iPhone 14 Plus corresponde al flujo original de Producto; no certifica Compra ni la regresión histórica de Safari.**
 
 Esta función reduce la captura manual al registrar productos nuevos. Reutiliza el
 scanner existente para consultar fuentes externas por código de barras, permite
@@ -12,7 +12,13 @@ el alta manual.
 
 ## Alcance
 
-La función aplica al flujo **Agregar producto** del módulo Productos.
+La función aplica al flujo **Agregar producto** del módulo Productos y se
+reutiliza en **Registrar producto** al escanear un código inexistente desde
+Nueva compra. El escaneo operativo de Compra sólo consulta datos locales: el
+lookup se inicia después de elegir ese subflujo explícito, conservando el código,
+la aceptación y el guardado manual. Al crear, el Producto queda seleccionado en
+el detalle original sin perder la Compra ni su comprobante. Criterios y
+evidencia en el [contrato operativo](scanner-operativo-v2-1.md#ajustes-implementados-y-validados--06102026).
 
 El formulario actual conserva:
 

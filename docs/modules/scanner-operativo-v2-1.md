@@ -1,9 +1,9 @@
-# V2.1 — Scanner operativo en Venta Directa e Inventario
+# V2.1 — Scanner operativo en Venta Directa, Inventario y Nueva compra
 
-**Estado: implementación inicial validada automáticamente en la rama feature (06/10/2026); ajustes funcionales aprobados tras probar Preview pendientes de implementación y QA físico final pendiente.**
+**Estado: implementación inicial y ajustes aprobados tras Preview implementados y validados automáticamente (06/10/2026); QA físico final pendiente.**
 
 Este documento conserva el contrato aprobado y describe su implementación en
-**Venta Directa** e **Inventario**, reutilizando el scanner de códigos de barras
+**Venta Directa**, **Inventario** y **Nueva compra**, reutilizando el scanner de códigos de barras
 existente. La evidencia automatizada y los límites del cierre se registran más
 abajo. No implica merge, release ni despliegue de esta rama.
 
@@ -14,11 +14,12 @@ No deben duplicarse ni reemplazarse para esta tarea.
 ## Objetivo
 
 Reducir el tiempo necesario para localizar mercancía durante una venta presencial
-o una consulta de inventario, usando `Producto.CodigoBarras` como acceso rápido
+o una consulta de inventario y seleccionar artículos al preparar una compra, usando `Producto.CodigoBarras` como acceso rápido
 a datos que **ya existen localmente en ResellManager**.
 
-El scanner operativo no registra productos, no consulta proveedores externos y
-no sustituye la búsqueda manual.
+El escaneo operativo selecciona datos locales y conserva la búsqueda manual.
+Sólo Nueva compra permite abrir explícitamente el alta asistida de Producto
+cuando un código no existe; ese subflujo reutiliza el lookup y el guardado vigentes.
 
 ## Principios comunes
 
@@ -27,11 +28,12 @@ no sustituye la búsqueda manual.
   otro decoder, otro flujo JS ni otra dependencia de lectura.
 - El valor confirmado por el scanner se busca como `Producto.CodigoBarras`.
 - La coincidencia operativa es local. **No consultar Open Facts, UPCitemdb ni
-  ningún otro proveedor externo** desde Venta Directa o Inventario.
+  ningún otro proveedor externo** desde el escaneo de Venta Directa, Inventario
+  o Nueva compra. La excepción pertenece sólo al alta explícita de Producto en Compra.
 - Si el código no corresponde a un producto registrado, informar claramente y
   permitir continuar con la búsqueda manual.
-- Cancelar/cerrar el scanner no modifica la venta, el inventario ni los filtros.
-- La búsqueda manual actual permanece disponible en ambos flujos.
+- Cancelar/cerrar el scanner no modifica la venta, la compra, el inventario ni los filtros.
+- La búsqueda manual actual permanece disponible en los tres flujos.
 - No generar, normalizar silenciosamente ni reemplazar códigos de barras.
 - No cambiar esquema, migraciones, estados de dominio ni reglas de disponibilidad
   para implementar esta mejora.
@@ -152,7 +154,7 @@ No introducir precios por cantidad, promociones ni descuentos automáticos.
 
 ## Ajuste aprobado tras probar Preview — agrupación por lote de agregado
 
-La primera implementación agrega correctamente N unidades físicas, pero presenta
+La primera implementación agregó correctamente N unidades físicas, pero presentó
 cada unidad como un detalle visual independiente con su propio campo de precio.
 Tras probar el flujo se aprobó cambiar **la representación y edición del
 formulario**, sin cambiar la identidad física ni el modelo histórico de la venta.
@@ -250,9 +252,9 @@ innecesariamente el término/filtro que la usuaria ya tenía.
 
 # Compras — integración aprobada tras probar Preview
 
-El scanner operativo también debe integrarse en **Nueva compra**. Este consumidor
-se aprobó después de la primera implementación de Venta Directa e Inventario y
-por eso todavía no está cubierto por el código inicial de esta rama.
+El scanner operativo ya se integra en **Nueva compra**. Este consumidor se aprobó
+después de probar la primera implementación de Venta Directa e Inventario y se
+implementó en la continuación de la misma rama, reutilizando el alta contextual.
 
 Compras ya modela cada detalle como **Producto + Cantidad + Costo unitario** y
 `CompraService` genera las unidades físicas según la cantidad. El scanner no
@@ -312,24 +314,24 @@ directamente en un detalle de Compra.
 
 ## Criterios de aceptación de Compras
 
-- [ ] Existe acción visible de scanner en Nueva compra sin eliminar
+- [x] Existe acción visible de scanner en Nueva compra sin eliminar
   `ProductoBuscador`.
-- [ ] Un código local existente selecciona el Producto en el detalle objetivo.
-- [ ] Cantidad y costo continúan siendo campos del detalle, no uno por unidad.
-- [ ] La revisión conserva el modelo Producto × Cantidad × Costo unitario.
-- [ ] El scanner no crea `UnidadInventario` directamente; la autoridad sigue en
+- [x] Un código local existente selecciona el Producto en el detalle objetivo.
+- [x] Cantidad y costo continúan siendo campos del detalle, no uno por unidad.
+- [x] La revisión conserva el modelo Producto × Cantidad × Costo unitario.
+- [x] El scanner no crea `UnidadInventario` directamente; la autoridad sigue en
   `CompraService`.
-- [ ] Un código inexistente ofrece Registrar producto sin modificar la Compra.
-- [ ] Registrar producto reutiliza el flujo asistido vigente y conserva el código
+- [x] Un código inexistente ofrece Registrar producto sin modificar la Compra.
+- [x] Registrar producto reutiliza el flujo asistido vigente y conserva el código
   escaneado.
-- [ ] El lookup externo sólo ocurre dentro del alta explícita de Producto.
-- [ ] Guardar el Producto nuevo vuelve a la Compra y lo autoselecciona en el
+- [x] El lookup externo sólo ocurre dentro del alta explícita de Producto.
+- [x] Guardar el Producto nuevo vuelve a la Compra y lo autoselecciona en el
   detalle original.
-- [ ] Cancelar el alta conserva intacta la Compra en preparación.
-- [ ] Fallo/cancelación del scanner conserva la Compra y la búsqueda manual.
-- [ ] No se cambian reglas de moneda, costos, origen, comprobantes, recepción ni
+- [x] Cancelar el alta conserva intacta la Compra en preparación.
+- [x] Fallo/cancelación del scanner conserva la Compra y la búsqueda manual.
+- [x] No se cambian reglas de moneda, costos, origen, comprobantes, recepción ni
   generación de unidades.
-- [ ] Pruebas cubren encontrado/no encontrado, alta asistida/cancelación,
+- [x] Pruebas cubren encontrado/no encontrado, alta asistida/cancelación,
   autoselección y preservación del formulario de Compra.
 
 ---
@@ -349,14 +351,18 @@ firmas actuales antes de modificar:
 - `UnidadBuscador` y el flujo actual de `VentaDirectaForm`: alternativa manual,
   exclusión de unidades ya seleccionadas y agregado de unidades concretas.
 - `Inventario.razor`: búsqueda/filtros actuales, que deben seguir funcionando.
+- `CompraNueva.razor`, `ProductoAltaPanel` y `ProductoForm`: detalle objetivo y
+  alta contextual asistida con revisión/importación reversible; guardado mediante
+  `IAltaProductoAsistidaService`.
 
 Si para Venta Directa hace falta una consulta por `ProductoId` que devuelva o
 cuente unidades elegibles excluyendo IDs ya seleccionados, ampliar el contrato
 operativo correspondiente en lugar de cargar todo el inventario y filtrar en
 Razor.
 
-No usar `IProductoLookupService` para estos flujos: ese servicio pertenece a la
-búsqueda asistida al **registrar Producto**, que tiene otro propósito.
+No usar `IProductoLookupService` en el escaneo operativo de Venta Directa,
+Inventario o Compra. Sólo el subflujo explícito **Registrar producto** de Compra
+reutiliza esa búsqueda asistida y `IAltaProductoAsistidaService` para el guardado.
 
 ## Alcance de UI
 
@@ -410,20 +416,20 @@ obligatoria de esta feature; está planificada por separado donde aporte valor.
 
 ## Ajustes posteriores a la primera implementación
 
-- [ ] Venta Directa agrupa visualmente por **lote de agregado**, no por Producto
+- [x] Venta Directa agrupa visualmente por **lote de agregado**, no por Producto
   global ni por precio.
-- [ ] Un lote de N unidades muestra Producto una vez, `×N`, los N códigos
+- [x] Un lote de N unidades muestra Producto una vez, `×N`, los N códigos
   físicos, un solo Precio final por unidad y su subtotal.
-- [ ] Cambiar el Precio final del lote aplica el mismo valor a sus N unidades
+- [x] Cambiar el Precio final del lote aplica el mismo valor a sus N unidades
   concretas.
-- [ ] Agregar el mismo Producto en otra acción crea otro lote independiente y
+- [x] Agregar el mismo Producto en otra acción crea otro lote independiente y
   permite otro Precio final.
-- [ ] La revisión previa a confirmar conserva los mismos lotes visuales.
-- [ ] Quitar una unidad concreta actualiza la cantidad del lote sin perder la
+- [x] La revisión previa a confirmar conserva los mismos lotes visuales.
+- [x] Quitar una unidad concreta actualiza la cantidad del lote sin perder la
   identidad de las restantes.
-- [ ] La persistencia y revalidación siguen operando sobre unidades físicas
+- [x] La persistencia y revalidación siguen operando sobre unidades físicas
   concretas; no hay migración ni fusión histórica.
-- [ ] Implementar y validar los criterios de Compras definidos en la sección
+- [x] Implementar y validar los criterios de Compras definidos en la sección
   correspondiente.
 
 ## Validación técnica y regresión
@@ -445,6 +451,10 @@ obligatoria de esta feature; está planificada por separado donde aporte valor.
 ---
 
 ## Implementación y evidencia — 06/10/2026
+
+**Registro histórico de la implementación inicial**, anterior a los ajustes de
+lotes y Compra. Conserva los resultados de esa ejecución; el estado actual y
+sus validaciones se registran en la sección posterior.
 
 - [VentaDirectaForm](../../src/ResellManager.Web/Components/Ventas/VentaDirectaForm.razor)
   y [Inventario](../../src/ResellManager.Web/Components/Pages/Inventario.razor)
@@ -501,15 +511,84 @@ runtime ni al lockfile. El QA visual no levanta un circuito Blazor interactivo;
 los callbacks, selección y navegación se ejercitan en .NET. Se inspeccionaron
 además las capturas de cantidad a 320 px, error/filtros a 390 px y escritorio.
 
-**Pendiente para cerrar el criterio físico y los ajustes aprobados:** implementar primero la agrupación de Venta Directa y el consumidor de Compras; después probar los flujos con cámara en
-un dispositivo real desde la implementación final y registrar modelo,
-versión del sistema y navegador exactos. Comprobar cantidad, escaneo repetido,
-producto sin unidades, código inexistente y cancelación; en Inventario, navegación
-al producto y preservación de filtros ante fallo/cancelación. No se dispuso de una
-cámara física para esta validación. No se ha desplegado la rama para suplirla.
-La evidencia previa de **iPhone 14 Plus + Brave**, conservada en la guía del
-scanner, corresponde al flujo de Producto; no valida estos dos consumidores
-nuevos ni certifica Safari.
+La prueba física anterior de **iPhone 14 Plus + Brave** corresponde al flujo de
+Producto y se conserva en la guía del scanner. No valida los consumidores
+operativos nuevos ni certifica Safari. El QA físico de la implementación final
+se detalla a continuación.
+
+---
+
+## Ajustes implementados y validados — 06/10/2026
+
+Se continuó desde `f7d4879` en `feature/scanner-operativo-v2-1`, conservando la
+implementación inicial y su base `develop` (`de55b57`). Este cierre no implica
+merge, release ni despliegue.
+
+- **Venta Directa:** cada acción asigna un `LoteId` de presentación a sus unidades.
+  `LoteVentaDirectaFormModel` agrupa sólo por esa identidad; dos acciones del mismo
+  Producto y precio permanecen independientes. Formulario y revisión muestran
+  Producto ×N, todos los códigos físicos, un precio por unidad y subtotal. Editar
+  ese precio actualiza los modelos de las N unidades; quitar una conserva el lote
+  y las identidades restantes, y el lote desaparece al quedar vacío. Los inputs
+  persistidos y la revalidación continúan por unidad física, sin nuevo esquema.
+- **Nueva compra:** cada detalle tiene `BarcodeScanner` junto a `ProductoBuscador`.
+  El callback consulta `IConsultaProductoCodigoBarras` y utiliza la misma aplicación
+  de Producto que el buscador, conservando cantidad, costo y el resto del modelo.
+  Las consultas no registran Compra ni generan inventario.
+- Un código inexistente muestra **Registrar producto** sin alterar el detalle.
+  Sólo al elegir esa acción se abre `ProductoAltaPanel` con el código exacto y
+  lookup habilitado. `ProductoForm.BuscarAlIniciar` inicia una sola ronda por modelo,
+  reutilizando la comprobación local y el fallback Open Facts → UPCitemdb.
+  El candidato requiere aceptación explícita; se conservan edición manual,
+  deshacer, cancelación y guardado. El alta manual previa de Compra conserva su
+  comportamiento.
+- El panel utiliza `IAltaProductoAsistidaService` para guardar el alta asistida,
+  incluida la imagen externa opcional y la prioridad de imagen manual. Un fallo
+  recuperable de imagen se comunica al volver a la Compra. Si el producto apareció
+  localmente antes de abrir el alta, no se consulta un proveedor ni se crea un
+  duplicado; su consulta se abre en otra pestaña para conservar la Compra.
+- Guardar autoselecciona el producto en el detalle original. Cerrar/cancelar el alta
+  conserva el modelo, moneda/tipo aplicado, origen, proveedor, detalles, cantidades,
+  costos, observaciones y el mismo `IBrowserFile` del comprobante. Cancelar durante
+  lookup cancela la ronda y descarta respuestas tardías. Los botones y manejadores
+  bloquean selecciones incompatibles, doble consulta y revisión durante el proceso.
+
+| Validación final | Resultado |
+| --- | --- |
+| `dotnet build ResellManager.sln` | 0 errores y 0 advertencias. |
+| Pruebas del área: ScannerOperativo + CompraProductoFlujo + CompraRevisionProveedor | 65 correctas, sin omisiones; incluyen 50 del scanner operativo. |
+| `dotnet test ResellManager.sln --no-build` | 878 correctas, sin omisiones. |
+| `npm ci` y `npm run css:build` | Correctos; CSS regenerado y conservado, vendor óptico sin cambios. |
+| `npm run test:js` | 115 correctas. |
+| `npm run qa:scanner` | 80 comprobaciones y 28 decodificaciones correctas con fixtures/canvas. |
+| `npm run qa:scanner-operativo` | 84 vistas: 21 estados a 320/390/768/1440 px, sin overflow, errores JS ni controles táctiles menores de 44 × 44 px. |
+| Enlaces/rutas nuevas y `git diff --check` | Correctos. |
+
+Las pruebas del área se ejecutaron con el filtro combinado
+`FullyQualifiedName~ScannerOperativo|FullyQualifiedName~CompraProductoFlujo|FullyQualifiedName~CompraRevisionProveedor`.
+[Pruebas de lotes](../../tests/ResellManager.Tests/ScannerOperativoLotesTests.cs) y
+[pruebas de Compra](../../tests/ResellManager.Tests/ScannerOperativoComprasTests.cs)
+amplían `ScannerOperativoTests`: precios iguales/distintos entre acciones,
+eliminación parcial/vacía, revisión/persistencia por IDs, códigos exactos,
+found/not-found, alta asistida/fallback y aceptación, autoselección, imagen opcional
+fallida, cancelación normal y durante lookup, comprobación local concurrente,
+comprobante intacto y generación de unidades sólo al confirmar la Compra.
+Todos los proveedores externos y datos son sintéticos en estas pruebas.
+
+El QA visual usa markup/CSS reales en **Edge 154.0.4258.62 headless sobre Windows**;
+no levanta un circuito Blazor interactivo ni usa cámara física. Comprueba también
+que las acciones iguales conservan dos lotes y que la Compra mantiene cantidad,
+costo, tipo aplicado y código durante el alta. Se inspeccionaron capturas de
+lotes a 320 px, alta/candidato a 390 px y Compra en escritorio. La evidencia local
+actual está en `.artifacts/scanner-operativo-ui/report.json` y sus PNG; el comando,
+Playwright disponible y las variables de configuración siguen la guía del scanner.
+
+**Pendiente: QA físico final** con cámara en dispositivo real de Venta Directa,
+Inventario y Nueva compra. Registrar modelo, sistema y navegador/versiones exactos;
+comprobar lotes/precios independientes, escaneo repetido, código inexistente,
+cancelación, navegación de Inventario sin unidades y alta/autoselección en Compra
+sin perder el comprobante. La prueba anterior de Producto no se extrapola a estos
+flujos. No se dispuso de ese dispositivo en esta validación.
 
 ---
 
@@ -538,8 +617,8 @@ documentación en el mismo cambio. Como mínimo:
   validado;
 - actualizar [V2 pendientes](../19_V2_Pendientes.md) para no dejar Venta Directa
   e Inventario descritos como pendientes si ambos quedaron terminados;
-- actualizar [Ventas](ventas.md), [Inventario](inventario.md) y
-  [Scanner](../29_BarcodeScanner.md) con consumidores/pruebas reales;
+- actualizar [Ventas](ventas.md), [Inventario](inventario.md),
+  [Compras](compras.md) y [Scanner](../29_BarcodeScanner.md) con consumidores/pruebas reales;
 - actualizar [Backlog](../09_Backlog.md), [ROADMAP](../../ROADMAP.md) y
   [CHANGELOG](../../CHANGELOG.md) cuando corresponda al cierre/versionado;
 - conservar como histórica la evidencia previa del scanner y añadir la nueva

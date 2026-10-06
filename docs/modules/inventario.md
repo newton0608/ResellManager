@@ -33,6 +33,6 @@ Pruebas existentes en [ResellManager.Tests](../../tests/ResellManager.Tests/):
 `UnidadesPerdidasTests`, `SeleccionOperativaTests` y
 [ScannerOperativoTests](../../tests/ResellManager.Tests/ScannerOperativoTests.cs).
 La evidencia y el criterio físico pendiente se registran en el
-[contrato operativo](scanner-operativo-v2-1.md#implementación-y-evidencia--06102026).
+[contrato operativo](scanner-operativo-v2-1.md#ajustes-implementados-y-validados--06102026).
 La concurrencia fuerte por unidad sigue [planificada en V2.3](../19_V2_Pendientes.md#concurrencia-de-reservas-de-inventario);
 deshabilitar botones no la implementa.

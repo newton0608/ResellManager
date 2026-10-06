@@ -4,11 +4,11 @@ Las fechas siguientes corresponden a creación de tags; no son fechas exactas de
 
 ## Unreleased — integración operativa V2.1
 
-- Scanner en Venta Directa: base implementada para coincidencia local, disponibilidad y agregado de N unidades físicas. Tras prueba de Preview queda aprobado y pendiente agrupar cada acción de agregado como Producto ×N con códigos físicos y un solo Precio final por unidad, conservando lotes separados para agregados posteriores.
+- Scanner en Venta Directa: coincidencia local, disponibilidad y agregado de N unidades físicas. Cada acción forma un lote independiente con Producto ×N, códigos físicos, precio común por unidad y subtotal en formulario/revisión; quitar unidades conserva las identidades restantes.
 - Scanner en Inventario: abre el detalle administrativo del Producto aunque no tenga unidades disponibles; fallos/cancelación conservan filtros y búsqueda.
-- Nueva compra: integración aprobada y pendiente para seleccionar Producto por scanner; un código inexistente podrá abrir el alta asistida existente y regresar autoseleccionado al detalle original.
+- Nueva compra: scanner por detalle con coincidencia local exacta. Un código inexistente permite abrir explícitamente el alta asistida existente, revisar/aceptar datos y regresar con el Producto autoseleccionado en el detalle original; cancelación/fallo conservan la Compra y el comprobante.
 - Reutiliza BarcodeScanner y contratos existentes. Venta Directa/Inventario son exclusivamente locales; en Compra el lookup externo sólo se permite dentro del subflujo explícito Registrar producto. Sin cambios de esquema ni nueva política de selección/costo.
-- La base cuenta con pruebas conductuales y QA reproducible del markup real a 320/390/768/1440 px. Los ajustes posteriores y la validación física final siguen pendientes según el [contrato operativo](docs/modules/scanner-operativo-v2-1.md); esta entrada no acredita merge ni despliegue.
+- Implementación y ajustes cubiertos por 878 pruebas .NET, 115 JS y QA reproducible de 84 vistas a 320/390/768/1440 px. Sólo el QA físico final sigue pendiente según el [contrato operativo](docs/modules/scanner-operativo-v2-1.md); esta entrada no acredita merge ni despliegue.
 
 ## Cambios posteriores a v1.2.1 — registro previo
 

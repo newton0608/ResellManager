@@ -38,36 +38,26 @@ Esta ampliación no equivale a la integración operativa del lector en Venta Dir
 
 ## Lectura de códigos de barras con la cámara
 
-**Implementación inicial completada; ajustes aprobados tras prueba de Preview
-pendientes (06/10/2026).** `ProductoForm`, `VentaDirectaForm` e `Inventario`
-reutilizan `BarcodeScanner`. El motor, formatos y privacidad están en
-[Scanner](29_BarcodeScanner.md); el comportamiento canónico está en el
-[contrato V2.1](modules/scanner-operativo-v2-1.md).
+**Implementación inicial y ajustes tras Preview completados y validados
+automáticamente (06/10/2026); QA físico final pendiente.** `ProductoForm`,
+`VentaDirectaForm`, `Inventario` y `CompraNueva` reutilizan `BarcodeScanner`.
+Motor, formatos y privacidad permanecen en [Scanner](29_BarcodeScanner.md);
+comportamiento, criterios y evidencia actual en el
+[contrato V2.1](modules/scanner-operativo-v2-1.md#ajustes-implementados-y-validados--06102026).
 
-Venta Directa ya resuelve el Producto local, descuenta unidades seleccionadas y
-agrega N unidades físicas elegibles. Antes del cierre debe cambiar su
-presentación a **lotes de agregado**: Producto una vez, `×N`, códigos físicos,
-un solo Precio final por unidad y subtotal. El mismo Producto agregado en otra
-acción forma otro lote y puede tener otro precio. La persistencia sigue por
-unidad física y no cambia el esquema.
+Venta Directa presenta lotes independientes por acción, con códigos físicos,
+precio común por unidad y subtotal en formulario/revisión; persistencia y
+revalidación siguen por unidad. Inventario conserva su navegación local.
+Nueva compra selecciona el Producto local sin alterar cantidad/costo y permite
+alta asistida explícita para un código inexistente, regresando al detalle de
+origen sin perder la Compra ni el comprobante. El lookup externo se limita a
+ese subflujo de alta; no se dispara desde el escaneo operativo.
 
-Inventario ya abre el detalle del Producto por código local sin modificar
-estados, reservas ni filtros.
-
-**Nueva compra queda incorporada al alcance V2.1 aprobado.** Debe permitir
-escanear para seleccionar un Producto local en el detalle manteniendo Cantidad y
-Costo unitario. Si el código no existe, puede ofrecer Registrar producto y
-reutilizar el alta asistida existente; el lookup externo sólo pertenece a ese
-subflujo explícito. Guardar el Producto debe regresar a la Compra y
-autoseleccionarlo sin perder el formulario.
-
-- [ ] Implementar agrupación por lote de agregado en formulario y revisión de
-  Venta Directa.
-- [ ] Integrar scanner en Nueva compra con alta asistida opcional para código
-  inexistente.
-- [ ] Ampliar pruebas y QA responsive para ambos ajustes.
+- [x] Agrupación por lote de agregado en formulario y revisión de Venta Directa.
+- [x] Scanner en Nueva compra y alta asistida opcional para código inexistente.
+- [x] Pruebas y QA responsive ampliados para ambos ajustes.
 - [ ] Validar físicamente la implementación final con cámara y registrar
-  dispositivo, sistema y navegador exactos.
+  dispositivo, sistema y navegador/versiones exactos.
 
 ## Analítica de uso y telemetría de producto
 
