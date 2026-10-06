@@ -217,9 +217,9 @@ En el cierre original del hotfix quedó pendiente la validación física en iPho
 
 ### Validación física posterior — 06/10/2026
 
-Durante la validación operativa posterior se abrió el scanner en vivo contra Preview con una cámara física real y el código fue detectado de inmediato; el flujo confirmó el valor y continuó correctamente hacia la búsqueda asistida de Producto. Esto cierra la incertidumbre de que el hotfix funcionara únicamente con canvas/fixtures.
+Durante la validación operativa posterior se abrió el scanner en vivo contra Preview con **Brave en un iPhone 14 Plus** y el código fue detectado de inmediato; el flujo confirmó el valor y continuó correctamente hacia la búsqueda asistida de Producto. Esto cierra la incertidumbre de que el hotfix funcionara únicamente con canvas/fixtures.
 
-No quedó registrada en esa comprobación la combinación exacta de modelo de dispositivo, navegador ni el código concreto que había fallado en v1.2.0. Por ello la evidencia permite afirmar **scanner en vivo validado en hardware real**, pero no certificar una matriz específica iPhone/Safari ni reproducir exactamente aquella regresión histórica.
+No quedó registrado que esta comprobación usara exactamente el mismo código que había fallado en v1.2.0 ni se repitió la prueba en Safari. Por ello la evidencia permite afirmar **scanner en vivo validado físicamente en iPhone 14 Plus + Brave**, pero no certificar específicamente la regresión histórica de Safari.
 
 ## Auditoría npm (2026-10-05)
 
