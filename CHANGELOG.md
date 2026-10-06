@@ -9,7 +9,7 @@ Las fechas siguientes corresponden a creación de tags; no son fechas exactas de
 - Descarga de imágenes con límites, validación de contenido, seguimiento manual de redirecciones y mitigaciones SSRF; persistencia final en el almacenamiento WebP administrado existente.
 - Preview de imagen externa segura, prioridad de imagen manual y regresiones de extremo a extremo para endpoints administrativos y catálogo público.
 - La cadena vulnerable de desarrollo `braces/micromatch` fue retirada mediante el override compatible de `@parcel/watcher`; `npm audit` quedó en 0 vulnerabilidades en la validación documentada.
-- Validación física posterior con cámara real confirmó lectura en vivo. La combinación exacta dispositivo/navegador y la regresión específica del caso Safari de v1.2.0 no quedaron registradas, por lo que no se presentan como certificadas.
+- Validación física posterior confirmó lectura en vivo con **Brave en un iPhone 14 Plus**. Esta evidencia no certifica por sí sola la regresión específica de Safari del caso de v1.2.0.
 
 ## v1.2.1 — tag del 05/10/2026 (fecha Git en UTC)
 
