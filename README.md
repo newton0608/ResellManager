@@ -151,4 +151,4 @@ El [soporte GTQ/USD en compras](docs/28_MonedasDeCompra.md) conserva GTQ como mo
 
 ## Scanner de códigos de producto
 
-El scanner usa Quagga2 1.11.0 local para EAN-13/EAN-8/UPC-A/UPC-E/CODE-128, con foto local y doble confirmación en vivo. Ya existe validación posterior con cámara física real; la matriz específica de dispositivo/navegador y la regresión exacta de Safari siguen documentadas por separado en [su guía técnica](docs/29_BarcodeScanner.md).
+El scanner usa Quagga2 1.11.0 local para EAN-13/EAN-8/UPC-A/UPC-E/CODE-128, con foto local y doble confirmación en vivo. La validación física posterior confirmó lectura en vivo con **Brave en un iPhone 14 Plus**; la regresión histórica específica de Safari sigue documentada por separado en [su guía técnica](docs/29_BarcodeScanner.md).
