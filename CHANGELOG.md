@@ -1,6 +1,15 @@
 # Changelog
 
-Las fechas siguientes corresponden a creación de tags; no son fechas exactas de despliegue ni acreditan una publicación en GitHub Releases.
+Las fechas siguientes corresponden a creación de tags; no son fechas exactas de despliegue. Las GitHub Releases pueden publicarse después usando esos mismos tags, por lo que la fecha de una Release tampoco debe confundirse con la fecha de despliegue.
+
+## Unreleased — main posterior a v1.2.1
+
+- Búsqueda asistida al agregar Producto: coincidencia local primero y fallback externo Open Facts → UPCitemdb, con revisión explícita antes de copiar datos al formulario.
+- Importación reversible de datos externos sin importar precios ni crear categorías; la imagen externa queda pendiente hasta Guardar producto.
+- Descarga de imágenes con límites, validación de contenido, seguimiento manual de redirecciones y mitigaciones SSRF; persistencia final en el almacenamiento WebP administrado existente.
+- Preview de imagen externa segura, prioridad de imagen manual y regresiones de extremo a extremo para endpoints administrativos y catálogo público.
+- La cadena vulnerable de desarrollo `braces/micromatch` fue retirada mediante el override compatible de `@parcel/watcher`; `npm audit` quedó en 0 vulnerabilidades en la validación documentada.
+- Validación física posterior con cámara real confirmó lectura en vivo. La combinación exacta dispositivo/navegador y la regresión específica del caso Safari de v1.2.0 no quedaron registradas, por lo que no se presentan como certificadas.
 
 ## v1.2.1 — tag del 05/10/2026 (fecha Git en UTC)
 
