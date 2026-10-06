@@ -21,7 +21,7 @@ Objetivo: reducir tiempo operativo y mejorar los flujos más frecuentes sin camb
 
 **Foto principal ya implementada**: [contrato actual](24_ImagenPrincipalProducto.md). La evaluación de múltiples fotos y ampliaciones posteriores sigue planeada. Los puntos siguientes conservan el alcance considerado originalmente y no implican que toda esa ampliación exista.
 
-- Mostrar imágenes en Producto e Inventario; evaluar su uso en Venta Directa y buscadores y reutilizarlas en la tienda pública V2.4.
+- Producto ya muestra su imagen en listado/detalle y el catálogo público la reutiliza cuando corresponde. Sigue pendiente incorporarla donde aporte valor en Inventario, Venta Directa y otros buscadores operativos.
 - Usar almacenamiento persistente; no guardar imágenes en la base de datos como blobs por defecto. Evaluar object storage para producción.
 - Generar miniaturas y aplicar compresión; definir formatos permitidos y tamaño máximo.
 - Permitir reemplazo y eliminación seguros, con limpieza de archivos sin referencias.
@@ -30,9 +30,15 @@ Objetivo: reducir tiempo operativo y mejorar los flujos más frecuentes sin camb
 
 La foto principal tiene implementación y migración existentes; no volver a crearlas siguiendo esta planificación. Múltiples imágenes/object storage siguen pendientes.
 
+## Búsqueda asistida externa al agregar Producto
+
+**Ya implementada antes de iniciar V2.1.** En `/productos/nuevo`, un código escrito o confirmado por el scanner comprueba primero coincidencia local y luego puede consultar Open Facts y UPCitemdb. El resultado se revisa antes de importarse, puede deshacerse y nunca guarda el producto por sí solo. La imagen externa aceptada se descarga únicamente al guardar y se incorpora al almacenamiento administrado si pasa sus validaciones. Ver [contrato vigente](modules/productos-lookup-codigo-barras.md).
+
+Esta ampliación no equivale a la integración operativa del lector en Venta Directa o Inventario y no debe volver a implementarse como parte de V2.1.
+
 ## Lectura de códigos de barras con la cámara
 
-La captura de `Producto.CodigoBarras` con cámara durante alta/edición ya está implementada; el motor vigente y sus límites se documentan en [Scanner](29_BarcodeScanner.md). La integración operativa del lector en Venta Directa, Inventario y búsquedas permanece planificada para **V2.1**.
+La captura de `Producto.CodigoBarras` con cámara durante alta/edición ya está implementada; el motor vigente y sus límites se documentan en [Scanner](29_BarcodeScanner.md). En el código actual, `ProductoForm` sigue siendo el consumidor funcional del componente `BarcodeScanner`; Venta Directa e Inventario todavía no lo integran. La integración operativa del lector en esos flujos y en búsquedas donde aporte velocidad permanece planificada para **V2.1**.
 
 ### Objetivo
 
