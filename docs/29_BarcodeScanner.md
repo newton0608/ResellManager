@@ -223,15 +223,22 @@ No quedó registrado que esta comprobación usara exactamente el mismo código q
 
 ## Integración operativa V2.1
 
-**Requisitos aprobados; implementación pendiente (06/10/2026).** El mismo
-`BarcodeScanner` se reutilizará en Venta Directa e Inventario sin modificar su
-contrato óptico por defecto. El comportamiento posterior a `OnDetected`,
-cantidades, disponibilidad, navegación, errores y exclusiones está definido en
-[Scanner operativo en Venta Directa e Inventario](modules/scanner-operativo-v2-1.md).
+**Implementado en la rama feature; QA físico operativo pendiente (06/10/2026).**
+`ProductoForm`, `VentaDirectaForm` e `Inventario` consumen el mismo
+`BarcodeScanner`, sin cambiar su contrato ni el motor óptico. Los dos consumidores
+operativos consultan sólo `IConsultaProductoCodigoBarras`; no invocan
+`IProductoLookupService` ni proveedores externos.
 
-Esta planificación no convierte `IProductoLookupService` ni los proveedores
-externos en parte del scanner operativo: esos flujos consultarán únicamente los
-datos locales de ResellManager.
+Cantidades, disponibilidad, navegación y evidencia actual están en el
+[contrato operativo](modules/scanner-operativo-v2-1.md#implementación-y-evidencia--06102026).
+`ScannerOperativoTests` prueba el callback real, selección, navegación,
+fallos/cancelación y revalidación con servicios locales. El nuevo
+`npm run qa:scanner-operativo` comprueba markup/CSS reales a 320/390/768/1440 px
+con Playwright disponible usando las mismas variables del QA óptico.
+
+La validación física histórica de iPhone 14 Plus + Brave se conserva arriba:
+no se extrapola a Venta Directa/Inventario ni a Safari. Los nuevos flujos aún
+requieren la comprobación con cámara y dispositivo/navegador exactos.
 
 ## Auditoría npm (2026-10-05)
 

@@ -38,71 +38,23 @@ Esta ampliación no equivale a la integración operativa del lector en Venta Dir
 
 ## Lectura de códigos de barras con la cámara
 
-La captura de `Producto.CodigoBarras` con cámara durante alta/edición ya está implementada; el motor vigente y sus límites se documentan en [Scanner](29_BarcodeScanner.md). En el código actual, `ProductoForm` sigue siendo el consumidor funcional del componente `BarcodeScanner`; Venta Directa e Inventario todavía no lo integran.
+**Integración implementada; QA físico operativo pendiente (06/10/2026).**
+`ProductoForm`, `VentaDirectaForm` e `Inventario` reutilizan el componente
+`BarcodeScanner`. El motor, formatos, privacidad y evidencia física previa están
+en [Scanner](29_BarcodeScanner.md); el comportamiento operativo y su validación
+están en el [contrato V2.1](modules/scanner-operativo-v2-1.md).
 
-**Los requisitos de integración para Venta Directa e Inventario ya están aprobados; la implementación sigue pendiente.** El contrato canónico es [Scanner operativo en Venta Directa e Inventario](modules/scanner-operativo-v2-1.md). No reinterpretar esta sección como autorización para inventar otros consumidores o reglas de selección de inventario.
+Venta Directa consulta el Producto local, descuenta las unidades ya agregadas,
+solicita una cantidad y agrega N unidades físicas elegibles con precio sugerido
+editable, conservando revisión y revalidación. Inventario abre el detalle del
+Producto aunque no tenga unidades disponibles, sin alterar filtros ante
+fallo/cancelación ni modificar inventario. Ambos flujos mantienen la búsqueda
+manual, sin lookup externo ni una nueva política de selección/costo.
 
-### Objetivo
-
-Permitir que la usuaria pueda escanear `Producto.CodigoBarras` desde un teléfono o dispositivo con cámara para localizar productos rápidamente y reducir la captura manual durante la operación diaria.
-
-### Alcance operativo aprobado para V2.1
-
-- Reutilizar el lector de cámara vigente; no crear otro decoder.
-- Buscar exclusivamente el producto local mediante `Producto.CodigoBarras`
-  después de una lectura confirmada.
-- **Venta Directa:** mostrar cuántas unidades físicas elegibles quedan,
-  descontando las ya agregadas; pedir una cantidad con 1 por defecto y máximo
-  igual a la disponibilidad; agregar N unidades concretas al formulario y
-  conservar revisión/revalidación final.
-- **Inventario:** si existe el producto, navegar directamente a
-  `/productos/{id}`, aunque en ese momento tenga cero unidades disponibles.
-- Mantener siempre búsqueda/captura manual como alternativa.
-- Mostrar errores claros cuando el código no corresponda a un producto local o
-  cuando el producto no tenga unidades elegibles para la venta.
-- No consultar Open Facts/UPCitemdb desde estos flujos y no ofrecer alta de
-  Producto como consecuencia del escaneo operativo.
-- No introducir FIFO, LIFO, orden por costo ni otra política de selección de
-  inventario no aprobada.
-- Otros consumidores del scanner quedan para evaluación posterior y no forman
-  parte automática de esta implementación.
-
-### Regla de datos
-
-`Producto.CodigoBarras` continúa siendo una referencia externa del producto. El lector no genera códigos de barras: en V1.1 captura mediante cámara el valor de la referencia externa en el formulario de Producto, donde puede editarse manualmente antes de guardar; en V2.1 podrá utilizarse en búsquedas y selección.
-
-El comportamiento de `Producto.CodigoInterno` es independiente de esta funcionalidad y debe seguir la decisión vigente documentada para los códigos internos del sistema.
-
-### Consideraciones técnicas para la integración V2.1
-
-Al extender el lector a flujos operativos se deberá evaluar:
-
-- compatibilidad de cámara en navegadores móviles;
-- permisos y experiencia cuando el usuario deniega acceso a la cámara;
-- soporte real de formatos de códigos utilizados por la mercancía del negocio;
-- comportamiento en conexiones lentas o inestables;
-- rendimiento del lector en dispositivos móviles;
-- seguridad y privacidad: la cámara solo debe activarse por acción explícita de la usuaria;
-- una solución web compatible con la arquitectura Blazor existente, evitando dependencias innecesarias.
-
-### Criterio de experiencia aprobado
-
-En Venta Directa, escanear identifica el Producto pero no registra una venta:
-primero se muestra la disponibilidad restante, la usuaria elige cuántas unidades
-agregar y el sistema incorpora esa cantidad de unidades físicas elegibles al
-formulario actual. Si ya había unidades de ese Producto agregadas, se descuentan
-de la disponibilidad mostrada. La validación previa al registro continúa siendo
-obligatoria y un cambio concurrente no puede sustituir ni reducir artículos
-silenciosamente.
-
-En Inventario, una coincidencia local navega directamente al detalle
-administrativo del Producto. Una lectura inexistente permanece en Inventario y
-muestra error sin destruir innecesariamente los filtros actuales.
-
-Esta mejora debe acelerar la operación, no convertir el escaneo en requisito
-obligatorio para vender o consultar inventario. Los casos de error, cantidad,
-selección de unidades y pruebas obligatorias están detallados en el
-[contrato operativo](modules/scanner-operativo-v2-1.md).
+La implementación está cubierta por pruebas .NET y QA visual/óptico automatizado.
+Sigue pendiente probar **estos dos consumidores** con cámara en un dispositivo
+real y registrar sus versiones exactas. Otros consumidores y las mejoras de
+imágenes, analítica y UX siguientes conservan su planificación independiente.
 
 ## Analítica de uso y telemetría de producto
 

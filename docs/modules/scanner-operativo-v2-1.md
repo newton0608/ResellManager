@@ -1,11 +1,11 @@
 # V2.1 — Scanner operativo en Venta Directa e Inventario
 
-**Estado: requisitos aprobados; implementación pendiente (06/10/2026).**
+**Estado: implementado y validado automáticamente en la rama feature (06/10/2026); QA físico operativo pendiente.**
 
-Este documento define el comportamiento que debe implementar V2.1 al reutilizar
-el scanner de códigos de barras existente en dos flujos operativos:
-**Venta Directa** e **Inventario**. Es una especificación de producto/UX para una
-implementación posterior; no describe funcionalidad ya disponible.
+Este documento conserva el contrato aprobado y describe su implementación en
+**Venta Directa** e **Inventario**, reutilizando el scanner de códigos de barras
+existente. La evidencia automatizada y los límites del cierre se registran más
+abajo. No implica merge, release ni despliegue de esta rama.
 
 El motor, formatos soportados, privacidad, modos de captura y contrato actual de
 `BarcodeScanner` siguen definidos en [Scanner de códigos de producto](../29_BarcodeScanner.md).
@@ -188,8 +188,10 @@ La implementación debe partir de los contratos existentes, verificando sus
 firmas actuales antes de modificar:
 
 - `BarcodeScanner.razor`: captura y confirmación del código.
-- `IProductoService.ObtenerPorCodigoBarrasAsync(...)`: coincidencia local de
-  Producto por código de barras.
+- `IConsultaProductoCodigoBarras.ObtenerPorCodigoBarrasAsync(...)`: contrato local
+  vigente, implementado por `ProductoService`, para coincidencia exacta por código.
+  La especificación inicial lo atribuía a `IProductoService`; se verificó y
+  reutilizó la interfaz real sin ampliar ese contrato ni activar lookup externo.
 - `ISeleccionOperativaService` / `SeleccionOperativaService`: reglas y
   consultas de unidades elegibles para flujos operativos.
 - `UnidadBuscador` y el flujo actual de `VentaDirectaForm`: alternativa manual,
@@ -225,50 +227,119 @@ obligatoria de esta feature; está planificada por separado donde aporte valor.
 
 ## Venta Directa
 
-- [ ] Existe una acción visible para abrir el scanner sin eliminar
+- [x] Existe una acción visible para abrir el scanner sin eliminar
   `UnidadBuscador`.
-- [ ] Cancelar el scanner deja intacta la venta en curso.
-- [ ] Un código inexistente muestra error local y no realiza lookup externo.
-- [ ] Un producto existente muestra la cantidad de unidades elegibles restantes.
-- [ ] Las unidades ya agregadas se descuentan de esa disponibilidad.
-- [ ] La cantidad inicia en 1 y no puede superar la disponibilidad.
-- [ ] Confirmar N agrega exactamente N unidades físicas distintas.
-- [ ] Escanear nuevamente el mismo producto permite agregar sólo las restantes.
-- [ ] Cero disponibilidad no agrega artículos.
-- [ ] Las unidades agregadas conservan precio sugerido inicial y precio final
+- [x] Cancelar el scanner deja intacta la venta en curso.
+- [x] Un código inexistente muestra error local y no realiza lookup externo.
+- [x] Un producto existente muestra la cantidad de unidades elegibles restantes.
+- [x] Las unidades ya agregadas se descuentan de esa disponibilidad.
+- [x] La cantidad inicia en 1 y no puede superar la disponibilidad.
+- [x] Confirmar N agrega exactamente N unidades físicas distintas.
+- [x] Escanear nuevamente el mismo producto permite agregar sólo las restantes.
+- [x] Cero disponibilidad no agrega artículos.
+- [x] Las unidades agregadas conservan precio sugerido inicial y precio final
   editable como el flujo manual.
-- [ ] La revisión final muestra las unidades concretas y el total normal.
-- [ ] La revalidación previa al registro sigue siendo obligatoria.
-- [ ] Un cambio concurrente de disponibilidad detiene la venta; no sustituye ni
+- [x] La revisión final muestra las unidades concretas y el total normal.
+- [x] La revalidación previa al registro sigue siendo obligatoria.
+- [x] Un cambio concurrente de disponibilidad detiene la venta; no sustituye ni
   reduce artículos silenciosamente.
-- [ ] No se introduce FIFO/LIFO ni orden por costo como regla de negocio.
+- [x] No se introduce FIFO/LIFO ni orden por costo como regla de negocio.
 
 ## Inventario
 
-- [ ] Existe una acción visible para abrir el scanner sin eliminar búsqueda ni
+- [x] Existe una acción visible para abrir el scanner sin eliminar búsqueda ni
   filtros actuales.
-- [ ] Un código de producto existente navega a `/productos/{id}`.
-- [ ] La navegación funciona aunque el producto tenga cero unidades disponibles.
-- [ ] Un código inexistente muestra error y permanece en Inventario.
-- [ ] El fallo/cancelación no borra innecesariamente filtros o búsqueda.
-- [ ] Escanear no cambia estados, reservas ni recepción.
-- [ ] No se consulta ningún proveedor externo.
+- [x] Un código de producto existente navega a `/productos/{id}`.
+- [x] La navegación funciona aunque el producto tenga cero unidades disponibles.
+- [x] Un código inexistente muestra error y permanece en Inventario.
+- [x] El fallo/cancelación no borra innecesariamente filtros o búsqueda.
+- [x] Escanear no cambia estados, reservas ni recepción.
+- [x] No se consulta ningún proveedor externo.
 
 ## Validación técnica y regresión
 
-- [ ] Pruebas cubren coincidencia, inexistente, cero/una/múltiples unidades,
+- [x] Pruebas cubren coincidencia, inexistente, cero/una/múltiples unidades,
   exclusión de seleccionadas, límites de cantidad y escaneo repetido.
-- [ ] Pruebas cubren navegación de Inventario y preservación ante fallo/cancelación.
-- [ ] Pruebas demuestran que el camino operativo no invoca lookup externo.
-- [ ] Las pruebas existentes de Venta Directa, inventario y scanner continúan
+- [x] Pruebas cubren navegación de Inventario y preservación ante fallo/cancelación.
+- [x] Pruebas demuestran que el camino operativo no invoca lookup externo.
+- [x] Las pruebas existentes de Venta Directa, inventario y scanner continúan
   pasando.
-- [ ] Ejecutar build y suite .NET; ejecutar pruebas JS/scanner cuando se toque
+- [x] Ejecutar build y suite .NET; ejecutar pruebas JS/scanner cuando se toque
   integración o markup relacionado.
-- [ ] Revisar UI al menos en los anchos móviles ya usados por el proyecto
+- [x] Revisar UI al menos en los anchos móviles ya usados por el proyecto
   (320/390 px) y escritorio, sin overflow horizontal.
 - [ ] Después de implementar, validar físicamente el flujo operativo con cámara
   en un dispositivo real; registrar dispositivo/navegador exactos sin extrapolar
   esa evidencia a navegadores no probados.
+
+---
+
+## Implementación y evidencia — 06/10/2026
+
+- [VentaDirectaForm](../../src/ResellManager.Web/Components/Ventas/VentaDirectaForm.razor)
+  y [Inventario](../../src/ResellManager.Web/Components/Pages/Inventario.razor)
+  consumen el mismo `BarcodeScanner.OnDetected` y consultan exclusivamente
+  `IConsultaProductoCodigoBarras`. Se mantienen los strings exactos, la entrada
+  manual y el contrato óptico existente.
+- `ISeleccionOperativaService.ListarUnidadesDirectasAsync(productoId, excluir, ct)`
+  devuelve todas las unidades elegibles del producto, sin el límite de 12 del
+  buscador manual. Reutiliza `Elegibles(productoId, null)`: estado Disponible,
+  sin reserva y excluyendo los IDs del formulario. Ordena por `CodigoInterno`
+  como el servicio operativo existente; `Id` desempata. No utiliza costo ni fecha.
+- Venta Directa muestra una selección de cantidad en la página, inicialmente 1,
+  con límites enteros verificados en el manejador del servidor. Ambos caminos
+  agregan los mismos modelos de unidad con precio sugerido editable. Mientras
+  hay una selección pendiente se bloquean selección manual, revisión y cambios
+  incompatibles. Cancelarla conserva los artículos existentes.
+- Antes de agregar N se comprueban los N IDs elegidos. Si alguno perdió
+  elegibilidad se conserva la selección para cancelarla/repetir el escaneo,
+  sin agregar parte de ella ni elegir reemplazos. La revalidación vigente antes
+  de crear el pedido y las comprobaciones de VentaService permanecen intactas.
+- Los errores del scanner de Inventario son independientes del listado y de sus
+  filtros. Un producto sin inventario también abre su detalle. La consulta no
+  modifica unidades, estados, reservas ni recepciones.
+
+Validaciones ejecutadas:
+
+| Comprobación | Resultado |
+| --- | --- |
+| `dotnet build ResellManager.sln` | 0 errores y 0 advertencias. |
+| `dotnet test ResellManager.sln --filter FullyQualifiedName~ScannerOperativo` | 34 casos correctos, sin omisiones. |
+| `dotnet test ResellManager.sln --no-build` | 862 pruebas correctas, sin omisiones; incluye Venta Directa, inventario y reservas existentes. |
+| `npm ci` y `npm run css:build` | Correctos; el CSS y el vendor generados conservan su contenido versionado. |
+| `npm run test:js` | 115 pruebas correctas, incluidas las 98 del scanner. |
+| `npm run qa:scanner` | 80 comprobaciones y 28 decodificaciones correctas; cámara de canvas, sin hardware. |
+| `npm run qa:scanner-operativo` | 40 vistas correctas: 10 estados a 320/390/768/1440 px, sin overflow horizontal; controles visibles de al menos 44 × 44 px y límites nativos de cantidad correctos. |
+| `git diff --check` | Sin errores. |
+
+[ScannerOperativoTests](../../tests/ResellManager.Tests/ScannerOperativoTests.cs)
+usa SQLite sintético, los servicios reales y el callback de BarcodeScanner:
+coincidencia exacta, inexistente, cero/una/múltiples unidades, reservas/estados,
+exclusiones, cantidad inválida, escaneo repetido, precios/revisión/registro,
+cancelación, errores técnicos, doble toque y pérdida de elegibilidad tanto antes
+de agregar como antes de registrar. Un servicio externo instrumentado verifica
+cero invocaciones en ambos caminos operativos.
+
+El [QA operativo reproducible](../../tests/scanner-operativo.browser.mjs) exporta
+markup de los componentes reales y usa sus CSS en **Edge 154.0.4258.62 headless
+sobre Windows**. Evidencia local ignorada por Git:
+`.artifacts/scanner-operativo-ui/report.json` y capturas PNG de los 40 estados.
+Para ejecutarlo se reutiliza Playwright disponible, con
+`SCANNER_PLAYWRIGHT_MODULE` y `SCANNER_BROWSER_CHANNEL` según la
+[guía del scanner](../29_BarcodeScanner.md#validación-y-límites), sin agregarlo al
+runtime ni al lockfile. El QA visual no levanta un circuito Blazor interactivo;
+los callbacks, selección y navegación se ejercitan en .NET. Se inspeccionaron
+además las capturas de cantidad a 320 px, error/filtros a 390 px y escritorio.
+
+**Pendiente para cerrar el criterio físico:** probar ambos flujos con cámara en
+un dispositivo real desde esta implementación y registrar modelo,
+versión del sistema y navegador exactos. Comprobar cantidad, escaneo repetido,
+producto sin unidades, código inexistente y cancelación; en Inventario, navegación
+al producto y preservación de filtros ante fallo/cancelación. No se dispuso de una
+cámara física para esta validación. No se ha desplegado la rama para suplirla.
+La evidencia previa de **iPhone 14 Plus + Brave**, conservada en la guía del
+scanner, corresponde al flujo de Producto; no valida estos dos consumidores
+nuevos ni certifica Safari.
 
 ---
 

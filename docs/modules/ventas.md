@@ -17,7 +17,7 @@ el pedido técnico automáticamente. Las ventas son completas en sus artículos.
 - Venta Directa conserva dos operaciones (crear Pedido y registrar Venta);
   no presupongas atomicidad conjunta ni idempotencia distribuida. Las
   protecciones de concurrencia adicionales continúan en V2.3.
-- **V2.1 aprobado, implementación pendiente:** [scanner operativo en Venta
+- **Scanner operativo V2.1 implementado; QA físico pendiente:** [scanner operativo en Venta
   Directa e Inventario](scanner-operativo-v2-1.md). En Venta Directa el código
   identifica un Producto local, muestra unidades elegibles restantes, solicita
   cantidad y agrega N unidades físicas concretas sin inventar FIFO/LIFO ni una
@@ -33,6 +33,9 @@ Pagos/Home y `Components/Ventas/`, `Components/Pagos/` de Web.
 
 Pruebas existentes en [ResellManager.Tests](../../tests/ResellManager.Tests/):
 `VentaInvariantesTests`, `VentaPagoReporteTests`, `Fase57VentaPagoTests`,
-`PagoBusquedaRevisionTests`, `DashboardTests` y `DashboardUxTests`.
+`PagoBusquedaRevisionTests`, `DashboardTests`, `DashboardUxTests` y
+[ScannerOperativoTests](../../tests/ResellManager.Tests/ScannerOperativoTests.cs).
+La evidencia y el criterio físico pendiente del scanner se registran en el
+[contrato operativo](scanner-operativo-v2-1.md#implementación-y-evidencia--06102026).
 Para cambios compartidos de dinero/inventario, ejecuta también la suite completa
 y revisa la [decisión 015](../11_DecisionesDeDiseño.md#015-el-saldo-requiere-endurecimiento-de-concurrencia-después-de-completar-la-ui).

@@ -15,7 +15,7 @@ historial. Su estado físico y su reserva comercial son dimensiones distintas.
 - El listado Disponible y el Dashboard filtran estado físico. Eso no equivale
   a disponibilidad comercial pública, que también exige unidad libre de reserva
   y de venta registrada; consulta [Catálogo](catalogo.md) para publicación.
-- **V2.1 aprobado, implementación pendiente:** [scanner operativo en Venta
+- **Scanner operativo V2.1 implementado; QA físico pendiente:** [scanner operativo en Venta
   Directa e Inventario](scanner-operativo-v2-1.md). En Inventario una lectura
   confirmada busca exclusivamente un Producto local por `CodigoBarras` y, si
   existe, abre `/productos/{id}`; no cambia unidades, estados ni reservas.
@@ -30,6 +30,9 @@ concentran las operaciones/consultas. UI en `Pages/Inventario.razor` y
 
 Pruebas existentes en [ResellManager.Tests](../../tests/ResellManager.Tests/):
 `InventarioModuloTests`, `ReservaInventarioTests`, `RecepcionPerdidasTests`,
-`UnidadesPerdidasTests` y `SeleccionOperativaTests`.
+`UnidadesPerdidasTests`, `SeleccionOperativaTests` y
+[ScannerOperativoTests](../../tests/ResellManager.Tests/ScannerOperativoTests.cs).
+La evidencia y el criterio físico pendiente se registran en el
+[contrato operativo](scanner-operativo-v2-1.md#implementación-y-evidencia--06102026).
 La concurrencia fuerte por unidad sigue [planificada en V2.3](../19_V2_Pendientes.md#concurrencia-de-reservas-de-inventario);
 deshabilitar botones no la implementa.
