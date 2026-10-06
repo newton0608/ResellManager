@@ -1,3 +1,5 @@
+using ResellManager.Application.Interfaces;
+using ResellManager.Application.Common;
 using System.ComponentModel.DataAnnotations;
 using System.Net;
 using System.Reflection;
@@ -129,6 +131,9 @@ public sealed class FormularioUxTests
             corregirModelo = () => modeloProducto.Nombre = "Producto del reintento";
             mensajeEsperado = "El nombre es obligatorio.";
             Establecer(pagina, "ProductoService", new ProductoService(test.Db));
+            Establecer(pagina, "AltaProductoAsistidaService", ProductoLookupImagenTests.Crear(
+                test, Path.Combine(Path.GetTempPath(), "resell-ux-" + Guid.NewGuid().ToString("N")),
+                new ProductoLookupImagenTests.DescargaFalsa(() => ServiceResult<Stream>.Failure("Sin imagen externa"))));
             Establecer(pagina, "CategoriasDisponibles", categorias);
             Establecer(pagina, "Logger", NullLogger<ProductoEdicion>.Instance);
         }
@@ -190,7 +195,8 @@ public sealed class FormularioUxTests
     private static async Task<string> RenderizarFormularioAsync(Type formulario, object modelo,
         string? error, IReadOnlyList<CategoriaDto> categorias)
     {
-        await using var servicios = new ServiceCollection().AddLogging().AddSingleton<IJSRuntime, JSInerte>().BuildServiceProvider();
+        await using var servicios = new ServiceCollection().AddLogging().AddSingleton<IJSRuntime, JSInerte>()
+            .AddSingleton<IProductoLookupService>(ProductoLookupTests.Servicio()).BuildServiceProvider();
         await using var renderer = new HtmlRenderer(servicios, servicios.GetRequiredService<ILoggerFactory>());
         return await renderer.Dispatcher.InvokeAsync(async () =>
         {

@@ -1,8 +1,8 @@
 # Catálogo público: backend de lectura
 
-Esta iteración incorpora una API pública de lectura para un futuro catálogo web. Reutiliza `Producto`, `Categoria` y el inventario físico existente. No es el flujo de `TipoPedido.Catalogo` / `OrigenCompra.Catalogo`, que sigue funcionando bajo pedido sin generar unidades físicas.
+Esta guía documenta la API pública de lectura implementada. La UI también existe: consulta [Catálogo](modules/catalogo.md) para el estado integrado y los dominios. Reutiliza `Producto`, `Categoria` y el inventario físico existente. No es el flujo de `TipoPedido.Catalogo` / `OrigenCompra.Catalogo`, que sigue funcionando bajo pedido sin generar unidades físicas.
 
-No incorpora UI, cuentas públicas, autorregistro, carrito, pedidos web, checkout ni pagos. No modifica entidades, configuración EF, esquema, migraciones ni reglas de compras, inventario, reservas, pedidos o ventas.
+La iteración original de backend no incorporó UI; esta se añadió posteriormente. El sistema actual sigue sin cuentas públicas, autorregistro, carrito, pedidos web, checkout ni pagos online. No modifica entidades, configuración EF, esquema, migraciones ni reglas de compras, inventario, reservas, pedidos o ventas.
 
 ## Disponibilidad exacta
 
@@ -63,7 +63,7 @@ El nuevo caso de uso recibe únicamente el ID, verifica disponibilidad y lee int
 
 Las pruebas usan SQLite real y los servicios existentes para comprar, recibir, reservar, vender y cancelar. Incluyen todos los estados físicos, mezcla de unidades, venta activa con estado inconsistente, búsqueda, categoría, detalle inexistente, listas explícitas de campos permitidos en JSON, acceso anónimo, métodos de escritura rechazados y protección de imágenes/rutas. El host de pruebas aísla también el directorio de imágenes en una carpeta temporal.
 
-Antes de continuar con la UI conviene revisar:
+Puntos de revisión originalmente registrados antes de la UI (ahora implementada); no son requisitos automáticamente aprobados:
 
 1. Que nombres, descripciones y fotos existentes sean apropiados para publicación: no existe una marca editorial de publicación independiente del stock.
 2. Si el negocio desea mostrar alguna referencia comercial y cómo presentar `PrecioSugerido` como precio público; la moneda/formato siguen siendo una decisión de presentación.
@@ -71,6 +71,8 @@ Antes de continuar con la UI conviene revisar:
 4. La disponibilidad puede cambiar entre lecturas. Cualquier futura operación comercial debe revalidar inventario mediante los flujos existentes.
 
 ## Resultado de validación de esta iteración
+
+Registro histórico del trabajo de backend, no resultados de la suite actual ni estado Git actual. El backend se incorporó después en `9a119bb`.
 
 - `dotnet build ResellManager.sln --no-restore`: correcto, 0 advertencias y 0 errores (.NET 10).
 - Pruebas específicas de `CatalogoPublico`: 47 correctas, 0 fallidas y 0 omitidas.

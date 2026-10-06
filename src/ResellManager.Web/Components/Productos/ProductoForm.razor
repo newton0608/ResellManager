@@ -37,9 +37,38 @@
                 <div class="grid min-w-0 gap-2">
                     <label class="text-sm font-medium" for="producto-codigo-barras">Código de barras</label>
                     <div class="grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
-                        <InputText class="ui-input" disabled="@Guardando" aria-describedby="producto-codigo-barras-validacion" id="producto-codigo-barras" @bind-Value="Modelo.CodigoBarras" inputmode="numeric" autocomplete="off" />
-                        <BarcodeScanner Disabled="@Guardando" OnDetected="CodigoEscaneado" />
+                        <InputText class="ui-input" disabled="@(Guardando || BuscandoLookup)" aria-describedby="producto-codigo-barras-validacion" id="producto-codigo-barras" @bind-Value="Modelo.CodigoBarras" @bind-Value:after="CodigoManualCambiado" inputmode="numeric" autocomplete="off" />
+                        <BarcodeScanner Disabled="@(Guardando || BuscandoLookup)" OnDetected="CodigoEscaneado" />
                     </div>
+                    @if (LookupHabilitado)
+                    {
+                        <button class="ui-button justify-self-start border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" type="button"
+                                disabled="@(Guardando || BuscandoLookup)" @onclick="BuscarProductoAsync">
+                            @(BuscandoLookup ? "Buscando..." : Ronda?.Agotada == true ? "Reintentar búsqueda" : "Buscar producto")
+                        </button>
+                        @if (MensajeLookup is not null)
+                        {
+                            <p class="m-0 rounded-xl bg-ui-canvas p-3 text-sm leading-6 [overflow-wrap:anywhere]" role="status" aria-live="polite">@MensajeLookup</p>
+                        }
+                        @if (ProductoLocalCoincide)
+                        {
+                            <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/productos/@Ronda!.ProductoLocal!.Id">Consultar producto existente</a>
+                        }
+                        @if (Ronda?.Intentos.Count > 0)
+                        {
+                            <ul class="m-0 pl-5 text-sm leading-6 text-ui-muted">
+                                @foreach (var intento in Ronda.Intentos)
+                                {
+                                    <li>@intento.Fuente: @EstadoIntento(intento.Estado)</li>
+                                }
+                            </ul>
+                        }
+                        @if (Importacion.PuedeDeshacer)
+                        {
+                            <button class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" type="button"
+                                    disabled="@(Guardando || BuscandoLookup)" @onclick="DeshacerImportacion">Deshacer datos importados</button>
+                        }
+                    }
                     <div class="empty:hidden" id="producto-codigo-barras-validacion"><ValidationMessage For="() => Modelo.CodigoBarras" /></div>
                 </div>
 
@@ -146,14 +175,17 @@
 
             <section class="ui-card grid min-w-0 gap-4 p-5 sm:p-6" aria-labelledby="producto-imagen-titulo">
                 <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="producto-imagen-titulo">Imagen del producto</h2>
-                @if (VistaPrevia is not null || (Modelo.ImagenPrincipalRuta is not null && !Modelo.EliminarImagenPrincipal))
+                @if (ImagenVistaPrevia is { } imagenVistaPrevia)
                 {
                     <div class="grid min-w-0 gap-3">
                         <div class="flex aspect-[4/3] max-h-64 w-full items-center justify-center overflow-hidden rounded-2xl border border-solid border-ui-border bg-ui-canvas p-3">
-                            <img class="block size-full object-contain" src="@(VistaPrevia ?? $"/productos/{ProductoId}/imagen")" alt="Vista previa de la imagen principal" />
+                            <img class="block size-full object-contain" src="@imagenVistaPrevia" alt="Vista previa de la imagen principal" referrerpolicy="no-referrer" />
                         </div>
-                        <button class="ui-button border-ui-danger/30 bg-white text-ui-danger hover:bg-ui-danger/5" type="button" disabled="@Guardando"
-                                @onclick="QuitarImagen">Eliminar imagen</button>
+                        @if (!ImagenExternaPendiente)
+                        {
+                            <button class="ui-button border-ui-danger/30 bg-white text-ui-danger hover:bg-ui-danger/5" type="button" disabled="@Guardando"
+                                    @onclick="QuitarImagen">Eliminar imagen</button>
+                        }
                     </div>
                 }
                 else
@@ -164,6 +196,12 @@
                     </div>
                 }
                 <div class="grid min-w-0 gap-2">
+                    @if (ImagenExternaPendiente)
+                    {
+                        <p class="m-0 text-sm leading-6 text-ui-muted" role="status">Imagen externa pendiente. Se intentará incorporar al guardar; puedes elegir una imagen manual o quitarla.</p>
+                        <button class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" type="button"
+                                disabled="@Guardando" @onclick="QuitarImagen">Quitar imagen externa</button>
+                    }
                     <label class="text-sm font-medium" for="producto-imagen">Imagen principal (opcional)</label>
                     <InputFile class="ui-input cursor-pointer text-sm file:mr-3 file:min-h-11 file:rounded-xl file:border-0 file:bg-ui-canvas file:px-3 file:py-2 file:font-sans file:text-sm file:font-semibold file:text-ui-ink hover:file:bg-ui-accent/10 disabled:cursor-not-allowed" @key="VersionSelectorImagen" id="producto-imagen"
                                OnChange="SeleccionarImagenAsync"
@@ -196,6 +234,12 @@
     </div>
 </EditForm>
 
+@if (LookupHabilitado && RevisandoLookup && Ronda?.Candidato is not null)
+{
+    <ProductoLookupRevision Candidato="Ronda.Candidato" CodigoConsultado="@Ronda.CodigoConsultado"
+                            OnAceptar="UsarCandidato" OnOtraFuente="BuscarOtraFuenteAsync" OnDescartar="DescartarCandidato" />
+}
+
 @code {
     [Parameter, EditorRequired]
     public ProductoFormModel Modelo { get; set; } = null!;
@@ -225,6 +269,8 @@
     private async Task SeleccionarImagenAsync(InputFileChangeEventArgs evento)
     {
         Modelo.ImagenArchivo = null;
+        Modelo.ImagenContenido = null;
+        Modelo.ImagenExternaUrl = null;
         VistaPrevia = null;
         ErrorImagen = null;
         var archivo = evento.File;
@@ -255,6 +301,7 @@
             }
             VistaPrevia = $"data:{tipo};base64,{Convert.ToBase64String(bytes)}";
             Modelo.ImagenArchivo = archivo;
+            Modelo.ImagenContenido = bytes;
             Modelo.EliminarImagenPrincipal = false;
         }
         catch (Exception)
@@ -266,6 +313,8 @@
     private void QuitarImagen()
     {
         Modelo.ImagenArchivo = null;
+        Modelo.ImagenContenido = null;
+        Modelo.ImagenExternaUrl = null;
         Modelo.EliminarImagenPrincipal = Modelo.ImagenPrincipalRuta is not null;
         VistaPrevia = null;
         ErrorImagen = null;
@@ -273,8 +322,8 @@
     }
 
 
-    private bool PuedeGuardar => !Guardando && Categorias.Count > 0;
+    private bool PuedeGuardar => !Guardando && !BuscandoLookup && !RevisandoLookup && !ProductoLocalCoincide && Categorias.Count > 0;
 
-    private Task GuardarAsync() => OnGuardar.InvokeAsync(Modelo);
-    private void CodigoEscaneado(string codigo) => Modelo.CodigoBarras = codigo;
+    private Task GuardarAsync() => PuedeGuardar ? OnGuardar.InvokeAsync(Modelo) : Task.CompletedTask;
+
 }

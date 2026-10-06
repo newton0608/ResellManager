@@ -1,10 +1,12 @@
 # Alcance V1
 
+> Este documento conserva el alcance de las fases originales V1. Para ampliaciones ya integradas (scanner, imágenes, monedas y catálogo público), consultar [índice vigente](README.md), [ROADMAP](../ROADMAP.md) y [changelog](../CHANGELOG.md). Las exclusiones de ecommerce no significan ausencia del catálogo de lectura actual.
+
 ## Estado operativo actual
 
 ResellManager está en producción. Existen `v1.0.0` (`3f2d264`) y `v1.0.1` (`97da64e`); no se deduce de esos tags la imagen exacta desplegada. El responsable del proyecto confirmó dominio/HTTPS, cuentas Identity separadas y pruebas de cliente, compra y venta directa. La corrección de claves duplicadas de Blazor en venta directa está incluida en `v1.0.1`.
 
-Backup manual y restore real fueron probados; el timer systemd está instalado, activo y ya ejecutó correctamente con retención automática. Las copias permanecen en el mismo VPS. Siguen pendientes copia automática externa a Raspberry/otro equipo y validación completa del rollback de versión de aplicación. Esta evidencia no certifica todos los controles de seguridad o recuperación. Detalle en el [runbook operativo](21_Despliegue_V1.md).
+Backup manual y restore real fueron probados; el timer systemd está instalado, activo y ya ejecutó correctamente con retención automática. Las copias permanecen en el mismo VPS. Siguen pendientes copia automática externa a Raspberry/otro equipo y validación completa del rollback de versión de aplicación. Esta evidencia no certifica todos los controles de seguridad o recuperación. Detalle en el [runbook operativo](deployment/deployment.md).
 
 ## Incluye
 

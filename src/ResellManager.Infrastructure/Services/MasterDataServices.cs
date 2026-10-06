@@ -279,7 +279,7 @@ public sealed class CategoriaService(ResellManagerDbContext db) : ICategoriaServ
     private static CategoriaDto Map(Categoria x) => new(x.Id, x.Nombre, x.Observaciones);
 }
 
-public sealed class ProductoService(ResellManagerDbContext db) : IProductoService
+public sealed class ProductoService(ResellManagerDbContext db) : IProductoService, IConsultaProductoCodigoBarras
 {
     public async Task<ServiceResult<ProductoDto>> CrearAsync(
         ProductoInput input,
@@ -351,6 +351,9 @@ public sealed class ProductoService(ResellManagerDbContext db) : IProductoServic
         return await Query(ordenados).ToListAsync(ct);
     }
 
+    public async Task<ProductoDto?> ObtenerPorCodigoBarrasAsync(string codigo, CancellationToken ct = default) =>
+        await Query(db.Productos.Where(x => x.CodigoBarras == codigo).OrderBy(x => x.Id)).FirstOrDefaultAsync(ct);
+
     private async Task<string?> Validar(ProductoInput x, string codigoInterno, int? id, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(x.Nombre))
@@ -379,7 +382,7 @@ public sealed class ProductoService(ResellManagerDbContext db) : IProductoServic
 
     private static void Apply(Producto x, ProductoInput i)
     {
-        x.CodigoBarras = i.CodigoBarras?.Trim();
+        x.CodigoBarras = i.CodigoBarras;
         x.Nombre = i.Nombre.Trim();
         x.Descripcion = i.Descripcion?.Trim();
         x.Marca = i.Marca?.Trim();

@@ -43,6 +43,34 @@ public sealed class ProductoFormModel : IValidatableObject
     public string? ImagenPrincipalRuta { get; set; }
     public IBrowserFile? ImagenArchivo { get; set; }
     public bool EliminarImagenPrincipal { get; set; }
+    public string? ImagenExternaUrl { get; set; }
+    // Bytes ya leídos para preservar una selección manual aunque se reabra el selector y luego se deshaga.
+    public byte[]? ImagenContenido { get; set; }
+
+    public ProductoFormModel CrearInstantanea() => (ProductoFormModel)MemberwiseClone();
+
+    public void Restaurar(ProductoFormModel anterior)
+    {
+        CodigoBarras = anterior.CodigoBarras;
+        Nombre = anterior.Nombre;
+        Descripcion = anterior.Descripcion;
+        Marca = anterior.Marca;
+        Modelo = anterior.Modelo;
+        Color = anterior.Color;
+        Talla = anterior.Talla;
+        Volumen = anterior.Volumen;
+        VolumenUnidad = anterior.VolumenUnidad;
+        Peso = anterior.Peso;
+        PesoUnidad = anterior.PesoUnidad;
+        Presentacion = anterior.Presentacion;
+        PrecioSugerido = anterior.PrecioSugerido;
+        CategoriaId = anterior.CategoriaId;
+        ImagenPrincipalRuta = anterior.ImagenPrincipalRuta;
+        ImagenArchivo = anterior.ImagenArchivo;
+        ImagenContenido = anterior.ImagenContenido;
+        ImagenExternaUrl = anterior.ImagenExternaUrl;
+        EliminarImagenPrincipal = anterior.EliminarImagenPrincipal;
+    }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {

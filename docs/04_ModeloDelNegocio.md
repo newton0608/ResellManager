@@ -45,7 +45,7 @@ La etiqueta comercial «Envío del hijo» corresponde al identificador persistid
 - Entregada
 - Perdida
 
-`Perdida` representa una pérdida previa a recepción: solo se admite desde `Comprada` o `EnTransito` y es irreversible en V1. Libera cualquier reserva, conserva el registro y excluye la unidad de recepción, reserva y venta; no equivale a mercancía recibida. Véanse las [reglas del negocio](08_ReglasDelNegocio.md#unidadinventario).
+`Perdida` representa una pérdida previa a recepción: solo se admite desde `Comprada` o `EnTransito` y es irreversible en V1. Libera cualquier reserva, conserva el registro y excluye la unidad de recepción, reserva y venta; no equivale a mercancía recibida. Véanse las [reglas del negocio](architecture/domain-rules.md#unidadinventario).
 
 El apartado es una asociación comercial con DetallePedido y no un estado físico.
 

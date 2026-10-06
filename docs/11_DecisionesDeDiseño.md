@@ -1,5 +1,9 @@
 # Decisiones
 
+Registro canónico de decisiones duraderas. Se conserva la numeración existente
+(en lugar de abrir ADRs duplicados). Cada nueva decisión distingue intención,
+comportamiento implementado y trabajo pendiente; el roadmap no prueba ejecución.
+
 ## 001 La aplicación será una Web App.
 
 Debe funcionar desde iPhone, Android y computadora sin desarrollar aplicaciones nativas.
@@ -271,3 +275,73 @@ Resultado:
 - Solo las unidades incluidas en la venta pasan a `Vendida`; las restantes pierden únicamente `DetallePedidoReservaId` y conservan su estado físico (`Comprada`, `EnTransito` o `Disponible`).
 - La liberación, el registro de la venta y la finalización del pedido ocurren en la misma transacción; un fallo no confirma cambios parciales.
 - La consulta de pendientes del cliente excluye reservas de pedidos `Completado` y `Cancelado`, incluso si encuentra asociaciones históricas inconsistentes. Esto no implica una migración ni una limpieza retroactiva de datos.
+
+## 025 Preservar clientes y productos con historial
+
+**Estado: decisión de dirección aceptada; implementación pendiente.** Confirmada
+por el responsable el 05/10/2026.
+
+Contexto: clientes/productos pueden ser referenciados por pedidos, compras,
+inventario, ventas y pagos. Perder el maestro rompe trazabilidad histórica y,
+además, mantener un único comportamiento evita dos semánticas distintas de baja.
+
+Decisión: desde la aplicación, **clientes y productos no se eliminan físicamente**,
+tengan o no historial transaccional. La operación visible prevista es siempre
+**Desactivar / Reactivar**. La preservación del historial es una de las razones
+principales de esta política, no una condición para aplicarla.
+
+Estado real: las entidades no tienen estado activo y sus servicios actuales no
+ofrecen borrar/desactivar/reactivar. Las FK restrictivas existentes no equivalen
+a implementar borrado lógico. No se añade código ni migración con esta decisión.
+
+Pendiente: definir qué ocurre al desactivar un cliente con deuda o con operaciones
+activas, qué operaciones nuevas admiten maestros inactivos, comportamiento en
+búsquedas/listados, efecto del producto inactivo sobre inventario y catálogo,
+y reglas exactas de reactivación. No se deciden aún campos, filtros globales ni
+un esquema definitivo. Categorías/proveedores no reciben automáticamente la
+misma política por analogía.
+
+## 026 Separar dominios público y administrativo
+
+**Estado: separación acordada e implementada operacionalmente; catálogo/Identity
+implementados.** Verificación operativa realizada el 05/10/2026.
+
+Virtuosa Store usa `virtuosagt.com`; administración, `app.resellmanager.tech`;
+`preview.newtonlab.dev` conserva las pruebas de catálogo. El catálogo consulta
+los servicios/productos/inventario existentes, sin otra base de datos. Los
+contratos públicos solo devuelven información comercial explícita.
+
+En el host público, `/` sirve el catálogo y
+`https://virtuosagt.com/producto/{id}` es la URL limpia operativa. Esa URL no es
+un `@page` de Blazor: Caddy la reescribe internamente a
+`/catalogo/{ProductoId:int}`, que sigue siendo la ruta declarada por la
+aplicación. `/catalogo` redirige a `/`, y `www.virtuosagt.com` redirige al
+host canónico. Las rutas administrativas probadas desde el host público responden
+404. El routing por dominio limita superficie, pero no sustituye Identity.
+
+La configuración efectiva del VPS que habilita estas reglas fue verificada, pero
+todavía no está completamente representada por la configuración versionada del
+repositorio; eso queda como deuda de infraestructura/versionado. No se presenta
+la URL limpia como un cambio de routing Blazor que no existe.
+
+Configuración técnica, evidencia y compatibilidad de previews viven en
+[Dominios](deployment/domains.md). No hay carrito, checkout ni pedidos web; la
+tienda ampliada continúa planeada en V2.4.
+
+## 027 Documentación por tarea para agentes
+
+**Estado: adoptada en la auditoría documental e integrada a `develop` el
+05/10/2026; `main` sigue sujeto al flujo normal de release.**
+
+Contexto: prompts extensos y documentos de fases mezclan contratos, planes y
+evidencia histórica; leerlos todos para un cambio pequeño no es necesario.
+
+Decisión: [AGENTS.md](../AGENTS.md) es un contrato breve y un mapa. Las guías por
+módulo enlazan las especificaciones existentes; arquitectura/persistencia,
+deployment y este registro conservan sus responsabilidades. Cada tarea lee solo
+las referencias pertinentes. No se crea una segunda especificación del mismo
+contrato ni se borra evidencia útil para simplificar el árbol.
+
+Flujo: discutir requisitos → documentar acuerdos/criterios de aceptación → prompt
+corto → implementar/validar y actualizar estado. Las opciones tentativas quedan
+marcadas como análisis; un agente no las transforma en reglas aprobadas.

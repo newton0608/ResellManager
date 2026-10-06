@@ -1,6 +1,6 @@
 # Fase 5.10 — Cierre técnico de V1
 
-> **Registro histórico de Fase 5.10.** Este documento conserva el cierre técnico y sus ampliaciones, incluida la última sección fechada el 13/09/2026. Resultados, pruebas, ramas, decisiones y pendientes describen sus respectivos momentos de verificación; no se actualizan retrospectivamente para certificar operación posterior. El estado vigente se consulta en [Alcance V1](14_Alcance_V1.md), [runbook operativo](21_Despliegue_V1.md), [seguridad de producción](22_Seguridad_Produccion.md) y [changelog](../CHANGELOG.md).
+> **Registro histórico de Fase 5.10.** Este documento conserva el cierre técnico y sus ampliaciones, incluida la última sección fechada el 13/09/2026. Resultados, pruebas, ramas, decisiones y pendientes describen sus respectivos momentos de verificación; no se actualizan retrospectivamente para certificar operación posterior. El estado vigente se consulta en [Alcance V1](14_Alcance_V1.md), [runbook operativo](deployment/deployment.md), [seguridad de producción](deployment/security.md) y [changelog](../CHANGELOG.md).
 
 ## 1. Alcance y estado
 
