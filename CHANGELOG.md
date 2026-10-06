@@ -4,10 +4,11 @@ Las fechas siguientes corresponden a creación de tags; no son fechas exactas de
 
 ## Unreleased — integración operativa V2.1
 
-- Scanner en Venta Directa: coincidencia local exacta, cantidad de unidades elegibles restantes y agregado de N unidades físicas con precio sugerido editable, revisión y revalidación sin sustituciones ni ventas parciales.
+- Scanner en Venta Directa: base implementada para coincidencia local, disponibilidad y agregado de N unidades físicas. Tras prueba de Preview queda aprobado y pendiente agrupar cada acción de agregado como Producto ×N con códigos físicos y un solo Precio final por unidad, conservando lotes separados para agregados posteriores.
 - Scanner en Inventario: abre el detalle administrativo del Producto aunque no tenga unidades disponibles; fallos/cancelación conservan filtros y búsqueda.
-- Reutiliza BarcodeScanner y contratos locales existentes; sin lookup externo, cambios de esquema ni nueva política de selección/costo.
-- Pruebas conductuales y QA reproducible del markup real a 320/390/768/1440 px. La validación física de ambos consumidores sigue pendiente según el [contrato operativo](docs/modules/scanner-operativo-v2-1.md); esta entrada no acredita merge ni despliegue.
+- Nueva compra: integración aprobada y pendiente para seleccionar Producto por scanner; un código inexistente podrá abrir el alta asistida existente y regresar autoseleccionado al detalle original.
+- Reutiliza BarcodeScanner y contratos existentes. Venta Directa/Inventario son exclusivamente locales; en Compra el lookup externo sólo se permite dentro del subflujo explícito Registrar producto. Sin cambios de esquema ni nueva política de selección/costo.
+- La base cuenta con pruebas conductuales y QA reproducible del markup real a 320/390/768/1440 px. Los ajustes posteriores y la validación física final siguen pendientes según el [contrato operativo](docs/modules/scanner-operativo-v2-1.md); esta entrada no acredita merge ni despliegue.
 
 ## Cambios posteriores a v1.2.1 — registro previo
 
