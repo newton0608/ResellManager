@@ -13,8 +13,7 @@ Categoría es un maestro configurable, no un enum.
   opcionales, nunca ambos informados; presentación comercial independiente.
 - [Imagen principal](../24_ImagenPrincipalProducto.md): una referencia privada
   a WebP procesado, almacenamiento administrado y compensación ante fallos.
-- [Scanner](../29_BarcodeScanner.md): contrato, vendor fijado, pruebas JS/ópticas
-  y validación física pendiente. No extrapoles emulación a iPhone real.
+- [Scanner](../29_BarcodeScanner.md): contrato, vendor fijado y pruebas JS/ópticas. Existe validación posterior con cámara física real; la combinación exacta dispositivo/navegador y la regresión Safari original no quedaron registradas.
 - [Búsqueda asistida por código de barras](productos-lookup-codigo-barras.md):
   consulta local + proveedores externos, revisión
   antes de aplicar datos y guardado manual. **Implementado en Agregar producto.**
@@ -35,6 +34,8 @@ UI en `Components/Productos/`, `Components/Categorias/` y sus páginas de Web.
 
 Pruebas existentes en [ResellManager.Tests](../../tests/ResellManager.Tests/):
 `CatalogoModuloTests` (maestros administrativos), `ProductoPrecioTests`,
-`ImagenPrincipalProductoTests` y `CreacionPedidoProductoTests`.
+`ImagenPrincipalProductoTests`, `CreacionPedidoProductoTests`, `ProductoLookupTests`,
+`ProductoLookupProvidersTests`, `ProductoLookupImagenTests`, `ProductoLookupPreviewTests`,
+`ImagenExternaRedireccionesTests` y `FlujoImagenExternaTests`.
 Para scanner sigue su guía y `npm run test:js`; para cambios de publicación lee
 [Catálogo público](catalogo.md), cuyo contrato es diferente.
