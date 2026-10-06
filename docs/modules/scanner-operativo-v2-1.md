@@ -1,6 +1,6 @@
 # V2.1 — Scanner operativo en Venta Directa e Inventario
 
-**Estado: implementado y validado automáticamente en la rama feature (06/10/2026); QA físico operativo pendiente.**
+**Estado: implementación inicial validada automáticamente en la rama feature (06/10/2026); ajustes funcionales aprobados tras probar Preview pendientes de implementación y QA físico final pendiente.**
 
 Este documento conserva el contrato aprobado y describe su implementación en
 **Venta Directa** e **Inventario**, reutilizando el scanner de códigos de barras
@@ -150,6 +150,72 @@ No introducir precios por cantidad, promociones ni descuentos automáticos.
 
 ---
 
+## Ajuste aprobado tras probar Preview — agrupación por lote de agregado
+
+La primera implementación agrega correctamente N unidades físicas, pero presenta
+cada unidad como un detalle visual independiente con su propio campo de precio.
+Tras probar el flujo se aprobó cambiar **la representación y edición del
+formulario**, sin cambiar la identidad física ni el modelo histórico de la venta.
+
+### Regla de agrupación
+
+Las unidades agregadas en **una misma acción** forman un lote visual de Venta
+Directa:
+
+- un escaneo que agrega 5 unidades crea un lote visual con cantidad `×5`;
+- el lote muestra el nombre del Producto una sola vez;
+- debajo se muestran los códigos de las 5 `UnidadInventario` concretas;
+- el lote tiene **un solo Precio final por unidad**, editable;
+- ese precio se aplica a todas las unidades concretas del lote;
+- el subtotal del lote es `cantidad × PrecioFinal`;
+- la revisión previa a confirmar debe conservar la misma agrupación visual.
+
+Ejemplo conceptual:
+
+```text
+Producto X                                      ×5
+UNI-...-001
+UNI-...-002
+UNI-...-003
+UNI-...-004
+UNI-...-005
+
+Precio final por unidad
+Q 75.00
+
+Subtotal
+Q 375.00
+```
+
+La agrupación se determina por **acción de agregado**, no solamente por
+`ProductoId` ni por igualdad de precio. Si el mismo Producto se agrega después
+en otra acción, debe formar otro lote independiente aunque coincidan Producto y
+precio. Esto permite, por ejemplo, vender 5 unidades juntas a Q75 y agregar luego
+1 unidad del mismo Producto a Q65 sin que la UI las fusione.
+
+La búsqueda manual de una unidad individual crea naturalmente un lote de una
+unidad. Si se quita una unidad concreta de un lote, la cantidad visible se
+actualiza; el lote desaparece al quedar vacío.
+
+### Persistencia y reglas que no cambian
+
+Esta agrupación es de **formulario/revisión**, no una fusión de las unidades
+físicas ni una nueva entidad de dominio obligatoria:
+
+- cada `UnidadInventario` conserva su identidad y código;
+- el registro final continúa creando los detalles físicos requeridos por el
+  contrato vigente, uno por unidad cuando corresponda;
+- todas las unidades de un lote reciben el mismo `PrecioFinal` al construir la
+  entrada de la Venta;
+- no agrupar detalles históricos de forma que se pierda la identidad de unidad;
+- la revalidación de elegibilidad continúa por IDs concretos;
+- no introducir descuentos por cantidad, promociones ni una política de precios.
+
+La implementación puede introducir un modelo de presentación/grupo en Web para
+representar el lote, pero no requiere migración ni cambio de esquema.
+
+---
+
 # Inventario
 
 ## Experiencia aprobada
@@ -179,6 +245,92 @@ El scanner es una acción independiente del formulario de filtros de Inventario.
 No debe interpretar el código como filtro de estado ni requerir limpiar los
 filtros antes de usarlo. Si no encuentra producto, no debe destruir
 innecesariamente el término/filtro que la usuaria ya tenía.
+
+---
+
+# Compras — integración aprobada tras probar Preview
+
+El scanner operativo también debe integrarse en **Nueva compra**. Este consumidor
+se aprobó después de la primera implementación de Venta Directa e Inventario y
+por eso todavía no está cubierto por el código inicial de esta rama.
+
+Compras ya modela cada detalle como **Producto + Cantidad + Costo unitario** y
+`CompraService` genera las unidades físicas según la cantidad. El scanner no
+debe duplicar esa lógica ni crear una fila visual por cada unidad comprada.
+
+## Producto ya registrado
+
+Flujo aprobado:
+
+1. La usuaria abre **Nueva compra** y activa **Escanear código** para el detalle
+   de compra en el que está trabajando.
+2. Confirma el código mediante el `BarcodeScanner` existente.
+3. ResellManager realiza primero una coincidencia local exacta por
+   `Producto.CodigoBarras`.
+4. Si existe, selecciona ese Producto en el detalle usando el mismo comportamiento
+   funcional que `ProductoBuscador`.
+5. En una línea nueva la cantidad inicial continúa siendo `1`; la usuaria puede
+   editar Cantidad y Costo unitario normalmente.
+6. La revisión de Compra muestra Producto, Cantidad, Costo unitario y subtotal
+   como hasta ahora.
+7. Al confirmar, `CompraService` conserva la autoridad para crear
+   `DetalleCompra` y las `UnidadInventario` físicas correspondientes.
+
+El scanner es solamente otro mecanismo para seleccionar Producto. No cambia
+moneda, proveedor, origen, costo, estado inicial, comprobante ni reglas de
+recepción. Si se usa sobre un detalle que ya contiene datos, seleccionar por
+scanner debe respetar las mismas reglas de conservación/reemplazo que seleccionar
+otro Producto mediante el buscador manual; no crear semántica paralela.
+
+## Código no registrado
+
+Si la coincidencia local no encuentra Producto, **Nueva compra sí puede ofrecer
+“Registrar producto”** porque este es un punto natural de entrada de mercancía
+nueva.
+
+Ese camino debe reutilizar el alta de Producto y la búsqueda asistida ya
+existentes:
+
+1. conservar el código escaneado como `CodigoBarras` del formulario de alta;
+2. ejecutar la comprobación local obligatoria del flujo de alta;
+3. permitir la ronda externa Open Facts → UPCitemdb únicamente dentro de ese
+   flujo de registro de Producto;
+4. presentar el candidato y exigir la misma aceptación explícita existente antes
+   de copiar datos;
+5. permitir edición manual y Guardar producto;
+6. al crear correctamente el Producto, volver a la Compra conservando sus datos
+   y autoseleccionar el Producto nuevo en el detalle original.
+
+Cancelar/cerrar el alta debe regresar a la Compra sin registrar Producto y sin
+perder proveedor, moneda, origen, detalles, cantidades, costos, observaciones ni
+comprobante que ya estuvieran en preparación.
+
+La excepción de lookup externo aplica **sólo al subflujo explícito Registrar
+producto**. Escanear en Compra no debe consultar proveedores externos de forma
+automática si existe un Producto local ni debe convertir datos externos
+directamente en un detalle de Compra.
+
+## Criterios de aceptación de Compras
+
+- [ ] Existe acción visible de scanner en Nueva compra sin eliminar
+  `ProductoBuscador`.
+- [ ] Un código local existente selecciona el Producto en el detalle objetivo.
+- [ ] Cantidad y costo continúan siendo campos del detalle, no uno por unidad.
+- [ ] La revisión conserva el modelo Producto × Cantidad × Costo unitario.
+- [ ] El scanner no crea `UnidadInventario` directamente; la autoridad sigue en
+  `CompraService`.
+- [ ] Un código inexistente ofrece Registrar producto sin modificar la Compra.
+- [ ] Registrar producto reutiliza el flujo asistido vigente y conserva el código
+  escaneado.
+- [ ] El lookup externo sólo ocurre dentro del alta explícita de Producto.
+- [ ] Guardar el Producto nuevo vuelve a la Compra y lo autoselecciona en el
+  detalle original.
+- [ ] Cancelar el alta conserva intacta la Compra en preparación.
+- [ ] Fallo/cancelación del scanner conserva la Compra y la búsqueda manual.
+- [ ] No se cambian reglas de moneda, costos, origen, comprobantes, recepción ni
+  generación de unidades.
+- [ ] Pruebas cubren encontrado/no encontrado, alta asistida/cancelación,
+  autoselección y preservación del formulario de Compra.
 
 ---
 
@@ -256,6 +408,24 @@ obligatoria de esta feature; está planificada por separado donde aporte valor.
 - [x] Escanear no cambia estados, reservas ni recepción.
 - [x] No se consulta ningún proveedor externo.
 
+## Ajustes posteriores a la primera implementación
+
+- [ ] Venta Directa agrupa visualmente por **lote de agregado**, no por Producto
+  global ni por precio.
+- [ ] Un lote de N unidades muestra Producto una vez, `×N`, los N códigos
+  físicos, un solo Precio final por unidad y su subtotal.
+- [ ] Cambiar el Precio final del lote aplica el mismo valor a sus N unidades
+  concretas.
+- [ ] Agregar el mismo Producto en otra acción crea otro lote independiente y
+  permite otro Precio final.
+- [ ] La revisión previa a confirmar conserva los mismos lotes visuales.
+- [ ] Quitar una unidad concreta actualiza la cantidad del lote sin perder la
+  identidad de las restantes.
+- [ ] La persistencia y revalidación siguen operando sobre unidades físicas
+  concretas; no hay migración ni fusión histórica.
+- [ ] Implementar y validar los criterios de Compras definidos en la sección
+  correspondiente.
+
 ## Validación técnica y regresión
 
 - [x] Pruebas cubren coincidencia, inexistente, cero/una/múltiples unidades,
@@ -331,8 +501,8 @@ runtime ni al lockfile. El QA visual no levanta un circuito Blazor interactivo;
 los callbacks, selección y navegación se ejercitan en .NET. Se inspeccionaron
 además las capturas de cantidad a 320 px, error/filtros a 390 px y escritorio.
 
-**Pendiente para cerrar el criterio físico:** probar ambos flujos con cámara en
-un dispositivo real desde esta implementación y registrar modelo,
+**Pendiente para cerrar el criterio físico y los ajustes aprobados:** implementar primero la agrupación de Venta Directa y el consumidor de Compras; después probar los flujos con cámara en
+un dispositivo real desde la implementación final y registrar modelo,
 versión del sistema y navegador exactos. Comprobar cantidad, escaneo repetido,
 producto sin unidades, código inexistente y cancelación; en Inventario, navegación
 al producto y preservación de filtros ante fallo/cancelación. No se dispuso de una
