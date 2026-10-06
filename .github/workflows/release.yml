@@ -23,15 +23,32 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Validate requested tag
-        if: github.event_name == 'workflow_dispatch'
+      - name: Resolve and validate tag
+        id: version
         shell: bash
         env:
-          RELEASE_TAG: ${{ inputs.tag }}
-        run: git rev-parse "refs/tags/$RELEASE_TAG^{commit}"
+          PUSH_TAG: ${{ github.ref_name }}
+          MANUAL_TAG: ${{ inputs.tag }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            tag="$MANUAL_TAG"
+          else
+            tag="$PUSH_TAG"
+          fi
+          git rev-parse "refs/tags/$tag^{commit}" >/dev/null
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
       - name: Publish release from tag
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
-          generate_release_notes: true
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Release $RELEASE_TAG already exists."
+            exit 0
+          fi
+          gh release create "$RELEASE_TAG" --verify-tag --title "$RELEASE_TAG" --generate-notes
