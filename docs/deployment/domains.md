@@ -1,6 +1,6 @@
 # Dominios, catálogo y previews
 
-**Actualizado: 05/10/2026.** Además de la auditoría del repositorio, se verificó
+**Actualizado: 06/10/2026.** Además de la auditoría del repositorio, se verificó
 operacionalmente el routing público del VPS. Esta guía distingue explícitamente
 el comportamiento externo efectivo del routing que declara Blazor y de la
 configuración que hoy está versionada en Git.
@@ -52,6 +52,12 @@ En la comprobación operativa del 05/10/2026:
 
 El routing por host reduce la superficie pública, pero no sustituye Identity para
 las rutas privadas del sistema administrativo.
+
+## Persistencia de imágenes en Preview
+
+Preview no usa el mismo layout interno de volúmenes que el Compose productivo. El proyecto administrado por DeployManager monta su persistencia en `/data`. Para que la imagen principal y las imágenes aceptadas por el lookup sobrevivan al contenedor y sean escribibles por la aplicación, la configuración efectiva debe incluir `AlmacenamientoImagenesProducto__DirectorioBase=/data/productos`.
+
+Esta variable faltaba durante la primera prueba real del lookup: la revisión y preview del navegador funcionaban, pero el guardado terminaba sin `ImagenPrincipalRuta`. El 06/10/2026 se añadió la variable, se redeployó Preview y se validó una nueva alta con imagen persistida. Producción es distinta y conserva `/app/data/productos` según Compose y el [contrato de imagen](../24_ImagenPrincipalProducto.md).
 
 ## Deuda de infraestructura/versionado
 
