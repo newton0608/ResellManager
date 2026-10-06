@@ -23,7 +23,7 @@ El [backend del catálogo público](docs/25_CatalogoPublicoBackend.md) ofrece le
 
 ## Versiones
 
-El historial curado se mantiene en [CHANGELOG.md](CHANGELOG.md). Los tags `v*` son la referencia de versión y pueden publicarse además como GitHub Releases.
+El historial curado se mantiene en [CHANGELOG.md](CHANGELOG.md). Los tags `v*` son la referencia de versión y pueden publicarse además como GitHub Releases. El workflow `.github/workflows/release.yml` publica automáticamente tags nuevos y permite publicar manualmente un tag histórico ya existente.
 
 | Referencia | Estado | Resumen |
 | --- | --- | --- |
