@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using ResellManager.Application.DTOs;
 using ResellManager.Application.Interfaces;
+using ResellManager.Infrastructure.Lookup;
 
 namespace ResellManager.Web.Components.Productos;
 
@@ -20,6 +21,21 @@ public partial class ProductoForm : IDisposable
     private string? ErrorImagenAnterior;
     private bool DescartadoLookup;
     private bool ProductoLocalCoincide => Ronda?.ProductoLocal is not null && Ronda.CodigoConsultado == Modelo.CodigoBarras;
+
+    private bool ImagenExternaPendiente => Modelo.ImagenExternaUrl is not null
+        && Modelo.ImagenArchivo is null && Modelo.ImagenContenido is null;
+
+    private string? ImagenVistaPrevia
+    {
+        get
+        {
+            if (VistaPrevia is not null) return VistaPrevia;
+            if (ImagenExternaPendiente && DestinoImagenProductoSeguro.UrlPermitida(Modelo.ImagenExternaUrl, out _))
+                return Modelo.ImagenExternaUrl;
+            return Modelo.ImagenPrincipalRuta is not null && !Modelo.EliminarImagenPrincipal
+                ? $"/productos/{ProductoId}/imagen" : null;
+        }
+    }
 
     protected override void OnParametersSet()
     {

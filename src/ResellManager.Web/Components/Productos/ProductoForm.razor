@@ -175,14 +175,17 @@
 
             <section class="ui-card grid min-w-0 gap-4 p-5 sm:p-6" aria-labelledby="producto-imagen-titulo">
                 <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="producto-imagen-titulo">Imagen del producto</h2>
-                @if (VistaPrevia is not null || (Modelo.ImagenPrincipalRuta is not null && !Modelo.EliminarImagenPrincipal))
+                @if (ImagenVistaPrevia is { } imagenVistaPrevia)
                 {
                     <div class="grid min-w-0 gap-3">
                         <div class="flex aspect-[4/3] max-h-64 w-full items-center justify-center overflow-hidden rounded-2xl border border-solid border-ui-border bg-ui-canvas p-3">
-                            <img class="block size-full object-contain" src="@(VistaPrevia ?? $"/productos/{ProductoId}/imagen")" alt="Vista previa de la imagen principal" />
+                            <img class="block size-full object-contain" src="@imagenVistaPrevia" alt="Vista previa de la imagen principal" referrerpolicy="no-referrer" />
                         </div>
-                        <button class="ui-button border-ui-danger/30 bg-white text-ui-danger hover:bg-ui-danger/5" type="button" disabled="@Guardando"
-                                @onclick="QuitarImagen">Eliminar imagen</button>
+                        @if (!ImagenExternaPendiente)
+                        {
+                            <button class="ui-button border-ui-danger/30 bg-white text-ui-danger hover:bg-ui-danger/5" type="button" disabled="@Guardando"
+                                    @onclick="QuitarImagen">Eliminar imagen</button>
+                        }
                     </div>
                 }
                 else
@@ -193,7 +196,7 @@
                     </div>
                 }
                 <div class="grid min-w-0 gap-2">
-                    @if (Modelo.ImagenExternaUrl is not null && Modelo.ImagenArchivo is null && Modelo.ImagenContenido is null)
+                    @if (ImagenExternaPendiente)
                     {
                         <p class="m-0 text-sm leading-6 text-ui-muted" role="status">Imagen externa pendiente. Se intentará incorporar al guardar; puedes elegir una imagen manual o quitarla.</p>
                         <button class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" type="button"

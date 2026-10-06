@@ -501,3 +501,32 @@ documentado en su [guía](../29_BarcodeScanner.md).
 No se usó cámara física ni se hicieron consultas de producto a Internet en las
 pruebas. Sigue pendiente el QA físico de iPhone/Safari indicado en la guía del
 scanner. No se añadieron migraciones ni se desplegó la aplicación.
+
+## Corrección de la preview externa (2026-10-05)
+
+Tras «Usar estos datos», el formulario muestra la URL externa pendiente como
+preview solamente si pasa `DestinoImagenProductoSeguro.UrlPermitida`, igual que
+el diálogo de revisión. La preview usa `referrerpolicy="no-referrer"`. Una imagen
+manual conserva prioridad y una URL no permitida nunca se incorpora al `src`
+de la preview. «Quitar imagen externa» elimina la URL y la preview; «Deshacer datos
+importados» recupera la imagen, los bytes manuales y los indicadores anteriores.
+Las imágenes ya guardadas siguen usando `/productos/{id}/imagen` y su eliminación
+habitual. Mostrar la preview no invoca el alta ni el descargador del servidor:
+la importación y persistencia definitiva siguen ocurriendo al guardar.
+
+`ProductoLookupPreviewTests` renderiza el componente Razor real y prueba
+aceptación, URLs rechazadas por la política existente, quitar, deshacer,
+prioridad manual antes y después de importar y la ruta de imágenes ya guardadas.
+La investigación y corrección de las cuatro alertas npm se detalla en
+[Auditoría npm del scanner](../29_BarcodeScanner.md#auditoría-npm-2026-10-05).
+
+Validación del seguimiento: build Debug y Release sin errores ni advertencias;
+136 pruebas .NET del área de lookup/imágenes/formulario y 789 de la suite Release,
+incluidas 18 regresiones nuevas de preview, todas correctas; 115 pruebas JS;
+`npm ci`, `npm run css:build` y `npm audit` correctos (0 vulnerabilidades).
+QA de Blazor en 320/390/768/1440 px con SQLite temporal, proveedores simulados e
+imágenes interceptadas localmente: carga de preview, quitar, deshacer, prioridad
+manual y ausencia de descarga del servidor hasta guardar. QA del scanner:
+80 comprobaciones y 28 decodificaciones ópticas, sin fallos. `git diff --check`
+correcto. Permanece pendiente la prueba física en iPhone/Safari; no se hicieron
+peticiones a proveedores reales, migraciones, despliegues ni merge.
