@@ -7,7 +7,7 @@ Para trabajar con agentes, comienza por [AGENTS.md](AGENTS.md) y consulta el
 
 ## Estado del proyecto
 
-La base auditada el 05/10/2026 corresponde al tag `v1.2.1` (`835a487`); main y develop estaban sincronizadas. También existen `v1.1.0` y `v1.2.0`. El código usa .NET 10 y ya incluye medidas/presentación, imagen principal, catálogo público, compras GTQ/USD y scanner Quagga2. Esto describe el repositorio, no acredita la imagen exacta desplegada.
+La última versión etiquetada es `v1.2.1` (`835a487`, 05/10/2026), pero `main` ya contiene cambios posteriores: búsqueda asistida de productos por código de barras con Open Facts/UPCitemdb, revisión antes de importar y persistencia segura de imágenes externas. El código usa .NET 10 e incluye además medidas/presentación, imagen principal, catálogo público, compras GTQ/USD y scanner Quagga2. El tag identifica una versión del repositorio; no acredita por sí solo la imagen exacta desplegada.
 
 ResellManager V1 implementa autenticación privada, clientes, productos/categorías, proveedores, compras y comprobantes privados, inventario/recepción, pedidos y reservas, ventas, pagos y Dashboard. La Fase 5.10 cerró consistencia y UX sin incorporar funcionalidades grandes ni concurrencia fuerte V2.
 
@@ -20,6 +20,19 @@ Existen los tags `v1.0.0` (`3f2d264`) y `v1.0.1` (`97da64e`); este último inclu
 El [runbook operativo V1](docs/deployment/deployment.md) distingue configuración versionada y evidencia operativa. Se probaron backup manual y restore real; el timer systemd está instalado, activo y ya ejecutó correctamente, con retención automática. Las copias permanecen en el mismo VPS. Siguen pendientes la copia automática externa a Raspberry/otro equipo y la validación completa del rollback de versión de aplicación.
 
 El [backend del catálogo público](docs/25_CatalogoPublicoBackend.md) ofrece lecturas comerciales de productos con inventario físico libre mediante `/api/catalogo/productos`, incluido detalle e imagen pública controlada. La [primera UI pública](docs/26_CatalogoPublicoUI.md) sigue declarada en Blazor como `/catalogo` y `/catalogo/{productoId}`, con búsqueda, filtro por categoría, precios en quetzales y diseño responsive integrado con Tailwind. La administración conserva su autenticación y los flujos del negocio permanecen intactos. La [identidad de Virtuosa Store](docs/27_VirtuosaStore.md) documenta logos y estilos `store-*`. Operacionalmente, `https://virtuosagt.com/` sirve el catálogo y `/producto/{id}` es la URL pública limpia mediante routing externo de Caddy; `https://app.resellmanager.tech` sigue siendo administración y `https://preview.newtonlab.dev/catalogo` conserva el preview. La diferencia entre rutas Blazor, routing externo y deuda de versionado de Caddy se documenta en [Dominios](docs/deployment/domains.md). No hay carrito, checkout ni pedidos web.
+
+## Versiones
+
+El historial curado se mantiene en [CHANGELOG.md](CHANGELOG.md). Los tags `v*` son la referencia de versión y pueden publicarse además como GitHub Releases.
+
+| Referencia | Estado | Resumen |
+| --- | --- | --- |
+| `main` posterior a `v1.2.1` | En desarrollo / aún sin tag | Búsqueda asistida por código, proveedores externos e imágenes importadas de forma segura. |
+| `v1.2.1` | Tag | Hotfix del scanner Quagga2. |
+| `v1.2.0` | Tag | .NET 10, imagen principal, catálogo público, GTQ/USD y migración visual. |
+| `v1.1.0` | Tag | Medidas y presentación de Producto. |
+| `v1.0.1` | Tag | Hotfix de venta directa y preparación operativa de producción. |
+| `v1.0.0` | Tag | Primera versión funcional V1. |
 
 ## Estructura
 
@@ -138,4 +151,4 @@ El [soporte GTQ/USD en compras](docs/28_MonedasDeCompra.md) conserva GTQ como mo
 
 ## Scanner de códigos de producto
 
-El scanner usa Quagga2 1.11.0 local para EAN-13/EAN-8/UPC-A/UPC-E/CODE-128, con foto local y doble confirmación en vivo. Consulta [su documentación técnica y validación pendiente en iPhone/Safari](docs/29_BarcodeScanner.md).
+El scanner usa Quagga2 1.11.0 local para EAN-13/EAN-8/UPC-A/UPC-E/CODE-128, con foto local y doble confirmación en vivo. Ya existe validación posterior con cámara física real; la matriz específica de dispositivo/navegador y la regresión exacta de Safari siguen documentadas por separado en [su guía técnica](docs/29_BarcodeScanner.md).
