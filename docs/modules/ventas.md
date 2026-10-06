@@ -17,11 +17,14 @@ el pedido técnico automáticamente. Las ventas son completas en sus artículos.
 - Venta Directa conserva dos operaciones (crear Pedido y registrar Venta);
   no presupongas atomicidad conjunta ni idempotencia distribuida. Las
   protecciones de concurrencia adicionales continúan en V2.3.
-- **Scanner operativo V2.1 implementado; QA físico pendiente:** [scanner operativo en Venta
-  Directa e Inventario](scanner-operativo-v2-1.md). En Venta Directa el código
-  identifica un Producto local, muestra unidades elegibles restantes, solicita
-  cantidad y agrega N unidades físicas concretas sin inventar FIFO/LIFO ni una
-  política de costo. El buscador manual y la revalidación final se conservan.
+- **Scanner operativo V2.1 en ajuste tras prueba de Preview:** [contrato
+  operativo](scanner-operativo-v2-1.md). La implementación inicial ya identifica
+  el Producto local, calcula unidades elegibles y agrega N unidades físicas.
+  Antes del cierre debe agrupar en formulario y revisión las unidades agregadas
+  en una misma acción como un lote visual con `×N`, códigos físicos y un solo
+  Precio final por unidad. Agregar el mismo Producto en otra acción crea otro
+  lote y puede usar otro precio. La persistencia continúa por unidad física; no
+  se introduce FIFO/LIFO, política de costo ni migración.
 
 ## Dónde trabajar y validar
 
