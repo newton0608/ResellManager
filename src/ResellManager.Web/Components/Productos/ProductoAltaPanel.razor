@@ -1,6 +1,7 @@
 @inject ICategoriaService CategoriaService
 @inject IProductoService ProductoService
 @inject IProductoConImagenService ProductoConImagenService
+@inject IAltaProductoAsistidaService AltaProductoAsistidaService
 @inject ILogger<ProductoAltaPanel> Logger
 
 <section class="ui-card rm-product-form mb-4 min-w-0 max-w-full space-y-5 border-ui-accent/20 bg-ui-accent/5 p-4 sm:p-6" aria-labelledby="titulo-alta-producto">
@@ -15,7 +16,8 @@
     else
     {
         <ProductoForm Modelo="Modelo" Categorias="Categorias" Guardando="Guardando"
-                      ErrorMessage="@Error" OnGuardar="GuardarAsync" OnCancelar="OnCancelar"
+                      ErrorMessage="@Error" OnGuardar="GuardarAsync" OnCancelar="CancelarAsync"
+                      LookupHabilitado="LookupHabilitado" BuscarAlIniciar="@(LookupHabilitado && CodigoInicial is not null)"
                       CategoriasEnOtraPestana="true" />
     }
     <button class="ui-button w-full border-ui-control bg-white text-ui-ink hover:bg-ui-canvas sm:w-auto" type="button" disabled="@(Guardando || Cargando)"
@@ -25,6 +27,9 @@
 @code {
     [Parameter] public EventCallback<ProductoDto> OnCreado { get; set; }
     [Parameter] public EventCallback OnCancelar { get; set; }
+    [Parameter] public EventCallback<string?> OnAvisoImagen { get; set; }
+    [Parameter] public string? CodigoInicial { get; set; }
+    [Parameter] public bool LookupHabilitado { get; set; }
     private ProductoFormModel Modelo { get; } = new();
     private IReadOnlyList<CategoriaDto> Categorias { get; set; } = [];
     private bool Cargando { get; set; }
@@ -32,7 +37,12 @@
     private string? Error { get; set; }
     private ElementReference Titulo;
 
-    protected override Task OnInitializedAsync() => CargarCategoriasAsync();
+    protected override Task OnInitializedAsync()
+    {
+        Modelo.CodigoBarras = CodigoInicial;
+        return CargarCategoriasAsync();
+    }
+    private Task CancelarAsync() => Guardando ? Task.CompletedTask : OnCancelar.InvokeAsync();
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender) await Titulo.FocusAsync();
@@ -64,9 +74,19 @@
         Error = null;
         try
         {
-            await using var imagen = modelo.ImagenArchivo?.OpenReadStream(
-                ResellManager.Infrastructure.Storage.AlmacenamientoImagenesProductoLocal.TamanoMaximoBytes);
-            var resultado = imagen is null
+            await using var imagen = modelo.ImagenContenido is not null
+                ? new MemoryStream(modelo.ImagenContenido, writable: false)
+                : modelo.ImagenArchivo?.OpenReadStream(
+                    ResellManager.Infrastructure.Storage.AlmacenamientoImagenesProductoLocal.TamanoMaximoBytes);
+            string? avisoImagen = null;
+            ServiceResult<ProductoDto> resultado;
+            if (LookupHabilitado)
+            {
+                var alta = await AltaProductoAsistidaService.CrearAsistidoAsync(modelo.ToInput(), imagen, modelo.ImagenExternaUrl);
+                resultado = alta.Producto;
+                avisoImagen = alta.AvisoImagen;
+            }
+            else resultado = imagen is null
                 ? await ProductoService.CrearAsync(modelo.ToInput())
                 : await ProductoConImagenService.CrearAsync(modelo.ToInput(), imagen);
             if (!resultado.IsSuccess || resultado.Value is null)
@@ -74,6 +94,7 @@
                 Error = resultado.ErrorMessage ?? "No fue posible registrar el producto.";
                 return;
             }
+            await OnAvisoImagen.InvokeAsync(avisoImagen);
             await OnCreado.InvokeAsync(resultado.Value);
         }
         catch (Exception ex)

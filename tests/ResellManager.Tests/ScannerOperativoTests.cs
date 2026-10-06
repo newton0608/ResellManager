@@ -1,4 +1,8 @@
 using System.Net;
+using Microsoft.Extensions.Logging.Abstractions;
+using ResellManager.Application.Common;
+using ResellManager.Web.Components.Compras;
+using ResellManager.Web.Components.Productos;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.HtmlRendering.Infrastructure;
 using Microsoft.AspNetCore.Components.Web.HtmlRendering;
@@ -17,7 +21,7 @@ using static ResellManager.Tests.RevisionOperacionesTests;
 
 namespace ResellManager.Tests;
 
-public sealed class ScannerOperativoTests
+public sealed partial class ScannerOperativoTests
 {
     private const string Codigo = "0012345678905";
 
@@ -98,18 +102,18 @@ public sealed class ScannerOperativoTests
         await vista.DetectarAsync(Codigo);
         Assert.Equal(retirada.Unidad.Id, Assert.Single(Get<IReadOnlyList<UnidadInventarioDto>>(vista.Componente, "UnidadesEscaneadas")).Id);
         await vista.EjecutarAsync("CancelarSeleccionCodigoAsync");
-        vista.Articulos[1].PrecioFinal = 90m;
+        Get<IReadOnlyList<LoteVentaDirectaFormModel>>(vista.Componente, "Lotes")[1].PrecioFinal = 90m;
         var ids = vista.Articulos.Select(x => x.Unidad.Id).ToArray();
         await vista.EjecutarAsync("RevisarVentaDirectaAsync");
         var html = await vista.HtmlAsync();
         foreach (var articulo in vista.Articulos) Assert.Contains(articulo.Unidad.CodigoInterno, html);
-        Assert.Contains(VentaPresentacion.Moneda(725m), html);
+        Assert.Contains(VentaPresentacion.Moneda(695m), html);
         Assert.Empty(await test.Db.Pedidos.ToListAsync());
         await vista.EjecutarAsync("ConfirmarVentaAsync");
         await vista.EjecutarAsync("ConfirmarVentaAsync");
         var venta = Assert.Single(await test.Db.Ventas.Include(x => x.Detalles).ToListAsync());
         Assert.Equal(ids.Order(), venta.Detalles.Select(x => x.UnidadInventarioId!.Value).Order());
-        Assert.Equal(725m, venta.Detalles.Sum(x => x.PrecioFinal));
+        Assert.Equal(695m, venta.Detalles.Sum(x => x.PrecioFinal));
         Assert.Equal(EstadoUnidadInventario.Disponible, (await test.Db.UnidadesInventario.SingleAsync(x => x.Id == retirada.Unidad.Id)).Estado);
         Assert.EndsWith("/ventas/" + venta.Id, vista.Navigation.Uri);
         Assert.Equal(0, vista.Externo.Llamadas);
@@ -398,11 +402,16 @@ public sealed class ScannerOperativoTests
         public ConsultaLocal Consulta { get; }
         public SeleccionControlada Seleccion { get; }
         public LookupProhibido Externo { get; } = new();
+        public ProductoAltaPanel Panel => activador.Panel!;
+        public ProductoForm AltaForm => activador.AltaForm!;
+        public ImagenExternaNoDisponible Imagenes { get; } = new();
         public List<UnidadVentaDirectaFormModel> Articulos => Get<List<UnidadVentaDirectaFormModel>>(Componente, "Unidades");
 
         private Vista(TestDatabase test)
         {
-            Consulta = new(new ProductoService(test.Db));
+            var productos = new ProductoService(test.Db);
+            var conImagen = new ProductoConImagenService(productos, null!, test.Db, NullLogger<ProductoConImagenService>.Instance, Imagenes);
+            Consulta = new(productos);
             Seleccion = new(new SeleccionOperativaService(test.Db));
             servicios = new ServiceCollection().AddLogging().AddSingleton(test.Db)
                 .AddSingleton<IJSRuntime, JSInerte>().AddSingleton<NavigationManager>(Navigation)
@@ -410,16 +419,22 @@ public sealed class ScannerOperativoTests
                 .AddSingleton<ISeleccionOperativaService>(Seleccion).AddSingleton<IProductoLookupService>(Externo)
                 .AddScoped<IProductoService, ProductoService>().AddScoped<IClienteService, ClienteService>()
                 .AddScoped<IInventarioService, InventarioService>().AddScoped<IRecepcionCompraService, RecepcionCompraService>()
-                .AddScoped<IPedidoService, PedidoService>().AddScoped<IVentaService, VentaService>().BuildServiceProvider();
+                .AddScoped<IPedidoService, PedidoService>().AddScoped<IVentaService, VentaService>()
+                .AddScoped<IProveedorService, ProveedorService>().AddScoped<ICategoriaService, CategoriaService>()
+                .AddSingleton<ITipoCambioReferenciaService, ReferenciaInerte>()
+                .AddSingleton<IProductoConImagenService>(conImagen).AddSingleton<IAltaProductoAsistidaService>(conImagen)
+                .AddSingleton<IRegistroCompraConComprobanteService>(new RegistroCompraConComprobanteService(
+                    new CompraService(test.Db), null!, NullLogger<RegistroCompraConComprobanteService>.Instance))
+                .BuildServiceProvider();
             renderer = new(servicios, servicios.GetRequiredService<ILoggerFactory>());
         }
-        public static async Task<Vista> CrearAsync(TestDatabase test, bool inventario = false)
+        public static async Task<Vista> CrearAsync(TestDatabase test, bool inventario = false, bool compra = false)
         {
             var vista = new Vista(test);
             vista.raiz = await vista.renderer.Dispatcher.InvokeAsync(async () =>
             {
-                var raiz = vista.renderer.BeginRenderingComponent(inventario ? typeof(Inventario) : typeof(VentaDirectaForm),
-                    inventario ? ParameterView.Empty : ParameterView.FromDictionary(new Dictionary<string, object?> { ["ClienteDesdeQuery"] = test.Cliente.Id.ToString() }));
+                var raiz = vista.renderer.BeginRenderingComponent(compra ? typeof(CompraNueva) : inventario ? typeof(Inventario) : typeof(VentaDirectaForm),
+                    inventario || compra ? ParameterView.Empty : ParameterView.FromDictionary(new Dictionary<string, object?> { ["ClienteDesdeQuery"] = test.Cliente.Id.ToString() }));
                 await raiz.QuiescenceTask;
                 return raiz;
             });
@@ -444,6 +459,26 @@ public sealed class ScannerOperativoTests
             if (Call(activador.Scanner, metodo, args) is Task tarea) await tarea;
             Call(activador.Scanner, "StateHasChanged");
         });
+        public Task AltaAsync(string metodo, params object[] args) => renderer.Dispatcher.InvokeAsync(async () =>
+        {
+            if (Call(activador.AltaForm!, metodo, args) is Task tarea) await tarea;
+            Call(activador.AltaForm!, "StateHasChanged");
+        });
+        public Task PanelAsync(string metodo, params object[] args) => renderer.Dispatcher.InvokeAsync(async () =>
+        {
+            if (Call(activador.Panel!, metodo, args) is Task tarea) await tarea;
+        });
+        public Task ScannerDetalleAsync(int detalle, string metodo, params object[] args) => renderer.Dispatcher.InvokeAsync(async () =>
+        {
+            var scanner = activador.Scanners[detalle];
+            if (Call(scanner, metodo, args) is Task tarea) await tarea;
+            Call(scanner, "StateHasChanged");
+        });
+        public async Task DetectarCompraAsync(int detalle, string codigo)
+        {
+            await ScannerDetalleAsync(detalle, "AbrirAsync");
+            await ScannerDetalleAsync(detalle, "FinalizarEscaneo", "detected", codigo);
+        }
         public async Task DetectarAsync(string codigo)
         {
             await ScannerAsync("AbrirAsync");
@@ -467,11 +502,16 @@ public sealed class ScannerOperativoTests
     {
         public object Componente { get; private set; } = null!;
         public BarcodeScanner Scanner { get; private set; } = null!;
+        public List<BarcodeScanner> Scanners { get; } = [];
+        public ProductoAltaPanel? Panel { get; private set; }
+        public ProductoForm? AltaForm { get; private set; }
         public IComponent CreateInstance(Type tipo)
         {
             var componente = (IComponent)Activator.CreateInstance(tipo)!;
-            if (componente is VentaDirectaForm or Inventario) Componente = componente;
-            if (componente is BarcodeScanner scanner) Scanner = scanner;
+            if (componente is VentaDirectaForm or Inventario or CompraNueva) Componente = componente;
+            if (componente is ProductoAltaPanel panel) Panel = panel;
+            if (componente is ProductoForm alta) AltaForm = alta;
+            if (componente is BarcodeScanner scanner) { Scanner = scanner; Scanners.Add(scanner); }
             return componente;
         }
     }
@@ -502,8 +542,22 @@ public sealed class ScannerOperativoTests
     private sealed class LookupProhibido : IProductoLookupService
     {
         public int Llamadas { get; private set; }
-        public Task<ProductoLookupRonda> IniciarAsync(string codigo, CancellationToken ct = default) { Llamadas++; throw new InvalidOperationException("Lookup externo no permitido"); }
-        public Task ContinuarAsync(ProductoLookupRonda ronda, CancellationToken ct = default) { Llamadas++; throw new InvalidOperationException("Lookup externo no permitido"); }
+        public IProductoLookupService? Servicio { get; set; }
+        public Task<ProductoLookupRonda> IniciarAsync(string codigo, CancellationToken ct = default)
+        { Llamadas++; return Servicio?.IniciarAsync(codigo, ct) ?? throw new InvalidOperationException("Lookup externo no permitido"); }
+        public Task ContinuarAsync(ProductoLookupRonda ronda, CancellationToken ct = default)
+        { Llamadas++; return Servicio?.ContinuarAsync(ronda, ct) ?? throw new InvalidOperationException("Lookup externo no permitido"); }
+    }
+    private sealed class ReferenciaInerte : ITipoCambioReferenciaService
+    {
+        public Task<TipoCambioReferenciaResultado> ConsultarAsync(MonedaCompra moneda, DateOnly fecha, CancellationToken cancellationToken = default) =>
+            Task.FromResult(TipoCambioReferenciaResultado.NoDisponible());
+    }
+    private sealed class ImagenExternaNoDisponible : IImagenProductoExternaService
+    {
+        public List<string> Solicitudes { get; } = [];
+        public Task<ServiceResult<Stream>> DescargarAsync(string url, CancellationToken ct = default)
+        { Solicitudes.Add(url); return Task.FromResult(ServiceResult<Stream>.Failure("Imagen no disponible en esta prueba")); }
     }
     private sealed class JSInerte : IJSRuntime
     {
