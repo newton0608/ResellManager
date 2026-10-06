@@ -438,7 +438,9 @@ de una URL remota.
 - Las respuestas JSON se limitan a 1 MiB y a un timeout total por proveedor
   (incluida la lectura del cuerpo). La imagen usa 10 segundos y 8 MiB como máximo,
   y pasa por el decoder real y conversión a WebP existentes. Solo se admite HTTPS
-  en puerto 443, sin credenciales de URL, proxies ni redirecciones de imágenes.
+  en puerto 443, sin credenciales de URL ni proxies. Las
+  [redirecciones de imágenes](../24_ImagenPrincipalProducto.md#imágenes-externas-importadas-desde-la-búsqueda)
+  se siguen manualmente con límite y validación SSRF por salto.
   El socket valida las direcciones DNS públicas y conecta a esa IP validada,
   evitando una segunda resolución; rechaza redes privadas, locales y reservadas.
 
@@ -530,3 +532,38 @@ manual y ausencia de descarga del servidor hasta guardar. QA del scanner:
 80 comprobaciones y 28 decodificaciones ópticas, sin fallos. `git diff --check`
 correcto. Permanece pendiente la prueba física en iPhone/Safari; no se hicieron
 peticiones a proveedores reales, migraciones, despliegues ni merge.
+
+## Guardado externo y redirecciones (2026-10-05)
+
+El fallo reproducible estaba en la descarga HTTP, antes de preparar y confirmar
+el WebP: el descargador rechazaba cualquier respuesta 3xx. El navegador seguía
+la redirección para mostrar revisión/preview, mientras `CrearAsistidoAsync`
+recibía una descarga fallida y guardaba con `ImagenPrincipalRuta = null` y el
+aviso previsto. El detalle mostraba entonces «Sin imagen principal».
+
+El diagnóstico manual, separado de las pruebas automatizadas, confirmó un
+`301` legítimo de `https://world.openfoodfacts.org/images/products/...` hacia
+`https://images.openfoodfacts.org/images/products/...`, para la misma imagen
+pública de referencia. Las URL actuales de las muestras consultadas de Open
+Food Facts, Open Beauty Facts y el primer CDN de UPCitemdb respondieron
+`200 image/jpeg` y el descargador real pudo leerlas. Otra imagen devuelta por
+UPCitemdb respondió `403` con un challenge de Cloudflare: una preview de navegador
+no garantiza que el servidor pueda descargar cualquier recurso. No se recibió
+el código/URL del producto reportado para atribuirle una de esas respuestas
+específicas; el rechazo de redirecciones sí quedó reproducido y corregido.
+
+El seguimiento manual, las restricciones SSRF por salto y los límites se definen
+en [Imagen principal: importación externa](../24_ImagenPrincipalProducto.md#imágenes-externas-importadas-desde-la-búsqueda).
+El alta, la prioridad manual, la compensación de archivos, los endpoints y las
+reglas de catálogo reutilizan los servicios existentes.
+
+Validación de esta corrección: `dotnet build ResellManager.sln` en Debug y Release,
+sin errores ni advertencias; 210 pruebas del área y 828 pruebas .NET de la suite
+Release correctas, incluidas 39 regresiones nuevas; `npm run test:js` con 115
+pruebas correctas; `git diff --check` correcto. QA de Blazor en Edge a 320 y
+1440 px, con SQLite temporal y HTTP simulado: aceptación sin descargar en el
+servidor, cadena 301→302→200 al guardar, ruta persistida, imágenes cargadas en
+listado/detalle administrativos e `ImagenCatalogo` y mismo WebP en ambos
+endpoints. Se verificaron 404 públicos y ausencia en listado antes de registrar
+stock elegible. No se modificaron modelos, migraciones, reglas de publicación,
+scanner, dependencias ni infraestructura de despliegue; no se hizo despliegue ni merge.

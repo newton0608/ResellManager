@@ -70,7 +70,7 @@ public sealed class ProductoLookupImagenTests
     }
 
     [Fact]
-    public async Task Descarga_NoSigueRedireccionNiAceptaHtmlOMayorDe8Mb()
+    public async Task Descarga_NoSigueRedireccionPrivadaNiAceptaHtmlOMayorDe8Mb()
     {
         foreach (var response in new[]
         {
