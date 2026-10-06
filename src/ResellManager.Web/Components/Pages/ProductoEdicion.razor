@@ -3,6 +3,7 @@
 @rendermode InteractiveServer
 @inject IProductoService ProductoService
 @inject IProductoConImagenService ProductoConImagenService
+@inject IAltaProductoAsistidaService AltaProductoAsistidaService
 @inject ICategoriaService CategoriaService
 @inject NavigationManager Navigation
 @inject ILogger<ProductoEdicion> Logger
@@ -41,6 +42,7 @@
                           Categorias="CategoriasDisponibles"
                           Guardando="Guardando"
                           ProductoId="Id"
+                          LookupHabilitado="@(!EsEdicion)"
                           ErrorMessage="@ErrorGuardado"
                           OnGuardar="GuardarAsync"
                           CancelarHref="@CancelarHref" />
@@ -131,16 +133,26 @@
 
         try
         {
-            await using var imagen = modelo.ImagenArchivo?.OpenReadStream(
-                ResellManager.Infrastructure.Storage.AlmacenamientoImagenesProductoLocal.TamanoMaximoBytes);
-            var resultado = imagen is null && !modelo.EliminarImagenPrincipal
-                ? EsEdicion
+            await using var imagen = modelo.ImagenContenido is not null
+                ? new MemoryStream(modelo.ImagenContenido, writable: false)
+                : modelo.ImagenArchivo?.OpenReadStream(
+                    ResellManager.Infrastructure.Storage.AlmacenamientoImagenesProductoLocal.TamanoMaximoBytes);
+            string? avisoImagen = null;
+            ServiceResult<ProductoDto> resultado;
+            if (EsEdicion)
+            {
+                resultado = imagen is null && !modelo.EliminarImagenPrincipal
                     ? await ProductoService.EditarAsync(Id!.Value, modelo.ToInput())
-                    : await ProductoService.CrearAsync(modelo.ToInput())
-                : EsEdicion
-                    ? await ProductoConImagenService.EditarAsync(
-                        Id!.Value, modelo.ToInput(), imagen, modelo.EliminarImagenPrincipal)
-                    : await ProductoConImagenService.CrearAsync(modelo.ToInput(), imagen);
+                    : await ProductoConImagenService.EditarAsync(
+                        Id!.Value, modelo.ToInput(), imagen, modelo.EliminarImagenPrincipal);
+            }
+            else
+            {
+                var alta = await AltaProductoAsistidaService.CrearAsistidoAsync(
+                    modelo.ToInput(), imagen, modelo.ImagenExternaUrl);
+                resultado = alta.Producto;
+                avisoImagen = alta.AvisoImagen;
+            }
 
             if (!resultado.IsSuccess)
             {
@@ -151,7 +163,8 @@
             Navigation.NavigateTo(
                 EsEdicion
                     ? "/productos?mensaje=producto-editado"
-                    : "/productos?mensaje=producto-creado");
+                    : avisoImagen is null ? "/productos?mensaje=producto-creado"
+                    : "/productos?mensaje=producto-creado-sin-imagen-externa");
         }
         catch (Exception ex)
         {

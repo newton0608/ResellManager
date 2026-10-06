@@ -1,6 +1,6 @@
 # Búsqueda asistida de productos por código de barras
 
-**Estado: especificación aprobada; implementación pendiente.**
+**Estado: implementado en Agregar producto. Validación física del scanner en iPhone/Safari pendiente, según su guía.**
 
 Esta función reduce la captura manual al registrar productos nuevos. Reutiliza el
 scanner existente para consultar fuentes externas por código de barras, permite
@@ -404,3 +404,100 @@ de una URL remota.
 - cache persistente de catálogos externos;
 - cambios de Docker, Caddy, DNS o despliegue;
 - refactors generales no necesarios para este flujo.
+
+## Implementación y configuración
+
+- `ProductoLookupService` en Application conserva la ronda y sus intentos.
+  `IConsultaProductoCodigoBarras`, implementado por `ProductoService`, realiza la
+  coincidencia local exacta. Se comprueba nuevamente al continuar la ronda y al
+  guardar el alta asistida. La comprobación final y la creación comparten una
+  transacción de escritura, incluyendo un registro paralelo durante la descarga.
+- Los adaptadores y la descarga están en `Infrastructure/Lookup/`. El orden de
+  registro de `IProductoLookupProvider` determina el fallback; cada candidato
+  útil puede contener datos parciales, sin exigir que todos los campos existan.
+- Open Facts consulta `GET /api/v3/product/{code}?product_type=all`. Sus
+  redirecciones se limitan a las cuatro instancias oficiales y a rutas de consulta
+  de productos. UPCitemdb usa `GET /prod/trial/lookup?upc={code}` por defecto;
+  una clave configurada selecciona `/prod/v1/lookup` y se envía solo en headers.
+  Estas APIs reciben códigos numéricos de 8, 12, 13 o 14 dígitos. Un CODE-128 de
+  texto conserva la consulta local y la captura manual, sin peticiones HTTP
+  incompatibles. No se modifica el string original, incluidos espacios.
+- `ProductoForm` habilita la asistencia solo desde `/productos/nuevo`; la edición
+  y el alta contextual de compras conservan su flujo. El diálogo reutiliza
+  `ConfirmacionOperacion`; Escape descarta el candidato. La última aceptación
+  conserva una instantánea completa del formulario, unidades de medida, imagen
+  manual y URL pendiente. La categoría local siempre se elige manualmente.
+- Se importan medidas con una sola unidad inequívoca (`ml`, `cl`, `l`, `g`, `kg`,
+  `lb` u `oz` de masa). No se interpreta `fl oz`, separadores de miles, cantidades
+  compuestas ni medidas contradictorias. Al importar una medida válida se libera
+  la medida opuesta; deshacer restaura ambas selecciones anteriores.
+- `CrearAsistidoAsync` de `ProductoConImagenService` reutiliza la preparación,
+  transacción, confirmación y compensación actuales. La imagen manual prevalece;
+  una descarga, contenido o confirmación externa fallidos permiten guardar sin
+  imagen con un aviso. La URL nunca se guarda en Producto.
+- Las respuestas JSON se limitan a 1 MiB y a un timeout total por proveedor
+  (incluida la lectura del cuerpo). La imagen usa 10 segundos y 8 MiB como máximo,
+  y pasa por el decoder real y conversión a WebP existentes. Solo se admite HTTPS
+  en puerto 443, sin credenciales de URL, proxies ni redirecciones de imágenes.
+  El socket valida las direcciones DNS públicas y conecta a esa IP validada,
+  evitando una segunda resolución; rechaza redes privadas, locales y reservadas.
+
+La sección tipada `ProductoLookup` permite configurar externamente:
+
+| Clave | Valor predeterminado |
+| --- | --- |
+| `UserAgent` | `ResellManager/1.0 (+https://github.com/newton0608/ResellManager)` |
+| `TimeoutSegundos` | `6` (acotado a 1–30) |
+| `OpenFactsHabilitado` / `UpcitemdbHabilitado` | `true` |
+| `OpenFactsPeticionesPorMinuto` | `15`, máximo 15 |
+| `UpcitemdbPeticionesPorMinuto` / `UpcitemdbPeticionesPorDia` | `6` / `100` |
+| `UpcitemdbUserKey` | sin clave; plan trial |
+
+Para una clave futura puede usarse `ProductoLookup__UpcitemdbUserKey` mediante
+configuración externa. No se versiona su valor. Los límites se comparten en
+memoria entre sesiones del proceso, respetan `Retry-After` y los headers de
+cuota/reset del proveedor y no realizan reintentos automáticos ni esperas.
+En trial se acotan a las cuotas oficiales; un plan de pago requiere configurar
+sus límites acordados. Otras aplicaciones o instancias pueden consumir la misma
+cuota por IP: una respuesta 429 sigue siendo recuperable.
+
+Referencias oficiales revisadas al implementar:
+
+- [Consulta transversal de Open Facts](https://openfoodfacts.github.io/documentation/docs/Product-Opener/api/tutorials/scanning-cosmetics-pet-food-and-other-products/).
+- [API v3 y campos](https://openfoodfacts.github.io/documentation/docs/Product-Opener/v3/products/get-api-v3-product-code/).
+- [Identificación y límites vigentes](https://openfoodfacts.github.io/openfoodfacts-server/api/).
+- [UPCitemdb: configuración](https://www.upcitemdb.com/wp/docs/main/development/getting-started/),
+  [respuestas](https://www.upcitemdb.com/wp/docs/main/development/responses/) y
+  [límites](https://www.upcitemdb.com/wp/docs/main/development/api-rate-limits/).
+
+Pruebas automatizadas: `ProductoLookupTests`, `ProductoLookupProvidersTests` y
+`ProductoLookupImagenTests`, junto con las regresiones existentes de productos,
+imágenes y formularios. Los proveedores y handlers son dobles locales; no requieren
+Internet ni datos reales. Se mantiene el QA óptico y de privacidad del scanner
+documentado en su [guía](../29_BarcodeScanner.md).
+
+## Validación de implementación (2026-10-05)
+
+- Build de la solución en Debug y Release: cero errores y advertencias.
+- Suite completa Release: 771 pruebas correctas, sin omisiones; incluye 94 nuevas
+  pruebas de lookup, adaptadores e imágenes. Las pruebas existentes conservan sus
+  expectativas de negocio.
+- npm ci, npm run css:build y npm run test:js: correctos; 115 pruebas JS.
+  Se mantienen los avisos de dependencias documentados en la guía del scanner.
+- QA de Blazor con SQLite aislado y proveedores ficticios en Edge headless a
+  320/390/768/1440 px: revisión, Escape, otra fuente, aceptación, edición,
+  deshacer, agotamiento, consulta local, precio/categoría manuales y alta con
+  aviso ante fallo de imagen. Se comprobó ausencia de overflow y controles
+  del diálogo de al menos 44×44 px.
+- El consumidor real del scanner se probó con fixtures EAN-13 y CODE-128:
+  únicamente Usar código inicia lookup en el alta; la edición solo captura.
+  La cámara y documentos del decoder quedan liberados antes de la revisión.
+- npm run qa:scanner: 80 comprobaciones y 28 lecturas ópticas correctas,
+  sin errores, en los cuatro tamaños. JS, contrato y vendor del scanner
+  permanecen intactos. Evidencia local en .artifacts/scanner-qa/ y
+  .artifacts/producto-lookup-qa/; no se versionan datos de pruebas.
+- git diff --check: correcto.
+
+No se usó cámara física ni se hicieron consultas de producto a Internet en las
+pruebas. Sigue pendiente el QA físico de iPhone/Safari indicado en la guía del
+scanner. No se añadieron migraciones ni se desplegó la aplicación.

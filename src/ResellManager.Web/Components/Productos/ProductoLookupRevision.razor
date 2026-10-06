@@ -1,0 +1,44 @@
+<ConfirmacionOperacion Titulo="Revisar producto encontrado" TextoEditar="Continuar manualmente"
+                       TextoConfirmar="Usar estos datos" OnEditar="OnDescartar" OnConfirmar="OnAceptar">
+    @if (ResellManager.Infrastructure.Lookup.DestinoImagenProductoSeguro.UrlPermitida(Candidato.ImagenUrl, out _))
+    {
+        <img class="mx-auto block max-h-48 max-w-full rounded-xl object-contain" src="@Candidato.ImagenUrl"
+             alt="Imagen del producto encontrado" referrerpolicy="no-referrer" loading="lazy" />
+    }
+    <dl class="m-0 grid min-w-0 gap-3">
+        @foreach (var campo in Campos())
+        {
+            <div class="min-w-0">
+                <dt class="font-semibold">@campo.Nombre</dt>
+                <dd class="m-0 whitespace-pre-wrap [overflow-wrap:anywhere]">@campo.Valor</dd>
+            </div>
+        }
+    </dl>
+    <p class="m-0 text-ui-muted">Se conservará el código consultado. Revisa el precio sugerido y elige una categoría local antes de guardar.</p>
+    <button class="ui-button w-full border-ui-control bg-white text-ui-ink hover:bg-ui-canvas"
+            type="button" @onclick="OnOtraFuente">Buscar en otra fuente</button>
+</ConfirmacionOperacion>
+
+@code {
+    [Parameter, EditorRequired] public ProductoLookupCandidato Candidato { get; set; } = null!;
+    [Parameter, EditorRequired] public string CodigoConsultado { get; set; } = string.Empty;
+    [Parameter] public EventCallback OnAceptar { get; set; }
+    [Parameter] public EventCallback OnOtraFuente { get; set; }
+    [Parameter] public EventCallback OnDescartar { get; set; }
+
+    private IEnumerable<(string Nombre, string Valor)> Campos()
+    {
+        var campos = new (string, string?)[]
+        {
+            ("Fuente", Candidato.Fuente), ("Código consultado", CodigoConsultado),
+            ("Código devuelto", Candidato.CodigoBarras != CodigoConsultado ? Candidato.CodigoBarras : null),
+            ("Nombre", Candidato.Nombre), ("Marca", Candidato.Marca), ("Descripción", Candidato.Descripcion),
+            ("Modelo", Candidato.Modelo), ("Color", Candidato.Color), ("Talla", Candidato.Talla),
+            ("Presentación", Candidato.Presentacion),
+            ("Peso", Candidato.PesoGramos.HasValue ? $"{Candidato.PesoGramos:0.##} g" : null),
+            ("Volumen", Candidato.ContenidoMl.HasValue ? $"{Candidato.ContenidoMl:0.##} ml" : null),
+            ("Categoría externa (referencia)", Candidato.CategoriaExterna)
+        };
+        return campos.Where(x => !string.IsNullOrWhiteSpace(x.Item2)).Select(x => (x.Item1, x.Item2!));
+    }
+}
