@@ -11,13 +11,39 @@ public sealed class ProductoConImagenService(
     IProductoService productos,
     IAlmacenamientoImagenesProducto almacenamiento,
     ResellManagerDbContext db,
-    ILogger<ProductoConImagenService> logger) : IProductoConImagenService
+    ILogger<ProductoConImagenService> logger, IImagenProductoExternaService? imagenesExternas = null) : IProductoConImagenService, IAltaProductoAsistidaService
 {
-    public async Task<ServiceResult<ProductoDto>> CrearAsync(
-        ProductoInput input, Stream? imagen, CancellationToken ct = default)
+    public async Task<AltaProductoAsistidaResultado> CrearAsistidoAsync(
+        ProductoInput input, Stream? imagenManual, string? imagenExternaUrl, CancellationToken ct = default)
+    {
+        // No se descarga una imagen cuando el código ya existe.
+        var errorCodigo = await ErrorCodigoRegistradoAsync(input, ct);
+        if (errorCodigo is not null) return new(ServiceResult<ProductoDto>.Failure(errorCodigo));
+        if (imagenManual is not null)
+            return new(await CrearConImagenAsync(input, imagenManual, false, true, null, ct));
+        if (string.IsNullOrEmpty(imagenExternaUrl))
+            return new(await CrearSinImagenAsistidoAsync(input, ct));
+        var descarga = imagenesExternas is not null
+            ? await imagenesExternas.DescargarAsync(imagenExternaUrl, ct)
+            : ServiceResult<Stream>.Failure("La imagen externa no está disponible.");
+        const string aviso = "No pudimos incorporar la imagen externa. El producto se guardó sin ella.";
+        if (!descarga.IsSuccess || descarga.Value is null)
+            return new(await CrearSinImagenAsistidoAsync(input, ct), aviso);
+        await using var imagen = descarga.Value;
+        string? avisoImagen = null;
+        var resultado = await CrearConImagenAsync(input, imagen, true, true, () => avisoImagen = aviso, ct);
+        return new(resultado, avisoImagen);
+    }
+
+    public Task<ServiceResult<ProductoDto>> CrearAsync(
+        ProductoInput input, Stream? imagen, CancellationToken ct = default) =>
+        CrearConImagenAsync(input, imagen, false, false, null, ct);
+
+    private async Task<ServiceResult<ProductoDto>> CrearConImagenAsync(
+        ProductoInput input, Stream? imagen, bool imagenOpcional, bool validarCodigo, Action? avisar, CancellationToken ct)
     {
         if (imagen is null)
-            return await productos.CrearAsync(input, ct);
+            return validarCodigo ? await CrearSinImagenAsistidoAsync(input, ct) : await productos.CrearAsync(input, ct);
 
         ImagenProductoPreparada? preparada = null;
         ImagenProductoGuardada? guardada = null;
@@ -27,10 +53,20 @@ public sealed class ProductoConImagenService(
         {
             var preparacion = await almacenamiento.PrepararAsync(imagen, ct);
             if (!preparacion.IsSuccess || preparacion.Value is null)
-                return ServiceResult<ProductoDto>.Failure(preparacion.ErrorMessage ?? "No fue posible preparar la imagen.");
+            {
+                if (!imagenOpcional)
+                    return ServiceResult<ProductoDto>.Failure(preparacion.ErrorMessage ?? "No fue posible preparar la imagen.");
+                avisar?.Invoke();
+                return validarCodigo ? await CrearSinImagenAsistidoAsync(input, ct) : await productos.CrearAsync(input, ct);
+            }
             preparada = preparacion.Value;
 
             await using var transaccion = await db.Database.BeginTransactionAsync(ct);
+            if (validarCodigo)
+            {
+                var errorCodigo = await ErrorCodigoRegistradoAsync(input, ct);
+                if (errorCodigo is not null) return ServiceResult<ProductoDto>.Failure(errorCodigo);
+            }
             var creacion = await productos.CrearAsync(input, ct);
             if (!creacion.IsSuccess || creacion.Value is null)
                 return creacion;
@@ -38,11 +74,15 @@ public sealed class ProductoConImagenService(
 
             var confirmacion = await almacenamiento.ConfirmarAsync(preparada, productoId.Value, ct);
             if (!confirmacion.IsSuccess || confirmacion.Value is null)
-                return ServiceResult<ProductoDto>.Failure(confirmacion.ErrorMessage ?? "No fue posible guardar la imagen.");
-            guardada = confirmacion.Value;
+            {
+                if (!imagenOpcional)
+                    return ServiceResult<ProductoDto>.Failure(confirmacion.ErrorMessage ?? "No fue posible guardar la imagen.");
+                avisar?.Invoke();
+            }
+            else guardada = confirmacion.Value;
 
             var entidad = await db.Productos.FindAsync([productoId.Value], ct);
-            entidad!.ImagenPrincipalRuta = guardada.RutaRelativa;
+            entidad!.ImagenPrincipalRuta = guardada?.RutaRelativa;
             await db.SaveChangesAsync(ct);
             await transaccion.CommitAsync(ct);
             confirmada = true;
@@ -63,11 +103,31 @@ public sealed class ProductoConImagenService(
         }
         finally
         {
-            if (preparada is not null && !confirmada)
+            if (preparada is not null && (!confirmada || guardada is null))
                 await LimpiarTemporalAsync(preparada.IdentificadorTemporal);
         }
     }
 
+    private async Task<ServiceResult<ProductoDto>> CrearSinImagenAsistidoAsync(ProductoInput input, CancellationToken ct)
+    {
+        // SQLite adquiere el bloqueo de escritura al iniciar la transacción, antes de leer el código.
+        // Esto también cubre otro registro que termine mientras se descarga/prepara una imagen.
+        await using var transaccion = await db.Database.BeginTransactionAsync(ct);
+        var errorCodigo = await ErrorCodigoRegistradoAsync(input, ct);
+        if (errorCodigo is not null) return ServiceResult<ProductoDto>.Failure(errorCodigo);
+        var resultado = await productos.CrearAsync(input, ct);
+        if (resultado.IsSuccess) await transaccion.CommitAsync(ct);
+        return resultado;
+    }
+
+    private async Task<string?> ErrorCodigoRegistradoAsync(ProductoInput input, CancellationToken ct)
+    {
+        if (string.IsNullOrEmpty(input.CodigoBarras)) return null;
+        var existente = await db.Productos.AsNoTracking()
+            .Where(x => x.CodigoBarras == input.CodigoBarras).Select(x => x.Nombre).FirstOrDefaultAsync(ct);
+        return existente is not null
+            ? $"El código ya pertenece al producto {existente}. Abre ese producto para consultarlo." : null;
+    }
     public async Task<ServiceResult<ProductoDto>> EditarAsync(
         int id, ProductoInput input, Stream? imagen, bool eliminarImagen, CancellationToken ct = default)
     {

@@ -7,6 +7,8 @@ using ResellManager.Application.Interfaces;
 using ResellManager.Infrastructure.Persistence;
 using ResellManager.Infrastructure.Services;
 using ResellManager.Infrastructure.Storage;
+using ResellManager.Infrastructure.Lookup;
+using ResellManager.Application.Services;
 
 namespace ResellManager.Infrastructure;
 
@@ -42,10 +44,26 @@ public static class DependencyInjection
         services.AddScoped<IActividadClienteService, ActividadClienteService>();
         services.AddScoped<IRecepcionCompraService, RecepcionCompraService>();
         services.AddScoped<ICategoriaService, CategoriaService>();
-        services.AddScoped<IProductoService, ProductoService>();
+        services.AddScoped<ProductoService>();
+        services.AddScoped<IProductoService>(sp => sp.GetRequiredService<ProductoService>());
+        services.AddScoped<IConsultaProductoCodigoBarras>(sp => sp.GetRequiredService<ProductoService>());
+        services.AddScoped<IProductoLookupService, ProductoLookupService>();
+        services.AddOptions<ProductoLookupOptions>().Bind(configuration.GetSection(ProductoLookupOptions.Seccion));
+        services.AddSingleton<ProductoLookupLimites>();
+        services.AddHttpClient<OpenFactsProductoLookupProvider>(client => client.Timeout = Timeout.InfiniteTimeSpan)
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false });
+        services.AddHttpClient<UpcitemdbProductoLookupProvider>(client => client.Timeout = Timeout.InfiniteTimeSpan)
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false });
+        // El orden de registro determina el fallback, sin conocimiento de proveedores en el formulario.
+        services.AddScoped<IProductoLookupProvider>(sp => sp.GetRequiredService<OpenFactsProductoLookupProvider>());
+        services.AddScoped<IProductoLookupProvider>(sp => sp.GetRequiredService<UpcitemdbProductoLookupProvider>());
+        services.AddHttpClient<IImagenProductoExternaService, ImagenProductoExternaService>(client => client.Timeout = Timeout.InfiniteTimeSpan)
+            .ConfigurePrimaryHttpMessageHandler(DestinoImagenProductoSeguro.CrearHandler);
         services.AddScoped<ICatalogoPublicoService, CatalogoPublicoService>();
         services.AddScoped<IAlmacenamientoImagenesProducto, AlmacenamientoImagenesProductoLocal>();
-        services.AddScoped<IProductoConImagenService, ProductoConImagenService>();
+        services.AddScoped<ProductoConImagenService>();
+        services.AddScoped<IProductoConImagenService>(sp => sp.GetRequiredService<ProductoConImagenService>());
+        services.AddScoped<IAltaProductoAsistidaService>(sp => sp.GetRequiredService<ProductoConImagenService>());
         services.AddScoped<IProveedorService, ProveedorService>();
         services.AddScoped<ICompraService, CompraService>();
         services.AddMemoryCache();
