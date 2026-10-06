@@ -202,10 +202,9 @@ recursos tardíos, zoom, resize, confirmación y privacidad.
 - git diff --check: correcto. Sólo queda la referencia histórica al motor
   retirado al explicar el motivo de este cambio.
 
-npm informa cuatro vulnerabilidades altas en la cadena existente
-Tailwind CLI → parcel/watcher → micromatch → braces, y un aviso de scripts de
-parcel/watcher sin aprobación npm registrada. No se ejecutó audit fix --force
-ni se actualizó Tailwind fuera del alcance. El build CSS terminó correctamente.
+En la validación original del hotfix npm informó cuatro vulnerabilidades altas
+en la cadena Tailwind CLI → parcel/watcher → micromatch → braces. La investigación
+y corrección posterior se documentan en «Auditoría npm» más abajo.
 Docker no está instalado en este entorno: se revisó su distribución por etapas
 y se comprobó publish local; no se construyó ni desplegó una imagen Docker.
 
@@ -215,3 +214,56 @@ Fuentes de API:
 [seguridad de captura en subframes WebKit](https://webkit.org/blog/7763/a-closer-look-into-webrtc/).
 
 Pendiente validación física en iPhone/Safari con el código real que fallaba en v1.2.0.
+
+## Auditoría npm (2026-10-05)
+
+El reporte de `npm audit --json` y `npm explain braces` identifica esta cadena,
+completa y exclusivamente de desarrollo:
+
+`@tailwindcss/cli@4.3.3 → @parcel/watcher@2.5.1 → micromatch@4.0.8 → braces@3.0.3`.
+
+| Paquete señalado | Versión instalada antes | Motivo de la alerta alta |
+| --- | --- | --- |
+| `braces` | 3.0.3 | [GHSA-vfj7-8cjw-p6xm / CVE-2026-93687](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm): recursión sin límite de profundidad que puede agotar la pila al procesar patrones anidados. |
+| `micromatch` | 4.0.8 | Dependencia del `braces` afectado; ninguna alerta propia adicional. |
+| `@parcel/watcher` | 2.5.1 | Dependencia de `micromatch`; ninguna alerta propia adicional. |
+| `@tailwindcss/cli` | 4.3.3 | Dependencia de `@parcel/watcher`; ninguna alerta propia adicional. |
+
+Las cuatro entradas altas corresponden a un único advisory propagado a sus
+dependientes. El registro consultado conserva `braces` 3.0.3 y `micromatch` 4.0.8
+como últimas versiones; el advisory no publica un parche para `braces`.
+Tailwind CLI 4.3.3 también es la última versión estable consultada y
+[fija Parcel 2.5.1](https://github.com/tailwindlabs/tailwindcss/blob/v4.3.3/packages/%40tailwindcss-cli/package.json).
+La recomendación automática de audit es volver a CLI 4.3.0, fuera de la versión
+exacta del manifiesto (npm la marca `isSemVerMajor: true` aunque es un retroceso).
+Se descartó ese cambio y no se ejecutó `npm audit fix --force`.
+
+La [versión menor Parcel 2.6.0](https://github.com/parcel-bundler/watcher/releases/tag/v2.6.0)
+conserva `subscribe`/`unsubscribe` y los filtros string del API utilizado por
+Tailwind. Su [wrapper oficial](https://github.com/parcel-bundler/watcher/blob/v2.6.0/wrapper.js)
+reemplaza `micromatch` por `picomatch`, retirando `braces` de la cadena.
+El [pin de Tailwind](https://github.com/tailwindlabs/tailwindcss/commit/e0a0c46c85640d0e72d5713c3acfada467553354)
+se introdujo para generar su lockfile con dependencias parcheadas, sin describir
+una incompatibilidad del API. Se aplica en `package.json` un override exacto
+`@tailwindcss/cli@4.3.3 → @parcel/watcher@2.6.0` y se regenera el lockfile.
+Parcel pasa a usar `picomatch@4.0.7` y comparte `detect-libc@2.1.2` con Lightning CSS.
+Las versiones directas Tailwind 4.3.3 y Quagga2 1.11.0 permanecen fijadas;
+el bundle y la licencia del scanner conservan sus bytes.
+
+Se comprobó `npm ci` reproducible, build CSS y el watcher nativo en Windows x64:
+compilación inicial, recompilación al modificar una clase, eliminación/restauración
+del archivo, globs de exclusión (incluidos patrones con llaves) y cierre de la
+suscripción. Parcel 2.6.0 conserva prebuilds Windows x64/arm64 y Linux;
+ya no distribuye el prebuild Windows ia32. Ese target no se validó.
+El CSS generado no cambia. `npm audit` termina con **0 vulnerabilidades**.
+El aviso `allow-scripts` de Parcel se refiere a aprobación de su script de
+instalación en npm, no a un advisory; no se cambió esa política.
+
+El riesgo anterior era de disponibilidad del proceso Node al recibir patrones
+anidados no confiables en el matcher de los filtros `ignore` de Parcel.
+[CLI 4.3.3 carga el watcher solo para `--watch` sin `--poll` y se suscribe sin filtros `ignore`](https://github.com/tailwindlabs/tailwindcss/blob/v4.3.3/packages/%40tailwindcss-cli/src/commands/build/index.ts).
+`css:build` no lo carga. Los datos de productos, códigos y fotos no se envían a
+ese API; el runtime publicado recibe CSS y el vendor del scanner, sin Node ni
+esta cadena de dependencias. No se identificó una ruta explotable desde las
+peticiones de la aplicación. La cadena vulnerable se elimina igualmente mediante
+la actualización compatible comprobada; no quedan vulnerabilidades npm pendientes.
