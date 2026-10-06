@@ -20,7 +20,7 @@ Modelo propuesto, reglas y decisiones abiertas en [Medidas y presentación de pr
 
 ## Ampliaciones ya incorporadas al repositorio
 
-La base `v1.2.1` incorpora imagen principal, catálogo público de Virtuosa Store, compras GTQ/USD y hotfix del scanner. Consulta el [índice](docs/README.md) y el [changelog](CHANGELOG.md). No hay todavía carrito, checkout ni pedidos web; landed cost sigue en [análisis pendiente](docs/modules/landed-cost.md) y desactivación/reactivación en [decisión 025](docs/11_DecisionesDeDiseño.md#025-preservar-clientes-y-productos-con-historial).
+La última base etiquetada, `v1.2.1`, incorpora imagen principal, catálogo público de Virtuosa Store, compras GTQ/USD y hotfix del scanner. `main` contiene además la búsqueda asistida externa por código de barras para Agregar producto y su persistencia segura de imagen; todavía no tiene un tag posterior en este documento. Consulta el [índice](docs/README.md) y el [changelog](CHANGELOG.md). No hay todavía carrito, checkout ni pedidos web; landed cost sigue en [análisis pendiente](docs/modules/landed-cost.md) y desactivación/reactivación en [decisión 025](docs/11_DecisionesDeDiseño.md#025-preservar-clientes-y-productos-con-historial).
 
 ## V2 — Evolución planificada
 
