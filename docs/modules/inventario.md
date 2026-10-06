@@ -15,6 +15,10 @@ historial. Su estado físico y su reserva comercial son dimensiones distintas.
 - El listado Disponible y el Dashboard filtran estado físico. Eso no equivale
   a disponibilidad comercial pública, que también exige unidad libre de reserva
   y de venta registrada; consulta [Catálogo](catalogo.md) para publicación.
+- **V2.1 aprobado, implementación pendiente:** [scanner operativo en Venta
+  Directa e Inventario](scanner-operativo-v2-1.md). En Inventario una lectura
+  confirmada busca exclusivamente un Producto local por `CodigoBarras` y, si
+  existe, abre `/productos/{id}`; no cambia unidades, estados ni reservas.
 
 ## Dónde trabajar y validar
 
