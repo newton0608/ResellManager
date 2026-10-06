@@ -10,6 +10,8 @@ public interface ISeleccionOperativaService
         int? pedidoId = null, IReadOnlyCollection<int>? excluir = null, bool soloReservadas = false, CancellationToken ct = default);
     Task<DisponibilidadReservaDto> DisponibilidadAsync(int productoId, CancellationToken ct = default);
     Task<IReadOnlyList<UnidadInventarioDto>> ListarReservablesAsync(int productoId, CancellationToken ct = default);
+    Task<IReadOnlyList<UnidadInventarioDto>> ListarUnidadesDirectasAsync(int productoId,
+        IReadOnlyCollection<int>? excluir = null, CancellationToken ct = default);
     Task<IReadOnlyList<PendienteClienteDto>> PendientesClienteAsync(int clienteId, CancellationToken ct = default);
     Task<bool> UnidadesDirectasDisponiblesAsync(IReadOnlyCollection<int> ids, CancellationToken ct = default);
 }

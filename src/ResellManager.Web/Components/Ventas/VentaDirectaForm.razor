@@ -1,9 +1,11 @@
 @using ResellManager.Domain.Enums
+@using System.Globalization
 @inject IPedidoService PedidoService
 @inject IVentaService VentaService
 @inject IInventarioService InventarioService
 @inject IClienteService ClienteService
 @inject IProductoService ProductoService
+@inject IConsultaProductoCodigoBarras ConsultaProductos
 @inject ISeleccionOperativaService SeleccionService
 @inject NavigationManager Navigation
 @inject ILogger<VentaDirectaForm> Logger
@@ -66,27 +68,62 @@ else
             <div class="grid min-w-0 gap-4 sm:grid-cols-2">
                 <div class="grid min-w-0 gap-2 [&>label]:text-sm [&>label]:font-semibold">
                     <ClienteBuscador Id="venta-directa-cliente" Seleccionado="ClienteSeleccionado"
-                        Deshabilitado="@(Registrando || RevisandoVenta || PedidoAutomaticoCreado is not null)" OnSeleccionado="ElegirCliente" />
+                        Deshabilitado="@SeleccionBloqueada" OnSeleccionado="ElegirCliente" />
                     <ValidationMessage id="venta-directa-cliente-error" For="() => Modelo.ClienteId" />
                 </div>
                 <div class="grid min-w-0 gap-2 [&>label]:text-sm [&>label]:font-semibold">
                     <label for="venta-directa-fecha">Fecha <span aria-hidden="true">*</span></label>
-                    <InputDate class="ui-input" id="venta-directa-fecha" @bind-Value="Modelo.Fecha" disabled="@(Registrando || PedidoAutomaticoCreado is not null)" />
+                    <InputDate class="ui-input" id="venta-directa-fecha" @bind-Value="Modelo.Fecha" disabled="@SeleccionBloqueada" />
                 </div>
                 <div class="grid min-w-0 gap-2 [&>label]:text-sm [&>label]:font-semibold sm:col-span-2">
                     <label for="venta-directa-observaciones">Observaciones</label>
                     <InputTextArea class="ui-input" id="venta-directa-observaciones"
                                    @bind-Value="Modelo.Observaciones"
                                    rows="3" maxlength="500" aria-describedby="venta-directa-observaciones-error"
-                                   disabled="@(Registrando || PedidoAutomaticoCreado is not null)" />
+                                   disabled="@SeleccionBloqueada" />
                     <ValidationMessage id="venta-directa-observaciones-error" For="() => Modelo.Observaciones" />
                 </div>
             </div>
         </section>
 
         <section class="ui-card grid min-w-0 gap-5 p-4 sm:p-6" aria-label="Buscar y agregar artículos">
+            <div class="grid min-w-0 gap-3 sm:flex sm:items-center sm:justify-between">
+                <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink">Agregar artículos</h2>
+                <BarcodeScanner Disabled="@SeleccionBloqueada" OnDetected="CodigoEscaneadoAsync" />
+            </div>
+            @if (BuscandoCodigo || AgregandoUnidad)
+            {
+                <p class="m-0 text-sm leading-6 text-ui-muted" role="status" aria-live="polite">Consultando unidades disponibles...</p>
+            }
+            @if (!string.IsNullOrWhiteSpace(ErrorCodigo))
+            {
+                <p class="m-0 rounded-2xl bg-ui-danger/5 p-3 text-sm leading-6 text-ui-danger [overflow-wrap:anywhere]" role="alert">@ErrorCodigo</p>
+            }
+            @if (ProductoEscaneado is not null)
+            {
+                <section class="grid min-w-0 gap-4 rounded-2xl border border-solid border-ui-border bg-ui-canvas p-4" aria-label="Producto escaneado" aria-busy="@(AgregandoUnidad ? "true" : "false")">
+                    <p class="m-0 font-semibold leading-6 text-ui-ink [overflow-wrap:anywhere]" role="status" aria-live="polite">@ProductoEscaneado.Nombre · @UnidadesEscaneadas.Count unidades disponibles para agregar</p>
+                    @if (CantidadPendiente)
+                    {
+                        <div class="grid min-w-0 gap-2">
+                            <label class="text-sm font-semibold" for="directa-cantidad-scanner">¿Cuántas unidades deseas agregar?</label>
+                            <input class="ui-input w-full" id="directa-cantidad-scanner" type="number" inputmode="numeric" min="1" max="@UnidadesEscaneadas.Count" step="1"
+                                @bind="CantidadEscaneada" @bind:event="oninput" disabled="@AgregandoUnidad" aria-describedby="directa-cantidad-ayuda" />
+                            <p class="m-0 text-sm leading-6 text-ui-muted" id="directa-cantidad-ayuda">Elige una cantidad entera entre 1 y @UnidadesEscaneadas.Count. La disponibilidad se comprobará antes de agregar y de registrar la venta.</p>
+                        </div>
+                        <div class="grid min-w-0 gap-3 sm:flex sm:flex-wrap">
+                            <button class="ui-button bg-ui-accent text-white hover:bg-ui-accent-hover" type="button" disabled="@(AgregandoUnidad || !CantidadValida)" @onclick="AgregarEscaneadasAsync">Agregar unidades</button>
+                            <button class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" type="button" disabled="@AgregandoUnidad" @onclick="CancelarSeleccionCodigoAsync">Cancelar selección</button>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="m-0 text-sm leading-6 text-ui-muted">Este producto no tiene unidades elegibles para Venta Directa. Puedes continuar con la búsqueda manual.</p>
+                    }
+                </section>
+            }
             <UnidadBuscador @key="@($"buscador-{RevisionBuscador}")" Id="directa-unidad" Excluir="@Unidades.Select(x => x.Unidad.Id).ToArray()"
-                Deshabilitado="@(Registrando || RevisandoVenta || AgregandoUnidad || PedidoAutomaticoCreado is not null)" OnSeleccionado="AgregarUnidadAsync" />
+                Deshabilitado="@SeleccionBloqueada" OnSeleccionado="AgregarUnidadAsync" />
             <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink">Artículos agregados a la venta</h2>
             @if (Unidades.Count == 0) { <p class="m-0 rounded-2xl bg-ui-canvas p-4 text-sm leading-6 text-ui-muted">Busca una unidad disponible y agrégala a la venta.</p> }
             @foreach (var detalle in Unidades)
@@ -99,16 +136,16 @@ else
                     <div class="grid min-w-0 gap-2 [&>label]:text-sm [&>label]:font-semibold">
                         <label for="precio-directo-@detalle.Unidad.Id">Precio final</label>
                         <input class="ui-input" inputmode="decimal" data-select-once="true" id="precio-directo-@detalle.Unidad.Id" type="number" step="0.01" min="0" @bind="detalle.PrecioFinal"
-                            disabled="@(Registrando || RevisandoVenta || PedidoAutomaticoCreado is not null)" />
+                            disabled="@SeleccionBloqueada" />
                     </div>
-                    <button type="button" class="ui-button min-w-0 border-ui-danger/30 bg-white text-ui-danger hover:bg-ui-danger/5 sm:col-span-2 xl:col-auto" disabled="@(Registrando || RevisandoVenta || PedidoAutomaticoCreado is not null)"
+                    <button type="button" class="ui-button min-w-0 border-ui-danger/30 bg-white text-ui-danger hover:bg-ui-danger/5 sm:col-span-2 xl:col-auto" disabled="@SeleccionBloqueada"
                         @onclick="() => QuitarUnidad(detalle)">Quitar artículo</button>
                 </article>
             }
         </section>
 
         <div class="grid grid-cols-1 gap-3 sm:flex sm:flex-wrap">
-            <button class="ui-button bg-ui-accent text-white hover:bg-ui-accent-hover" type="submit" disabled="@(Registrando || RevisandoVenta || AgregandoUnidad || Seleccionadas.Count == 0)">
+            <button class="ui-button bg-ui-accent text-white hover:bg-ui-accent-hover" type="submit" disabled="@(Registrando || RevisandoVenta || AgregandoUnidad || BuscandoCodigo || CantidadPendiente || Seleccionadas.Count == 0)">
                 @(Registrando
                     ? "Registrando..."
                     : PedidoAutomaticoCreado is null
@@ -147,7 +184,7 @@ else
     private bool RevisandoVenta { get; set; }
     private async Task RevisarVentaDirectaAsync()
     {
-        if (Registrando || AgregandoUnidad || RevisandoVenta) return;
+        if (Registrando || AgregandoUnidad || RevisandoVenta || BuscandoCodigo || CantidadPendiente) return;
         ErrorGuardado = ValidacionFormulario.PrimerError(Modelo) ?? Validar(Seleccionadas);
         if (ErrorGuardado is not null) return;
         RevisandoVenta = true;
@@ -187,27 +224,123 @@ else
         && (!Inicializado || ClienteQueryCargado != ClienteDesdeQuery) ? CargarAsync() : Task.CompletedTask;
     private void ElegirCliente(ClienteDto? cliente)
     {
-        if (Registrando || RevisandoVenta || PedidoAutomaticoCreado is not null) return;
+        if (SeleccionBloqueada) return;
         ClienteSeleccionado = cliente; Modelo.ClienteId = cliente?.Id ?? 0; Clientes = cliente is null ? [] : [cliente];
         ErrorGuardado = null;
     }
     private async Task AgregarUnidadAsync(UnidadInventarioDto? unidad)
     {
-        if (unidad is null || Registrando || RevisandoVenta || AgregandoUnidad || PedidoAutomaticoCreado is not null || Unidades.Any(x => x.Unidad.Id == unidad.Id)) return;
+        if (unidad is null || SeleccionBloqueada || Unidades.Any(x => x.Unidad.Id == unidad.Id)) return;
         AgregandoUnidad = true;
         try
         {
             var producto = await ProductoService.ObtenerPorIdAsync(unidad.ProductoId);
             if (!producto.IsSuccess || producto.Value is null) { ErrorGuardado = "No pudimos cargar el producto. Vuelve a buscar la unidad."; return; }
-            Unidades.Add(new UnidadVentaDirectaFormModel { Unidad = unidad, Seleccionada = true, PrecioFinal = producto.Value.PrecioSugerido });
-            RevisionBuscador++;
+            AgregarArticulos([unidad], producto.Value.PrecioSugerido);
         }
         catch (Exception ex) { Logger.LogError(ex, "No fue posible agregar la unidad a la venta."); ErrorGuardado = "No pudimos agregar la unidad. Intenta nuevamente."; }
         finally { AgregandoUnidad = false; }
     }
     private void QuitarUnidad(UnidadVentaDirectaFormModel detalle)
     {
-        if (!Registrando && !RevisandoVenta && PedidoAutomaticoCreado is null) Unidades.Remove(detalle);
+        if (!SeleccionBloqueada) Unidades.Remove(detalle);
+    }
+
+    private bool BuscandoCodigo { get; set; }
+    private ProductoDto? ProductoEscaneado { get; set; }
+    private IReadOnlyList<UnidadInventarioDto> UnidadesEscaneadas { get; set; } = [];
+    private string CantidadEscaneada { get; set; } = "1";
+    private string? ErrorCodigo { get; set; }
+    private bool CantidadPendiente => ProductoEscaneado is not null && UnidadesEscaneadas.Count > 0;
+    private bool SeleccionBloqueada => Registrando || RevisandoVenta || AgregandoUnidad || BuscandoCodigo
+        || CantidadPendiente || PedidoAutomaticoCreado is not null;
+    private bool CantidadValida => int.TryParse(CantidadEscaneada, NumberStyles.None, CultureInfo.InvariantCulture, out var cantidad)
+        && cantidad >= 1 && cantidad <= UnidadesEscaneadas.Count;
+
+    private async Task CodigoEscaneadoAsync(string codigo)
+    {
+        if (SeleccionBloqueada) return;
+        BuscandoCodigo = true;
+        LimpiarSeleccionCodigo();
+        try
+        {
+            await OcupadoChanged.InvokeAsync(true);
+            var producto = await ConsultaProductos.ObtenerPorCodigoBarrasAsync(codigo);
+            if (producto is null)
+            {
+                ErrorCodigo = "No hay ningún producto registrado con este código de barras. Puedes continuar con la búsqueda manual.";
+                return;
+            }
+            var unidades = await SeleccionService.ListarUnidadesDirectasAsync(producto.Id, Unidades.Select(x => x.Unidad.Id).ToArray());
+            ProductoEscaneado = producto;
+            UnidadesEscaneadas = unidades;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible buscar el producto escaneado para Venta Directa.");
+            ErrorCodigo = "No pudimos consultar el producto. Vuelve a escanear o continúa con la búsqueda manual.";
+        }
+        finally
+        {
+            BuscandoCodigo = false;
+            await OcupadoChanged.InvokeAsync(CantidadPendiente);
+        }
+    }
+
+    private async Task AgregarEscaneadasAsync()
+    {
+        if (!CantidadPendiente || Registrando || RevisandoVenta || AgregandoUnidad || BuscandoCodigo || PedidoAutomaticoCreado is not null) return;
+        if (!CantidadValida)
+        {
+            ErrorCodigo = $"Elige una cantidad entera entre 1 y {UnidadesEscaneadas.Count}.";
+            return;
+        }
+        var cantidad = int.Parse(CantidadEscaneada, CultureInfo.InvariantCulture);
+        var unidades = UnidadesEscaneadas.Take(cantidad).ToArray();
+        AgregandoUnidad = true;
+        ErrorCodigo = null;
+        try
+        {
+            if (!await SeleccionService.UnidadesDirectasDisponiblesAsync(unidades.Select(x => x.Id).ToArray()))
+            {
+                ErrorCodigo = "Una o más unidades ya no están disponibles. Cancela esta selección y vuelve a escanear el producto.";
+                return;
+            }
+            AgregarArticulos(unidades, ProductoEscaneado!.PrecioSugerido);
+            LimpiarSeleccionCodigo();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible agregar las unidades escaneadas a la venta.");
+            ErrorCodigo = "No pudimos agregar las unidades. Intenta nuevamente.";
+        }
+        finally
+        {
+            AgregandoUnidad = false;
+            await OcupadoChanged.InvokeAsync(CantidadPendiente);
+        }
+    }
+
+    private void AgregarArticulos(IEnumerable<UnidadInventarioDto> unidades, decimal precioSugerido)
+    {
+        Unidades.AddRange(unidades.Select(unidad => new UnidadVentaDirectaFormModel
+            { Unidad = unidad, Seleccionada = true, PrecioFinal = precioSugerido }));
+        RevisionBuscador++;
+    }
+
+    private async Task CancelarSeleccionCodigoAsync()
+    {
+        if (AgregandoUnidad || BuscandoCodigo || Registrando || RevisandoVenta) return;
+        LimpiarSeleccionCodigo();
+        await OcupadoChanged.InvokeAsync(false);
+    }
+
+    private void LimpiarSeleccionCodigo()
+    {
+        ProductoEscaneado = null;
+        UnidadesEscaneadas = [];
+        CantidadEscaneada = "1";
+        ErrorCodigo = null;
     }
 
     private async Task CargarAsync()
@@ -243,7 +376,7 @@ else
 
     private async Task RegistrarVentaDirectaAsync()
     {
-        if (Registrando || AgregandoUnidad)
+        if (Registrando || AgregandoUnidad || BuscandoCodigo || CantidadPendiente)
             return;
 
         var seleccionadas = Seleccionadas;
