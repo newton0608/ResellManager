@@ -14,8 +14,26 @@ lectura; todavía no es una tienda con carrito, checkout o pedidos web.
   la tarea lo requiera explícitamente. No uses datos reales para pruebas.
 - Distingue comportamiento implementado, decisión pendiente y propuesta futura.
   Una contradicción documental no autoriza cambiar reglas de negocio.
-- Actualiza el documento canónico pertinente cuando cambie un contrato; enlaza
-  detalles en lugar de copiarlos en varias guías.
+- La documentación forma parte de la definición de terminado. **Cada cambio
+  implementado debe cerrar también su estado documental en la misma rama**:
+  revisa el documento canónico del módulo y cualquier registro de planificación
+  afectado. Si una tarea completa algo que figuraba como pendiente, actualiza o
+  marca ese ítem en `docs/09_Backlog.md`, `docs/19_V2_Pendientes.md`,
+  `ROADMAP.md` u otro `.md` que lo siga; no dejes una funcionalidad
+  implementada descrita como pendiente.
+- Actualiza `CHANGELOG.md` cuando el cambio sea relevante para el historial de
+  producto/release. Actualiza decisiones, arquitectura, deployment, seguridad,
+  contratos, pruebas o runbooks cuando el cambio altere esas fuentes de verdad.
+  No modifiques documentos no afectados solo por cumplir una lista.
+- Antes de entregar, busca referencias obsoletas al comportamiento cambiado
+  (estados «pendiente/planeado», nombres, rutas, versiones, límites, criterios de
+  validación) y reconcílialas. Conserva la evidencia histórica como histórica:
+  añade el estado posterior cuando corresponda en vez de reescribir lo que una
+  validación pasada realmente demostró.
+- Enlaza detalles en lugar de copiarlos en varias guías. Si el código y la
+  documentación discrepan, reporta la discrepancia y deja ambas fuentes
+  coherentes dentro del alcance autorizado; una contradicción documental no
+  autoriza inventar ni cambiar reglas de negocio.
 
 ## Arquitectura
 

@@ -29,7 +29,7 @@ como tales en el [registro de decisiones](11_DecisionesDeDiseño.md).
 | Invariantes | [Reglas del negocio](architecture/domain-rules.md) | Estados físicos, reserva, venta, saldo y costos. |
 | EF / SQLite / archivos | [Persistencia](architecture/persistence.md) | Contratos del esquema y migraciones existentes. |
 | Clientes | [Módulo](modules/clientes.md) | Actividad/saldo; decisión 025 pendiente. |
-| Productos / categorías | [Módulo](modules/productos.md) | [Medidas](23_MedidasYPresentacionProducto.md), [imagen](24_ImagenPrincipalProducto.md), [scanner](29_BarcodeScanner.md). |
+| Productos / categorías | [Módulo](modules/productos.md) | [Medidas](23_MedidasYPresentacionProducto.md), [imagen](24_ImagenPrincipalProducto.md), [scanner](29_BarcodeScanner.md), [lookup externo](modules/productos-lookup-codigo-barras.md). |
 | Compras / proveedores | [Módulo](modules/compras.md) | [Comprobantes](16_Fase58_ComprasYComprobantes.md), [GTQ/USD](28_MonedasDeCompra.md). |
 | Inventario | [Módulo](modules/inventario.md) | Reglas físicas y recepción. |
 | Pedidos / reservas | [Módulo](modules/pedidos.md) | [Códigos y canales](15_CodigosYCanalesVenta.md). |
@@ -57,7 +57,7 @@ decisiones en lugar de abrir una segunda colección ADR con decisiones repetidas
 | [Entrevistas](13_Entrevistas.md) | Hallazgos originales; no tomar porcentajes/devoluciones como implementados. |
 | [Nomenclatura](15_Nomenclatura.md) / [glosario](16_Glosario.md) | Vocabulario y separación de conceptos. |
 | [Alcance V1](14_Alcance_V1.md) / [cierre V1](18_Fase510_CierreV1.md) | Alcance/evidencia de fases anteriores; no contienen todas las ampliaciones actuales. |
-| [Changelog](../CHANGELOG.md) | Tags/versiones; no certifica despliegue. |
+| [Changelog](../CHANGELOG.md) | Tags/versiones y estado Unreleased; no certifica despliegue. `.github/workflows/release.yml` publica GitHub Releases desde tags. |
 | [Diagramas](diagrams/) | Material editable conservado; contrastar contratos ampliados con código/configuración EF. |
 | [Auditoría documental 05/10/2026](documentation-audit.md) | Base, reorganización, contradicciones y límites de esta revisión. |
 
