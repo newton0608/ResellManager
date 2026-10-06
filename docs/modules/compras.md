@@ -14,6 +14,13 @@ GTQ continúa siendo la moneda base del resto del negocio.
   congelado, redondeo en backend, compatibilidad histórica y fallback manual.
 - Flete, courier, impuestos y prorrateo no están incluidos en esa conversión:
   [landed cost sigue en análisis](landed-cost.md).
+- **Scanner en Nueva compra aprobado para V2.1, implementación pendiente:** ver
+  [contrato operativo](scanner-operativo-v2-1.md#compras--integración-aprobada-tras-probar-preview).
+  Un código local selecciona el Producto en el detalle y conserva el modelo
+  Producto + Cantidad + Costo unitario. Si no existe, puede ofrecer **Registrar
+  producto** reutilizando el alta asistida existente; sólo ese subflujo explícito
+  puede consultar Open Facts/UPCitemdb. Al guardar, el Producto nuevo vuelve
+  autoseleccionado al detalle original sin perder la Compra en preparación.
 
 ## Dónde trabajar y validar
 
