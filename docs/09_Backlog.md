@@ -64,9 +64,12 @@ V1 está en producción. Este backlog conserva entregas de fases y distingue amp
 - [ ] Diseñar configuración de comisiones por proveedor y categoría.
 - [ ] Al automatizar comisiones, guardar snapshot del porcentaje y/o monto aplicado en cada venta para preservar historial.
 
-## Flujos futuros
+## Flujos operativos y futuros
 
-- [ ] V2.1: integrar el scanner existente en Venta Directa e Inventario según el [contrato operativo aprobado](modules/scanner-operativo-v2-1.md): cantidad de unidades elegibles en Venta Directa y navegación directa al Producto desde Inventario.
+- [x] V2.1: base del scanner en Venta Directa e Inventario implementada y validada automáticamente según el [contrato operativo](modules/scanner-operativo-v2-1.md).
+- [x] V2.1: agrupar Venta Directa por lote de agregado: Producto ×N, códigos físicos, un solo Precio final por unidad y la misma agrupación en revisión; agregados separados del mismo Producto permanecen como lotes independientes.
+- [x] V2.1: integrar scanner en Nueva compra; coincidencia local selecciona Producto y código inexistente puede abrir Registrar producto reutilizando el alta asistida, regresando autoseleccionado al detalle original.
+- [ ] V2.1: validar físicamente la implementación final de los consumidores operativos con cámara y registrar dispositivo/versiones exactos; no extrapolar evidencia histórica de Producto.
 - [ ] Diseñar devoluciones y cambios para unidades entregadas.
 
 ---

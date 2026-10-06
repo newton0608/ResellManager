@@ -10,6 +10,8 @@ public partial class ProductoForm : IDisposable
     [Inject] private IProductoLookupService LookupService { get; set; } = null!;
     [Inject] private ILogger<ProductoForm> LookupLogger { get; set; } = null!;
     [Parameter] public bool LookupHabilitado { get; set; }
+    [Parameter] public bool BuscarAlIniciar { get; set; }
+    private ProductoFormModel? ModeloBusquedaInicial;
     private ProductoLookupRonda? Ronda;
     private bool BuscandoLookup;
     private bool RevisandoLookup;
@@ -48,6 +50,13 @@ public partial class ProductoForm : IDisposable
         Importacion = new();
         VistaPrevia = null;
         ErrorImagen = null;
+    }
+
+    protected override Task OnParametersSetAsync()
+    {
+        if (!LookupHabilitado || !BuscarAlIniciar || ReferenceEquals(ModeloBusquedaInicial, Modelo)) return Task.CompletedTask;
+        ModeloBusquedaInicial = Modelo;
+        return BuscarProductoAsync();
     }
 
     private Task BuscarProductoAsync() => EjecutarBusquedaAsync(false);

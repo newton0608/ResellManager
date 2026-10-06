@@ -45,6 +45,7 @@ public sealed class VentaDirectaFormModel
 public sealed class UnidadVentaDirectaFormModel
 {
     public required UnidadInventarioDto Unidad { get; init; }
+    public Guid LoteId { get; init; } = Guid.NewGuid();
     public bool Seleccionada { get; set; }
     public decimal PrecioFinal { get; set; }
 
@@ -67,4 +68,21 @@ public sealed class UnidadVentaDirectaFormModel
             PrecioFinal,
             Observaciones
         );
+}
+
+// Agrupación de presentación por acción; los inputs persistidos siguen siendo por unidad.
+public sealed class LoteVentaDirectaFormModel(IReadOnlyList<UnidadVentaDirectaFormModel> unidades)
+{
+    public Guid Id => unidades[0].LoteId;
+    public string Producto => unidades[0].Unidad.Producto;
+    public IReadOnlyList<UnidadVentaDirectaFormModel> Unidades => unidades;
+    public int Cantidad => unidades.Count;
+    public decimal PrecioFinal
+    {
+        get => unidades[0].PrecioFinal;
+        set { foreach (var unidad in unidades) unidad.PrecioFinal = value; }
+    }
+    public decimal Subtotal => unidades.Sum(x => x.PrecioFinal);
+    public static IReadOnlyList<LoteVentaDirectaFormModel> Agrupar(IEnumerable<UnidadVentaDirectaFormModel> unidades) =>
+        unidades.GroupBy(x => x.LoteId).Select(grupo => new LoteVentaDirectaFormModel(grupo.ToArray())).ToArray();
 }

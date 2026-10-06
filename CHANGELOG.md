@@ -2,7 +2,15 @@
 
 Las fechas siguientes corresponden a creación de tags; no son fechas exactas de despliegue. Las GitHub Releases pueden publicarse después usando esos mismos tags, por lo que la fecha de una Release tampoco debe confundirse con la fecha de despliegue.
 
-## Unreleased — main posterior a v1.2.1
+## Unreleased — integración operativa V2.1
+
+- Scanner en Venta Directa: coincidencia local, disponibilidad y agregado de N unidades físicas. Cada acción forma un lote independiente con Producto ×N, códigos físicos, precio común por unidad y subtotal en formulario/revisión; quitar unidades conserva las identidades restantes.
+- Scanner en Inventario: abre el detalle administrativo del Producto aunque no tenga unidades disponibles; fallos/cancelación conservan filtros y búsqueda.
+- Nueva compra: scanner por detalle con coincidencia local exacta. Un código inexistente permite abrir explícitamente el alta asistida existente, revisar/aceptar datos y regresar con el Producto autoseleccionado en el detalle original; cancelación/fallo conservan la Compra y el comprobante.
+- Reutiliza BarcodeScanner y contratos existentes. Venta Directa/Inventario son exclusivamente locales; en Compra el lookup externo sólo se permite dentro del subflujo explícito Registrar producto. Sin cambios de esquema ni nueva política de selección/costo.
+- Implementación y ajustes cubiertos por 878 pruebas .NET, 115 JS y QA reproducible de 84 vistas a 320/390/768/1440 px. Sólo el QA físico final sigue pendiente según el [contrato operativo](docs/modules/scanner-operativo-v2-1.md); esta entrada no acredita merge ni despliegue.
+
+## Cambios posteriores a v1.2.1 — registro previo
 
 - Búsqueda asistida al agregar Producto: coincidencia local primero y fallback externo Open Facts → UPCitemdb, con revisión explícita antes de copiar datos al formulario.
 - Importación reversible de datos externos sin importar precios ni crear categorías; la imagen externa queda pendiente hasta Guardar producto.
