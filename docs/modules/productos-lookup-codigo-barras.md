@@ -1,6 +1,6 @@
 # Búsqueda asistida de productos por código de barras
 
-**Estado: implementado en Agregar producto. Validación física del scanner en iPhone/Safari pendiente, según su guía.**
+**Estado: implementado en Agregar producto y validado con cámara física real. La combinación exacta dispositivo/navegador de esa prueba no quedó registrada; la regresión específica iPhone/Safari del hotfix conserva esa limitación en su guía.**
 
 Esta función reduce la captura manual al registrar productos nuevos. Reutiliza el
 scanner existente para consultar fuentes externas por código de barras, permite
@@ -500,9 +500,7 @@ documentado en su [guía](../29_BarcodeScanner.md).
   .artifacts/producto-lookup-qa/; no se versionan datos de pruebas.
 - git diff --check: correcto.
 
-No se usó cámara física ni se hicieron consultas de producto a Internet en las
-pruebas. Sigue pendiente el QA físico de iPhone/Safari indicado en la guía del
-scanner. No se añadieron migraciones ni se desplegó la aplicación.
+No se usó cámara física ni se hicieron consultas de producto a Internet en **esta validación automatizada del 05/10**. Ese era el estado de la evidencia en ese momento; la validación operativa real del 06/10 se registra más abajo. No se añadieron migraciones en esta funcionalidad.
 
 ## Corrección de la preview externa (2026-10-05)
 
@@ -530,16 +528,13 @@ QA de Blazor en 320/390/768/1440 px con SQLite temporal, proveedores simulados e
 imágenes interceptadas localmente: carga de preview, quitar, deshacer, prioridad
 manual y ausencia de descarga del servidor hasta guardar. QA del scanner:
 80 comprobaciones y 28 decodificaciones ópticas, sin fallos. `git diff --check`
-correcto. Permanece pendiente la prueba física en iPhone/Safari; no se hicieron
-peticiones a proveedores reales, migraciones, despliegues ni merge.
+correcto. En **este seguimiento automatizado del 05/10** todavía no se hicieron
+peticiones a proveedores reales, migraciones, despliegues ni merge; la evidencia
+operativa posterior se registra más abajo.
 
 ## Guardado externo y redirecciones (2026-10-05)
 
-El fallo reproducible estaba en la descarga HTTP, antes de preparar y confirmar
-el WebP: el descargador rechazaba cualquier respuesta 3xx. El navegador seguía
-la redirección para mostrar revisión/preview, mientras `CrearAsistidoAsync`
-recibía una descarga fallida y guardaba con `ImagenPrincipalRuta = null` y el
-aviso previsto. El detalle mostraba entonces «Sin imagen principal».
+Se reprodujo un defecto real e independiente en la descarga HTTP: el descargador rechazaba cualquier respuesta 3xx antes de preparar y confirmar el WebP. Un navegador podía seguir esa redirección para mostrar revisión/preview mientras `CrearAsistidoAsync` recibía una descarga fallida y guardaba sin imagen. Se corrigió con seguimiento manual y validado de redirecciones. **Sin embargo, esta no fue la causa del fallo persistente observado después en Preview**: ese entorno continuó fallando incluso con URLs de imagen que respondían 200, y su causa operativa se documenta en la sección siguiente.
 
 El diagnóstico manual, separado de las pruebas automatizadas, confirmó un
 `301` legítimo de `https://world.openfoodfacts.org/images/products/...` hacia
