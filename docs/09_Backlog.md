@@ -66,6 +66,7 @@ V1 está en producción. Este backlog conserva entregas de fases y distingue amp
 
 ## Flujos futuros
 
+- [ ] V2.1: integrar el scanner existente en Venta Directa e Inventario según el [contrato operativo aprobado](modules/scanner-operativo-v2-1.md): cantidad de unidades elegibles en Venta Directa y navegación directa al Producto desde Inventario.
 - [ ] Diseñar devoluciones y cambios para unidades entregadas.
 
 ---
