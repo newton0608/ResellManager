@@ -316,7 +316,7 @@ Alcance inicial:
 - creación de una solicitud/pedido dentro de ResellManager reutilizando sus reglas y servicios actuales;
 - revalidación de disponibilidad al procesar la solicitud, sin asumir que consultar un producto equivale a reservarlo.
 
-No se requieren inicialmente pago en línea, cuentas completas de cliente, promociones complejas, integración WhatsApp ni logística avanzada. Pueden evaluarse después; no son requisitos de la tienda básica V2.4.
+No se requieren inicialmente pago en línea, cuentas completas de cliente, promociones complejas, integración automática con la API de WhatsApp ni logística avanzada. Pueden evaluarse después; no son requisitos de la tienda básica V2.4. Un enlace simple `wa.me` con mensaje prellenado para consultar un producto está **aprobado para V1.4** (aún no implementado), según [el contrato](modules/catalogo-v1-4.md); no constituye integración automática ni crea pedidos.
 
 **Estado actual:** catálogo, categorías derivadas del listado, búsqueda, detalle, imagen y disponibilidad de lectura ya existen: [Catálogo público](modules/catalogo.md). La evolución hacia carrito/selección y pedidos web sigue siendo planificación V2.4. No está implementada ni autorizada por este roadmap; pagos online tampoco existen. Dominios y ruta canónica pendiente se describen en [Dominios](deployment/domains.md).
 
