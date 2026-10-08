@@ -2,6 +2,19 @@
 
 V1 está en producción. Este backlog conserva entregas de fases y distingue ampliaciones posteriores; sus pendientes V2 no se consideran resueltos por el despliegue. El estado operativo vigente se mantiene en el [runbook V1](deployment/deployment.md) y las versiones en el [changelog](../CHANGELOG.md).
 
+## V1.4 — Mejoras de catálogo (aprobada, pendiente)
+
+Contrato: [V1.4 de Virtuosa Store](modules/catalogo-v1-4.md). Rama
+`feature/catalogo-v1-4` desde `v1.3.0`, independiente de V2.1.
+
+- [ ] Galería de 0 a 8 fotos por producto, con portada, orden y gestión autenticada; preservar imágenes históricas.
+- [ ] Miniaturas y visor público con zoom/pinch, swipe, teclado y accesibilidad.
+- [ ] Subcategorías de máximo dos niveles, migración EF y filtros jerárquicos.
+- [ ] Filtro público por marca usando `Producto.Marca`, combinable con búsqueda/categoría.
+- [ ] Reconexión no modal en catálogo público; mantener modal administrativo.
+- [ ] Indicador verde `Disponible` sin alterar regla de publicación.
+- [ ] Tests, QA móvil y cierre documental; no desplegar ni mezclar V2.1 sin aprobación.
+
 ## Backend V1 completado
 
 - [x] Separar reserva comercial del estado físico de inventario.
