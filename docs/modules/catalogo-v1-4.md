@@ -9,11 +9,11 @@ No interpretar estos requisitos como funcionalidades ya desplegadas.
 ## Objetivo y fronteras
 
 Mejorar cómo se cargan, observan y encuentran los productos de Virtuosa Store
-sin cambiar la operación comercial. La administración sigue siendo la única que
+y facilitar la consulta por WhatsApp sin cambiar la operación comercial. La administración sigue siendo la única que
 edita productos y categorías. El catálogo público sigue siendo **solo lectura**,
 anónimo y sujeto a la misma regla actual de disponibilidad comercial: una unidad
 `Disponible`, sin reserva y sin venta `Registrada`. No añadir carrito,
-checkout, pedidos, pagos, WhatsApp, stock público, precios automáticos,
+checkout, pedidos automáticos, pagos, stock público, precios automáticos,
 cambios de costos, ventas, inventario, códigos de barras ni servicios externos.
 No alterar infraestructura, Caddy, DNS, Docker ni DeployManager.
 
@@ -157,6 +157,42 @@ el lenguaje visual de Virtuosa y el diseño `store-*`, separado de `ui-*`.
 - No deducir stock a partir del color ni publicar cantidad de unidades.
   No modificar los colores semánticos de administración.
 
+## 6. Consulta por WhatsApp desde el detalle público
+
+- Agregar botón claro **«Consultar por WhatsApp»** en el detalle del producto
+  disponible de Virtuosa Store, cercano a su información comercial; mantener
+  estilo `store-*` y buena usabilidad móvil/escritorio. No es checkout ni
+  confirmación de pedido.
+- Al activarlo, abrir el enlace oficial `https://wa.me/{numero}?text={mensaje}`
+  con texto **codificado para URL** que incluya al menos el **nombre del
+  producto** y la **URL pública canónica absoluta de ese producto**. Propuesta
+  de texto editable solo desde código: «Hola, quisiera consultar por
+  {nombre}. {url}». No añadir precio/stock en el texto por defecto para
+  evitar compartir valores desactualizados.
+- Obtener el número de WhatsApp desde configuración de servidor
+  (variable de entorno/Options; nunca hardcodear un número real en Razor,
+  JavaScript o CSS). Validar formato internacional solo dígitos, sin `+`,
+  espacios ni signos, con longitud razonable para `wa.me`. Documentar
+  clave/configuración y ejemplo **ficticio**, sin incluir secretos reales.
+- Si falta el número o es inválido, **ocultar el botón** o mostrarlo
+  inequívocamente deshabilitado sin enlace roto; el catálogo y el detalle
+  continúan funcionando. No exigir WhatsApp para navegar el catálogo.
+- La URL del producto debe ser la del **dominio público canónico** cuando
+  corresponda (p. ej. `https://virtuosagt.com/producto/{id}`), no una URL
+  administrativa, privada, de Preview ni el endpoint API. Resolver mediante
+  configuración de origen público/URL canónica documentada o mecanismo
+  confiable equivalente, sin depender de `localhost` ni de URLs internas.
+  En Preview se puede navegar con sus rutas existentes, pero el enlace
+  compartido debe representar la URL pública canónica. Validar y codificar
+  el texto y el URL para impedir inyección o parámetros corruptos.
+- Abrir WhatsApp mediante enlace externo estándar, sin API de WhatsApp
+  Business, credenciales, persistencia de conversaciones, envíos automáticos,
+  seguimiento de clientes ni modificación de disponibilidad o reservas.
+- QA: botón visible solo con configuración válida y producto publicable;
+  nombre con acentos/caracteres especiales codificado correctamente, enlace
+  canónico correcto, apertura desde iPhone/Android/escritorio, y ausencia
+  de errores si la configuración está vacía o inválida.
+
 ## Contratos técnicos y compatibilidad
 
 - Seguir capas `Domain/Application/Infrastructure/Web` y `AGENTS.md`.
@@ -193,9 +229,12 @@ el lenguaje visual de Virtuosa y el diseño `store-*`, separado de `ui-*`.
    discreto; fallo/rechazo permite acción. Administración conserva el modal.
 8. Indicador `Disponible` verde con texto y contraste; sin cambios en
    precio, reservas, venta, compra ni inventario.
-9. QA responsive al menos 320, 390, 768 y 1440 px; Safari/iPhone real
+9. WhatsApp: CTA en detalle, número configurable y validado, mensaje
+   precargado con nombre + URL pública canónica; sin enlace si falta número,
+   sin pedidos ni reservas automáticos.
+10. QA responsive al menos 320, 390, 768 y 1440 px; Safari/iPhone real
    pendiente hasta validación física documentada. Emulación no la sustituye.
-10. `dotnet build ResellManager.sln`, tests focalizados y suite completa
+11. `dotnet build ResellManager.sln`, tests focalizados y suite completa
     por migraciones/contratos compartidos, `npm run test:js`,
     `npm run css:build`, `git diff --check`; reportar resultados reales.
 
@@ -207,7 +246,7 @@ el lenguaje visual de Virtuosa y el diseño `store-*`, separado de `ui-*`.
    Si hay cambios locales ajenos, conservarlos y reportar bloqueo.
 2. Implementar por bloques verificables: persistencia/servicios de galería,
    administración, API/UI pública y visor, subcategorías, marca, reconexión,
-   indicador y QA. Commits descriptivos; sin cambios no relacionados.
+   indicador, WhatsApp y QA. Commits descriptivos; sin cambios no relacionados.
 3. Actualizar documentación **después de implementar**: este contrato y
    `docs/modules/catalogo.md`, `docs/modules/productos.md`,
    `docs/24_ImagenPrincipalProducto.md`, `docs/25_CatalogoPublicoBackend.md`,
