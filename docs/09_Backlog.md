@@ -13,6 +13,7 @@ Contrato: [V1.4 de Virtuosa Store](modules/catalogo-v1-4.md). Rama
 - [ ] Filtro público por marca usando `Producto.Marca`, combinable con búsqueda/categoría.
 - [ ] Reconexión no modal en catálogo público; mantener modal administrativo.
 - [ ] Indicador verde `Disponible` sin alterar regla de publicación.
+- [ ] Botón WhatsApp en detalle con nombre y enlace canónico precargados; número configurable y ausencia segura si no se configura.
 - [ ] Tests, QA móvil y cierre documental; no desplegar ni mezclar V2.1 sin aprobación.
 
 ## Backend V1 completado
