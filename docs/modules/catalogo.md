@@ -6,8 +6,8 @@ el botón para pedir por WhatsApp tampoco está implementado en esta base.
 La ampliación hacia una tienda está [planeada para V2.4](../19_V2_Pendientes.md#v24--canal-público--tienda-en-línea).
 
 **V1.4 aprobada, aún no implementada:** [Galería (máximo 8 fotos), zoom,
-subcategorías de dos niveles, filtro por marca, reconexión discreta pública
-e indicador verde](catalogo-v1-4.md). Se desarrolla en una rama separada
+subcategorías de dos niveles, filtro por marca, reconexión discreta pública,
+indicador verde y consulta por WhatsApp](catalogo-v1-4.md). Se desarrolla en una rama separada
 partiendo de `v1.3.0`; no incluye ni fusiona V2.1.
 
 ## Contratos y límites
