@@ -6,16 +6,18 @@
 @inject ICatalogoPublicoClient Cliente
 @inject ILogger<Catalogo> Logger
 @inject BusquedaTiendaEstado Busqueda
+@inject IJSRuntime JS
 
 <PageTitle>Catálogo | Virtuosa Store</PageTitle>
-<CatalogoVista Modelo="Modelo" OnCategoria="Modelo.FiltrarCategoriaAsync"
+<CatalogoVista Modelo="Modelo" OnCategoria="FiltrarCategoriaAsync" OnMarca="FiltrarMarcaAsync"
                OnLimpiar="LimpiarAsync" OnReintentar="Modelo.CargarAsync" />
 
 @code {
     [SupplyParameterFromQuery(Name = "termino")] public string? TerminoInicial { get; set; }
     [SupplyParameterFromQuery(Name = "categoriaId")] public int? CategoriaInicial { get; set; }
+    [SupplyParameterFromQuery(Name = "marca")] public string? MarcaInicial { get; set; }
     private CatalogoListadoModelo Modelo = null!;
-    private (string? Termino, int? Categoria)? Anterior;
+    private (string? Termino, int? Categoria, string? Marca)? Anterior;
     private bool Pendiente;
     private bool Descartado;
 
@@ -27,9 +29,9 @@
 
     protected override void OnParametersSet()
     {
-        if (Anterior == (TerminoInicial, CategoriaInicial)) return;
-        Anterior = (TerminoInicial, CategoriaInicial);
-        Modelo.EstablecerFiltros(TerminoInicial, CategoriaInicial);
+        if (Anterior == (TerminoInicial, CategoriaInicial, MarcaInicial)) return;
+        Anterior = (TerminoInicial, CategoriaInicial, MarcaInicial);
+        Modelo.EstablecerFiltros(TerminoInicial, CategoriaInicial, MarcaInicial);
         Busqueda.FijarTermino(Modelo.Termino);
         Pendiente = true;
     }
@@ -45,6 +47,7 @@
     private async Task BuscarDesdeEncabezadoAsync(string termino)
     {
         var carga = Modelo.BuscarAsync(termino);
+        await ActualizarUrlAsync();
         await InvokeAsync(StateHasChanged);
         await carga;
         if (!Descartado) await InvokeAsync(StateHasChanged);
@@ -62,6 +65,25 @@
     {
         Busqueda.FijarTermino(string.Empty);
         await Modelo.LimpiarAsync();
+        await ActualizarUrlAsync();
+    }
+
+    private async Task FiltrarCategoriaAsync(int? id)
+    {
+        await Modelo.FiltrarCategoriaAsync(id);
+        await ActualizarUrlAsync();
+    }
+    private async Task FiltrarMarcaAsync(string? marca)
+    {
+        await Modelo.FiltrarMarcaAsync(marca);
+        await ActualizarUrlAsync();
+    }
+    private async Task ActualizarUrlAsync()
+    {
+        if (Descartado) return;
+        var modulo = await JS.InvokeAsync<IJSObjectReference>("import", "./catalogo-publico.js");
+        try { await modulo.InvokeVoidAsync("actualizarUrl", Modelo.Termino, Modelo.CategoriaId, Modelo.Marca); }
+        finally { await modulo.DisposeAsync(); }
     }
 
     public void Dispose()

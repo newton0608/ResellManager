@@ -6,13 +6,17 @@ const path = require("node:path");
 const vm = require("node:vm");
 const script = fs.readFileSync(path.resolve(__dirname, "../../src/ResellManager.Web/wwwroot/reconnect.js"), "utf8");
 
-function fixture(reconnect = async () => true) {
+function fixture(reconnect = async () => true, publicCatalog = false) {
     const classes = new Set(["components-reconnect-hide"]);
     const attributes = {};
     const focus = [];
     const listeners = {};
     const retry = { disabled: false, addEventListener: (name, callback) => listeners[`retry:${name}`] = callback };
     const reload = { addEventListener: (name, callback) => listeners[`reload:${name}`] = callback };
+    const notice = { hidden: true, dataset: {} };
+    const noticeMessage = { textContent: '' };
+    const noticeRetry = { hidden: true, disabled: false, addEventListener: (name, callback) => listeners[`noticeRetry:${name}`] = callback };
+    const noticeReload = { hidden: true, addEventListener: (name, callback) => listeners[`noticeReload:${name}`] = callback };
     const current = { innerText: "4" };
     const maximum = { innerText: "8" };
     let observer;
@@ -35,8 +39,12 @@ function fixture(reconnect = async () => true) {
         addEventListener: (name, callback) => listeners[`modal:${name}`] = callback,
     };
     const context = {
-        document: { getElementById: id => ({
+        document: { querySelector: () => publicCatalog ? {} : null, getElementById: id => ({
             "components-reconnect-modal": modal,
+            "store-reconnect": notice,
+            "store-reconnect-message": noticeMessage,
+            "store-reconnect-retry": noticeRetry,
+            "store-reconnect-reload": noticeReload,
             "reconnect-retry": retry,
             "reconnect-reload": reload,
             "components-reconnect-current-attempt": current,
@@ -53,9 +61,11 @@ function fixture(reconnect = async () => true) {
     };
     vm.runInNewContext(script, context);
     return {
-        modal, retry, attributes, focus, current, maximum,
+        modal, retry, attributes, focus, current, maximum, notice, noticeMessage, noticeRetry, noticeReload,
         state: value => { classes.clear(); classes.add(`components-reconnect-${value}`); observer(); },
         hasState: value => classes.has(`components-reconnect-${value}`),
+        clickNoticeRetry: () => listeners["noticeRetry:click"](),
+        clickNoticeReload: () => listeners["noticeReload:click"](),
         clickRetry: () => listeners["retry:click"](),
         clickReload: () => listeners["reload:click"](),
         cancel: event => listeners["modal:cancel"](event),
@@ -162,4 +172,28 @@ test("la navegación mejorada no instala otro observador sobre el modal permanen
     ui.state("failed");
     await ui.clickRetry();
     assert.equal(ui.calls, 1);
+});
+
+test("layout público usa aviso sin modal/foco y desaparece solo al reconectar", () => {
+    const ui = fixture(async () => true, true);
+    ui.state("show");
+    assert.equal(ui.modal.open, false);
+    assert.equal(ui.notice.hidden, false);
+    assert.equal(ui.noticeMessage.textContent, "Reconectando…");
+    assert.equal(ui.focus.length, 0);
+    ui.state("hide");
+    assert.equal(ui.notice.hidden, true);
+});
+
+test("fallo/rechazo público conserva acciones nativas sin circuito", async () => {
+    const ui = fixture(async () => false, true);
+    ui.state("failed");
+    assert.equal(ui.noticeRetry.hidden, false);
+    await ui.clickNoticeRetry();
+    assert.equal(ui.hasState("rejected"), true);
+    assert.equal(ui.notice.hidden, false);
+    assert.equal(ui.noticeReload.hidden, false);
+    assert.equal(ui.modal.open, false);
+    ui.clickNoticeReload();
+    assert.equal(ui.reloads, 1);
 });

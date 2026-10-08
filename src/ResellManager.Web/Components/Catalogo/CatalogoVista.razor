@@ -25,7 +25,22 @@
                 }
                 @foreach (var categoria in Modelo.Categorias)
                 {
-                    <option value="@categoria.Id">@categoria.Nombre</option>
+                    <option value="@categoria.Id">@(categoria.PadreId.HasValue ? "↳ " : "")@categoria.Nombre</option>
+                }
+            </select>
+        </div>
+        <div class="store-filter-field">
+            <label class="store-filter-label" for="catalogo-marca">Marca</label>
+            <select @key="Modelo.Marcas" id="catalogo-marca" name="marca" class="store-input" value="@(Modelo.Marca ?? "")"
+                    @onchange="CambiarMarcaAsync" disabled="@(!Modelo.CategoriasCargadas)">
+                <option value="">Todas las marcas</option>
+                @if (!string.IsNullOrWhiteSpace(Modelo.Marca) && !Modelo.Marcas.Contains(Modelo.Marca, StringComparer.OrdinalIgnoreCase))
+                {
+                    <option value="@Modelo.Marca">Marca no disponible</option>
+                }
+                @foreach (var marca in Modelo.Marcas)
+                {
+                    <option value="@marca">@marca</option>
                 }
             </select>
         </div>
@@ -88,7 +103,9 @@
 @code {
     [Parameter, EditorRequired] public CatalogoListadoModelo Modelo { get; set; } = null!;
     [Parameter] public EventCallback<int?> OnCategoria { get; set; }
+    [Parameter] public EventCallback<string?> OnMarca { get; set; }
     [Parameter] public EventCallback OnLimpiar { get; set; }
     [Parameter] public EventCallback OnReintentar { get; set; }
+    private Task CambiarMarcaAsync(ChangeEventArgs e) => OnMarca.InvokeAsync(e.Value?.ToString());
     private Task CambiarCategoriaAsync(ChangeEventArgs e) => OnCategoria.InvokeAsync(int.TryParse(e.Value?.ToString(), out var id) ? id : null);
 }

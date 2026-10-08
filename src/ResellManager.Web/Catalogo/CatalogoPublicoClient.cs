@@ -20,8 +20,8 @@ public sealed class CatalogoPublicoClient(IJSRuntime js) : ICatalogoPublicoClien
     }
 
     public async Task<IReadOnlyList<ProductoCatalogoDto>> ListarAsync(
-        string? termino = null, int? categoriaId = null, CancellationToken ct = default) =>
-        await (await ModuloAsync(ct)).InvokeAsync<ProductoCatalogoDto[]>("listar", ct, termino, categoriaId);
+        string? termino = null, int? categoriaId = null, CancellationToken ct = default, string? marca = null) =>
+        await (await ModuloAsync(ct)).InvokeAsync<ProductoCatalogoDto[]>("listar", ct, termino, categoriaId, marca);
 
     public async Task<ProductoCatalogoDetalleDto?> ObtenerDetalleAsync(int productoId, CancellationToken ct = default) =>
         await (await ModuloAsync(ct)).InvokeAsync<ProductoCatalogoDetalleDto?>("detalle", ct, productoId);
