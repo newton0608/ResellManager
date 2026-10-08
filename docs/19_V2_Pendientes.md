@@ -19,7 +19,7 @@ Objetivo: reducir tiempo operativo y mejorar los flujos más frecuentes sin camb
 
 ## Imágenes de productos
 
-**Foto principal ya implementada**: [contrato actual](24_ImagenPrincipalProducto.md). La evaluación de múltiples fotos y ampliaciones posteriores sigue planeada. Los puntos siguientes conservan el alcance considerado originalmente y no implican que toda esa ampliación exista.
+**Foto principal ya implementada**: [contrato actual](24_ImagenPrincipalProducto.md). La galería de hasta 8 fotos, portada, zoom y subcategorías se han **aprobado para V1.4**, pero aún **no están implementados**; ver [especificación V1.4](modules/catalogo-v1-4.md). Los puntos siguientes conservan el alcance original de V2.1 (especialmente imágenes en flujos operativos) y no implican que ya exista esa ampliación.
 
 - Producto ya muestra su imagen en listado/detalle y el catálogo público la reutiliza cuando corresponde. Sigue pendiente incorporarla donde aporte valor en Inventario, Venta Directa y otros buscadores operativos.
 - Usar almacenamiento persistente; no guardar imágenes en la base de datos como blobs por defecto. Evaluar object storage para producción.
