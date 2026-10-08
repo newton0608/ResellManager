@@ -20,18 +20,18 @@ Modelo propuesto, reglas y decisiones abiertas en [Medidas y presentación de pr
 
 ## Ampliaciones ya incorporadas al repositorio
 
-La última base etiquetada, `v1.2.1`, incorpora imagen principal, catálogo público de Virtuosa Store, compras GTQ/USD y hotfix del scanner. `main` contiene además la búsqueda asistida externa por código de barras para Agregar producto y su persistencia segura de imagen; todavía no tiene un tag posterior en este documento. Consulta el [índice](docs/README.md) y el [changelog](CHANGELOG.md). No hay todavía carrito, checkout ni pedidos web; landed cost sigue en [análisis pendiente](docs/modules/landed-cost.md) y desactivación/reactivación en [decisión 025](docs/11_DecisionesDeDiseño.md#025-preservar-clientes-y-productos-con-historial).
+La base etiquetada `v1.3.0` (`b9ab4ee`) incorpora imagen principal, catálogo público de Virtuosa Store, compras GTQ/USD y hotfix del scanner. Esa base contiene además la búsqueda asistida externa por código de barras para Agregar producto y su persistencia segura de imagen. Consulta el [índice](docs/README.md) y el [changelog](CHANGELOG.md). No hay todavía carrito, checkout ni pedidos web; landed cost sigue en [análisis pendiente](docs/modules/landed-cost.md) y desactivación/reactivación en [decisión 025](docs/11_DecisionesDeDiseño.md#025-preservar-clientes-y-productos-con-historial).
 
-## V1.4 — Experiencia de Virtuosa Store (aprobada; pendiente)
+## V1.4 — Experiencia de Virtuosa Store (implementada en rama; QA físico pendiente)
 
 Rama `feature/catalogo-v1-4` **desde tag `v1.3.0`**. Alcance canónico:
 [Galería de hasta 8 fotos por producto, zoom, subcategorías de dos niveles,
 filtro público por marca, reconexión discreta exclusiva de catálogo, indicador
 verde de disponibilidad y consulta por WhatsApp desde el detalle con número
 configurable](docs/modules/catalogo-v1-4.md). La implementación
-requiere cambios administrativos puntuales y migración EF, sin alterar la
-operación comercial ni agregar carrito/checkout. Esta planificación no
-significa que V1.4 esté implementada, etiquetada o desplegada. La rama de
+incorpora cambios administrativos puntuales y migración EF, sin alterar la
+operación comercial ni agregar carrito/checkout. V1.4 está implementada y validada automáticamente en esta rama; el QA físico
+queda pendiente. No se ha etiquetado ni desplegado. La rama de
 V2.1 sigue independiente y su integración se decidirá después.
 
 ## V2 — Evolución planificada

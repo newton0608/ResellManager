@@ -2,7 +2,20 @@
 
 Las fechas siguientes corresponden a creación de tags; no son fechas exactas de despliegue. Las GitHub Releases pueden publicarse después usando esos mismos tags, por lo que la fecha de una Release tampoco debe confundirse con la fecha de despliegue.
 
-## Unreleased — main posterior a v1.2.1
+## Unreleased — V1.4 en feature/catalogo-v1-4
+
+Base `v1.3.0` (`b9ab4ee`); sin tag, release ni despliegue.
+
+- Galería de cero a ocho fotos, portada y orden, edición autenticada y migración que preserva referencias históricas.
+- Visor público con zoom/pinch/pan, swipe, teclado, foco y fallback.
+- Subcategorías de dos niveles y filtro de marca combinable con búsqueda/categoría y URLs compartibles.
+- Reconexión discreta exclusiva de Virtuosa e indicador Disponible verde.
+- Consulta WhatsApp opcional con número/origen canónico configurables, sin crear pedidos.
+- Validación y QA físico pendiente en [V1.4](docs/modules/catalogo-v1-4.md).
+
+## v1.3.0 — base etiquetada del 06/10/2026
+
+Referencia: `b9ab4ee`. Conserva las ampliaciones previamente registradas como main posterior a v1.2.1:
 
 - Búsqueda asistida al agregar Producto: coincidencia local primero y fallback externo Open Facts → UPCitemdb, con revisión explícita antes de copiar datos al formulario.
 - Importación reversible de datos externos sin importar precios ni crear categorías; la imagen externa queda pendiente hasta Guardar producto.

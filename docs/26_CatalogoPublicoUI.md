@@ -6,6 +6,10 @@ El backend se incorporó en `9a119bb` y esta primera UI en `c345ad6`, sobre `fea
 
 > Registro de la primera iteración visual, no especificación del diseño final. La identidad pública vigente se describe en [Virtuosa Store](27_VirtuosaStore.md), y los dominios/ruta canónica pendiente en [Dominios](deployment/domains.md). El estado integrado está en [Catálogo](modules/catalogo.md).
 
+> Estado posterior: [V1.4](modules/catalogo-v1-4.md) añade galería/zoom,
+> subcategorías/marca, reconexión discreta e interacción WhatsApp en su rama.
+> Las cifras y arquitectura de esta primera iteración se conservan como historia.
+
 ## Componentes y responsabilidades
 
 Todos los componentes públicos están fuera de `Components/Pages`, cuyo `_Imports.razor` exige autenticación. Las dos páginas declaran `AllowAnonymous`, `InteractiveServer` y `CatalogoLayout`.

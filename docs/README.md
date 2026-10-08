@@ -34,7 +34,7 @@ como tales en el [registro de decisiones](11_DecisionesDeDiseño.md).
 | Inventario | [Módulo](modules/inventario.md) | Reglas físicas y recepción. |
 | Pedidos / reservas | [Módulo](modules/pedidos.md) | [Códigos y canales](15_CodigosYCanalesVenta.md). |
 | Ventas / pagos / Dashboard | [Módulo](modules/ventas.md) | [Dashboard](17_Fase59_Dashboard.md). |
-| Catálogo público | [Módulo](modules/catalogo.md) | [Backend](25_CatalogoPublicoBackend.md), [primera UI](26_CatalogoPublicoUI.md), [marca vigente](27_VirtuosaStore.md), [V1.4 aprobada (pendiente)](modules/catalogo-v1-4.md). |
+| Catálogo público | [Módulo](modules/catalogo.md) | [Backend](25_CatalogoPublicoBackend.md), [primera UI](26_CatalogoPublicoUI.md), [marca vigente](27_VirtuosaStore.md), [V1.4 implementada en rama; QA físico pendiente](modules/catalogo-v1-4.md). |
 | Deployment | [Dominios](deployment/domains.md) | [Runbook](deployment/deployment.md), [seguridad](deployment/security.md). |
 
 Las entradas por módulo son mapas de trabajo: no reemplazan ni duplican las

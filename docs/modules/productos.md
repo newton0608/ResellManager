@@ -11,12 +11,11 @@ Categoría es un maestro configurable, no un enum.
   barras externo opcional y manual, también capturable con cámara.
 - [Medidas y presentación](../23_MedidasYPresentacionProducto.md): ml o gramos
   opcionales, nunca ambos informados; presentación comercial independiente.
-- [Imagen principal](../24_ImagenPrincipalProducto.md): una referencia privada
+- [Galería e imagen principal](../24_ImagenPrincipalProducto.md): referencias privadas
   a WebP procesado, almacenamiento administrado y compensación ante fallos.
-- [V1.4 aprobada, pendiente](catalogo-v1-4.md): hasta ocho imágenes totales
-  por producto, portada y orden, zoom público y categorías padre/hija. El
-  modelo actual de una sola imagen y categorías planas sigue vigente hasta
-  implementar la migración.
+- [V1.4 implementada en esta rama](catalogo-v1-4.md): de cero a ocho imágenes totales
+  por producto, portada y orden, zoom público y categorías padre/hija. La migración
+  conserva la imagen existente y deja las categorías anteriores como raíces.
 - [Scanner](../29_BarcodeScanner.md): contrato, vendor fijado y pruebas JS/ópticas. Existe validación física posterior en **iPhone 14 Plus + Brave**; la regresión histórica específica de Safari no quedó certificada por esa prueba.
 - [Búsqueda asistida por código de barras](productos-lookup-codigo-barras.md):
   consulta local + proveedores externos, revisión

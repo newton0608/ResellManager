@@ -2,7 +2,7 @@
 
 Esta guía documenta la API pública de lectura implementada. La UI también existe: consulta [Catálogo](modules/catalogo.md) para el estado integrado y los dominios. Reutiliza `Producto`, `Categoria` y el inventario físico existente. No es el flujo de `TipoPedido.Catalogo` / `OrigenCompra.Catalogo`, que sigue funcionando bajo pedido sin generar unidades físicas.
 
-La iteración original de backend no incorporó UI; esta se añadió posteriormente. El sistema actual sigue sin cuentas públicas, autorregistro, carrito, pedidos web, checkout ni pagos online. No modifica entidades, configuración EF, esquema, migraciones ni reglas de compras, inventario, reservas, pedidos o ventas.
+La iteración original de backend no incorporó UI; esta se añadió posteriormente. El sistema actual sigue sin cuentas públicas, autorregistro, carrito, pedidos web, checkout ni pagos online. Aquella iteración no modificó el esquema. V1.4 añade persistencia de galería y jerarquía de categorías, conservando las reglas de compras, inventario, reservas, pedidos y ventas; ver [contrato V1.4](modules/catalogo-v1-4.md).
 
 ## Disponibilidad exacta
 
@@ -28,12 +28,12 @@ La disponibilidad es una lectura del momento, sin crear una reserva ni garantiza
 
 ## Capas y contratos
 
-- **Application:** `ICatalogoPublicoService`, `ProductoCatalogoDto` y `ProductoCatalogoDetalleDto`. La abstracción permite listar/buscar/filtrar, obtener detalle y abrir la imagen principal por ID.
-- **Infrastructure:** `CatalogoPublicoService`, registrado scoped. Las consultas EF son `AsNoTracking`, usan `Any`/`EXISTS` y proyectan únicamente los campos del contrato; no cargan grafos administrativos. Un único filtro privado de disponibilidad se reutiliza en las tres lecturas.
-- **Web:** `CatalogoPublicoEndpoints`, adaptador HTTP con tres rutas GET `AllowAnonymous`. Los 404 de estos endpoints no reejecutan las páginas Blazor administrativas.
-- **Domain:** sin modificaciones.
+- **Application:** `ICatalogoPublicoService`, `ProductoCatalogoDto` y `ProductoCatalogoDetalleDto`. La abstracción permite listar/buscar/filtrar, obtener detalle y abrir portada o fotografías de galería por ID.
+- **Infrastructure:** `CatalogoPublicoService`, registrado scoped. Las consultas EF son `AsNoTracking`, usan `Any`/`EXISTS` y un único filtro de disponibilidad en todas las lecturas. El listado proyecta campos comerciales; el detalle carga producto, categoría e imágenes para devolver metadatos mínimos. Nunca devuelve entidades administrativas.
+- **Web:** `CatalogoPublicoEndpoints`, adaptador HTTP con cuatro rutas GET `AllowAnonymous`. Los 404 de estos endpoints no reejecutan las páginas Blazor administrativas.
+- **Domain:** V1.4 añade `ProductoImagen` y `Categoria.CategoriaPadreId` opcional.
 
-El listado expone `Id`, `Nombre`, `CategoriaId`, nombre de `Categoria`, `PrecioPublico`, `TieneImagenPrincipal` y `Disponible`. El detalle agrega `Descripcion`, `Marca`, `Modelo`, `Color`, `Talla`, `ContenidoMl`, `PesoGramos` y `Presentacion`. `PrecioPublico` se proyecta directamente de `PrecioSugerido`; no calcula márgenes ni utiliza precios/costos transaccionales. `Disponible` es siempre true en las respuestas exitosas porque las lecturas excluyen los demás productos.
+El listado expone `Id`, `Nombre`, `CategoriaId`, nombre de `Categoria`, `PrecioPublico`, `TieneImagenPrincipal`, `Disponible`, `Marca`, `CategoriaPadreId` y `CategoriaPadreNombre`. El detalle agrega `Descripcion`, `Marca`, `Modelo`, `Color`, `Talla`, `ContenidoMl`, `PesoGramos` y `Presentacion`, más `Imagenes` ordenadas (`Id`, `Orden`, `EsPortada`). `PrecioPublico` se proyecta directamente de `PrecioSugerido`; no calcula márgenes ni utiliza precios/costos transaccionales. `Disponible` es siempre true en las respuestas exitosas porque las lecturas excluyen los demás productos.
 
 No se exponen costo, proveedor, compras, unidades, reservas, pedidos, clientes, observaciones de categoría ni rutas de archivo. Los contratos contienen únicamente campos comerciales explícitos, sin entidades Domain ni DTOs administrativos anidados.
 
@@ -43,11 +43,14 @@ No se exponen costo, proveedor, compras, unidades, reservas, pedidos, clientes, 
 
 | Método y ruta | Resultado |
 | --- | --- |
-| `GET /api/catalogo/productos?termino=...&categoriaId=...` | 200 con un array de productos disponibles. Ambos filtros son opcionales y se combinan. |
+| `GET /api/catalogo/productos?termino=...&categoriaId=...&marca=...` | 200 con un array de productos disponibles. Los tres filtros son opcionales y se combinan mediante AND. |
 | `GET /api/catalogo/productos/{productoId}` | 200 con detalle comercial; 404 si no existe o ya no tiene unidades libres. |
-| `GET /api/catalogo/productos/{productoId}/imagen` | 200 `image/webp`; 404 si no está publicado, no tiene imagen o el archivo no puede abrirse. |
+| `GET /api/catalogo/productos/{productoId}/imagen` | 200 `image/webp`; portada vigente compatible, 404 si no está publicado o no puede abrirse. |
+| `GET /api/catalogo/productos/{productoId}/imagenes/{imagenId}` | Fotografía identificada por GUID opaco dentro del producto; misma elegibilidad, `no-store` y 404 sin rutas privadas. `principal` conserva el fallback legado. |
 
 La búsqueda conserva los campos y mecanismo de `IProductoService.BuscarAsync`: nombre, código interno y código de barras, con `Trim`, minúsculas y coincidencia parcial; prioriza códigos exactos y luego ordena por nombre/ID. No agrega búsqueda por proveedores, compras o códigos de unidad. No incorpora búsqueda difusa ni normalización de acentos; se conservan las capacidades actuales de SQLite. Término vacío equivale al listado; categoría desconocida o búsqueda sin coincidencias devuelve `[]`.
+
+La categoría raíz incluye productos directos y de sus hijas; una hija incluye solo sus productos. Marca compara `Trim` y `OrdinalIgnoreCase` tras la proyección de productos elegibles para soportar Unicode sin matching difuso ni mutar datos. La UI deriva opciones estables del listado elegible completo y consolida espacios/caso de marcas.
 
 Solo se registran GET. No se permite escribir a través del catálogo. Los casos de uso devuelven `ServiceResult` para detalle e imagen siguiendo el patrón existente; HTTP devuelve 404 vacío sin información administrativa.
 

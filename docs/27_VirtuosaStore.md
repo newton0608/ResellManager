@@ -2,7 +2,7 @@
 
 Virtuosa Store es la identidad de la tienda pública de ResellManager. Las vistas `/catalogo` y `/catalogo/{productoId}` consumen el catálogo del mismo backend y el mismo inventario. El sistema administrativo conserva su identidad visual `ui-*`; los estilos de la tienda se definen con tokens y componentes `store-*`. La tienda solo presenta datos comerciales que devuelve la API pública; no calcula disponibilidad ni modifica inventario.
 
-La interfaz está implementada y preparada para servirse desde el dominio público confirmado. No cambia el proxy, DNS, Caddy, el backend ni la base de datos. Las URL usadas por la UI son relativas al origen que sirve la página.
+La interfaz está implementada y preparada para servirse desde el dominio público confirmado. La iteración de identidad no cambió proxy, DNS ni Caddy. La ampliación V1.4 modifica el backend/esquema según [su contrato](modules/catalogo-v1-4.md). Las URL usadas por la UI son relativas al origen que sirve la página.
 
 ## Logos originales
 
@@ -22,8 +22,9 @@ El diseño reserva `wwwroot/branding/virtuosa/horizontal-transparent.webp` para 
 La tienda usa estas lecturas existentes:
 
 - `GET /catalogo` y `GET /catalogo/{productoId}` para las páginas, sin Identity.
-- `GET /api/catalogo/productos` con `termino` y `categoriaId` opcionales.
+- `GET /api/catalogo/productos` con `termino`, `categoriaId` y `marca` opcionales.
 - `GET /api/catalogo/productos/{productoId}` y `GET /api/catalogo/productos/{productoId}/imagen`.
+- `GET /api/catalogo/productos/{productoId}/imagenes/{imagenId}` para galería.
 
 El buscador del encabezado usa el debounce de 300 ms del modelo actual en el listado; desde el detalle navega al catálogo filtrado al enviarse. La API decide qué productos siguen disponibles. El filtro de categorías usa los nombres e identificadores que recibe del listado público. Las imágenes proceden del endpoint público por ID; las rutas privadas del servidor y el endpoint administrativo de imágenes no se publican. No hay rutas de carrito, checkout, pagos ni pedidos online.
 
@@ -48,3 +49,17 @@ privadas.
 - Verificar configuración efectiva de los hosts y preview según [Dominios](deployment/domains.md); no crear otro inventario ni otra base para el catálogo.
 - Revisar la calidad de nombres, descripciones y fotografías comerciales, porque provienen de los datos actuales del producto.
 - Evaluar carga inicial/SEO y paginación si el catálogo crece. La UI actual necesita conexión de Blazor para cargar productos y el filtro de categorías deriva del listado público completo.
+
+## Experiencia V1.4
+
+El detalle selecciona la portada, ofrece miniaturas diferidas y un visor de
+pantalla completa con zoom, pan/pinch, swipe sin zoom, Escape y flechas. Mantiene
+proporciones y no amplía imágenes pequeñas por defecto; bloquea scroll y restaura
+foco al cerrar o desmontarse. Las tarjetas conservan contenedor 4:5 sin recorte.
+El indicador Disponible utiliza verde y texto sin revelar cantidades.
+
+El layout lleva `data-public-catalog="true"`: reconexión muestra aviso discreto
+sin foco/backdrop aun con rutas públicas reescritas. Fallo/rechazo conserva
+Reintentar/Recargar nativos sin circuito; administración conserva su modal.
+El contacto WhatsApp usa configuración de servidor y URL canónica, descritas en
+[V1.4](modules/catalogo-v1-4.md#implementación-y-configuración-v14).

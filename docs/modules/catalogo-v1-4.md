@@ -1,6 +1,6 @@
 # V1.4 — Galería, exploración y UX del catálogo público
 
-**Estado: decisión aprobada; implementación pendiente.** Alcance acordado el 08/10/2026.
+**Estado: implementada en `feature/catalogo-v1-4`; QA físico pendiente.** Alcance acordado el 08/10/2026.
 **Base obligatoria de esta línea de trabajo:** tag `v1.3.0`, commit
 `b9ab4eeabc2dd04b587e437243d6e27cb4b5e1e2`; rama
 `feature/catalogo-v1-4`. Esta especificación es la fuente de verdad para Codex.
@@ -237,6 +237,105 @@ el lenguaje visual de Virtuosa y el diseño `store-*`, separado de `ui-*`.
 11. `dotnet build ResellManager.sln`, tests focalizados y suite completa
     por migraciones/contratos compartidos, `npm run test:js`,
     `npm run css:build`, `git diff --check`; reportar resultados reales.
+
+## Implementación y configuración V1.4
+
+Implementada en esta rama sobre `v1.3.0`; no publicada ni desplegada. La única
+migración nueva es `20261008144723_AddCatalogGalleryAndSubcategories`, generada
+con EF Core junto con Designer/snapshot. Añade `ProductoImagenes` con GUID,
+referencia privada y orden, y `CategoriaPadreId` nullable con FK restrictiva.
+El backfill registra portadas sin duplicar archivos; deja categorías como raíces.
+La prueba de upgrade compara datos históricos e imágenes byte por byte.
+
+La portada permanece en `ImagenPrincipalRuta`; los endpoints antiguos siguen
+resolviendo la portada elegida. Detalle entrega `Imagenes` mínimas ordenadas
+(`Id`, `Orden`, `EsPortada`), y las fotografías se leen en
+`/api/catalogo/productos/{id}/imagenes/{imagenId}` bajo la misma elegibilidad.
+Administración escribe mediante servicios desde componentes autenticados;
+los GET privados `/productos/{id}/imagenes` y `/productos/{id}/imagenes/{guid}` requieren Identity.
+No hay uploads públicos. Los lotes inválidos y una novena foto se rechazan completos.
+Si la persistencia queda ambigua y tampoco puede consultarse, se conserva el
+archivo y se registra error crítico para conciliación, como en el contrato de
+[almacenamiento](../24_ImagenPrincipalProducto.md); no se borra una referencia desconocida.
+
+Las nuevas imágenes manuales usan máximo 2000 px y WebP calidad 88, sin ampliar
+originales pequeños; el pipeline singular/lookup mantiene 1200 px y calidad 82.
+Ambos conservan máximo 8 MiB y 25 millones de píxeles. Las miniaturas se cargan
+de forma diferida desde referencias existentes; no se generan variantes adicionales.
+El listado solo solicita portadas. El visor empieza en la portada aunque su orden
+sea distinto, admite zoom 1×–4×, pan/pinch, swipe sin zoom y teclado; restaura
+scroll/foco también al desmontarse.
+
+`CatalogoContacto` es una sección Options de servidor. Variables de entorno:
+
+```text
+CatalogoContacto__WhatsAppNumero=50255550123
+CatalogoContacto__OrigenPublico=https://tienda.example
+```
+
+Son ejemplos ficticios. El origen debe ser HTTPS absoluto, de dominio DNS,
+sin credenciales, ruta, query, fragmento ni puerto alternativo; el número usa
+solo dígitos internacionales (8–15, sin cero inicial). Con valores vacíos o
+inválidos se omite el CTA y el catálogo sigue funcionando. En operación se debe
+configurar el origen canónico real; nunca se deriva del request de Preview.
+El mensaje codificado incluye nombre y `{OrigenPublico}/producto/{id}`, sin
+precio ni stock. Las rutas de navegación Preview se conservan.
+
+Los filtros categoría/marca/búsqueda se combinan y se restauran por URL.
+Opciones públicas se obtienen del listado elegible completo y quedan estables
+al filtrar. La raíz se revela también cuando solo tiene publicaciones indirectas.
+La reconexión detecta `data-public-catalog="true"` del layout, sin depender de
+host/ruta; continúa observando las clases oficiales de Blazor. Aviso transitorio
+no modal, fallo/rechazo con acciones nativas, y modal administrativo conservado.
+
+## Validación realizada — 08/10/2026
+
+Resultados en esta rama, con .NET SDK 10.0.302 y Node 24.19.0. Datos sintéticos,
+SQLite/directorios aislados; no se usaron producción, proveedores externos reales
+ni despliegues.
+
+| Validación | Resultado |
+| --- | --- |
+| `dotnet build ResellManager.sln` | Correcto, 0 advertencias y 0 errores. |
+| `dotnet test ResellManager.sln --no-build --filter FullyQualifiedName~Catalogo` | 126 correctas; 0 fallidas/omitidas. |
+| Suite .NET completa (`dotnet test ResellManager.sln --no-build`) | 894 correctas; 0 fallidas/omitidas. |
+| Focalizadas administración/lookup/Compra | 47 correctas; incluye alta desde Compra con 1, 2 y 8 imágenes. |
+| `npm ci` | Correcto; auditoría de dependencias fijadas: 0 vulnerabilidades. |
+| `npm run test:js` | 123 correctas; 0 fallidas/omitidas. |
+| `npm run css:build` | Correcto; CSS generado conservado, sin editarlo manualmente. |
+| `npm run qa:catalogo` | 76 comprobaciones correctas en Microsoft Edge headless, 0 errores JS. |
+| `git diff --check` y enlaces locales modificados | Correctos. |
+
+El runner [tests/catalogo.browser.mjs](../../tests/catalogo.browser.mjs) arranca
+la app real en un puerto local con base y usuario ficticio bajo `.artifacts/`.
+Simula únicamente las lecturas públicas/fotografías del producto de QA; las
+altas y ediciones administrativas usan los servicios y archivos reales de prueba.
+Requiere Playwright disponible (o `CATALOGO_PLAYWRIGHT_MODULE` apuntando a su
+`index.mjs`), sin añadir dependencias al proyecto. `CATALOGO_BROWSER_CHANNEL`
+permite elegir un canal instalado; se usó `msedge`. Primero compilar en Debug.
+
+Responsive verificado a **320, 390, 768 y 1440 px** en listado/detalle, galería
+administrativa y categorías, sin overflow horizontal. Se revisaron capturas
+visualmente; evidencias locales en `.artifacts/catalogo-qa/1791472517997/`
+(`report.json`, PNGs y log de app). Incluye restauración de URL con tres filtros,
+portada independiente del orden, zoom, flechas/Escape y foco/scroll, pinch/swipe
+sintéticos, placeholder de imagen fallida, creación/edición de galería persistida
+y raíz con hijas protegida. La reconexión se verifica con las clases oficiales de
+Blazor, layout público en Preview y URL pública simulada `/producto/{id}`, y
+modal administrativo. Los reintentos éxito/fallo/rechazo se prueban también en JS.
+
+Los defectos encontrados durante QA (marca al restaurar opciones diferidas y
+liberación inmediata de scroll al cerrar con Escape) quedaron corregidos. Las
+pruebas de archivos incluyen errores de preparación, confirmación y persistencia,
+fallo posterior al commit, cancelación, referencias ajenas/compartidas y prioridad
+manual del lookup. El upgrade verifica FK y preservación histórica de importes,
+portada y bytes. No se reescribió la evidencia de validaciones anteriores.
+
+**QA físico pendiente:** Safari/iPhone y Android reales (pinch/pan, swipe sin
+zoom, lectura de etiquetas y selección múltiple desde cámara/galería), y apertura
+real de WhatsApp en iPhone/Android/escritorio. El enlace, mensaje codificado y
+ocultación ante configuración vacía/inválida sí están automatizados. Emulación y
+gestos sintéticos no certifican esos dispositivos ni una desconexión física.
 
 ## Estrategia de trabajo y cierre para Codex
 

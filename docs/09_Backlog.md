@@ -2,19 +2,21 @@
 
 V1 está en producción. Este backlog conserva entregas de fases y distingue ampliaciones posteriores; sus pendientes V2 no se consideran resueltos por el despliegue. El estado operativo vigente se mantiene en el [runbook V1](deployment/deployment.md) y las versiones en el [changelog](../CHANGELOG.md).
 
-## V1.4 — Mejoras de catálogo (aprobada, pendiente)
+## V1.4 — Mejoras de catálogo (implementada en rama; QA físico pendiente)
 
 Contrato: [V1.4 de Virtuosa Store](modules/catalogo-v1-4.md). Rama
 `feature/catalogo-v1-4` desde `v1.3.0`, independiente de V2.1.
 
-- [ ] Galería de 0 a 8 fotos por producto, con portada, orden y gestión autenticada; preservar imágenes históricas.
-- [ ] Miniaturas y visor público con zoom/pinch, swipe, teclado y accesibilidad.
-- [ ] Subcategorías de máximo dos niveles, migración EF y filtros jerárquicos.
-- [ ] Filtro público por marca usando `Producto.Marca`, combinable con búsqueda/categoría.
-- [ ] Reconexión no modal en catálogo público; mantener modal administrativo.
-- [ ] Indicador verde `Disponible` sin alterar regla de publicación.
-- [ ] Botón WhatsApp en detalle con nombre y enlace canónico precargados; número configurable y ausencia segura si no se configura.
-- [ ] Tests, QA móvil y cierre documental; no desplegar ni mezclar V2.1 sin aprobación.
+- [x] Galería de 0 a 8 fotos por producto, con portada, orden y gestión autenticada; preservar imágenes históricas.
+- [x] Miniaturas y visor público con zoom/pinch, swipe, teclado y accesibilidad.
+- [x] Subcategorías de máximo dos niveles, migración EF y filtros jerárquicos.
+- [x] Filtro público por marca usando `Producto.Marca`, combinable con búsqueda/categoría.
+- [x] Reconexión no modal en catálogo público; mantener modal administrativo.
+- [x] Indicador verde `Disponible` sin alterar regla de publicación.
+- [x] Botón WhatsApp en detalle con nombre y enlace canónico precargados; número configurable y ausencia segura si no se configura.
+- [x] Tests automatizados, QA responsive emulado y cierre documental; resultados en [V1.4](modules/catalogo-v1-4.md).
+- [ ] QA físico Safari/iPhone y Android: pinch/pan, lectura de etiquetas y apertura WhatsApp; emulación no lo certifica.
+- [ ] Integración/release/despliegue posteriores, fuera de esta tarea; V2.1 permanece independiente.
 
 ## Backend V1 completado
 

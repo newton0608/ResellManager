@@ -19,7 +19,7 @@ Objetivo: reducir tiempo operativo y mejorar los flujos más frecuentes sin camb
 
 ## Imágenes de productos
 
-**Foto principal ya implementada**: [contrato actual](24_ImagenPrincipalProducto.md). La galería de hasta 8 fotos, portada, zoom y subcategorías se han **aprobado para V1.4**, pero aún **no están implementados**; ver [especificación V1.4](modules/catalogo-v1-4.md). Los puntos siguientes conservan el alcance original de V2.1 (especialmente imágenes en flujos operativos) y no implican que ya exista esa ampliación.
+**Foto principal ya implementada**: [contrato actual](24_ImagenPrincipalProducto.md). La galería de hasta 8 fotos, portada, zoom y subcategorías están **implementados en la rama V1.4**, sin release ni despliegue; ver [especificación V1.4](modules/catalogo-v1-4.md). Los puntos siguientes conservan el alcance original de V2.1 (especialmente imágenes en flujos operativos) y no deben repetir lo implementado en V1.4.
 
 - Producto ya muestra su imagen en listado/detalle y el catálogo público la reutiliza cuando corresponde. Sigue pendiente incorporarla donde aporte valor en Inventario, Venta Directa y otros buscadores operativos.
 - Usar almacenamiento persistente; no guardar imágenes en la base de datos como blobs por defecto. Evaluar object storage para producción.
@@ -28,7 +28,7 @@ Objetivo: reducir tiempo operativo y mejorar los flujos más frecuentes sin camb
 - Mostrar un fallback cuando no exista imagen.
 - Validar contenido, permisos de acceso y privacidad; evitar exponer archivos no autorizados.
 
-La foto principal tiene implementación y migración existentes; no volver a crearlas siguiendo esta planificación. Múltiples imágenes/object storage siguen pendientes.
+La foto principal tiene implementación y migración existentes; no volver a crearlas siguiendo esta planificación. La galería múltiple ya existe en V1.4; object storage y miniaturas derivadas siguen como optimizaciones futuras.
 
 ## Búsqueda asistida externa al agregar Producto
 
@@ -316,7 +316,7 @@ Alcance inicial:
 - creación de una solicitud/pedido dentro de ResellManager reutilizando sus reglas y servicios actuales;
 - revalidación de disponibilidad al procesar la solicitud, sin asumir que consultar un producto equivale a reservarlo.
 
-No se requieren inicialmente pago en línea, cuentas completas de cliente, promociones complejas, integración automática con la API de WhatsApp ni logística avanzada. Pueden evaluarse después; no son requisitos de la tienda básica V2.4. Un enlace simple `wa.me` con mensaje prellenado para consultar un producto está **aprobado para V1.4** (aún no implementado), según [el contrato](modules/catalogo-v1-4.md); no constituye integración automática ni crea pedidos.
+No se requieren inicialmente pago en línea, cuentas completas de cliente, promociones complejas, integración automática con la API de WhatsApp ni logística avanzada. Pueden evaluarse después; no son requisitos de la tienda básica V2.4. Un enlace simple `wa.me` con mensaje prellenado para consultar un producto está **implementado en la rama V1.4** (sin release ni despliegue), según [el contrato](modules/catalogo-v1-4.md); no constituye integración automática ni crea pedidos.
 
 **Estado actual:** catálogo, categorías derivadas del listado, búsqueda, detalle, imagen y disponibilidad de lectura ya existen: [Catálogo público](modules/catalogo.md). La evolución hacia carrito/selección y pedidos web sigue siendo planificación V2.4. No está implementada ni autorizada por este roadmap; pagos online tampoco existen. Dominios y ruta canónica pendiente se describen en [Dominios](deployment/domains.md).
 

@@ -84,6 +84,10 @@ integre esta rama; no se añadieron stubs duplicados.
 | README describía estilos legacy/aislados retirados | Alinear descripción con app.css base, Tailwind compartido y storefront.css. |
 | Requisitos/diagramas/alcance original no contienen todas las ampliaciones posteriores | Mantener material histórico y referir al índice/código/configuración EF; no afirmar sincronización completa de diagramas. |
 
+Nota posterior del 08/10/2026: múltiples fotos y consulta WhatsApp se implementan
+en [V1.4](modules/catalogo-v1-4.md); las conclusiones anteriores conservan
+el estado de la auditoría original. Scanner operativo/V2.1 sigue independiente.
+
 ## Decisiones y datos que siguen abiertos
 
 - Landed cost: levantamiento pendiente, sin gastos/reglas de reparto, entidades,

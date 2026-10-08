@@ -1,8 +1,8 @@
-# Imagen principal opcional de producto
+# Galería e imagen principal opcional de producto
 
-Cada producto puede guardar una sola ruta relativa nullable en `Producto.ImagenPrincipalRuta`. Los registros anteriores siguen sin imagen. No se guarda el binario en SQLite.
+Cada producto admite de cero a ocho fotografías totales. `ProductoImagenes` guarda identificadores GUID, referencias privadas y orden; `Producto.ImagenPrincipalRuta` mantiene la única portada y la compatibilidad de los endpoints anteriores. No se guardan binarios en SQLite. La migración V1.4 registra cada referencia histórica sin copiar ni reprocesar archivos; categorías e historial permanecen intactos.
 
-`IAlmacenamientoImagenesProducto` recibe el flujo sin usar el nombre original. Admite JPEG, PNG y WebP validados por firma y decodificación con SkiaSharp. El límite de entrada es 8 MB y 25 millones de píxeles. Se aplica la orientación codificada, se conserva la proporción, se reduce el lado mayor a 1200 píxeles y se convierte a WebP (calidad 82). HEIC/HEIF no está soportado en esta versión: requeriría dependencias o soporte nativo adicional en Linux.
+`IAlmacenamientoImagenesProducto` recibe el flujo sin usar el nombre original. Admite JPEG, PNG y WebP validados por firma y decodificación con SkiaSharp. El límite de entrada es 8 MB y 25 millones de píxeles. Se aplica la orientación codificada y se conserva la proporción sin ampliar imágenes pequeñas. `PrepararAsync` conserva el máximo histórico de 1200 píxeles y WebP calidad 82; `PrepararGaleriaAsync` permite nuevas fotografías hasta 2000 píxeles, calidad 88, con los mismos límites de entrada y memoria. No se reprocesan imágenes existentes. HEIC/HEIF no está soportado en esta versión: requeriría dependencias o soporte nativo adicional en Linux.
 
 El archivo procesado pasa por `.temporales/` y se confirma como `productos/{id}/imagen-principal-{guid}.webp`. La base solo conserva esa ruta relativa. El directorio físico se configura mediante `AlmacenamientoImagenesProducto:DirectorioBase` (en Docker, `/app/data/productos`), fuera de `wwwroot`. La lectura usa `GET /productos/{id}/imagen` con autenticación y valida la ruta antes de abrir el archivo. No se publican rutas del servidor.
 
@@ -15,7 +15,7 @@ Producción requiere el bind mount `/opt/resellmanager/data/productos:/app/data/
 La búsqueda conserva la URL aceptada en `ProductoFormModel.ImagenExternaUrl`
 hasta «Guardar producto». Una imagen manual tiene prioridad. El alta asistida
 descarga la imagen, reutiliza la validación y conversión a WebP de este
-almacenamiento y persiste únicamente `ImagenPrincipalRuta`. La ruta lógica
+almacenamiento y persiste una sola portada en `ImagenPrincipalRuta` y su referencia en la galería. La ruta lógica
 `productos/{id}/imagen-principal-{guid}.webp` se resuelve físicamente como
 `{DirectorioBase}/{id}/imagen-principal-{guid}.webp`.
 
@@ -53,3 +53,19 @@ límites, ciclos, cancelación, timeout total y cuerpos acotados;
 Guardar → SQLite/WebP → endpoints administrativos/públicos y `ImagenCatalogo`,
 incluyendo la exclusión pública antes de registrar una unidad disponible.
 Las pruebas automatizadas no consultan Internet ni usan imágenes externas reales.
+
+## Gestión V1.4
+
+`CrearGaleriaAsync` y `EditarGaleriaAsync` validan el límite, pertenencia de IDs,
+portada y referencias de nuevas imágenes exactamente una vez. Preparan cada foto
+secuencialmente y persisten el conjunto en una transacción SQLite; una novena o
+un archivo inválido rechaza el lote completo. La edición permite eliminar, elegir
+portada y reordenar sin perder las restantes. Solo se borran archivos después
+de verificar que ninguna referencia persistida los usa; los fallos de limpieza
+se registran para operación. Las páginas administrativas autenticadas realizan
+las escrituras mediante el servicio; los nuevos GET autenticados son
+`/productos/{id}/imagenes` y `/productos/{id}/imagenes/{guid}`.
+
+El lookup sigue importando a lo sumo una portada al guardar, con prioridad de
+la galería manual. El detalle público usa IDs, nunca rutas físicas. Contrato,
+migración y QA: [V1.4](modules/catalogo-v1-4.md).
