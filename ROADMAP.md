@@ -26,8 +26,9 @@ La última base etiquetada, `v1.2.1`, incorpora imagen principal, catálogo púb
 
 Rama `feature/catalogo-v1-4` **desde tag `v1.3.0`**. Alcance canónico:
 [Galería de hasta 8 fotos por producto, zoom, subcategorías de dos niveles,
-filtro público por marca, reconexión discreta exclusiva de catálogo e indicador
-verde de disponibilidad](docs/modules/catalogo-v1-4.md). La implementación
+filtro público por marca, reconexión discreta exclusiva de catálogo, indicador
+verde de disponibilidad y consulta por WhatsApp desde el detalle con número
+configurable](docs/modules/catalogo-v1-4.md). La implementación
 requiere cambios administrativos puntuales y migración EF, sin alterar la
 operación comercial ni agregar carrito/checkout. Esta planificación no
 significa que V1.4 esté implementada, etiquetada o desplegada. La rama de
