@@ -179,6 +179,79 @@ public sealed class ProductoLookupPreviewTests
         Assert.Equal(0, vista.Guardados);
     }
 
+    [Fact]
+    public async Task GaleriaManual_AgregaOchoSinGuardarYRechazaNovenaSinPerderSeleccion()
+    {
+        var modelo = ModeloManual();
+        await using var vista = await Vista.CrearAsync(modelo);
+        await vista.EjecutarAsync("SeleccionarImagenAsync", new InputFileChangeEventArgs(
+            Enumerable.Range(0, 8).Select(_ => (IBrowserFile)new ArchivoImagen()).ToArray()));
+        Assert.Equal(8, modelo.Galeria.Count);
+        Assert.True(modelo.Galeria[0].EsPortada);
+        Assert.Single(modelo.Galeria.Where(x => x.EsPortada));
+        var anteriores = modelo.Galeria.ToArray();
+        await vista.EjecutarAsync("SeleccionarImagenAsync", new InputFileChangeEventArgs([new ArchivoImagen()]));
+        Assert.Equal(anteriores, modelo.Galeria);
+        Assert.Contains("No se añadió ninguna de esta selección", await vista.HtmlAsync());
+        Assert.Equal(0, vista.Guardados);
+    }
+
+    [Fact]
+    public async Task GaleriaManual_SeleccionInvalidaEsAtomicaYConservaImagenExternaPendiente()
+    {
+        var modelo = ModeloManual();
+        modelo.ImagenExternaUrl = ImagenExterna;
+        await using var vista = await Vista.CrearAsync(modelo);
+        await vista.EjecutarAsync("SeleccionarImagenAsync", new InputFileChangeEventArgs(
+            [new ArchivoImagen(), new ArchivoImagen([1, 2, 3])]));
+        Assert.Empty(modelo.Galeria);
+        Assert.Equal(ImagenExterna, modelo.ImagenExternaUrl);
+        Assert.Null(modelo.ImagenContenido);
+        Assert.Contains("No se añadió ninguna de esta selección", await vista.HtmlAsync());
+    }
+
+    [Fact]
+    public async Task GaleriaManual_ReordenaCambiaPortadaYEliminarSeleccionaPortadaRestante()
+    {
+        var modelo = ModeloManual();
+        await using var vista = await Vista.CrearAsync(modelo);
+        await vista.EjecutarAsync("SeleccionarImagenAsync", new InputFileChangeEventArgs(
+            [new ArchivoImagen(), new ArchivoImagen()]));
+        var primera = modelo.Galeria[0];
+        var segunda = modelo.Galeria[1];
+        await vista.EjecutarAsync("ElegirPortada", segunda);
+        await vista.EjecutarAsync("MoverFoto", 1, -1);
+        Assert.Same(segunda, modelo.Galeria[0]);
+        Assert.True(segunda.EsPortada);
+        Assert.False(primera.EsPortada);
+        Assert.Equal(0, modelo.ToGaleriaEdicion().PortadaIndice);
+        await vista.EjecutarAsync("QuitarFoto", segunda);
+        Assert.True(Assert.Single(modelo.Galeria).EsPortada);
+        await vista.EjecutarAsync("QuitarFoto", primera);
+        Assert.Empty(modelo.Galeria);
+        Assert.Null(modelo.ImagenContenido);
+        Assert.Contains("Sin imagen seleccionada", await vista.HtmlAsync());
+    }
+
+    [Fact]
+    public async Task GaleriaManual_LookupYDeshacerRestauranOrdenPortadaYFotografias()
+    {
+        var modelo = ModeloManual();
+        await using var vista = await Vista.CrearAsync(modelo);
+        await vista.EjecutarAsync("SeleccionarImagenAsync", new InputFileChangeEventArgs(
+            [new ArchivoImagen(), new ArchivoImagen()]));
+        await vista.EjecutarAsync("ElegirPortada", modelo.Galeria[1]);
+        await vista.ImportarAsync();
+        Assert.Null(modelo.ImagenExternaUrl);
+        await vista.EjecutarAsync("QuitarImagen");
+        await vista.EjecutarAsync("DeshacerImportacion");
+        Assert.Equal(2, modelo.Galeria.Count);
+        Assert.False(modelo.Galeria[0].EsPortada);
+        Assert.True(modelo.Galeria[1].EsPortada);
+        Assert.Contains("Fotografía 2 del producto", await vista.HtmlAsync());
+        Assert.Equal(0, vista.Guardados);
+    }
+
     private sealed class Vista : IAsyncDisposable
     {
         private readonly ServiceProvider servicios;
@@ -246,12 +319,14 @@ public sealed class ProductoLookupPreviewTests
 
     private sealed class ArchivoImagen : IBrowserFile
     {
+        private readonly byte[] contenido;
+        public ArchivoImagen(byte[]? contenido = null) => this.contenido = contenido ?? ImagenManual;
         public string Name => "manual.png";
         public DateTimeOffset LastModified => DateTimeOffset.UnixEpoch;
-        public long Size => ImagenManual.Length;
+        public long Size => contenido.Length;
         public string ContentType => "image/png";
         public Stream OpenReadStream(long maxAllowedSize = 512000, CancellationToken cancellationToken = default) =>
-            new MemoryStream(ImagenManual, writable: false);
+            new MemoryStream(contenido, writable: false);
     }
 
     private sealed class JSInerte : IJSRuntime

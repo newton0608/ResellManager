@@ -23,7 +23,7 @@ public partial class ProductoForm : IDisposable
     private bool ProductoLocalCoincide => Ronda?.ProductoLocal is not null && Ronda.CodigoConsultado == Modelo.CodigoBarras;
 
     private bool ImagenExternaPendiente => Modelo.ImagenExternaUrl is not null
-        && Modelo.ImagenArchivo is null && Modelo.ImagenContenido is null;
+        && Modelo.Galeria.Count == 0 && Modelo.ImagenArchivo is null && Modelo.ImagenContenido is null;
 
     private string? ImagenVistaPrevia
     {
@@ -55,7 +55,7 @@ public partial class ProductoForm : IDisposable
 
     private async Task EjecutarBusquedaAsync(bool siguiente)
     {
-        if (!LookupHabilitado || Guardando || BuscandoLookup || DescartadoLookup) return;
+        if (!LookupHabilitado || Guardando || LeyendoImagenes || BuscandoLookup || DescartadoLookup) return;
         BuscandoLookup = true;
         RevisandoLookup = false;
         MensajeLookup = siguiente ? "Buscando en la siguiente fuente..." : "Buscando producto...";
@@ -119,7 +119,7 @@ public partial class ProductoForm : IDisposable
 
     private void UsarCandidato()
     {
-        if (Guardando || BuscandoLookup || !RevisandoLookup || Ronda?.Candidato is null
+        if (Guardando || LeyendoImagenes || BuscandoLookup || !RevisandoLookup || Ronda?.Candidato is null
             || Ronda.CodigoConsultado != Modelo.CodigoBarras) return;
         VistaPreviaAnterior = VistaPrevia;
         ErrorImagenAnterior = ErrorImagen;
@@ -131,7 +131,7 @@ public partial class ProductoForm : IDisposable
 
     private void DeshacerImportacion()
     {
-        if (Guardando || BuscandoLookup || !Importacion.PuedeDeshacer) return;
+        if (Guardando || LeyendoImagenes || BuscandoLookup || !Importacion.PuedeDeshacer) return;
         Importacion.Deshacer(Modelo);
         VistaPrevia = VistaPreviaAnterior;
         ErrorImagen = ErrorImagenAnterior;

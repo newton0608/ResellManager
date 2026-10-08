@@ -9,7 +9,7 @@ namespace ResellManager.Application.Interfaces;
 public interface ICatalogoPublicoService
 {
     Task<IReadOnlyList<ProductoCatalogoDto>> ListarAsync(
-        string? termino = null, int? categoriaId = null, CancellationToken ct = default);
+        string? termino = null, int? categoriaId = null, CancellationToken ct = default, string? marca = null);
 
     Task<ServiceResult<ProductoCatalogoDetalleDto>> ObtenerPorIdAsync(
         int productoId, CancellationToken ct = default);
@@ -17,4 +17,7 @@ public interface ICatalogoPublicoService
     // El consumidor recibe el contenido; la ruta de almacenamiento permanece privada.
     Task<ServiceResult<ImagenProductoLectura>> AbrirImagenPrincipalAsync(
         int productoId, CancellationToken ct = default);
+
+    Task<ServiceResult<ImagenProductoLectura>> AbrirImagenAsync(
+        int productoId, string imagenId, CancellationToken ct = default);
 }

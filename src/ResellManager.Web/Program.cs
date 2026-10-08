@@ -43,6 +43,8 @@ builder.Services.AddRateLimiter(options =>
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ICatalogoPublicoClient, CatalogoPublicoClient>();
 builder.Services.AddScoped<BusquedaTiendaEstado>();
+builder.Services.Configure<CatalogoContactoOptions>(builder.Configuration.GetSection(CatalogoContactoOptions.Seccion));
+builder.Services.AddScoped<CatalogoWhatsApp>();
 
 builder.Services.AddSingleton<IEmailSender<IdentityUser>, NoOpEmailSender>();
 
@@ -158,6 +160,7 @@ app.UseAntiforgery();
 
 app.MapGet("/health", () => Results.Text("OK")).AllowAnonymous();
 app.MapCatalogoPublico();
+app.MapProductoGaleriaEndpoints();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode(options => options.ContentSecurityFrameAncestorsPolicy = "'none'");

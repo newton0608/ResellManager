@@ -59,11 +59,14 @@
                 <span class="text-sm text-ui-muted">@CategoriasEncontradas.Count @(CategoriasEncontradas.Count == 1 ? "categoría" : "categorías")</span>
             </div>
             <ul class="m-0 list-none space-y-3 p-0" role="list">
-                @foreach (var categoria in CategoriasEncontradas)
+                @foreach (var categoria in CategoriaPresentacion.Ordenar(CategoriasEncontradas))
                 {
                     <li class="ui-card min-w-0">
                         <article class="grid min-w-0 gap-4 p-4 sm:grid-cols-[minmax(0,.85fr)_minmax(0,1.15fr)_auto] sm:items-center sm:gap-5 sm:p-5">
-                            <h3 class="m-0 min-w-0 text-base font-semibold leading-6 text-ui-ink [overflow-wrap:anywhere]">@categoria.Nombre</h3>
+                            <div class="min-w-0 space-y-1">
+                                <h3 class="m-0 min-w-0 text-base font-semibold leading-6 text-ui-ink [overflow-wrap:anywhere]">@CategoriaPresentacion.Etiqueta(categoria)</h3>
+                                <p class="m-0 text-xs leading-5 text-ui-muted">@(categoria.CategoriaPadreId.HasValue ? "Subcategoría" : "Categoría raíz")</p>
+                            </div>
                             <div class="min-w-0 space-y-1">
                                 <p class="m-0 text-xs font-medium leading-5 text-ui-muted">Observaciones</p>
                                 <p class="m-0 min-w-0 text-sm leading-6 whitespace-pre-line text-ui-muted [overflow-wrap:anywhere]">@TextoOpcional(categoria.Observaciones)</p>

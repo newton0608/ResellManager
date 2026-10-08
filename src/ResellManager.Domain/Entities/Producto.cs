@@ -19,6 +19,7 @@ public class Producto
     public int CategoriaId { get; set; }
 
     public Categoria Categoria { get; set; } = null!;
+    public ICollection<ProductoImagen> Imagenes { get; set; } = [];
     public ICollection<UnidadInventario> UnidadesInventario { get; set; } = [];
     public ICollection<DetalleCompra> DetallesCompra { get; set; } = [];
     public ICollection<DetallePedido> DetallesPedido { get; set; } = [];

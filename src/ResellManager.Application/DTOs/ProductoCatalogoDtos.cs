@@ -7,7 +7,12 @@ public sealed record ProductoCatalogoDto(
     string Categoria,
     decimal PrecioPublico,
     bool TieneImagenPrincipal,
-    bool Disponible);
+    bool Disponible,
+    string? Marca = null,
+    int? CategoriaPadreId = null,
+    string? CategoriaPadreNombre = null);
+
+public sealed record ImagenCatalogoDto(string Id, int Orden, bool EsPortada);
 
 public sealed record ProductoCatalogoDetalleDto(
     int Id,
@@ -24,4 +29,5 @@ public sealed record ProductoCatalogoDetalleDto(
     string Categoria,
     decimal PrecioPublico,
     bool TieneImagenPrincipal,
-    bool Disponible);
+    bool Disponible,
+    IReadOnlyList<ImagenCatalogoDto>? Imagenes = null);

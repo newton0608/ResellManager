@@ -17,9 +17,9 @@ public static class CatalogoPublicoEndpoints
             return await siguiente(contexto);
         });
 
-        catalogo.MapGet("", async (string? termino, int? categoriaId,
+        catalogo.MapGet("", async (string? termino, int? categoriaId, string? marca,
             ICatalogoPublicoService servicio, CancellationToken ct) =>
-            Results.Ok(await servicio.ListarAsync(termino, categoriaId, ct)));
+            Results.Ok(await servicio.ListarAsync(termino, categoriaId, ct, marca)));
 
         catalogo.MapGet("/{productoId:int}", async (int productoId,
             ICatalogoPublicoService servicio, CancellationToken ct) =>
@@ -33,6 +33,15 @@ public static class CatalogoPublicoEndpoints
             ICatalogoPublicoService servicio, CancellationToken ct) =>
         {
             var imagen = await servicio.AbrirImagenPrincipalAsync(productoId, ct);
+            return imagen.IsSuccess && imagen.Value is not null
+                ? Results.File(imagen.Value.Contenido, imagen.Value.ContentType)
+                : Results.NotFound();
+        });
+
+        catalogo.MapGet("/{productoId:int}/imagenes/{imagenId}", async (int productoId, string imagenId,
+            ICatalogoPublicoService servicio, CancellationToken ct) =>
+        {
+            var imagen = await servicio.AbrirImagenAsync(productoId, imagenId, ct);
             return imagen.IsSuccess && imagen.Value is not null
                 ? Results.File(imagen.Value.Contenido, imagen.Value.ContentType)
                 : Results.NotFound();

@@ -107,6 +107,8 @@ public interface IAlmacenamientoComprobantes
 public interface IAlmacenamientoImagenesProducto
 {
     Task<ServiceResult<ImagenProductoPreparada>> PrepararAsync(Stream contenido, CancellationToken ct = default);
+    Task<ServiceResult<ImagenProductoPreparada>> PrepararGaleriaAsync(Stream contenido, CancellationToken ct = default)
+        => PrepararAsync(contenido, ct);
     Task<ServiceResult<ImagenProductoGuardada>> ConfirmarAsync(ImagenProductoPreparada preparada, int productoId, CancellationToken ct = default);
     Task<ServiceResult> EliminarTemporalAsync(string identificadorTemporal, CancellationToken ct = default);
     Task<ServiceResult> EliminarAsync(string rutaRelativa, CancellationToken ct = default);
@@ -117,6 +119,12 @@ public interface IProductoConImagenService
 {
     Task<ServiceResult<ProductoDto>> CrearAsync(ProductoInput input, Stream? imagen, CancellationToken ct = default);
     Task<ServiceResult<ProductoDto>> EditarAsync(int id, ProductoInput input, Stream? imagen, bool eliminarImagen, CancellationToken ct = default);
+    Task<ServiceResult<ProductoDto>> CrearGaleriaAsync(ProductoInput input, IReadOnlyList<Stream> imagenes,
+        int portadaIndice = 0, CancellationToken ct = default, bool validarCodigoBarras = false);
+    Task<ServiceResult<ProductoDto>> EditarGaleriaAsync(int id, ProductoInput input, GaleriaProductoEdicion galeria,
+        IReadOnlyList<Stream> nuevas, CancellationToken ct = default);
+    Task<ServiceResult<IReadOnlyList<ImagenProductoDto>>> ObtenerGaleriaAsync(int id, CancellationToken ct = default);
+    Task<ServiceResult<ImagenProductoLectura>> AbrirImagenAsync(int id, Guid imagenId, CancellationToken ct = default);
 }
 
 public interface IRegistroCompraConComprobanteService

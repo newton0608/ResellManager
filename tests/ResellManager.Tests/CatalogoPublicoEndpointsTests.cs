@@ -35,7 +35,7 @@ public sealed class CatalogoPublicoEndpointsTests : PruebaWebAislada
         Assert.True(producto.GetProperty("disponible").GetBoolean());
         Assert.True(producto.GetProperty("tieneImagenPrincipal").GetBoolean());
         AssertCampos(producto, "id", "nombre", "categoriaId", "categoria", "precioPublico",
-            "tieneImagenPrincipal", "disponible");
+            "tieneImagenPrincipal", "disponible", "marca", "categoriaPadreId", "categoriaPadreNombre");
 
         using var detalle = await cliente.GetAsync($"/api/catalogo/productos/{escenario.ProductoId}");
         Assert.Equal(HttpStatusCode.OK, detalle.StatusCode);
@@ -44,7 +44,7 @@ public sealed class CatalogoPublicoEndpointsTests : PruebaWebAislada
         using var jsonDetalle = JsonDocument.Parse(contenido);
         AssertCampos(jsonDetalle.RootElement, "id", "nombre", "descripcion", "marca", "modelo",
             "color", "talla", "contenidoMl", "pesoGramos", "presentacion", "categoriaId",
-            "categoria", "precioPublico", "tieneImagenPrincipal", "disponible");
+            "categoria", "precioPublico", "tieneImagenPrincipal", "disponible", "imagenes");
         foreach (var datoPrivado in new[] { "PRIVADO", "7501234567890", "PRO-", "COM-",
             "74.12", escenario.RutaImagen!, factory.RutaImagenes, factory.RutaBaseDatos })
             Assert.DoesNotContain(datoPrivado, contenido);
@@ -65,7 +65,8 @@ public sealed class CatalogoPublicoEndpointsTests : PruebaWebAislada
         Assert.Empty(json.RootElement.EnumerateArray());
 
         foreach (var ruta in new[] { $"/api/catalogo/productos/{escenario.ProductoId}",
-            $"/api/catalogo/productos/{escenario.ProductoId}/imagen" })
+            $"/api/catalogo/productos/{escenario.ProductoId}/imagen",
+            $"/api/catalogo/productos/{escenario.ProductoId}/imagenes/principal" })
         {
             using var respuesta = await cliente.GetAsync(ruta);
             await AssertNoEncontradoAsync(respuesta);
@@ -75,6 +76,7 @@ public sealed class CatalogoPublicoEndpointsTests : PruebaWebAislada
     [Theory]
     [InlineData("/api/catalogo/productos/2147483647")]
     [InlineData("/api/catalogo/productos/2147483647/imagen")]
+    [InlineData("/api/catalogo/productos/2147483647/imagenes/principal")]
     public async Task Inexistente_Devuelve404SinRedireccionNiPaginaAdministrativa(string ruta)
     {
         using var cliente = CrearCliente();
@@ -140,7 +142,7 @@ public sealed class CatalogoPublicoEndpointsTests : PruebaWebAislada
             .OfType<RouteEndpoint>()
             .Where(x => x.RoutePattern.RawText!.StartsWith("/api/catalogo/productos", StringComparison.Ordinal))
             .ToArray();
-        Assert.Equal(3, endpoints.Length);
+        Assert.Equal(4, endpoints.Length);
         Assert.All(endpoints, endpoint =>
         {
             Assert.NotNull(endpoint.Metadata.GetMetadata<IAllowAnonymous>());
@@ -163,7 +165,8 @@ public sealed class CatalogoPublicoEndpointsTests : PruebaWebAislada
         using var cliente = CrearCliente();
         foreach (var ruta in new[] { "/api/catalogo/productos",
             $"/api/catalogo/productos/{escenario.ProductoId}",
-            $"/api/catalogo/productos/{escenario.ProductoId}/imagen" })
+            $"/api/catalogo/productos/{escenario.ProductoId}/imagen",
+            $"/api/catalogo/productos/{escenario.ProductoId}/imagenes/principal" })
         {
             using var solicitud = new HttpRequestMessage(new HttpMethod(metodo), ruta);
             using var respuesta = await cliente.SendAsync(solicitud);
@@ -177,6 +180,62 @@ public sealed class CatalogoPublicoEndpointsTests : PruebaWebAislada
         Assert.Empty(await db.Ventas.ToListAsync());
     }
 
+    [Fact]
+    public async Task MarcaYJerarquia_ListadoPublicoCombinaFiltrosSinExponerMaestrosVacios()
+    {
+        var escenario = await CrearProductoAsync(imagen: false);
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ResellManagerDbContext>();
+            var padre = new Categoria { Nombre = "Salud" };
+            db.Categorias.Add(padre);
+            await db.SaveChangesAsync();
+            (await db.Categorias.FindAsync(escenario.CategoriaId))!.CategoriaPadreId = padre.Id;
+            (await db.Productos.FindAsync(escenario.ProductoId))!.Marca = "  ÁCME  ";
+            db.Categorias.Add(new Categoria { Nombre = "Categoría privada vacía" });
+            await db.SaveChangesAsync();
+        }
+        using var cliente = CrearCliente();
+        using var filtrado = await cliente.GetAsync($"/api/catalogo/productos?termino=perfume&categoriaId={escenario.CategoriaId}&marca=%20%C3%A1cme%20");
+        Assert.Equal(HttpStatusCode.OK, filtrado.StatusCode);
+        using var resultado = JsonDocument.Parse(await filtrado.Content.ReadAsStringAsync());
+        var producto = Assert.Single(resultado.RootElement.EnumerateArray());
+        Assert.Equal("Salud", producto.GetProperty("categoriaPadreNombre").GetString());
+        Assert.Equal("  ÁCME  ", producto.GetProperty("marca").GetString());
+        var padreId = producto.GetProperty("categoriaPadreId").GetInt32();
+        using var porRaiz = await cliente.GetAsync($"/api/catalogo/productos?categoriaId={padreId}&marca=%C3%81CME");
+        using var raiz = JsonDocument.Parse(await porRaiz.Content.ReadAsStringAsync());
+        Assert.Single(raiz.RootElement.EnumerateArray());
+        using var noCoincidente = await cliente.GetAsync("/api/catalogo/productos?marca=%C3%81CM");
+        using var vacio = JsonDocument.Parse(await noCoincidente.Content.ReadAsStringAsync());
+        Assert.Empty(vacio.RootElement.EnumerateArray());
+        Assert.DoesNotContain("Categoría privada vacía", await filtrado.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task GaleriaPublica_IdentificadorOpacoSeValidaDentroDelProductoYConDisponibilidad()
+    {
+        var escenario = await CrearProductoAsync();
+        var ajeno = await CrearProductoAsync();
+        using var cliente = CrearCliente();
+        using var detalle = await cliente.GetAsync($"/api/catalogo/productos/{escenario.ProductoId}");
+        using var json = JsonDocument.Parse(await detalle.Content.ReadAsStringAsync());
+        var imagen = Assert.Single(json.RootElement.GetProperty("imagenes").EnumerateArray());
+        AssertCampos(imagen, "id", "orden", "esPortada");
+        var id = imagen.GetProperty("id").GetString()!;
+        Assert.True(Guid.TryParse(id, out _));
+        Assert.True(imagen.GetProperty("esPortada").GetBoolean());
+        using var foto = await cliente.GetAsync($"/api/catalogo/productos/{escenario.ProductoId}/imagenes/{id}");
+        Assert.Equal(HttpStatusCode.OK, foto.StatusCode);
+        Assert.Equal("image/webp", foto.Content.Headers.ContentType!.MediaType);
+        using var referenciaAjena = await cliente.GetAsync($"/api/catalogo/productos/{ajeno.ProductoId}/imagenes/{id}");
+        await AssertNoEncontradoAsync(referenciaAjena);
+        using var rutaCliente = await cliente.GetAsync($"/api/catalogo/productos/{escenario.ProductoId}/imagenes/no-es-un-id");
+        await AssertNoEncontradoAsync(rutaCliente);
+        await OcuparUnidadAsync(escenario, reservar: true);
+        using var noDisponible = await cliente.GetAsync($"/api/catalogo/productos/{escenario.ProductoId}/imagenes/{id}");
+        await AssertNoEncontradoAsync(noDisponible);
+    }
     private HttpClient CrearCliente() => factory.CreateClient(new WebApplicationFactoryClientOptions
     {
         AllowAutoRedirect = false,

@@ -47,7 +47,34 @@ public sealed class ProductoFormModel : IValidatableObject
     // Bytes ya leídos para preservar una selección manual aunque se reabra el selector y luego se deshaga.
     public byte[]? ImagenContenido { get; set; }
 
-    public ProductoFormModel CrearInstantanea() => (ProductoFormModel)MemberwiseClone();
+    public List<ProductoImagenFormModel> Galeria { get; private set; } = [];
+    public bool GaleriaCargada { get; private set; }
+
+    public void CargarGaleria(IReadOnlyList<ImagenProductoDto> imagenes)
+    {
+        Galeria = imagenes.OrderBy(x => x.Orden).Select(x => new ProductoImagenFormModel
+        {
+            ImagenId = x.Id,
+            EsPortada = x.EsPortada,
+        }).ToList();
+        GaleriaCargada = true;
+    }
+
+    public GaleriaProductoEdicion ToGaleriaEdicion()
+    {
+        var nuevas = 0;
+        var imagenes = Galeria.Select(x => x.ImagenId.HasValue
+            ? new ImagenProductoEdicion(x.ImagenId)
+            : new ImagenProductoEdicion(NuevaImagenIndice: nuevas++)).ToArray();
+        return new GaleriaProductoEdicion(imagenes, Math.Max(0, Galeria.FindIndex(x => x.EsPortada)));
+    }
+
+    public ProductoFormModel CrearInstantanea()
+    {
+        var copia = (ProductoFormModel)MemberwiseClone();
+        copia.Galeria = Galeria.Select(x => x.CrearInstantanea()).ToList();
+        return copia;
+    }
 
     public void Restaurar(ProductoFormModel anterior)
     {
@@ -70,10 +97,16 @@ public sealed class ProductoFormModel : IValidatableObject
         ImagenContenido = anterior.ImagenContenido;
         ImagenExternaUrl = anterior.ImagenExternaUrl;
         EliminarImagenPrincipal = anterior.EliminarImagenPrincipal;
+        Galeria = anterior.Galeria.Select(x => x.CrearInstantanea()).ToList();
+        GaleriaCargada = anterior.GaleriaCargada;
     }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
+        if (Galeria.Count > 8)
+            yield return new ValidationResult("Un producto admite hasta 8 fotografías en total.", [nameof(Galeria)]);
+        if (Galeria.Count > 0 && Galeria.Count(x => x.EsPortada) != 1)
+            yield return new ValidationResult("Selecciona exactamente una portada para la galería.", [nameof(Galeria)]);
         if (PrecioSugerido < 0)
         {
             yield return new ValidationResult(
