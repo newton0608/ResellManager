@@ -1,0 +1,71 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<div @ref="Elemento" class="store-gallery" data-name="@Producto.Nombre" data-selected-index="@IndicePortada">
+    @if (Fotos.Count == 0)
+    {
+        <ImagenCatalogo ProductoId="Producto.Id" Nombre="@Producto.Nombre" TieneImagen="false" />
+    }
+    else
+    {
+        <button type="button" class="store-gallery-open store-media" data-gallery-open aria-label="Ampliar fotografías de @Producto.Nombre">
+            <span class="store-image-placeholder" hidden data-gallery-fallback>Imagen no disponible</span>
+            <img data-gallery-main src="@Ruta(Fotos[IndicePortada].Id)" alt="@Producto.Nombre — fotografía @(IndicePortada + 1)" decoding="async" />
+            <span class="store-gallery-hint">Ampliar imagen</span>
+        </button>
+        <div class="store-gallery-nav">
+            <button type="button" class="store-button store-button--quiet" data-gallery-prev aria-label="Fotografía anterior">←</button>
+            <span data-gallery-count role="status" aria-live="polite">@(IndicePortada + 1) / @Fotos.Count</span>
+            <button type="button" class="store-button store-button--quiet" data-gallery-next aria-label="Fotografía siguiente">→</button>
+        </div>
+        <div class="store-gallery-thumbs" aria-label="Fotografías del producto">
+            @for (var i = 0; i < Fotos.Count; i++)
+            {
+                var indice = i;
+                <button type="button" data-gallery-index="@indice" data-gallery-src="@Ruta(Fotos[i].Id)" aria-label="Ver fotografía @(i + 1) de @Producto.Nombre" aria-pressed="@(i == IndicePortada ? "true" : "false")">
+                    <img src="@Ruta(Fotos[i].Id)" loading="lazy" decoding="async" alt="" />
+                    <span class="store-thumb-fallback" hidden>Foto @(i + 1)</span>
+                </button>
+            }
+        </div>
+        <dialog class="store-lightbox" aria-label="Fotografías de @Producto.Nombre" data-gallery-dialog>
+            <div class="store-lightbox-toolbar">
+                <button type="button" class="store-button" data-gallery-close aria-label="Cerrar visor">Cerrar ×</button>
+                <button type="button" class="store-button" data-gallery-minus aria-label="Reducir zoom">−</button>
+                <button type="button" class="store-button" data-gallery-plus aria-label="Ampliar zoom">+</button>
+                <button type="button" class="store-button" data-gallery-reset aria-label="Restablecer zoom">1:1</button>
+                <span data-gallery-zoom role="status" aria-live="polite">100%</span>
+            </div>
+            <div class="store-lightbox-stage" data-gallery-stage>
+                <span class="store-image-placeholder" hidden data-lightbox-fallback>Imagen no disponible</span>
+                <img data-lightbox-image alt="@Producto.Nombre" draggable="false" />
+            </div>
+            <div class="store-lightbox-navigation">
+                <button type="button" class="store-button" data-gallery-prev aria-label="Fotografía anterior">←</button>
+                <span data-gallery-count role="status" aria-live="polite">@(IndicePortada + 1) / @Fotos.Count</span>
+                <button type="button" class="store-button" data-gallery-next aria-label="Fotografía siguiente">→</button>
+            </div>
+        </dialog>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public ProductoCatalogoDetalleDto Producto { get; set; } = null!;
+    private ElementReference Elemento;
+    private IJSObjectReference? Modulo;
+    private IReadOnlyList<ImagenCatalogoDto> Fotos => Producto.Imagenes ?? (Producto.TieneImagenPrincipal ? [new ImagenCatalogoDto("principal", 0, true)] : []);
+    private int IndicePortada => Fotos.Select((foto, indice) => (foto, indice)).FirstOrDefault(x => x.foto.EsPortada).indice;
+    private string Ruta(string id) => $"/api/catalogo/productos/{Producto.Id}/imagenes/{Uri.EscapeDataString(id)}";
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || Fotos.Count == 0) return;
+        Modulo = await JS.InvokeAsync<IJSObjectReference>("import", "./catalogo-galeria.js");
+        await Modulo.InvokeVoidAsync("iniciar", Elemento);
+    }
+    public async ValueTask DisposeAsync()
+    {
+        if (Modulo is null) return;
+        try { await Modulo.InvokeVoidAsync("destruir", Elemento); await Modulo.DisposeAsync(); }
+        catch (JSDisconnectedException) { }
+    }
+}

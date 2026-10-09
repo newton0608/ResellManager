@@ -262,10 +262,10 @@ public sealed class CatalogoPublicoTests
         var listado = JsonSerializer.SerializeToElement(Assert.Single(await servicio.ListarAsync()));
         var detalle = JsonSerializer.SerializeToElement((await servicio.ObtenerPorIdAsync(test.Producto.Id)).Value);
 
-        AssertCampos(listado, "Id", "Nombre", "CategoriaId", "Categoria", "PrecioPublico", "TieneImagenPrincipal", "Disponible");
+        AssertCampos(listado, "Id", "Nombre", "CategoriaId", "Categoria", "PrecioPublico", "TieneImagenPrincipal", "Disponible", "Marca", "CategoriaPadreId", "CategoriaPadreNombre");
         AssertCampos(detalle, "Id", "Nombre", "Descripcion", "Marca", "Modelo", "Color", "Talla",
             "ContenidoMl", "PesoGramos", "Presentacion", "CategoriaId", "Categoria", "PrecioPublico",
-            "TieneImagenPrincipal", "Disponible");
+            "TieneImagenPrincipal", "Disponible", "Imagenes");
     }
 
     private static void AssertCampos(JsonElement producto, params string[] permitidos) =>

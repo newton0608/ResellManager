@@ -31,6 +31,16 @@ El diagrama se encuentra en:
 
 Los contratos vigentes se describen aquí y en la configuración EF; la ampliación GTQ/USD de Compras se detalla en [monedas de compra](../28_MonedasDeCompra.md).
 
+## Galería y categorías V1.4
+
+`20261008144723_AddCatalogGalleryAndSubcategories` añade `ProductoImagenes`
+(GUID, ProductoId, RutaRelativa, Orden) y `CategoriaPadreId` nullable con FK
+restrictiva. Registra las portadas existentes sin modificar archivos; las
+categorías anteriores siguen como raíces. El servicio valida 0–8 fotos, portada
+única y máximo dos niveles sin ciclos. Snapshot y migración se mantienen en EF;
+no cambia datos comerciales históricos. Detalle en [V1.4](../modules/catalogo-v1-4.md)
+y [almacenamiento](../24_ImagenPrincipalProducto.md).
+
 ## Notas generales
 
 - El saldo del cliente no se almacena directamente; se calcula con ventas registradas y pagos.

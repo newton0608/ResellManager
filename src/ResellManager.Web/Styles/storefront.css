@@ -273,7 +273,7 @@
 }
 .store-availability::before {
   content: ""; width: .5rem; height: .5rem; border-radius: 50%;
-  background: var(--color-store-accent);
+  background: #23743c;
 }
 .store-detail-section {
   border-top: 1px solid var(--color-store-border);
@@ -371,3 +371,35 @@
   .store-brand-icon--mobile { display: none; }
   .store-brand-horizontal { display: block; }
 }
+/* V1.4: galería, visor y aviso público, sin afectar ui-*. */
+.store-filter-field { min-width: 0; width: min(100%, 20rem); }
+.store-input { min-width: 0; max-width: 100%; }
+.store-contact { margin-top: 1.5rem; }
+.store-contact a { color: white; text-align: center; }
+.store-gallery-open { border: 0; padding: 0; width: 100%; cursor: zoom-in; }
+.store-gallery-open.store-media { aspect-ratio: 4 / 5; }
+.store-media img { inset: auto; width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; }
+.store-gallery-hint { position: absolute; bottom: .75rem; border-radius: 1rem; background: white; color: var(--color-store-primary); padding: .4rem .8rem; font-size: .8rem; }
+.store-gallery-nav, .store-lightbox-navigation { display: flex; justify-content: center; align-items: center; gap: 1rem; padding: .5rem; }
+.store-gallery-thumbs { display: flex; gap: .5rem; overflow-x: auto; padding: .75rem; }
+.store-gallery-thumbs button { flex: 0 0 3.5rem; height: 4.4rem; border: 2px solid transparent; border-radius: .5rem; background: var(--color-store-soft); padding: .25rem; }
+.store-gallery-thumbs button[aria-pressed=true] { border-color: var(--color-store-primary); }
+.store-gallery-thumbs img { width: 100%; height: 100%; object-fit: contain; }
+.store-thumb-fallback { font-size: .75rem; }
+.store-lightbox { width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: .5rem; border: 0; background: #fff9f7; color: #2b1215; overflow: hidden; }
+.store-lightbox[open] { display: flex; flex-direction: column; }
+.store-lightbox::backdrop { background: #2b1215; }
+.store-lightbox-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; flex: none; }
+.store-lightbox .store-button { min-height: 2.75rem; min-width: 2.75rem; padding: .5rem .75rem; }
+.store-lightbox-stage { display: flex; align-items: center; justify-content: center; flex: 1; min-height: 0; min-width: 0; overflow: hidden; touch-action: none; }
+.store-lightbox-stage img { width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; user-select: none; -webkit-user-select: none; cursor: zoom-in; }
+.store-lightbox [hidden], .store-gallery [hidden] { display: none; }
+.store-reconnect { position: fixed; z-index: 200; bottom: max(.625rem, env(safe-area-inset-bottom)); right: max(.625rem, env(safe-area-inset-right)); display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; max-width: calc(100% - max(.625rem, env(safe-area-inset-left)) - max(.625rem, env(safe-area-inset-right))); border: 1px solid #e8d8d4; border-radius: .65rem; padding: .4rem .6rem; background: #fff9f7; color: #2b1215; box-shadow: 0 2px 8px #2b12151a; font: .75rem/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.store-reconnect[hidden], .store-reconnect button[hidden] { display: none; }
+.store-reconnect-spinner { display: none; width: .75rem; height: .75rem; flex: 0 0 .75rem; border: 2px solid #e8d8d4; border-top-color: #691017; border-radius: 50%; animation: store-reconnect-spin 1s linear infinite; }
+.store-reconnect[data-state=show] .store-reconnect-spinner { display: inline-block; }
+.store-reconnect button { min-height: 2.75rem; border: 0; border-radius: .5rem; background: #691017; color: white; padding: .5rem .75rem; font-size: .875rem; }
+.store-reconnect button:focus-visible { outline: 2px solid #691017; outline-offset: 3px; }
+.store-reconnect[data-state=failed], .store-reconnect[data-state=rejected] { border-color: #691017; font-size: .875rem; }
+@keyframes store-reconnect-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .store-reconnect-spinner { animation: none; } }

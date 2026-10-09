@@ -225,58 +225,70 @@ public sealed class ClienteService(ResellManagerDbContext db) : IClienteService
 public sealed class CategoriaService(ResellManagerDbContext db) : ICategoriaService
 {
     public async Task<ServiceResult<CategoriaDto>> CrearAsync(
-        CategoriaInput input,
-        CancellationToken ct = default
-    )
+        CategoriaInput input, CancellationToken ct = default)
     {
-        if (string.IsNullOrWhiteSpace(input.Nombre))
-            return ServiceResult<CategoriaDto>.Failure("El nombre es obligatorio.");
-        var x = new Categoria
+        await using var transaccion = await db.Database.BeginTransactionAsync(ct);
+        var error = await ValidarAsync(input, null, ct);
+        if (error is not null) return ServiceResult<CategoriaDto>.Failure(error);
+        var categoria = new Categoria
         {
             Nombre = input.Nombre.Trim(),
             Observaciones = input.Observaciones?.Trim(),
+            CategoriaPadreId = input.CategoriaPadreId
         };
-        db.Categorias.Add(x);
+        db.Categorias.Add(categoria);
         await db.SaveChangesAsync(ct);
-        return ServiceResult<CategoriaDto>.Ok(Map(x));
+        await transaccion.CommitAsync(ct);
+        return await ObtenerPorIdAsync(categoria.Id, ct);
     }
 
     public async Task<ServiceResult<CategoriaDto>> EditarAsync(
-        int id,
-        CategoriaInput input,
-        CancellationToken ct = default
-    )
+        int id, CategoriaInput input, CancellationToken ct = default)
     {
-        var x = await db.Categorias.FindAsync([id], ct);
-        if (x is null)
-            return ServiceResult<CategoriaDto>.Failure("Categoría no encontrada.");
-        if (string.IsNullOrWhiteSpace(input.Nombre))
-            return ServiceResult<CategoriaDto>.Failure("El nombre es obligatorio.");
-        x.Nombre = input.Nombre.Trim();
-        x.Observaciones = input.Observaciones?.Trim();
+        await using var transaccion = await db.Database.BeginTransactionAsync(ct);
+        var categoria = await db.Categorias.FindAsync([id], ct);
+        if (categoria is null) return ServiceResult<CategoriaDto>.Failure("Categoría no encontrada.");
+        var error = await ValidarAsync(input, id, ct);
+        if (error is not null) return ServiceResult<CategoriaDto>.Failure(error);
+        categoria.Nombre = input.Nombre.Trim();
+        categoria.Observaciones = input.Observaciones?.Trim();
+        categoria.CategoriaPadreId = input.CategoriaPadreId;
         await db.SaveChangesAsync(ct);
-        return ServiceResult<CategoriaDto>.Ok(Map(x));
+        await transaccion.CommitAsync(ct);
+        return await ObtenerPorIdAsync(id, ct);
     }
 
-    public async Task<ServiceResult<CategoriaDto>> ObtenerPorIdAsync(
-        int id,
-        CancellationToken ct = default
-    )
+    public async Task<ServiceResult<CategoriaDto>> ObtenerPorIdAsync(int id, CancellationToken ct = default)
     {
-        var x = await db.Categorias.AsNoTracking().FirstOrDefaultAsync(y => y.Id == id, ct);
-        return x is null
+        var categoria = await Query(db.Categorias.Where(x => x.Id == id)).FirstOrDefaultAsync(ct);
+        return categoria is null
             ? ServiceResult<CategoriaDto>.Failure("Categoría no encontrada.")
-            : ServiceResult<CategoriaDto>.Ok(Map(x));
+            : ServiceResult<CategoriaDto>.Ok(categoria);
     }
 
     public async Task<IReadOnlyList<CategoriaDto>> ListarAsync(CancellationToken ct = default) =>
-        await db
-            .Categorias.AsNoTracking()
-            .OrderBy(x => x.Nombre)
-            .Select(x => Map(x))
+        await Query(db.Categorias.OrderBy(x => x.CategoriaPadre == null ? x.Nombre : x.CategoriaPadre.Nombre)
+            .ThenBy(x => x.CategoriaPadreId.HasValue).ThenBy(x => x.Nombre).ThenBy(x => x.Id))
             .ToListAsync(ct);
 
-    private static CategoriaDto Map(Categoria x) => new(x.Id, x.Nombre, x.Observaciones);
+    private async Task<string?> ValidarAsync(CategoriaInput input, int? id, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(input.Nombre)) return "El nombre es obligatorio.";
+        if (!input.CategoriaPadreId.HasValue) return null;
+        if (input.CategoriaPadreId == id) return "Una categoría no puede ser su propia categoría padre.";
+        var padre = await db.Categorias.AsNoTracking()
+            .Where(x => x.Id == input.CategoriaPadreId.Value)
+            .Select(x => new { x.CategoriaPadreId }).FirstOrDefaultAsync(ct);
+        if (padre is null) return "Categoría padre no encontrada.";
+        if (padre.CategoriaPadreId.HasValue) return "La categoría padre debe ser una raíz; solo se permiten dos niveles.";
+        if (id.HasValue && await db.Categorias.AnyAsync(x => x.CategoriaPadreId == id.Value, ct))
+            return "Una categoría con subcategorías no puede convertirse en hija.";
+        return null;
+    }
+
+    private static IQueryable<CategoriaDto> Query(IQueryable<Categoria> categorias) => categorias.AsNoTracking()
+        .Select(x => new CategoriaDto(x.Id, x.Nombre, x.Observaciones, x.CategoriaPadreId,
+            x.CategoriaPadre == null ? null : x.CategoriaPadre.Nombre, x.Subcategorias.Any()));
 }
 
 public sealed class ProductoService(ResellManagerDbContext db) : IProductoService, IConsultaProductoCodigoBarras
@@ -368,8 +380,23 @@ public sealed class ProductoService(ResellManagerDbContext db) : IProductoServic
             return "Un producto no puede tener contenido en ml y peso en gramos simultáneamente.";
         if (x.Presentacion is { Length: > 100 })
             return "La presentación no puede superar los 100 caracteres.";
-        if (!await db.Categorias.AnyAsync(c => c.Id == x.CategoriaId, ct))
-            return "Categoría no encontrada.";
+        var categoria = await db.Categorias.AsNoTracking().Where(c => c.Id == x.CategoriaId)
+            .Select(c => new { c.Id, c.CategoriaPadreId,
+                PadreDePadreId = c.CategoriaPadre == null ? (int?)null : c.CategoriaPadre.CategoriaPadreId })
+            .SingleOrDefaultAsync(ct);
+        if (categoria is null) return "Categoría no encontrada.";
+        if (categoria.CategoriaPadreId == categoria.Id || categoria.PadreDePadreId.HasValue)
+            return "La categoría del producto debe ser una raíz o una subcategoría de una raíz.";
+        if (x.CategoriaPrincipalId.HasValue)
+        {
+            var principal = await db.Categorias.AsNoTracking()
+                .Where(c => c.Id == x.CategoriaPrincipalId.Value)
+                .Select(c => new { c.Id, c.CategoriaPadreId }).SingleOrDefaultAsync(ct);
+            if (principal is null || principal.CategoriaPadreId.HasValue)
+                return "Selecciona una categoría principal válida.";
+            if (categoria.Id != principal.Id && categoria.CategoriaPadreId != principal.Id)
+                return "La subcategoría no pertenece a la categoría principal seleccionada.";
+        }
         if (
             await db.Productos.AnyAsync(
                 p => p.CodigoInterno == codigoInterno && p.Id != id,

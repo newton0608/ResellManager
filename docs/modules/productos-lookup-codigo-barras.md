@@ -579,3 +579,10 @@ Se configuró Preview con `AlmacenamientoImagenesProducto__DirectorioBase=/data/
 Esta ruta es específica del despliegue de Preview. Producción conserva el contrato de Compose `/app/data/productos` con su bind de host; no copiar `/data/productos` a producción. Ver [Imagen principal](../24_ImagenPrincipalProducto.md) y [Dominios/Preview](../deployment/domains.md).
 
 La prueba física confirma funcionamiento en **iPhone 14 Plus + Brave**. No quedó registrado que se usara exactamente el código histórico que fallaba en v1.2.0 y no se repitió esa comprobación en Safari; por tanto no debe presentarse como certificación específica de Safari.
+
+## Compatibilidad posterior V1.4
+
+La galería manual (0–8 fotos) prevalece sobre la imagen externa aceptada.
+El lookup sigue descargando como máximo una portada solo al guardar; no
+obtiene fotografías externas adicionales. Deshacer la importación conserva
+la galería manual y el alta desde Compra sigue funcionando. Ver [V1.4](catalogo-v1-4.md).

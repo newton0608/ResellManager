@@ -215,6 +215,9 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("CategoriaPadreId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Nombre")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -225,6 +228,8 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CategoriaPadreId");
 
                     b.ToTable("Categorias", (string)null);
                 });
@@ -616,6 +621,36 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("ResellManager.Domain.Entities.ProductoImagen", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Orden")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("ProductoId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("RutaRelativa")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductoId", "Orden");
+
+                    b.HasIndex("ProductoId", "RutaRelativa")
+                        .IsUnique();
+
+                    b.ToTable("ProductoImagenes", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ProductoImagenes_Orden", "Orden >= 0 AND Orden < 8");
+                        });
+                });
+
             modelBuilder.Entity("ResellManager.Domain.Entities.Proveedor", b =>
                 {
                     b.Property<int>("Id")
@@ -777,6 +812,16 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("ResellManager.Domain.Entities.Categoria", b =>
+                {
+                    b.HasOne("ResellManager.Domain.Entities.Categoria", "CategoriaPadre")
+                        .WithMany("Subcategorias")
+                        .HasForeignKey("CategoriaPadreId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CategoriaPadre");
+                });
+
             modelBuilder.Entity("ResellManager.Domain.Entities.Compra", b =>
                 {
                     b.HasOne("ResellManager.Domain.Entities.Proveedor", "Proveedor")
@@ -895,6 +940,17 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
                     b.Navigation("Categoria");
                 });
 
+            modelBuilder.Entity("ResellManager.Domain.Entities.ProductoImagen", b =>
+                {
+                    b.HasOne("ResellManager.Domain.Entities.Producto", "Producto")
+                        .WithMany("Imagenes")
+                        .HasForeignKey("ProductoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Producto");
+                });
+
             modelBuilder.Entity("ResellManager.Domain.Entities.UnidadInventario", b =>
                 {
                     b.HasOne("ResellManager.Domain.Entities.DetalleCompra", "DetalleCompra")
@@ -935,6 +991,8 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("ResellManager.Domain.Entities.Categoria", b =>
                 {
                     b.Navigation("Productos");
+
+                    b.Navigation("Subcategorias");
                 });
 
             modelBuilder.Entity("ResellManager.Domain.Entities.Cliente", b =>
@@ -973,6 +1031,8 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
                     b.Navigation("DetallesCompra");
 
                     b.Navigation("DetallesPedido");
+
+                    b.Navigation("Imagenes");
 
                     b.Navigation("UnidadesInventario");
                 });

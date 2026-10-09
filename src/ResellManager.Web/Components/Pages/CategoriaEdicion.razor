@@ -38,6 +38,8 @@
     {
         <section class="ui-card min-w-0 p-5 sm:p-6" aria-label="Formulario de categoría">
             <CategoriaForm Modelo="Modelo"
+                           PadresDisponibles="PadresDisponibles"
+                           TieneSubcategorias="TieneSubcategorias"
                            Guardando="Guardando"
                            ErrorMessage="@ErrorGuardado"
                            OnGuardar="GuardarAsync" />
@@ -50,6 +52,8 @@
     public int? Id { get; set; }
 
     private CategoriaFormModel Modelo { get; set; } = new();
+    private IReadOnlyList<CategoriaDto> PadresDisponibles { get; set; } = [];
+    private bool TieneSubcategorias;
     private bool Guardando { get; set; }
     private bool Cargando { get; set; }
     private string? ErrorCarga { get; set; }
@@ -60,18 +64,7 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        if (!EsEdicion)
-        {
-            ErrorCarga = null;
-            ErrorGuardado = null;
-            Cargando = false;
-            Modelo = new CategoriaFormModel();
-            IdCargado = null;
-
-            return;
-        }
-
-        if (IdCargado != Id)
+        if (!EsEdicion || IdCargado != Id)
         {
             await CargarCategoriaAsync();
         }
@@ -84,6 +77,15 @@
 
         try
         {
+            var categorias = await CategoriaService.ListarAsync();
+            PadresDisponibles = categorias.Where(x => x.CategoriaPadreId is null && x.Id != Id).ToArray();
+            TieneSubcategorias = false;
+            if (!EsEdicion)
+            {
+                Modelo = new CategoriaFormModel();
+                IdCargado = null;
+                return;
+            }
             var resultado = await CategoriaService.ObtenerPorIdAsync(Id.GetValueOrDefault());
             if (!resultado.IsSuccess || resultado.Value is null)
             {
@@ -92,6 +94,7 @@
             }
 
             Modelo = CategoriaFormModel.FromDto(resultado.Value);
+            TieneSubcategorias = resultado.Value.TieneSubcategorias;
             IdCargado = Id;
         }
         catch (Exception ex)

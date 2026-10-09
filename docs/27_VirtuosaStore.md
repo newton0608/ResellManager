@@ -2,7 +2,7 @@
 
 Virtuosa Store es la identidad de la tienda pública de ResellManager. Las vistas `/catalogo` y `/catalogo/{productoId}` consumen el catálogo del mismo backend y el mismo inventario. El sistema administrativo conserva su identidad visual `ui-*`; los estilos de la tienda se definen con tokens y componentes `store-*`. La tienda solo presenta datos comerciales que devuelve la API pública; no calcula disponibilidad ni modifica inventario.
 
-La interfaz está implementada y preparada para servirse desde el dominio público confirmado. No cambia el proxy, DNS, Caddy, el backend ni la base de datos. Las URL usadas por la UI son relativas al origen que sirve la página.
+La interfaz está implementada y preparada para servirse desde el dominio público confirmado. La iteración de identidad no cambió proxy, DNS ni Caddy. V1.4 incorpora galería/jerarquía y [ajustes UX](modules/catalogo-v1-4-ajustes-ux.md) ya implementados, sin release ni despliegue de esa ampliación. Las URL usadas por la UI son relativas al origen que sirve la página; este documento no certifica qué versión ejecuta cada host.
 
 ## Logos originales
 
@@ -19,13 +19,41 @@ El diseño reserva `wwwroot/branding/virtuosa/horizontal-transparent.webp` para 
 
 ## Rutas y recursos públicos
 
-La tienda usa estas lecturas existentes:
+Las páginas siguen siendo `GET /catalogo` y `GET /catalogo/{productoId}`, sin
+Identity. La UI vigente consume escaparate, productos paginados, opciones y
+contexto de categoría mediante las [lecturas públicas acotadas](25_CatalogoPublicoBackend.md#api).
+El endpoint de array `/api/catalogo/productos` se conserva para compatibilidad;
+no se usa para precargar productos ni construir filtros. Detalle, portada y
+fotografías de galería mantienen sus rutas públicas por ID.
 
-- `GET /catalogo` y `GET /catalogo/{productoId}` para las páginas, sin Identity.
-- `GET /api/catalogo/productos` con `termino` y `categoriaId` opcionales.
-- `GET /api/catalogo/productos/{productoId}` y `GET /api/catalogo/productos/{productoId}/imagen`.
+El buscador del encabezado conserva debounce de 300 ms; desde el detalle navega
+al catálogo filtrado al enviarse. Busca sobre todos los productos elegibles,
+combinado con los filtros activos, aunque no se hayan cargado sus carruseles.
+La API decide qué productos siguen disponibles. Opciones de raíces, hijas y
+marcas son lecturas públicas independientes. Las imágenes proceden del endpoint
+público por ID; no se publican rutas privadas ni el endpoint administrativo.
+No hay rutas de carrito, checkout, pagos ni pedidos online.
 
-El buscador del encabezado usa el debounce de 300 ms del modelo actual en el listado; desde el detalle navega al catálogo filtrado al enviarse. La API decide qué productos siguen disponibles. El filtro de categorías usa los nombres e identificadores que recibe del listado público. Las imágenes proceden del endpoint público por ID; las rutas privadas del servidor y el endpoint administrativo de imágenes no se publican. No hay rutas de carrito, checkout, pagos ni pedidos online.
+## Portada y navegación incremental V1.4
+
+Sin filtros, la portada presenta bloques de tres raíces, cada una con carrusel
+táctil de hasta diez productos directos o de sus hijas. «Ver todos» queda fuera
+del área desplazable y abre el listado de la raíz. Las tarjetas mantienen 4:5,
+`object-contain`, imágenes lazy y scroll horizontal con snap y controles
+accesibles. Raíces, hijas y productos tienen orden determinista por ID ascendente.
+
+El listado de raíz muestra su nombre, chips «Todos»/hijas públicas y regreso a
+la portada. Raíz, hija, búsqueda y marca cargan dieciséis productos por página;
+no se recorta un catálogo descargado completo. El sentinel usa
+`IntersectionObserver`, con «Cargar más» como alternativa. La siguiente carga
+muestra estado discreto, conserva resultados y permite reintentar el mismo
+cursor ante error. Hay mensaje de cero resultados e indicador de fin.
+
+Categoría principal y marca ofrecen opciones acotadas ampliables; las hijas
+pertenecen a la raíz abierta. Los enlaces con `termino`, `categoriaId` y `marca`
+restauran contexto, incluso con una hija fuera del primer bloque de opciones.
+Cambiar filtros reinicia la paginación y descarta respuestas obsoletas; «Limpiar»
+restablece la portada. La navegación conserva historial atrás/adelante.
 
 ## Dominios y frontera pública
 
@@ -47,4 +75,23 @@ privadas.
 - Incorporar una exportación horizontal transparente y un favicon optimizado proporcionados o aprobados por la marca en la carpeta indicada.
 - Verificar configuración efectiva de los hosts y preview según [Dominios](deployment/domains.md); no crear otro inventario ni otra base para el catálogo.
 - Revisar la calidad de nombres, descripciones y fotografías comerciales, porque provienen de los datos actuales del producto.
-- Evaluar carga inicial/SEO y paginación si el catálogo crece. La UI actual necesita conexión de Blazor para cargar productos y el filtro de categorías deriva del listado público completo.
+- La carga inicial/SEO requiere evaluación. Portada por categorías, carruseles y paginación real ya están implementados en [ajustes UX V1.4](modules/catalogo-v1-4-ajustes-ux.md). La carga de datos todavía necesita JavaScript y el circuito Blazor; las opciones ya no dependen del listado público completo. QA físico de esta navegación sigue pendiente.
+
+## Experiencia V1.4
+
+El detalle selecciona la portada, ofrece miniaturas diferidas y un visor de
+pantalla completa con zoom, pan/pinch, swipe sin zoom, Escape y flechas. Mantiene
+proporciones y no amplía imágenes pequeñas por defecto; bloquea scroll y restaura
+foco al cerrar o desmontarse. Las tarjetas conservan contenedor 4:5 sin recorte.
+El indicador Disponible utiliza verde y texto sin revelar cantidades.
+
+El layout lleva `data-public-catalog="true"`. La reconexión transitoria muestra
+aviso mínimo con spinner, sin contador, foco ni backdrop; fallo/rechazo permiten
+Reintentar/Recargar y administración conserva su modal. El mecanismo ahora
+resincroniza al cambiar el layout, durante navegación mejorada de Blazor y al
+restaurar historial. El [diagnóstico del ajuste UX](modules/catalogo-v1-4-ajustes-ux.md#8-diagnóstico-de-reconexión-y-límites-de-evidencia)
+distingue el defecto local corregido de la captura de Preview del 08/10: su modal
+grande no se reprodujo en Edge a 390 px y la causa exacta en el iPhone sigue sin
+confirmarse. La prueba física de desconexión y caché sigue pendiente.
+El contacto WhatsApp usa configuración de servidor y URL canónica, descritas en
+[V1.4](modules/catalogo-v1-4.md#implementación-y-configuración-v14).

@@ -4,10 +4,11 @@ using ResellManager.Application.Common;
 using ResellManager.Application.DTOs;
 using ResellManager.Application.Interfaces;
 using ResellManager.Infrastructure.Persistence;
+using ResellManager.Domain.Entities;
 
 namespace ResellManager.Infrastructure.Services;
 
-public sealed class ProductoConImagenService(
+public sealed partial class ProductoConImagenService(
     IProductoService productos,
     IAlmacenamientoImagenesProducto almacenamiento,
     ResellManagerDbContext db,
@@ -83,6 +84,11 @@ public sealed class ProductoConImagenService(
 
             var entidad = await db.Productos.FindAsync([productoId.Value], ct);
             entidad!.ImagenPrincipalRuta = guardada?.RutaRelativa;
+            if (guardada is not null)
+                db.ProductoImagenes.Add(new ProductoImagen
+                {
+                    ProductoId = productoId.Value, RutaRelativa = guardada.RutaRelativa, Orden = 0
+                });
             await db.SaveChangesAsync(ct);
             await transaccion.CommitAsync(ct);
             confirmada = true;
@@ -103,6 +109,7 @@ public sealed class ProductoConImagenService(
         }
         finally
         {
+            if (!confirmada) db.ChangeTracker.Clear();
             if (preparada is not null && (!confirmada || guardada is null))
                 await LimpiarTemporalAsync(preparada.IdentificadorTemporal);
         }
@@ -128,70 +135,24 @@ public sealed class ProductoConImagenService(
         return existente is not null
             ? $"El código ya pertenece al producto {existente}. Abre ese producto para consultarlo." : null;
     }
+
     public async Task<ServiceResult<ProductoDto>> EditarAsync(
         int id, ProductoInput input, Stream? imagen, bool eliminarImagen, CancellationToken ct = default)
     {
         if (imagen is not null && eliminarImagen)
             return ServiceResult<ProductoDto>.Failure("Selecciona reemplazar o eliminar la imagen.");
-
-        var anterior = await db.Productos.AsNoTracking()
-            .Where(x => x.Id == id).Select(x => x.ImagenPrincipalRuta).FirstOrDefaultAsync(ct);
-        if (imagen is null && (!eliminarImagen || anterior is null))
+        if (imagen is null && !eliminarImagen)
             return await productos.EditarAsync(id, input, ct);
 
-        ImagenProductoPreparada? preparada = null;
-        ImagenProductoGuardada? guardada = null;
-        var confirmada = false;
-        try
-        {
-            if (imagen is not null)
-            {
-                var preparacion = await almacenamiento.PrepararAsync(imagen, ct);
-                if (!preparacion.IsSuccess || preparacion.Value is null)
-                    return ServiceResult<ProductoDto>.Failure(preparacion.ErrorMessage ?? "No fue posible preparar la imagen.");
-                preparada = preparacion.Value;
-            }
-
-            await using var transaccion = await db.Database.BeginTransactionAsync(ct);
-            var edicion = await productos.EditarAsync(id, input, ct);
-            if (!edicion.IsSuccess || edicion.Value is null)
-                return edicion;
-
-            if (preparada is not null)
-            {
-                var resultado = await almacenamiento.ConfirmarAsync(preparada, id, ct);
-                if (!resultado.IsSuccess || resultado.Value is null)
-                    return ServiceResult<ProductoDto>.Failure(resultado.ErrorMessage ?? "No fue posible guardar la imagen.");
-                guardada = resultado.Value;
-            }
-
-            var entidad = await db.Productos.FindAsync([id], ct);
-            entidad!.ImagenPrincipalRuta = guardada?.RutaRelativa;
-            await db.SaveChangesAsync(ct);
-            await transaccion.CommitAsync(ct);
-            confirmada = true;
-            if (anterior is not null)
-                await EliminarAnteriorAsync(anterior);
-            return await productos.ObtenerPorIdAsync(id, ct);
-        }
-        catch (OperationCanceledException)
-        {
-            await RecuperarEdicionAsync(id, anterior, guardada);
-            throw;
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "No fue posible editar el producto {ProductoId} con su imagen.", id);
-            var recuperado = await RecuperarEdicionAsync(id, anterior, guardada);
-            return recuperado is not null
-                ? ServiceResult<ProductoDto>.Ok(recuperado)
-                : ServiceResult<ProductoDto>.Failure("No fue posible guardar el producto con su imagen.");
-        }
-        finally
-        {
-            if (preparada is not null && !confirmada)
-                await LimpiarTemporalAsync(preparada.IdentificadorTemporal);
-        }
+        var galeria = await ObtenerGaleriaAsync(id, ct);
+        if (!galeria.IsSuccess || galeria.Value is null)
+            return ServiceResult<ProductoDto>.Failure(galeria.ErrorMessage ?? "Producto no encontrado.");
+        var restantes = galeria.Value.Where(x => !x.EsPortada).OrderBy(x => x.Orden)
+            .Select(x => new ImagenProductoEdicion(x.Id)).ToList();
+        if (imagen is not null)
+            restantes.Insert(0, new ImagenProductoEdicion(NuevaImagenIndice: 0));
+        return await EditarGaleriaAsync(id, input, new GaleriaProductoEdicion(restantes),
+            imagen is null ? [] : [imagen], ct);
     }
 
     private async Task<ProductoDto?> RecuperarCreacionAsync(
@@ -213,27 +174,6 @@ public sealed class ProductoConImagenService(
         return null;
     }
 
-    private async Task<ProductoDto?> RecuperarEdicionAsync(
-        int id, string? anterior, ImagenProductoGuardada? guardada)
-    {
-        try
-        {
-            var persistido = await productos.ObtenerPorIdAsync(id, CancellationToken.None);
-            if (persistido.IsSuccess && persistido.Value is not null
-                && persistido.Value.ImagenPrincipalRuta == guardada?.RutaRelativa)
-            {
-                if (anterior is not null) await EliminarAnteriorAsync(anterior);
-                return persistido.Value;
-            }
-            if (guardada is not null) await EliminarNuevoAsync(guardada.RutaRelativa);
-        }
-        catch (Exception ex)
-        {
-            logger.LogCritical(ex, "No se pudo comprobar la referencia de la imagen del producto {ProductoId}; se conserva el archivo.", id);
-        }
-        return null;
-    }
-
     private async Task LimpiarTemporalAsync(string identificador)
     {
         var resultado = await almacenamiento.EliminarTemporalAsync(identificador, CancellationToken.None);
@@ -243,6 +183,7 @@ public sealed class ProductoConImagenService(
 
     private async Task EliminarNuevoAsync(string ruta)
     {
+        if (await RutaReferenciadaAsync(ruta)) return;
         var resultado = await almacenamiento.EliminarAsync(ruta, CancellationToken.None);
         if (!resultado.IsSuccess)
             logger.LogCritical("No fue posible limpiar la nueva imagen tras fallar el guardado del producto.");
@@ -250,6 +191,7 @@ public sealed class ProductoConImagenService(
 
     private async Task EliminarAnteriorAsync(string ruta)
     {
+        if (await RutaReferenciadaAsync(ruta)) return;
         var resultado = await almacenamiento.EliminarAsync(ruta, CancellationToken.None);
         if (!resultado.IsSuccess)
             logger.LogCritical("La referencia del producto cambió pero no fue posible eliminar su imagen anterior {Ruta}.", ruta);

@@ -30,7 +30,7 @@ public sealed class ProductoLookupImportacion
             modelo.Volumen = null;
             modelo.PesoGramos = datos.PesoGramos;
         }
-        if (datos.ImagenUrl is not null && modelo.ImagenArchivo is null && modelo.ImagenContenido is null)
+        if (datos.ImagenUrl is not null && modelo.Galeria.Count == 0 && modelo.ImagenArchivo is null && modelo.ImagenContenido is null)
             modelo.ImagenExternaUrl = datos.ImagenUrl;
         // El código aprobado, precio y categoría local se conservan.
     }

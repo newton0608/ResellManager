@@ -4,7 +4,15 @@ La primera vista pública permite explorar productos disponibles en `/catalogo` 
 
 El backend se incorporó en `9a119bb` y esta primera UI en `c345ad6`, sobre `feature/tailwind-ui`.
 
-> Registro de la primera iteración visual, no especificación del diseño final. La identidad pública vigente se describe en [Virtuosa Store](27_VirtuosaStore.md), y los dominios/ruta canónica pendiente en [Dominios](deployment/domains.md). El estado integrado está en [Catálogo](modules/catalogo.md).
+> Registro de la primera iteración visual, no especificación del diseño final. La identidad pública vigente se describe en [Virtuosa Store](27_VirtuosaStore.md), y los dominios/rutas actuales en [Dominios](deployment/domains.md). El estado integrado está en [Catálogo](modules/catalogo.md).
+
+> Estado posterior: [V1.4](modules/catalogo-v1-4.md) añade galería/zoom,
+> subcategorías/marca, reconexión discreta e interacción WhatsApp en su rama.
+> Estado posterior adicional: [ajustes UX V1.4](modules/catalogo-v1-4-ajustes-ux.md)
+> implementan escaparate por raíces, páginas de 16, opciones públicas independientes,
+> chips de hijas y restauración de filtros/historial. La dependencia del listado
+> completo y la ausencia de endpoint de categorías descritas abajo son históricas.
+> Las cifras y arquitectura de esta primera iteración se conservan como historia.
 
 ## Componentes y responsabilidades
 

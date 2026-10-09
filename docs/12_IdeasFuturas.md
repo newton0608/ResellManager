@@ -1,6 +1,10 @@
 # Ideas Futuras
 
-## Compartir directamente a WhatsApp.
+## Compartir directamente a WhatsApp
+
+La consulta por producto mediante enlace `wa.me` está implementada en
+[V1.4](modules/catalogo-v1-4.md). Integración automática/API sigue siendo futura.
+
 ## Notificaciones.
 ## Dashboard avanzado.
 ## Estadísticas.

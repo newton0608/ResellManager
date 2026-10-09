@@ -17,6 +17,22 @@
             </div>
 
             <div class="grid min-w-0 gap-2">
+                <label class="text-sm font-medium" for="categoria-padre">Categoría padre (opcional)</label>
+                <InputSelect class="ui-input" id="categoria-padre" @bind-Value="Modelo.CategoriaPadreId"
+                             disabled="@(Guardando || TieneSubcategorias)" aria-describedby="categoria-padre-ayuda">
+                    <option value="">Sin padre — categoría raíz</option>
+                    @foreach (var categoria in PadresDisponibles)
+                    {
+                        <option value="@categoria.Id">@categoria.Nombre</option>
+                    }
+                </InputSelect>
+                <p class="m-0 text-sm leading-6 text-ui-muted" id="categoria-padre-ayuda">@(TieneSubcategorias
+                    ? "Esta categoría tiene subcategorías y debe conservarse como raíz."
+                    : "Selecciona una raíz para crear una subcategoría. Se permiten dos niveles.")</p>
+                <ValidationMessage For="() => Modelo.CategoriaPadreId" />
+            </div>
+
+            <div class="grid min-w-0 gap-2">
                 <label class="text-sm font-medium" for="categoria-observaciones">Observaciones</label>
                 <InputTextArea class="ui-input min-h-28 resize-y" disabled="@Guardando" aria-describedby="categoria-observaciones-validacion" id="categoria-observaciones" @bind-Value="Modelo.Observaciones" rows="4" />
                 <div class="empty:hidden" id="categoria-observaciones-validacion"><ValidationMessage For="() => Modelo.Observaciones" /></div>
@@ -40,6 +56,9 @@
 
     [Parameter]
     public bool Guardando { get; set; }
+
+    [Parameter] public IReadOnlyList<CategoriaDto> PadresDisponibles { get; set; } = [];
+    [Parameter] public bool TieneSubcategorias { get; set; }
 
     [Parameter]
     public string? ErrorMessage { get; set; }

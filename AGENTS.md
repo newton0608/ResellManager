@@ -21,6 +21,11 @@ lectura; todavía no es una tienda con carrito, checkout o pedidos web.
   marca ese ítem en `docs/09_Backlog.md`, `docs/19_V2_Pendientes.md`,
   `ROADMAP.md` u otro `.md` que lo siga; no dejes una funcionalidad
   implementada descrita como pendiente.
+- Mantén separada la documentación de la ejecución: los documentos de módulos
+  registran decisiones, funcionamiento, contratos, límites y criterios de
+  aceptación, **no** prompts ni instrucciones operativas para Codex
+  (ramas, secuencias de comandos, commits, push). Esas indicaciones van en el
+  prompt del chat. Este `AGENTS.md` sí establece las reglas generales para agentes.
 - Actualiza `CHANGELOG.md` cuando el cambio sea relevante para el historial de
   producto/release. Actualiza decisiones, arquitectura, deployment, seguridad,
   contratos, pruebas o runbooks cuando el cambio altere esas fuentes de verdad.

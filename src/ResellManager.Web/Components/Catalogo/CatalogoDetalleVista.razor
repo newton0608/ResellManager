@@ -19,7 +19,7 @@ else if (Producto is not null)
 {
     <article class="store-detail-grid" aria-labelledby="titulo-producto-publico">
         <div class="store-detail-media">
-            <ImagenCatalogo ProductoId="Producto.Id" Nombre="@Producto.Nombre" TieneImagen="Producto.TieneImagenPrincipal" Prioritaria="true" />
+            <GaleriaCatalogo @key="Producto.Id" Producto="Producto" />
         </div>
         <div class="store-detail-copy">
             <a href="/catalogo?categoriaId=@Producto.CategoriaId" class="store-detail-category">@Producto.Categoria</a>
@@ -28,6 +28,10 @@ else if (Producto is not null)
             @if (Producto.Disponible)
             {
                 <span class="store-availability">Disponible</span>
+            }
+            @if (Producto.Disponible && EnlaceWhatsApp is not null)
+            {
+                <p class="store-contact"><a class="store-button" href="@EnlaceWhatsApp" target="_blank" rel="noopener noreferrer">Consultar por WhatsApp</a></p>
             }
             @if (!string.IsNullOrWhiteSpace(Producto.Descripcion))
             {
@@ -57,5 +61,6 @@ else if (Producto is not null)
     [Parameter] public bool Cargando { get; set; }
     [Parameter] public bool NoDisponible { get; set; }
     [Parameter] public string? Error { get; set; }
+    [Parameter] public string? EnlaceWhatsApp { get; set; }
     [Parameter] public EventCallback OnReintentar { get; set; }
 }

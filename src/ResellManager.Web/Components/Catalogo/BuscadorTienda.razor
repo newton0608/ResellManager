@@ -36,7 +36,7 @@
     }
 
     private void UbicacionCambiada(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
-        => Estado.FijarTermino(LeerTermino());
+        { if (!Estado.TieneCatalogo) Estado.FijarTermino(LeerTermino()); }
 
     private void Actualizar()
     {

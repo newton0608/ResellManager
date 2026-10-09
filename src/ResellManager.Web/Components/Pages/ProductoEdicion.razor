@@ -93,6 +93,13 @@
                 }
 
                 Modelo = ProductoFormModel.FromDto(resultado.Value);
+                var galeria = await ProductoConImagenService.ObtenerGaleriaAsync(Id.Value);
+                if (!galeria.IsSuccess || galeria.Value is null)
+                {
+                    ErrorCarga = galeria.ErrorMessage ?? "No fue posible cargar las fotografías del producto.";
+                    return;
+                }
+                Modelo.CargarGaleria(galeria.Value);
             }
             else
             {
@@ -133,18 +140,29 @@
 
         try
         {
-            await using var imagen = modelo.ImagenContenido is not null
-                ? new MemoryStream(modelo.ImagenContenido, writable: false)
-                : modelo.ImagenArchivo?.OpenReadStream(
-                    ResellManager.Infrastructure.Storage.AlmacenamientoImagenesProductoLocal.TamanoMaximoBytes);
+            await using var imagen = modelo.GaleriaCargada || modelo.Galeria.Count > 0
+                ? null
+                : modelo.ImagenContenido is not null
+                    ? new MemoryStream(modelo.ImagenContenido, writable: false)
+                    : modelo.ImagenArchivo?.OpenReadStream(
+                        ResellManager.Infrastructure.Storage.AlmacenamientoImagenesProductoLocal.TamanoMaximoBytes);
+            using var nuevas = new ProductoGaleriaArchivos(modelo);
             string? avisoImagen = null;
             ServiceResult<ProductoDto> resultado;
             if (EsEdicion)
             {
-                resultado = imagen is null && !modelo.EliminarImagenPrincipal
-                    ? await ProductoService.EditarAsync(Id!.Value, modelo.ToInput())
-                    : await ProductoConImagenService.EditarAsync(
-                        Id!.Value, modelo.ToInput(), imagen, modelo.EliminarImagenPrincipal);
+                resultado = modelo.GaleriaCargada
+                    ? await ProductoConImagenService.EditarGaleriaAsync(
+                        Id!.Value, modelo.ToInput(), modelo.ToGaleriaEdicion(), nuevas.Imagenes)
+                    : imagen is null && !modelo.EliminarImagenPrincipal
+                        ? await ProductoService.EditarAsync(Id!.Value, modelo.ToInput())
+                        : await ProductoConImagenService.EditarAsync(
+                            Id!.Value, modelo.ToInput(), imagen, modelo.EliminarImagenPrincipal);
+            }
+            else if (modelo.Galeria.Count > 0)
+            {
+                resultado = await ProductoConImagenService.CrearGaleriaAsync(
+                    modelo.ToInput(), nuevas.Imagenes, modelo.ToGaleriaEdicion().PortadaIndice, validarCodigoBarras: true);
             }
             else
             {
