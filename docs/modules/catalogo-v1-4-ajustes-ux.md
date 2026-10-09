@@ -1,6 +1,6 @@
 # V1.4 — Ajustes de UX tras revisión en iPhone
 
-**Estado: implementación y validación automática completadas; QA exploratorio parcial en iPhone satisfactorio y verificaciones físicas específicas pendientes.**
+**Estado: implementación integrada en `main` y `develop`; validación automática completada, QA exploratorio parcial en iPhone satisfactorio y verificaciones físicas específicas pendientes.**
 Requisitos aprobados el 08/10/2026 y completados sobre la implementación inicial
 V1.4, cuya base histórica es `v1.3.0` (`b9ab4ee`). Sin release ni despliegue.
 Este documento registra el contrato aprobado y su funcionamiento final; los
