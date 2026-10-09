@@ -34,6 +34,13 @@ operación comercial ni agregar carrito/checkout. V1.4 está implementada y vali
 queda pendiente. No se ha etiquetado ni desplegado. La rama de
 V2.1 sigue independiente y su integración se decidirá después.
 
+**Iteración UX aprobada y pendiente antes del cierre de V1.4:** portada por
+categorías raíz con carruseles de hasta 10 productos, listado paginado real
+de 16 en 16, chips de subcategorías, selectores dependientes en administración,
+progreso por foto y reconexión pública realmente discreta. El diagnóstico de
+Preview es parte de la tarea, no evidencia de que la rama esté desplegada.
+Ver [contrato de ajustes UX](docs/modules/catalogo-v1-4-ajustes-ux.md).
+
 ## V2 — Evolución planificada
 
 - V2.1: productividad y experiencia de uso.
