@@ -48,7 +48,7 @@ privadas.
 - Incorporar una exportación horizontal transparente y un favicon optimizado proporcionados o aprobados por la marca en la carpeta indicada.
 - Verificar configuración efectiva de los hosts y preview según [Dominios](deployment/domains.md); no crear otro inventario ni otra base para el catálogo.
 - Revisar la calidad de nombres, descripciones y fotografías comerciales, porque provienen de los datos actuales del producto.
-- Evaluar carga inicial/SEO y paginación si el catálogo crece. La UI actual necesita conexión de Blazor para cargar productos y el filtro de categorías deriva del listado público completo.
+- La carga inicial/SEO requiere evaluación. **Portada por categorías, carruseles y paginación real ya están aprobados pero aún pendientes** en [ajustes UX V1.4](modules/catalogo-v1-4-ajustes-ux.md). La UI inicial todavía necesita conexión de Blazor para cargar productos y deriva las categorías del listado público completo.
 
 ## Experiencia V1.4
 
@@ -58,8 +58,11 @@ proporciones y no amplía imágenes pequeñas por defecto; bloquea scroll y rest
 foco al cerrar o desmontarse. Las tarjetas conservan contenedor 4:5 sin recorte.
 El indicador Disponible utiliza verde y texto sin revelar cantidades.
 
-El layout lleva `data-public-catalog="true"`: reconexión muestra aviso discreto
-sin foco/backdrop aun con rutas públicas reescritas. Fallo/rechazo conserva
-Reintentar/Recargar nativos sin circuito; administración conserva su modal.
+El layout lleva `data-public-catalog="true"` y la rama contiene lógica de
+reconexión discreta sin foco/backdrop, con Reintentar/Recargar y modal
+administrativo conservado. **La captura de Preview del 08/10 mostró un modal
+grande**, por lo que el [ajuste UX pendiente](modules/catalogo-v1-4-ajustes-ux.md)
+exige comprobar versión desplegada/caché/detección antes de darlo por validado
+físicamente; la captura no demuestra por sí sola un fallo de la rama.
 El contacto WhatsApp usa configuración de servidor y URL canónica, descritas en
 [V1.4](modules/catalogo-v1-4.md#implementación-y-configuración-v14).
