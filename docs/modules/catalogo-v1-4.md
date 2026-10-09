@@ -1,10 +1,15 @@
 # V1.4 — Galería, exploración y UX del catálogo público
 
-**Estado: implementada en `feature/catalogo-v1-4`; QA físico pendiente.** Alcance acordado el 08/10/2026.
+**Estado: implementación inicial completada en `feature/catalogo-v1-4`; QA físico pendiente. Ajustes UX aprobados posteriormente, todavía SIN implementar.** Alcance inicial acordado el 08/10/2026.
 **Base obligatoria de esta línea de trabajo:** tag `v1.3.0`, commit
 `b9ab4eeabc2dd04b587e437243d6e27cb4b5e1e2`; rama
 `feature/catalogo-v1-4`. Esta especificación es la fuente de verdad para Codex.
 No interpretar estos requisitos como funcionalidades ya desplegadas.
+
+**Siguiente iteración aprobada, aún pendiente:** [escaparate por categorías,
+paginación real, selección dependiente, progreso de fotos y reconexión pública
+mínima](catalogo-v1-4-ajustes-ux.md). Ese documento amplía/sustituye la UX
+inicial donde lo indica; no invalida los resultados históricos de esta V1.4.
 
 ## Objetivo y fronteras
 
@@ -282,8 +287,11 @@ El mensaje codificado incluye nombre y `{OrigenPublico}/producto/{id}`, sin
 precio ni stock. Las rutas de navegación Preview se conservan.
 
 Los filtros categoría/marca/búsqueda se combinan y se restauran por URL.
-Opciones públicas se obtienen del listado elegible completo y quedan estables
-al filtrar. La raíz se revela también cuando solo tiene publicaciones indirectas.
+**Estado implementado antes de los ajustes UX:** las opciones públicas se
+obtienen del listado elegible completo y quedan estables al filtrar. La raíz se
+revela también cuando solo tiene publicaciones indirectas. La iteración
+[aprobada y pendiente](catalogo-v1-4-ajustes-ux.md) sustituirá esa carga total
+por metadatos públicos y listados paginados en servidor.
 La reconexión detecta `data-public-catalog="true"` del layout, sin depender de
 host/ruta; continúa observando las clases oficiales de Blazor. Aviso transitorio
 no modal, fallo/rechazo con acciones nativas, y modal administrativo conservado.
@@ -336,6 +344,21 @@ zoom, lectura de etiquetas y selección múltiple desde cámara/galería), y ape
 real de WhatsApp en iPhone/Android/escritorio. El enlace, mensaje codificado y
 ocultación ante configuración vacía/inválida sí están automatizados. Emulación y
 gestos sintéticos no certifican esos dispositivos ni una desconexión física.
+
+## Iteración de navegación, carga y reconexión — pendiente
+
+Tras el QA visual se aprobó un ajuste adicional, **no cubierto por las pruebas
+894/.NET, 123/JS y 76/responsive anteriores**. Requisitos, criterios de
+aceptación, restricciones de compatibilidad y diagnóstico de Preview:
+[contrato de ajustes UX](catalogo-v1-4-ajustes-ux.md). Incluye portada con
+carruseles de hasta 10 productos por categoría raíz, listados de 16 en 16
+paginados desde SQLite, chips de subcategoría, selector dependiente en
+administración, progreso real de fotos y reconexión pública sin modal.
+
+El placeholder «Imagen no disponible» visto en Preview corresponde a productos
+sin fotografías: no es un defecto a corregir. El modal grande sí requiere
+verificar primero la versión desplegada y la detección del layout antes de
+atribuirlo al código de la rama. No hay despliegue autorizado.
 
 ## Estrategia de trabajo y cierre para Codex
 
