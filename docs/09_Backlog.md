@@ -2,10 +2,10 @@
 
 V1 está en producción. Este backlog conserva entregas de fases y distingue ampliaciones posteriores; sus pendientes V2 no se consideran resueltos por el despliegue. El estado operativo vigente se mantiene en el [runbook V1](deployment/deployment.md) y las versiones en el [changelog](../CHANGELOG.md).
 
-## V1.4 — Mejoras de catálogo (implementada en rama; QA físico parcial satisfactorio)
+## V1.4 — Mejoras de catálogo (integrada en main/develop; QA físico parcial satisfactorio)
 
 Contrato: [V1.4 de Virtuosa Store](modules/catalogo-v1-4.md). Rama
-`feature/catalogo-v1-4` desde `v1.3.0`, independiente de V2.1.
+`feature/catalogo-v1-4` desde `v1.3.0`; integrada a `main` (PR #17) y `develop` (PR #16). La implementación V2.1 permanece independiente.
 
 - [x] Galería de 0 a 8 fotos por producto, con portada, orden y gestión autenticada; preservar imágenes históricas.
 - [x] Miniaturas y visor público con zoom/pinch, swipe, teclado y accesibilidad.
@@ -27,7 +27,8 @@ Contrato: [V1.4 de Virtuosa Store](modules/catalogo-v1-4.md). Rama
 
 - [x] QA exploratorio comunicado en iPhone: navegación del catálogo y fotografías desde cámara y galería, sin fallos observados por el usuario (09/10/2026; navegador/modelo de la sesión no confirmados).
 - [ ] QA específico restante: Safari, Android, carruseles/carga incremental, chips/historial, desconexión/caché, gestos, accesibilidad y apertura de WhatsApp configurado. Confirmar causa de la captura original; emulación no lo certifica.
-- [ ] Integración/release/despliegue posteriores, fuera de esta tarea; V2.1 permanece independiente.
+- [x] Integración de V1.4 en `main` y `develop` (PR #17 y #16), conservando la documentación V2.1 en `develop` sin incorporar su implementación.
+- [ ] Tag, release y despliegue V1.4: no ejecutados; requieren decisión posterior.
 
 ## Backend V1 completado
 
