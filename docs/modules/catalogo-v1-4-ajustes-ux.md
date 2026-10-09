@@ -3,7 +3,7 @@
 **Estado: requisitos aprobados el 08/10/2026; NO implementados todavía.**
 Se aplicarán exclusivamente a `feature/catalogo-v1-4`, creada desde
 `v1.3.0` (`b9ab4ee`), **después** de la implementación inicial de V1.4.
-No describir este documento como evidencia de despliegue, release ni pruebas.
+Este documento describe decisiones aprobadas, no evidencia de despliegue, release ni pruebas.
 
 **Fuentes:** [contrato y validación de V1.4](catalogo-v1-4.md),
 [catálogo público](catalogo.md), [productos/categorías](productos.md) y
@@ -242,19 +242,3 @@ Inspección de la rama antes de esta iteración:
     `npm run css:build`, QA responsive, enlaces y `git diff --check`.
     **No reutilizar 894/123/76 como evidencia de esta iteración**;
     conservarlos como resultados históricos de V1.4 inicial.
-
-## 7. Flujo de implementación y cierre
-
-- Trabajar **en la misma rama** `feature/catalogo-v1-4`, sobre los
-  commits existentes; confirmar estado remoto y preservar cambios ajenos.
-- Leer `AGENTS.md`, `docs/modules/catalogo-v1-4.md` y este contrato.
-  Implementar en bloques verificables: API paginada/metadatos;
-  portada/carruseles; vista raíz/hija y filtros; formulario dependiente;
-  progreso fotos; diagnóstico/reconexión; regresiones y QA.
-- Tras implementar, actualizar el **estado** de este documento, contrato
-  V1.4, `catalogo.md`, `productos.md`, `ROADMAP.md`,
-  `docs/09_Backlog.md`, `CHANGELOG.md` y documentos API afectados.
-  Registrar endpoints finales, paginación/orden, pruebas y QA físico.
-- Commits descriptivos y push **solo** a `feature/catalogo-v1-4`
-  cuando se solicite. **Sin merge, tag, release ni despliegue** sin
-  aprobación posterior; no incorporar `develop`/V2.1.
