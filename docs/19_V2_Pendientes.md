@@ -28,7 +28,7 @@ Objetivo: reducir tiempo operativo y mejorar los flujos más frecuentes sin camb
 - Mostrar un fallback cuando no exista imagen.
 - Validar contenido, permisos de acceso y privacidad; evitar exponer archivos no autorizados.
 
-La foto principal tiene implementación y migración existentes; no volver a crearlas siguiendo esta planificación. La galería múltiple ya existe en V1.4; object storage y miniaturas derivadas siguen como optimizaciones futuras.
+La foto principal tiene implementación y migración existentes; no volver a crearlas siguiendo esta planificación. La galería múltiple ya existe en V1.4; object storage y miniaturas derivadas siguen como optimizaciones futuras. La [iteración UX de V1.4 aprobada y pendiente](modules/catalogo-v1-4-ajustes-ux.md) añade progreso visible por foto y navegación/paginación pública; no trasladar estos ajustes a V2.1 ni darlos por implementados.
 
 ## Búsqueda asistida externa al agregar Producto
 
