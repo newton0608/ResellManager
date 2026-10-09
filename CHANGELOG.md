@@ -17,7 +17,7 @@ Base `v1.3.0` (`b9ab4ee`); sin tag, release ni despliegue.
 - Selectores administrativos raíz/hija en Producto y alta desde Compra, con validación de pertenencia en servidor sin columnas nuevas.
 - Progreso real de preparación/transferencia por foto, reintento sin duplicados y guardado atómico rotulado sin contador simulado.
 - Reconexión pública mínima sincronizada con cambios de layout, navegación mejorada e historial; modal administrativo conservado. Diagnóstico distingue defecto local corregido de captura física aún sin causa confirmada.
-- Validación inicial histórica en [V1.4](docs/modules/catalogo-v1-4.md); cierre propio y QA físico pendiente de los [ajustes UX](docs/modules/catalogo-v1-4-ajustes-ux.md).
+- Validación inicial histórica en [V1.4](docs/modules/catalogo-v1-4.md); cierre propio y QA exploratorio parcial satisfactorio en iPhone (navegación, fotografías de cámara y galería); permanecen verificaciones físicas específicas de los [ajustes UX](docs/modules/catalogo-v1-4-ajustes-ux.md).
 
 ## v1.3.0 — base etiquetada del 06/10/2026
 
