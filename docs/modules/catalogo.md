@@ -10,6 +10,12 @@ subcategorías de dos niveles, filtro por marca, reconexión discreta pública,
 indicador verde y consulta por WhatsApp](catalogo-v1-4.md). Se desarrolla en una rama separada
 partiendo de `v1.3.0`; no incluye ni fusiona V2.1.
 
+**Ajustes aprobados pendientes de implementación:** [portada con carruseles
+por categoría raíz, paginación real, navegación raíz→subcategorías,
+progreso de fotos y aviso mínimo de reconexión](catalogo-v1-4-ajustes-ux.md).
+El listado actual todavía descarga todos los productos elegibles; el nuevo
+contrato lo sustituirá sin alterar la elegibilidad ni el carácter solo lectura.
+
 ## Contratos y límites
 
 - [Backend público](../25_CatalogoPublicoBackend.md) es la referencia de campos,
