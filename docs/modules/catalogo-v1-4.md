@@ -1,6 +1,6 @@
 # V1.4 — Galería, exploración y UX del catálogo público
 
-**Estado: V1.4 y ajustes UX implementados; QA físico pendiente, sin release ni despliegue.**
+**Estado: V1.4 y ajustes UX implementados; QA exploratorio parcial satisfactorio en iPhone, otras verificaciones físicas pendientes; sin release ni despliegue.**
 Alcance inicial acordado el 08/10/2026. Base histórica: tag `v1.3.0`, commit
 `b9ab4eeabc2dd04b587e437243d6e27cb4b5e1e2`. Este documento registra el alcance,
 las decisiones y los contratos de V1.4; no certifica su despliegue.
@@ -347,11 +347,19 @@ fallo posterior al commit, cancelación, referencias ajenas/compartidas y priori
 manual del lookup. El upgrade verifica FK y preservación histórica de importes,
 portada y bytes. No se reescribió la evidencia de validaciones anteriores.
 
-**QA físico pendiente:** Safari/iPhone y Android reales (pinch/pan, swipe sin
-zoom, lectura de etiquetas y selección múltiple desde cámara/galería), y apertura
-real de WhatsApp en iPhone/Android/escritorio. El enlace, mensaje codificado y
-ocultación ante configuración vacía/inválida sí están automatizados. Emulación y
-gestos sintéticos no certifican esos dispositivos ni una desconexión física.
+**QA físico exploratorio comunicado por el usuario (09/10/2026):** probó el
+catálogo en su iPhone, navegó por la tienda y cargó fotografías tanto desde
+la galería como desde la cámara; informó que todo le pareció correcto.
+No se registraron modelo/navegador exactos de esta sesión, pasos exhaustivos,
+capturas ni evidencia instrumentada. Es una comprobación manual satisfactoria
+de esos recorridos, **no una certificación de todos los gestos o navegadores**.
+El botón WhatsApp no se mostró; la ausencia es el comportamiento esperado si
+falta una configuración válida, pero no se verificó la configuración del entorno.
+
+**Aún pendiente:** pinch/pan/swipe y accesibilidad comprobados específicamente,
+desconexión física y caché, apertura real de WhatsApp configurado,
+compatibilidad Safari específica (navegador no confirmado), Android y escritorio.
+Las pruebas automatizadas del enlace y su ocultación siguen vigentes.
 
 ## Iteración de navegación, carga y reconexión — implementada
 
@@ -368,4 +376,4 @@ fotografías. La inspección de Preview no reprodujo el modal grande ni identifi
 un SHA desplegado verificable; la causa exacta de la captura de iPhone queda
 sin confirmar. Sí se corrigió un defecto local al cambiar de layout sin cambiar
 la clase de reconexión, documentado en [su diagnóstico](catalogo-v1-4-ajustes-ux.md#8-diagnóstico-de-reconexión-y-límites-de-evidencia).
-No se modificó el despliegue ni se publicó una release. QA físico pendiente.
+No se modificó el despliegue ni se publicó una release. QA físico parcial registrado; quedan verificaciones específicas pendientes.
