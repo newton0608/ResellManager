@@ -1,6 +1,6 @@
 # V1.4 — Ajustes de UX tras revisión en iPhone
 
-**Estado: implementación y validación automática completadas; QA físico pendiente.**
+**Estado: implementación y validación automática completadas; QA exploratorio parcial en iPhone satisfactorio y verificaciones físicas específicas pendientes.**
 Requisitos aprobados el 08/10/2026 y completados sobre la implementación inicial
 V1.4, cuya base histórica es `v1.3.0` (`b9ab4ee`). Sin release ni despliegue.
 Este documento registra el contrato aprobado y su funcionamiento final; los
@@ -372,8 +372,17 @@ corrigieron las dimensiones y su contención. Estos casos quedaron cubiertos,
 igual que la importación JS tardía al desmontar y los callbacks de sentinel
 obsoletos o rechazados por un circuito caído.
 
-Pendiente en Safari/iPhone y Android reales: carruseles y scroll incremental,
-chips, historial/back-forward, desconexión física y caché, selección múltiple
-cámara/galería, pinch/pan y lectura de etiquetas; también la apertura real de
-WhatsApp en móvil/escritorio. El renderizado y los gestos emulados no certifican
-esos equipos. Los ajustes están implementados, sin release ni despliegue.
+**QA físico exploratorio comunicado por el usuario el 09/10/2026:** probó
+la navegación del catálogo en un iPhone y seleccionó/subió fotografías desde
+la galería y directamente desde la cámara; reportó funcionamiento satisfactorio.
+El navegador, modelo exacto de esa sesión y un protocolo detallado no quedaron
+confirmados; esta evidencia es manual y declarativa, distinta de Playwright.
+El botón WhatsApp no apareció: su ocultación es esperada sin número válido,
+pero no se comprobó la configuración del servidor ni la apertura del enlace.
+
+**Pendiente de QA específico:** carruseles/scroll infinito, chips e historial
+bajo casos de estrés; pinch/pan/swipe y accesibilidad en dispositivos reales;
+desconexión/caché y causa de la captura original; apertura de WhatsApp una vez
+configurado; comprobación explícita de Safari y Android, y escritorio.
+Los ajustes están implementados; este QA parcial no certifica todos los
+recorridos ni implica release o despliegue.
