@@ -50,7 +50,7 @@ No se exponen costo, proveedor, compras, unidades, reservas, pedidos, clientes, 
 
 La búsqueda conserva los campos y mecanismo de `IProductoService.BuscarAsync`: nombre, código interno y código de barras, con `Trim`, minúsculas y coincidencia parcial; prioriza códigos exactos y luego ordena por nombre/ID. No agrega búsqueda por proveedores, compras o códigos de unidad. No incorpora búsqueda difusa ni normalización de acentos; se conservan las capacidades actuales de SQLite. Término vacío equivale al listado; categoría desconocida o búsqueda sin coincidencias devuelve `[]`.
 
-La categoría raíz incluye productos directos y de sus hijas; una hija incluye solo sus productos. Marca compara `Trim` y `OrdinalIgnoreCase` tras la proyección de productos elegibles para soportar Unicode sin matching difuso ni mutar datos. La UI deriva opciones estables del listado elegible completo y consolida espacios/caso de marcas.
+La categoría raíz incluye productos directos y de sus hijas; una hija incluye solo sus productos. Marca compara `Trim` y `OrdinalIgnoreCase` tras la proyección de productos elegibles para soportar Unicode sin matching difuso ni mutar datos. **Estado actual de V1.4 inicial:** la UI deriva opciones estables del listado elegible completo y consolida espacios/caso de marcas. **Cambio aprobado, no implementado:** [paginación real y metadatos públicos independientes](modules/catalogo-v1-4-ajustes-ux.md), conservando la API existente para consumidores anteriores.
 
 Solo se registran GET. No se permite escribir a través del catálogo. Los casos de uso devuelven `ServiceResult` para detalle e imagen siguiendo el patrón existente; HTTP devuelve 404 vacío sin información administrativa.
 
@@ -70,7 +70,7 @@ Puntos de revisión originalmente registrados antes de la UI (ahora implementada
 
 1. Que nombres, descripciones y fotos existentes sean apropiados para publicación: no existe una marca editorial de publicación independiente del stock.
 2. Si el negocio desea mostrar alguna referencia comercial y cómo presentar `PrecioSugerido` como precio público; la moneda/formato siguen siendo una decisión de presentación.
-3. Paginación y selección pública de categorías si el volumen lo requiere: esta versión devuelve el listado completo filtrado y no utiliza `ICategoriaService` administrativo.
+3. Paginación y navegación pública por raíces/hijas: **ya aprobadas para la iteración UX de V1.4, aún pendientes de implementación**. Esta versión devuelve el listado completo filtrado y no utiliza `ICategoriaService` administrativo; ver [contrato aprobado](modules/catalogo-v1-4-ajustes-ux.md). No interpretar esta observación histórica como funcionalidad ya entregada.
 4. La disponibilidad puede cambiar entre lecturas. Cualquier futura operación comercial debe revalidar inventario mediante los flujos existentes.
 
 ## Resultado de validación de esta iteración
