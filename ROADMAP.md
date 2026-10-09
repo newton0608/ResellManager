@@ -22,7 +22,7 @@ Modelo propuesto, reglas y decisiones abiertas en [Medidas y presentación de pr
 
 La base etiquetada `v1.3.0` (`b9ab4ee`) incorpora imagen principal, catálogo público de Virtuosa Store, compras GTQ/USD y hotfix del scanner. Esa base contiene además la búsqueda asistida externa por código de barras para Agregar producto y su persistencia segura de imagen. Consulta el [índice](docs/README.md) y el [changelog](CHANGELOG.md). No hay todavía carrito, checkout ni pedidos web; landed cost sigue en [análisis pendiente](docs/modules/landed-cost.md) y desactivación/reactivación en [decisión 025](docs/11_DecisionesDeDiseño.md#025-preservar-clientes-y-productos-con-historial).
 
-## V1.4 — Experiencia de Virtuosa Store (implementada en rama; QA físico pendiente)
+## V1.4 — Experiencia de Virtuosa Store (implementada en rama; QA físico parcial satisfactorio)
 
 Rama `feature/catalogo-v1-4` **desde tag `v1.3.0`**. Alcance canónico:
 [Galería de hasta 8 fotos por producto, zoom, subcategorías de dos niveles,
