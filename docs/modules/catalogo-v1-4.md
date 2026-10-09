@@ -3,7 +3,7 @@
 **Estado: implementación inicial completada en `feature/catalogo-v1-4`; QA físico pendiente. Ajustes UX aprobados posteriormente, todavía SIN implementar.** Alcance inicial acordado el 08/10/2026.
 **Base obligatoria de esta línea de trabajo:** tag `v1.3.0`, commit
 `b9ab4eeabc2dd04b587e437243d6e27cb4b5e1e2`; rama
-`feature/catalogo-v1-4`. Esta especificación es la fuente de verdad para Codex.
+`feature/catalogo-v1-4`. Este documento registra el alcance, las decisiones y los contratos de V1.4.
 No interpretar estos requisitos como funcionalidades ya desplegadas.
 
 **Siguiente iteración aprobada, aún pendiente:** [escaparate por categorías,
@@ -359,23 +359,3 @@ El placeholder «Imagen no disponible» visto en Preview corresponde a productos
 sin fotografías: no es un defecto a corregir. El modal grande sí requiere
 verificar primero la versión desplegada y la detección del layout antes de
 atribuirlo al código de la rama. No hay despliegue autorizado.
-
-## Estrategia de trabajo y cierre para Codex
-
-1. Confirmar rama `feature/catalogo-v1-4` basada en `v1.3.0`; revisar
-   `git status` y `git fetch`. **No** hacer merge/rebase/cherry-pick de
-   `develop` ni de `feature/scanner-operativo-v2-1` para resolver la V1.4.
-   Si hay cambios locales ajenos, conservarlos y reportar bloqueo.
-2. Implementar por bloques verificables: persistencia/servicios de galería,
-   administración, API/UI pública y visor, subcategorías, marca, reconexión,
-   indicador, WhatsApp y QA. Commits descriptivos; sin cambios no relacionados.
-3. Actualizar documentación **después de implementar**: este contrato y
-   `docs/modules/catalogo.md`, `docs/modules/productos.md`,
-   `docs/24_ImagenPrincipalProducto.md`, `docs/25_CatalogoPublicoBackend.md`,
-   `docs/27_VirtuosaStore.md`, `docs/19_V2_Pendientes.md`,
-   `docs/09_Backlog.md`, `ROADMAP.md`, `CHANGELOG.md` cuando aplique.
-   Conservar resultados históricos y distinguir pruebas automáticas de QA real.
-4. Ejecutar validaciones, registrar limitaciones y hacer push de **esta rama**.
-   No crear tag, no publicar V1.4, no desplegar, no fusionar con `main`
-   o `develop` sin aprobación posterior. Resolver eventuales conflictos
-   con V2.1 **en una tarea separada**, no aquí.
