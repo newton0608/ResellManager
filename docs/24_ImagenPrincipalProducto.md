@@ -69,3 +69,30 @@ las escrituras mediante el servicio; los nuevos GET autenticados son
 El lookup sigue importando a lo sumo una portada al guardar, con prioridad de
 la galería manual. El detalle público usa IDs, nunca rutas físicas. Contrato,
 migración y QA: [V1.4](modules/catalogo-v1-4.md).
+
+## Progreso y reintento en el formulario
+
+Los [ajustes UX V1.4](modules/catalogo-v1-4-ajustes-ux.md) instrumentan el formulario
+reutilizado en Nuevo/Editar y alta desde Compra. Un spinner con texto accesible
+anuncia `Preparando foto n de total` al comprobar el archivo y su firma, y
+`Subiendo foto n de total` durante la lectura efectiva de `IBrowserFile` por
+SignalR. Después de recibir los bytes, la preparación conserva contenido/vista
+previa en memoria para confirmar con el producto. La transferencia no significa
+que el archivo ni su referencia ya estén persistidos; la decodificación completa
+y el procesamiento WebP siguen siendo responsabilidad del servicio de guardado.
+
+La operación transaccional muestra **«Guardando fotografías…»**, sin contador
+por archivo porque el servicio no informa ese avance. La finalización de la
+preparación se anuncia sólo después de recibir y validar todo el lote. Los
+lotes inválidos conservan la galería anterior sin añadir fotos parcialmente;
+la novena fotografía sigue rechazándose antes de transferir.
+
+Ante fallo de transferencia se conserva la selección y existe «Reintentar
+preparación». Deshacer una importación descarta el lote de transferencia fallido
+antes de renovar el selector, evitando referencias obsoletas a archivos. Ante
+fallo de guardado se conservan los bytes ya preparados para
+reintentar sin duplicar fotos; las garantías de compensación del servicio se
+mantienen. Se bloquean guardado, cambios de fotos y acciones incompatibles
+durante la operación, sin modal de pantalla completa. `role=status` y
+`aria-live=polite` acompañan al texto; el spinner respeta movimiento reducido.
+QA físico de selección desde cámara/galería sigue pendiente.

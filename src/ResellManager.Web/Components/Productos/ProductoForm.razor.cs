@@ -39,9 +39,11 @@ public partial class ProductoForm : IDisposable
 
     protected override void OnParametersSet()
     {
+        Modelo.PrepararSeleccionCategoria(Categorias);
         if (ReferenceEquals(ModeloLookup, Modelo)) return;
         CancelacionLookup?.Cancel();
         ModeloLookup = Modelo;
+        SeleccionPendiente = null;
         Ronda = null;
         RevisandoLookup = false;
         MensajeLookup = null;
@@ -135,6 +137,7 @@ public partial class ProductoForm : IDisposable
         Importacion.Deshacer(Modelo);
         VistaPrevia = VistaPreviaAnterior;
         ErrorImagen = ErrorImagenAnterior;
+        SeleccionPendiente = null;
         VersionSelectorImagen++;
         Ronda = null;
         RevisandoLookup = false;
@@ -153,7 +156,10 @@ public partial class ProductoForm : IDisposable
 
     public void Dispose()
     {
+        if (DescartadoLookup) return;
         DescartadoLookup = true;
         CancelacionLookup?.Cancel();
+        CancelacionImagenes.Cancel();
+        CancelacionImagenes.Dispose();
     }
 }

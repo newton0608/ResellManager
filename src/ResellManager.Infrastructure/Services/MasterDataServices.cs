@@ -380,8 +380,23 @@ public sealed class ProductoService(ResellManagerDbContext db) : IProductoServic
             return "Un producto no puede tener contenido en ml y peso en gramos simultáneamente.";
         if (x.Presentacion is { Length: > 100 })
             return "La presentación no puede superar los 100 caracteres.";
-        if (!await db.Categorias.AnyAsync(c => c.Id == x.CategoriaId, ct))
-            return "Categoría no encontrada.";
+        var categoria = await db.Categorias.AsNoTracking().Where(c => c.Id == x.CategoriaId)
+            .Select(c => new { c.Id, c.CategoriaPadreId,
+                PadreDePadreId = c.CategoriaPadre == null ? (int?)null : c.CategoriaPadre.CategoriaPadreId })
+            .SingleOrDefaultAsync(ct);
+        if (categoria is null) return "Categoría no encontrada.";
+        if (categoria.CategoriaPadreId == categoria.Id || categoria.PadreDePadreId.HasValue)
+            return "La categoría del producto debe ser una raíz o una subcategoría de una raíz.";
+        if (x.CategoriaPrincipalId.HasValue)
+        {
+            var principal = await db.Categorias.AsNoTracking()
+                .Where(c => c.Id == x.CategoriaPrincipalId.Value)
+                .Select(c => new { c.Id, c.CategoriaPadreId }).SingleOrDefaultAsync(ct);
+            if (principal is null || principal.CategoriaPadreId.HasValue)
+                return "Selecciona una categoría principal válida.";
+            if (categoria.Id != principal.Id && categoria.CategoriaPadreId != principal.Id)
+                return "La subcategoría no pertenece a la categoría principal seleccionada.";
+        }
         if (
             await db.Productos.AnyAsync(
                 p => p.CodigoInterno == codigoInterno && p.Id != id,

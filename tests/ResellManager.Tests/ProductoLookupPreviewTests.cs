@@ -252,6 +252,199 @@ public sealed class ProductoLookupPreviewTests
         Assert.Equal(0, vista.Guardados);
     }
 
+    [Fact]
+    public async Task GaleriaManual_CincoFotosMuestranCadaTransferenciaRealYBloqueanMutaciones()
+    {
+        var modelo = ModeloManual();
+        await using var vista = await Vista.CrearAsync(modelo);
+        var archivos = Enumerable.Range(0, 5).Select(_ => new ArchivoControlado()).ToArray();
+        var lectura = vista.EjecutarAsync("SeleccionarImagenAsync", new InputFileChangeEventArgs(archivos));
+        for (var indice = 0; indice < archivos.Length; indice++)
+        {
+            await archivos[indice].Inicio.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            var html = await vista.HtmlAsync();
+            Assert.Contains($"Subiendo foto {indice + 1} de 5", html);
+            Assert.Contains("role=\"status\" aria-live=\"polite\" aria-atomic=\"true\"", html);
+            Assert.DoesNotContain("Guardando foto", html);
+            Assert.Empty(modelo.Galeria); // El lote solo se incorpora al terminar las cinco lecturas.
+            await vista.EjecutarAsync("QuitarImagen");
+            await vista.EjecutarAsync("GuardarAsync");
+            Assert.Equal(0, vista.Guardados);
+            archivos[indice].Continuar.TrySetResult();
+        }
+        await lectura;
+        Assert.Equal(5, modelo.Galeria.Count);
+        Assert.Single(modelo.Galeria.Where(x => x.EsPortada));
+        Assert.Contains("5 de 8 fotografías preparadas", await vista.HtmlAsync());
+        Assert.DoesNotContain("Subiendo foto", await vista.HtmlAsync());
+        await vista.EjecutarAsync("GuardarAsync");
+        Assert.Equal(1, vista.Guardados);
+    }
+
+    [Fact]
+    public async Task GaleriaManual_FalloDeTransferenciaConservaSeleccionOrdenPortadaYReintentaSinDuplicar()
+    {
+        var modelo = ModeloManual();
+        await using var vista = await Vista.CrearAsync(modelo);
+        await vista.EjecutarAsync("SeleccionarImagenAsync", new InputFileChangeEventArgs(
+            [new ArchivoImagen(), new ArchivoImagen()]));
+        await vista.EjecutarAsync("ElegirPortada", modelo.Galeria[1]);
+        await vista.EjecutarAsync("MoverFoto", 1, -1);
+        var anteriores = modelo.Galeria.ToArray();
+        var fallida = new ArchivoReintentable();
+        await vista.EjecutarAsync("SeleccionarImagenAsync", new InputFileChangeEventArgs([new ArchivoImagen(), fallida]));
+        Assert.Equal(anteriores, modelo.Galeria);
+        Assert.True(anteriores[0].EsPortada);
+        Assert.Contains("Reintentar preparación", await vista.HtmlAsync());
+        await vista.EjecutarAsync("GuardarAsync");
+        Assert.Equal(0, vista.Guardados);
+        await vista.EjecutarAsync("ReintentarImagenesAsync");
+        Assert.Equal(4, modelo.Galeria.Count);
+        Assert.Equal(anteriores, modelo.Galeria.Take(2));
+        Assert.Same(anteriores[0], modelo.Galeria.Single(x => x.EsPortada));
+        Assert.Equal(2, fallida.Lecturas);
+        Assert.DoesNotContain("Reintentar preparación", await vista.HtmlAsync());
+        await vista.EjecutarAsync("ReintentarImagenesAsync");
+        Assert.Equal(4, modelo.Galeria.Count);
+    }
+
+    [Fact]
+    public async Task GaleriaManual_DeshacerLookupTrasTransferenciaFallidaDescartaReintentoInvalidoYPermiteGuardar()
+    {
+        var modelo = ModeloManual();
+        await using var vista = await Vista.CrearAsync(modelo);
+        await vista.EjecutarAsync("SeleccionarImagenAsync", new InputFileChangeEventArgs(
+            [new ArchivoImagen(), new ArchivoImagen()]));
+        await vista.EjecutarAsync("ElegirPortada", modelo.Galeria[1]);
+        await vista.EjecutarAsync("MoverFoto", 1, -1);
+        var anteriores = modelo.Galeria.ToArray();
+        await vista.ImportarAsync();
+        var fallida = new ArchivoReintentable();
+        await vista.EjecutarAsync("SeleccionarImagenAsync", new InputFileChangeEventArgs([new ArchivoImagen(), fallida]));
+        Assert.Equal(anteriores, modelo.Galeria);
+        Assert.Contains("Reintentar preparación", await vista.HtmlAsync());
+        await vista.EjecutarAsync("GuardarAsync");
+        Assert.Equal(0, vista.Guardados);
+
+        await vista.EjecutarAsync("DeshacerImportacion");
+        var html = await vista.HtmlAsync();
+        Assert.Equal("Manual", modelo.Nombre);
+        Assert.Equal(anteriores.Select(x => x.Archivo), modelo.Galeria.Select(x => x.Archivo));
+        Assert.True(modelo.Galeria[0].EsPortada);
+        Assert.False(modelo.Galeria[1].EsPortada);
+        Assert.DoesNotContain("Reintentar preparación", html);
+        Assert.DoesNotContain("No fue posible transferir", html);
+        // Deshacer recrea InputFile: no debe intentar leer las referencias del lote anterior.
+        await vista.EjecutarAsync("ReintentarImagenesAsync");
+        Assert.Equal(1, fallida.Lecturas);
+        Assert.Equal(2, modelo.Galeria.Count);
+        await vista.EjecutarAsync("GuardarAsync");
+        Assert.Equal(1, vista.Guardados);
+
+        await vista.EjecutarAsync("SeleccionarImagenAsync", new InputFileChangeEventArgs([new ArchivoImagen()]));
+        Assert.Equal(3, modelo.Galeria.Count);
+        Assert.True(modelo.Galeria[0].EsPortada);
+        await vista.EjecutarAsync("GuardarAsync");
+        Assert.Equal(2, vista.Guardados);
+    }
+
+    [Fact]
+    public async Task GaleriaManual_ArchivoMayorA8MbRechazaLoteAntesDeLeerYConservaFotosPrevias()
+    {
+        var modelo = ModeloManual();
+        await using var vista = await Vista.CrearAsync(modelo);
+        await vista.EjecutarAsync("SeleccionarImagenAsync", new InputFileChangeEventArgs([new ArchivoImagen()]));
+        var anterior = Assert.Single(modelo.Galeria);
+        var grande = new ArchivoImagen(tamano: 8 * 1024 * 1024 + 1);
+        await vista.EjecutarAsync("SeleccionarImagenAsync", new InputFileChangeEventArgs([grande]));
+        Assert.Equal(0, grande.Lecturas);
+        Assert.Same(anterior, Assert.Single(modelo.Galeria));
+        Assert.True(anterior.EsPortada);
+        Assert.Contains("8 MB", await vista.HtmlAsync());
+        Assert.DoesNotContain("Reintentar preparación", await vista.HtmlAsync());
+        Assert.Equal(0, vista.Guardados);
+    }
+
+    [Fact]
+    public async Task GaleriaManual_GuardadoAtomicoMuestraSpinnerYTextoSinContadorSimulado()
+    {
+        var modelo = ModeloManual();
+        await using var vista = await Vista.CrearAsync(modelo, guardando: true);
+        var html = await vista.HtmlAsync();
+        Assert.Contains("Guardando fotografías…", html);
+        Assert.Contains("motion-safe:animate-spin", html);
+        Assert.DoesNotContain("Guardando foto 1", html);
+        Assert.Equal(0, vista.Guardados);
+    }
+
+    [Fact]
+    public async Task CategoriaDependiente_EditarHijaPreseleccionaRaizYLimpiaHijaAlCambiar()
+    {
+        var modelo = ModeloManual();
+        modelo.CategoriaId = 3;
+        var categorias = new CategoriaDto[] {
+            new(1, "Raíz A", null), new(2, "Raíz B", null),
+            new(3, "Hija A", null, 1, "Raíz A"), new(4, "Hija B", null, 2, "Raíz B") };
+        await using var vista = await Vista.CrearAsync(modelo, categorias);
+        Assert.Equal(1, modelo.CategoriaPrincipalId);
+        Assert.Equal(3, modelo.SubcategoriaId);
+        var html = await vista.HtmlAsync();
+        Assert.Contains("Categoría principal", html);
+        Assert.Contains("Subcategoría (opcional)", html);
+        Assert.DoesNotContain(">Hija B</option>", html);
+        modelo.CategoriaPrincipalId = 2;
+        modelo.SeleccionarCategoriaPrincipal();
+        await vista.EjecutarAsync("StateHasChanged");
+        Assert.Null(modelo.SubcategoriaId);
+        Assert.Equal(2, modelo.CategoriaId);
+        Assert.Equal(2, modelo.ToInput().CategoriaPrincipalId);
+        html = await vista.HtmlAsync();
+        Assert.DoesNotContain(">Hija A</option>", html);
+        Assert.Contains(">Hija B</option>", html);
+        modelo.SubcategoriaId = 4;
+        modelo.SeleccionarSubcategoria();
+        Assert.Equal(4, modelo.ToInput().CategoriaId);
+    }
+
+    private sealed class ArchivoControlado : IBrowserFile
+    {
+        public TaskCompletionSource Inicio { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource Continuar { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public string Name => "prueba.png";
+        public DateTimeOffset LastModified => DateTimeOffset.UnixEpoch;
+        public long Size => ImagenManual.Length;
+        public string ContentType => "image/png";
+        public Stream OpenReadStream(long maxAllowedSize = 512000, CancellationToken cancellationToken = default) =>
+            new TransferenciaControlada(this);
+
+        private sealed class TransferenciaControlada(ArchivoControlado archivo) : MemoryStream(ImagenManual, false)
+        {
+            public override async Task CopyToAsync(Stream destino, int bufferSize, CancellationToken ct)
+            {
+                archivo.Inicio.TrySetResult();
+                await archivo.Continuar.Task.WaitAsync(ct);
+                await base.CopyToAsync(destino, bufferSize, ct);
+            }
+        }
+    }
+
+    private sealed class ArchivoReintentable : IBrowserFile
+    {
+        public int Lecturas { get; private set; }
+        public string Name => "reintento.png";
+        public DateTimeOffset LastModified => DateTimeOffset.UnixEpoch;
+        public long Size => ImagenManual.Length;
+        public string ContentType => "image/png";
+        public Stream OpenReadStream(long maxAllowedSize = 512000, CancellationToken cancellationToken = default) =>
+            ++Lecturas == 1 ? new TransferenciaFallida() : new MemoryStream(ImagenManual, false);
+
+        private sealed class TransferenciaFallida : MemoryStream
+        {
+            public override Task CopyToAsync(Stream destino, int bufferSize, CancellationToken ct) =>
+                Task.FromException(new IOException("Interrupción de transferencia de prueba"));
+        }
+    }
+
     private sealed class Vista : IAsyncDisposable
     {
         private readonly ServiceProvider servicios;
@@ -271,13 +464,14 @@ public sealed class ProductoLookupPreviewTests
             renderer = new HtmlRenderer(servicios, servicios.GetRequiredService<ILoggerFactory>());
         }
 
-        public static async Task<Vista> CrearAsync(ProductoFormModel modelo)
+        public static async Task<Vista> CrearAsync(ProductoFormModel modelo, IReadOnlyList<CategoriaDto>? categorias = null, bool guardando = false)
         {
             var vista = new Vista();
             vista.raiz = await vista.renderer.Dispatcher.InvokeAsync(() =>
                 vista.renderer.RenderComponentAsync<ProductoForm>(ParameterView.FromDictionary(new Dictionary<string, object?>()
                 {
-                    ["Modelo"] = modelo, ["Categorias"] = new CategoriaDto[] { new(1, "General", null) },
+                    ["Modelo"] = modelo, ["Categorias"] = categorias ?? new CategoriaDto[] { new(1, "General", null) },
+                    ["Guardando"] = guardando,
                     ["LookupHabilitado"] = true, ["ProductoId"] = 7,
                     ["OnGuardar"] = EventCallback.Factory.Create<ProductoFormModel>(vista, _ => vista.Guardados++)
                 })));
@@ -320,13 +514,22 @@ public sealed class ProductoLookupPreviewTests
     private sealed class ArchivoImagen : IBrowserFile
     {
         private readonly byte[] contenido;
-        public ArchivoImagen(byte[]? contenido = null) => this.contenido = contenido ?? ImagenManual;
+        private readonly long? tamano;
+        public ArchivoImagen(byte[]? contenido = null, long? tamano = null)
+        {
+            this.contenido = contenido ?? ImagenManual;
+            this.tamano = tamano;
+        }
+        public int Lecturas { get; private set; }
         public string Name => "manual.png";
         public DateTimeOffset LastModified => DateTimeOffset.UnixEpoch;
-        public long Size => contenido.Length;
+        public long Size => tamano ?? contenido.Length;
         public string ContentType => "image/png";
-        public Stream OpenReadStream(long maxAllowedSize = 512000, CancellationToken cancellationToken = default) =>
-            new MemoryStream(contenido, writable: false);
+        public Stream OpenReadStream(long maxAllowedSize = 512000, CancellationToken cancellationToken = default)
+        {
+            Lecturas++;
+            return new MemoryStream(contenido, writable: false);
+        }
     }
 
     private sealed class JSInerte : IJSRuntime

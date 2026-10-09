@@ -7,7 +7,7 @@ public sealed record CategoriaInput(string Nombre, string? Observaciones, int? C
 public sealed record CategoriaDto(int Id, string Nombre, string? Observaciones,
     int? CategoriaPadreId = null, string? CategoriaPadre = null, bool TieneSubcategorias = false);
 
-public sealed record ProductoInput(string? CodigoBarras, string Nombre, string? Descripcion, string? Marca, string? Modelo, string? Color, string? Talla, decimal PrecioSugerido, int CategoriaId, decimal? ContenidoMl = null, decimal? PesoGramos = null, string? Presentacion = null);
+public sealed record ProductoInput(string? CodigoBarras, string Nombre, string? Descripcion, string? Marca, string? Modelo, string? Color, string? Talla, decimal PrecioSugerido, int CategoriaId, decimal? ContenidoMl = null, decimal? PesoGramos = null, string? Presentacion = null, int? CategoriaPrincipalId = null);
 public sealed record ProductoDto(int Id, string CodigoInterno, string? CodigoBarras, string Nombre, string? Descripcion, string? Marca, string? Modelo, string? Color, string? Talla, decimal PrecioSugerido, int CategoriaId, string Categoria, decimal? ContenidoMl = null, decimal? PesoGramos = null, string? Presentacion = null, string? ImagenPrincipalRuta = null);
 
 public sealed record ProveedorInput(string Nombre, string? Telefono, string? CodigoPais, string? Descripcion);

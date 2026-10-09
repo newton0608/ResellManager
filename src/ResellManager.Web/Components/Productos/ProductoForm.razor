@@ -72,16 +72,31 @@
                     <div class="empty:hidden" id="producto-codigo-barras-validacion"><ValidationMessage For="() => Modelo.CodigoBarras" /></div>
                 </div>
 
-                <div class="grid min-w-0 gap-2">
-                    <label class="text-sm font-medium" for="producto-categoria">Categoría <span aria-hidden="true">*</span></label>
-                    <InputSelect class="ui-input" aria-describedby="producto-categoria-validacion" aria-required="true" id="producto-categoria" @bind-Value="Modelo.CategoriaId" disabled="@(Guardando || Categorias.Count == 0)">
-                        <option value="0">Selecciona una categoría</option>
-                        @foreach (var categoria in CategoriaPresentacion.Ordenar(Categorias))
-                        {
-                            <option value="@categoria.Id">@CategoriaPresentacion.Etiqueta(categoria)</option>
-                        }
-                    </InputSelect>
-                    <div class="empty:hidden" id="producto-categoria-validacion"><ValidationMessage For="() => Modelo.CategoriaId" /></div>
+                <div class="grid min-w-0 gap-4 sm:grid-cols-2">
+                    <div class="grid min-w-0 gap-2">
+                        <label class="text-sm font-medium" for="producto-categoria">Categoría principal <span aria-hidden="true">*</span></label>
+                        <InputSelect class="ui-input" aria-describedby="producto-categoria-validacion" aria-required="true" id="producto-categoria"
+                                     @bind-Value="Modelo.CategoriaPrincipalId" @bind-Value:after="Modelo.SeleccionarCategoriaPrincipal"
+                                     disabled="@(Guardando || Categorias.Count == 0)">
+                            <option value="0">Selecciona una categoría principal</option>
+                            @foreach (var categoria in Categorias.Where(x => x.CategoriaPadreId is null).OrderBy(x => x.Nombre).ThenBy(x => x.Id))
+                            {
+                                <option value="@categoria.Id">@categoria.Nombre</option>
+                            }
+                        </InputSelect>
+                        <div class="empty:hidden" id="producto-categoria-validacion"><ValidationMessage For="() => Modelo.CategoriaId" /></div>
+                    </div>
+                    <div class="grid min-w-0 gap-2">
+                        <label class="text-sm font-medium" for="producto-subcategoria">Subcategoría (opcional)</label>
+                        <InputSelect class="ui-input" id="producto-subcategoria" @bind-Value="Modelo.SubcategoriaId" @bind-Value:after="Modelo.SeleccionarSubcategoria"
+                                     disabled="@(Guardando || Modelo.CategoriaPrincipalId <= 0 || !Categorias.Any(x => x.CategoriaPadreId == Modelo.CategoriaPrincipalId))">
+                            <option value="">Sin subcategoría</option>
+                            @foreach (var categoria in Categorias.Where(x => x.CategoriaPadreId == Modelo.CategoriaPrincipalId).OrderBy(x => x.Nombre).ThenBy(x => x.Id))
+                            {
+                                <option value="@categoria.Id">@categoria.Nombre</option>
+                            }
+                        </InputSelect>
+                    </div>
                 </div>
 
                 <div class="grid min-w-0 gap-2">
@@ -241,7 +256,19 @@
                                accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
                                disabled="@(Guardando || LeyendoImagenes || Modelo.Galeria.Count >= 8)" />
                     <p class="m-0 text-sm leading-6 text-ui-muted">JPEG, PNG o WebP; máximo 8 MB por foto. Puedes seleccionar varias. En móvil puedes elegir cámara o galería.</p>
-                    <p class="m-0 text-sm leading-6 text-ui-muted" role="status" aria-live="polite">@(LeyendoImagenes ? "Preparando fotografías..." : $"{Modelo.Galeria.Count} de 8 fotografías seleccionadas")</p>
+                    <div class="flex min-w-0 items-center gap-3 text-sm leading-6 text-ui-muted" role="status" aria-live="polite" aria-atomic="true">
+                        @if (LeyendoImagenes || Guardando)
+                        {
+                            <span class="size-5 shrink-0 rounded-full border-[3px] border-solid border-ui-accent/20 border-t-ui-accent motion-safe:animate-spin" aria-hidden="true"></span>
+                        }
+                        <span>@(LeyendoImagenes ? ProgresoImagenes : Guardando ? "Guardando fotografías…" : $"{Modelo.Galeria.Count} de 8 fotografías preparadas")</span>
+                    </div>
+                    <p class="m-0 text-sm leading-6 text-ui-muted">La lectura transfiere cada foto al servidor para validarla. Se guardan con el producto al confirmar.</p>
+                    @if (SeleccionPendiente is not null && !LeyendoImagenes && !Guardando)
+                    {
+                        <button class="ui-button justify-self-start border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" type="button"
+                                @onclick="ReintentarImagenesAsync">Reintentar preparación</button>
+                    }
                 </div>
                 @if (!string.IsNullOrWhiteSpace(ErrorImagen))
                 {
@@ -259,11 +286,18 @@
         </button>
         @if (OnCancelar.HasDelegate)
         {
-            <button class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" type="button" disabled="@Guardando" @onclick="OnCancelar">Cancelar</button>
+            <button class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" type="button" disabled="@(Guardando || LeyendoImagenes)" @onclick="OnCancelar">Cancelar</button>
         }
         else
         {
-            <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="@CancelarHref">Cancelar</a>
+            @if (Guardando || LeyendoImagenes)
+            {
+                <button class="ui-button border-ui-control bg-white text-ui-ink" type="button" disabled>Cancelar</button>
+            }
+            else
+            {
+                <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="@CancelarHref">Cancelar</a>
+            }
         }
     </div>
 </EditForm>
@@ -296,15 +330,20 @@
     [Parameter] public EventCallback OnCancelar { get; set; }
     [Parameter] public bool CategoriasEnOtraPestana { get; set; }
     [Parameter] public int? ProductoId { get; set; }
+    [Parameter] public EventCallback<bool> OnPreparandoImagenes { get; set; }
     private string? VistaPrevia;
     private string? ErrorImagen;
     private int VersionSelectorImagen;
 
     private bool LeyendoImagenes;
+    private string? ProgresoImagenes;
+    private IReadOnlyList<IBrowserFile>? SeleccionPendiente;
+    private readonly CancellationTokenSource CancelacionImagenes = new();
 
     private async Task SeleccionarImagenAsync(InputFileChangeEventArgs evento)
     {
         if (Guardando || LeyendoImagenes || evento.FileCount == 0) return;
+        SeleccionPendiente = null;
         ErrorImagen = null;
         if (evento.FileCount + Modelo.Galeria.Count > 8)
         {
@@ -312,21 +351,43 @@
             VersionSelectorImagen++;
             return;
         }
+        await PrepararImagenesAsync(evento.GetMultipleFiles(8));
+    }
+
+    private Task ReintentarImagenesAsync() => SeleccionPendiente is not null
+        ? PrepararImagenesAsync(SeleccionPendiente) : Task.CompletedTask;
+
+    private async Task PrepararImagenesAsync(IReadOnlyList<IBrowserFile> archivos)
+    {
+        if (Guardando || LeyendoImagenes || CancelacionImagenes.IsCancellationRequested) return;
         LeyendoImagenes = true;
+        ErrorImagen = null;
+        SeleccionPendiente = null;
+        var modelo = Modelo;
+        await OnPreparandoImagenes.InvokeAsync(true);
         try
         {
             var nuevas = new List<ProductoImagenFormModel>();
-            foreach (var archivo in evento.GetMultipleFiles(8))
+            for (var indice = 0; indice < archivos.Count; indice++)
             {
+                var archivo = archivos[indice];
+                ProgresoImagenes = $"Preparando foto {indice + 1} de {archivos.Count}";
+                await InvokeAsync(StateHasChanged);
                 if (archivo.Size > ResellManager.Infrastructure.Storage.AlmacenamientoImagenesProductoLocal.TamanoMaximoBytes)
                 {
                     ErrorImagen = "Una imagen supera el límite máximo de 8 MB. No se añadió ninguna de esta selección.";
+                    VersionSelectorImagen++;
                     return;
                 }
                 await using var entrada = archivo.OpenReadStream(
-                    ResellManager.Infrastructure.Storage.AlmacenamientoImagenesProductoLocal.TamanoMaximoBytes);
+                    ResellManager.Infrastructure.Storage.AlmacenamientoImagenesProductoLocal.TamanoMaximoBytes,
+                    CancelacionImagenes.Token);
                 using var memoria = new MemoryStream();
-                await entrada.CopyToAsync(memoria);
+                ProgresoImagenes = $"Subiendo foto {indice + 1} de {archivos.Count}";
+                await InvokeAsync(StateHasChanged);
+                await entrada.CopyToAsync(memoria, CancelacionImagenes.Token);
+                ProgresoImagenes = $"Preparando foto {indice + 1} de {archivos.Count}";
+                await InvokeAsync(StateHasChanged);
                 var bytes = memoria.ToArray();
                 var tipo = bytes.Length >= 3 && bytes[0] == 0xff && bytes[1] == 0xd8 && bytes[2] == 0xff
                     ? "image/jpeg"
@@ -339,6 +400,7 @@
                 if (tipo is null)
                 {
                     ErrorImagen = "Selecciona imágenes JPEG, PNG o WebP válidas. No se añadió ninguna de esta selección.";
+                    VersionSelectorImagen++;
                     return;
                 }
                 nuevas.Add(new ProductoImagenFormModel
@@ -348,20 +410,26 @@
                     VistaPrevia = $"data:{tipo};base64,{Convert.ToBase64String(bytes)}",
                 });
             }
-            if (Modelo.Galeria.Count == 0 && nuevas.Count > 0) nuevas[0].EsPortada = true;
-            Modelo.Galeria.AddRange(nuevas);
-            Modelo.ImagenExternaUrl = null;
-            Modelo.EliminarImagenPrincipal = false;
+            if (CancelacionImagenes.IsCancellationRequested || !ReferenceEquals(Modelo, modelo)) return;
+            if (modelo.Galeria.Count == 0 && nuevas.Count > 0) nuevas[0].EsPortada = true;
+            modelo.Galeria.AddRange(nuevas);
+            modelo.ImagenExternaUrl = null;
+            modelo.EliminarImagenPrincipal = false;
             SincronizarImagenManual();
+            VersionSelectorImagen++;
         }
+        catch (OperationCanceledException) when (CancelacionImagenes.IsCancellationRequested) { }
         catch (Exception)
         {
-            ErrorImagen = "No fue posible mostrar las imágenes seleccionadas. No se añadió ninguna de esta selección.";
+            ErrorImagen = "No fue posible transferir las imágenes. No se añadió ninguna de esta selección. Puedes reintentar.";
+            // Conservar el InputFile y sus referencias hasta reintentar o elegir un lote nuevo.
+            SeleccionPendiente = archivos;
         }
         finally
         {
             LeyendoImagenes = false;
-            VersionSelectorImagen++;
+            ProgresoImagenes = null;
+            if (!DescartadoLookup) await OnPreparandoImagenes.InvokeAsync(false);
         }
     }
 
@@ -390,7 +458,7 @@
         Modelo.EliminarImagenPrincipal = Modelo.Galeria.Count == 0 && Modelo.ImagenPrincipalRuta is not null;
         SincronizarImagenManual();
         ErrorImagen = null;
-        VersionSelectorImagen++;
+        if (SeleccionPendiente is null) VersionSelectorImagen++;
     }
 
     private void SincronizarImagenManual()
@@ -405,6 +473,7 @@
     {
         if (Guardando || LeyendoImagenes) return;
         Modelo.Galeria.Clear();
+        SeleccionPendiente = null;
         Modelo.ImagenArchivo = null;
         Modelo.ImagenContenido = null;
         Modelo.ImagenExternaUrl = null;
@@ -414,7 +483,7 @@
         VersionSelectorImagen++;
     }
 
-    private bool PuedeGuardar => !Guardando && !LeyendoImagenes && !BuscandoLookup && !RevisandoLookup && !ProductoLocalCoincide && Categorias.Count > 0;
+    private bool PuedeGuardar => SeleccionPendiente is null && !Guardando && !LeyendoImagenes && !BuscandoLookup && !RevisandoLookup && !ProductoLocalCoincide && Categorias.Count > 0;
 
     private Task GuardarAsync() => PuedeGuardar ? OnGuardar.InvokeAsync(Modelo) : Task.CompletedTask;
 

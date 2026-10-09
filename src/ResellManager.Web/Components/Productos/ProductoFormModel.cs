@@ -39,7 +39,25 @@ public sealed class ProductoFormModel : IValidatableObject
     public string? Presentacion { get; set; }
 
     public decimal PrecioSugerido { get; set; }
+    // CategoriaId sigue siendo la única categoría persistida. Los otros IDs son contexto del formulario.
     public int CategoriaId { get; set; }
+    public int CategoriaPrincipalId { get; set; }
+    public int? SubcategoriaId { get; set; }
+
+    public void PrepararSeleccionCategoria(IReadOnlyList<CategoriaDto> categorias)
+    {
+        var final = categorias.FirstOrDefault(x => x.Id == CategoriaId);
+        CategoriaPrincipalId = final?.CategoriaPadreId ?? final?.Id ?? 0;
+        SubcategoriaId = final?.CategoriaPadreId.HasValue == true ? final.Id : null;
+    }
+
+    public void SeleccionarCategoriaPrincipal()
+    {
+        SubcategoriaId = null;
+        CategoriaId = CategoriaPrincipalId;
+    }
+
+    public void SeleccionarSubcategoria() => CategoriaId = SubcategoriaId ?? CategoriaPrincipalId;
     public string? ImagenPrincipalRuta { get; set; }
     public IBrowserFile? ImagenArchivo { get; set; }
     public bool EliminarImagenPrincipal { get; set; }
@@ -92,6 +110,8 @@ public sealed class ProductoFormModel : IValidatableObject
         Presentacion = anterior.Presentacion;
         PrecioSugerido = anterior.PrecioSugerido;
         CategoriaId = anterior.CategoriaId;
+        CategoriaPrincipalId = anterior.CategoriaPrincipalId;
+        SubcategoriaId = anterior.SubcategoriaId;
         ImagenPrincipalRuta = anterior.ImagenPrincipalRuta;
         ImagenArchivo = anterior.ImagenArchivo;
         ImagenContenido = anterior.ImagenContenido;
@@ -156,7 +176,8 @@ public sealed class ProductoFormModel : IValidatableObject
             CategoriaId,
             ContenidoMl,
             PesoGramos,
-            Presentacion);
+            Presentacion,
+            CategoriaPrincipalId > 0 ? CategoriaPrincipalId : null);
 
     public static ProductoFormModel FromDto(ProductoDto producto) =>
         new()

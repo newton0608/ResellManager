@@ -16,9 +16,9 @@
     {
         <ProductoForm Modelo="Modelo" Categorias="Categorias" Guardando="Guardando"
                       ErrorMessage="@Error" OnGuardar="GuardarAsync" OnCancelar="OnCancelar"
-                      CategoriasEnOtraPestana="true" />
+                      CategoriasEnOtraPestana="true" OnPreparandoImagenes="@(valor => PreparandoImagenes = valor)" />
     }
-    <button class="ui-button w-full border-ui-control bg-white text-ui-ink hover:bg-ui-canvas sm:w-auto" type="button" disabled="@(Guardando || Cargando)"
+    <button class="ui-button w-full border-ui-control bg-white text-ui-ink hover:bg-ui-canvas sm:w-auto" type="button" disabled="@(Guardando || Cargando || PreparandoImagenes)"
             @onclick="CargarCategoriasAsync">Actualizar categorías</button>
 </section>
 
@@ -29,6 +29,7 @@
     private IReadOnlyList<CategoriaDto> Categorias { get; set; } = [];
     private bool Cargando { get; set; }
     private bool Guardando { get; set; }
+    private bool PreparandoImagenes { get; set; }
     private string? Error { get; set; }
     private ElementReference Titulo;
 
@@ -40,7 +41,7 @@
 
     private async Task CargarCategoriasAsync()
     {
-        if (Cargando || Guardando) return;
+        if (Cargando || Guardando || PreparandoImagenes) return;
         Cargando = true;
         Error = null;
         try { Categorias = await CategoriaService.ListarAsync(); }
