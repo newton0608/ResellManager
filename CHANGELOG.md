@@ -2,9 +2,9 @@
 
 Las fechas siguientes corresponden a creación de tags; no son fechas exactas de despliegue. Las GitHub Releases pueden publicarse después usando esos mismos tags, por lo que la fecha de una Release tampoco debe confundirse con la fecha de despliegue.
 
-## Unreleased — V1.4 en feature/catalogo-v1-4
+## Unreleased — V1.4 integrada en main y develop
 
-Base `v1.3.0` (`b9ab4ee`); sin tag, release ni despliegue.
+Base `v1.3.0` (`b9ab4ee`); integrada a `main` mediante PR #17 y a `develop` mediante PR #16. Sin nuevo tag, release ni despliegue.
 
 - Galería de cero a ocho fotos, portada y orden, edición autenticada y migración que preserva referencias históricas.
 - Visor público con zoom/pinch/pan, swipe, teclado, foco y fallback.
