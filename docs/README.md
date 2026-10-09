@@ -61,17 +61,15 @@ decisiones en lugar de abrir una segunda colección ADR con decisiones repetidas
 | [Diagramas](diagrams/) | Material editable conservado; contrastar contratos ampliados con código/configuración EF. |
 | [Auditoría documental 05/10/2026](documentation-audit.md) | Base, reorganización, contradicciones y límites de esta revisión. |
 
-## Flujo para futuras tareas de Codex
+## Separación entre documentación y ejecución
 
-1. Discutir requisitos y resolver preguntas del negocio.
-2. Actualizar el documento canónico del módulo: estado actual, cambio aprobado,
-   alcance/exclusiones y criterios de aceptación. Registrar decisión duradera
-   solo cuando corresponda; no convertir opciones tentativas en reglas.
-3. Dar un prompt corto: rama/base, objetivo, documentos pertinentes y entrega.
-4. Implementar, validar y actualizar el estado documental en la misma rama.
+Los documentos permanentes describen **decisiones, comportamiento implementado,
+requisitos aprobados, reglas de negocio, arquitectura, contratos, límites y
+criterios de aceptación**, distinguiendo siempre lo vigente de lo pendiente.
+No contienen prompts para Codex ni instrucciones específicas de ejecución
+(comandos a lanzar, orden de trabajo, creación de ramas, commits o push).
 
-Ejemplo: «Desde develop, crea una rama para implementar el cambio aprobado en
-docs/modules/catalogo.md. Lee AGENTS.md y las referencias necesarias de ese módulo.
-Respeta sus criterios de aceptación, valida el área y entrega commit/push sin merge».
-Este ejemplo requiere primero que el cambio concreto esté aprobado y documentado;
-la guía actual de catálogo no autoriza implementar pendientes por sí sola.
+La comunicación de tareas a un agente se realiza **en el chat**, mediante un
+prompt independiente que remite a los documentos pertinentes. `AGENTS.md`
+conserva, por su propósito explícito, el contrato general del repositorio
+para agentes; no se usa como contenedor de prompts por funcionalidad.
