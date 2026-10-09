@@ -1,12 +1,11 @@
 # V1.4 — Galería, exploración y UX del catálogo público
 
-**Estado: implementación inicial completada en `feature/catalogo-v1-4`; QA físico pendiente. Ajustes UX aprobados posteriormente, todavía SIN implementar.** Alcance inicial acordado el 08/10/2026.
-**Base obligatoria de esta línea de trabajo:** tag `v1.3.0`, commit
-`b9ab4eeabc2dd04b587e437243d6e27cb4b5e1e2`; rama
-`feature/catalogo-v1-4`. Este documento registra el alcance, las decisiones y los contratos de V1.4.
-No interpretar estos requisitos como funcionalidades ya desplegadas.
+**Estado: V1.4 y ajustes UX implementados; QA físico pendiente, sin release ni despliegue.**
+Alcance inicial acordado el 08/10/2026. Base histórica: tag `v1.3.0`, commit
+`b9ab4eeabc2dd04b587e437243d6e27cb4b5e1e2`. Este documento registra el alcance,
+las decisiones y los contratos de V1.4; no certifica su despliegue.
 
-**Siguiente iteración aprobada, aún pendiente:** [escaparate por categorías,
+**Iteración UX posterior implementada:** [escaparate por categorías,
 paginación real, selección dependiente, progreso de fotos y reconexión pública
 mínima](catalogo-v1-4-ajustes-ux.md). Ese documento amplía/sustituye la UX
 inicial donde lo indica; no invalida los resultados históricos de esta V1.4.
@@ -239,13 +238,13 @@ el lenguaje visual de Virtuosa y el diseño `store-*`, separado de `ui-*`.
    sin pedidos ni reservas automáticos.
 10. QA responsive al menos 320, 390, 768 y 1440 px; Safari/iPhone real
    pendiente hasta validación física documentada. Emulación no la sustituye.
-11. `dotnet build ResellManager.sln`, tests focalizados y suite completa
-    por migraciones/contratos compartidos, `npm run test:js`,
-    `npm run css:build`, `git diff --check`; reportar resultados reales.
+11. Compilación de la solución, tests focalizados y suite .NET completa por
+    migraciones/contratos compartidos, regresiones JS, generación de CSS y
+    revisión del diff sin errores de whitespace; evidencia de resultados reales.
 
 ## Implementación y configuración V1.4
 
-Implementada en esta rama sobre `v1.3.0`; no publicada ni desplegada. La única
+Implementada sobre `v1.3.0`; no publicada ni desplegada. La única
 migración nueva es `20261008144723_AddCatalogGalleryAndSubcategories`, generada
 con EF Core junto con Designer/snapshot. Añade `ProductoImagenes` con GUID,
 referencia privada y orden, y `CategoriaPadreId` nullable con FK restrictiva.
@@ -286,19 +285,27 @@ configurar el origen canónico real; nunca se deriva del request de Preview.
 El mensaje codificado incluye nombre y `{OrigenPublico}/producto/{id}`, sin
 precio ni stock. Las rutas de navegación Preview se conservan.
 
-Los filtros categoría/marca/búsqueda se combinan y se restauran por URL.
-**Estado implementado antes de los ajustes UX:** las opciones públicas se
-obtienen del listado elegible completo y quedan estables al filtrar. La raíz se
-revela también cuando solo tiene publicaciones indirectas. La iteración
-[aprobada y pendiente](catalogo-v1-4-ajustes-ux.md) sustituirá esa carga total
-por metadatos públicos y listados paginados en servidor.
-La reconexión detecta `data-public-catalog="true"` del layout, sin depender de
-host/ruta; continúa observando las clases oficiales de Blazor. Aviso transitorio
-no modal, fallo/rechazo con acciones nativas, y modal administrativo conservado.
+Los filtros categoría/marca/búsqueda se combinan y se restauran por URL. La raíz
+se revela también cuando sólo tiene publicaciones indirectas. **Estado posterior
+a los ajustes UX:** la portada carga tres carruseles de raíces por bloque, con
+hasta diez productos cada uno; los listados obtienen páginas de dieciséis desde
+SQLite, y las opciones públicas provienen de contratos independientes acotados.
+Se conserva el array del endpoint antiguo para consumidores anteriores; la UI
+vigente no lo utiliza para construir filtros ni carruseles. Los selectores
+administrativos raíz/hija y las etapas reales de transferencia/preparación
+conservan el modelo y las garantías de persistencia existentes.
+Funcionamiento y diagnóstico: [ajustes UX](catalogo-v1-4-ajustes-ux.md).
 
-## Validación realizada — 08/10/2026
+La reconexión detecta `data-public-catalog="true"` del layout sin depender de
+host/ruta y observa las clases oficiales de Blazor. También resincroniza al
+cambiar el layout durante navegación mejorada o restaurar historial. Aviso
+transitorio mínimo no modal, fallo/rechazo con acciones nativas, y modal
+administrativo conservado.
 
-Resultados en esta rama, con .NET SDK 10.0.302 y Node 24.19.0. Datos sintéticos,
+## Validación histórica de V1.4 inicial — 08/10/2026
+
+Resultados anteriores a los ajustes UX, con .NET SDK 10.0.302 y Node 24.19.0.
+No certifican la iteración posterior. Datos sintéticos,
 SQLite/directorios aislados; no se usaron producción, proveedores externos reales
 ni despliegues.
 
@@ -320,7 +327,8 @@ Simula únicamente las lecturas públicas/fotografías del producto de QA; las
 altas y ediciones administrativas usan los servicios y archivos reales de prueba.
 Requiere Playwright disponible (o `CATALOGO_PLAYWRIGHT_MODULE` apuntando a su
 `index.mjs`), sin añadir dependencias al proyecto. `CATALOGO_BROWSER_CHANNEL`
-permite elegir un canal instalado; se usó `msedge`. Primero compilar en Debug.
+permite elegir un canal instalado; la evidencia registrada corresponde a `msedge`
+y al build Debug.
 
 Responsive verificado a **320, 390, 768 y 1440 px** en listado/detalle, galería
 administrativa y categorías, sin overflow horizontal. Se revisaron capturas
@@ -345,17 +353,19 @@ real de WhatsApp en iPhone/Android/escritorio. El enlace, mensaje codificado y
 ocultación ante configuración vacía/inválida sí están automatizados. Emulación y
 gestos sintéticos no certifican esos dispositivos ni una desconexión física.
 
-## Iteración de navegación, carga y reconexión — pendiente
+## Iteración de navegación, carga y reconexión — implementada
 
-Tras el QA visual se aprobó un ajuste adicional, **no cubierto por las pruebas
-894/.NET, 123/JS y 76/responsive anteriores**. Requisitos, criterios de
-aceptación, restricciones de compatibilidad y diagnóstico de Preview:
-[contrato de ajustes UX](catalogo-v1-4-ajustes-ux.md). Incluye portada con
-carruseles de hasta 10 productos por categoría raíz, listados de 16 en 16
-paginados desde SQLite, chips de subcategoría, selector dependiente en
-administración, progreso real de fotos y reconexión pública sin modal.
+Tras el QA visual se aprobó e implementó el ajuste de navegación/carga y
+reconexión, **no cubierto por las pruebas 894/.NET, 123/JS y 76/responsive
+anteriores**. El [contrato de ajustes UX](catalogo-v1-4-ajustes-ux.md) registra
+el comportamiento final, contratos, diagnóstico y validación propia. Incluye
+portada con carruseles de hasta 10 productos por raíz, listado real de 16 en 16,
+chips de hijas, selector administrativo dependiente y progreso real de fotos.
+El guardado atómico conserva spinner sin contador ficticio.
 
-El placeholder «Imagen no disponible» visto en Preview corresponde a productos
-sin fotografías: no es un defecto a corregir. El modal grande sí requiere
-verificar primero la versión desplegada y la detección del layout antes de
-atribuirlo al código de la rama. No hay despliegue autorizado.
+El placeholder «Imagen no disponible» de Preview corresponde a productos sin
+fotografías. La inspección de Preview no reprodujo el modal grande ni identificó
+un SHA desplegado verificable; la causa exacta de la captura de iPhone queda
+sin confirmar. Sí se corrigió un defecto local al cambiar de layout sin cambiar
+la clase de reconexión, documentado en [su diagnóstico](catalogo-v1-4-ajustes-ux.md#8-diagnóstico-de-reconexión-y-límites-de-evidencia).
+No se modificó el despliegue ni se publicó una release. QA físico pendiente.

@@ -29,12 +29,12 @@ como tales en el [registro de decisiones](11_DecisionesDeDiseño.md).
 | Invariantes | [Reglas del negocio](architecture/domain-rules.md) | Estados físicos, reserva, venta, saldo y costos. |
 | EF / SQLite / archivos | [Persistencia](architecture/persistence.md) | Contratos del esquema y migraciones existentes. |
 | Clientes | [Módulo](modules/clientes.md) | Actividad/saldo; decisión 025 pendiente. |
-| Productos / categorías | [Módulo](modules/productos.md) | [Medidas](23_MedidasYPresentacionProducto.md), [imagen](24_ImagenPrincipalProducto.md), [scanner](29_BarcodeScanner.md), [lookup externo](modules/productos-lookup-codigo-barras.md), [selectores/progreso de fotos pendientes](modules/catalogo-v1-4-ajustes-ux.md). |
+| Productos / categorías | [Módulo](modules/productos.md) | [Medidas](23_MedidasYPresentacionProducto.md), [imagen](24_ImagenPrincipalProducto.md), [scanner](29_BarcodeScanner.md), [lookup externo](modules/productos-lookup-codigo-barras.md), [selectores/progreso de fotos implementados](modules/catalogo-v1-4-ajustes-ux.md). |
 | Compras / proveedores | [Módulo](modules/compras.md) | [Comprobantes](16_Fase58_ComprasYComprobantes.md), [GTQ/USD](28_MonedasDeCompra.md). |
 | Inventario | [Módulo](modules/inventario.md) | Reglas físicas y recepción. |
 | Pedidos / reservas | [Módulo](modules/pedidos.md) | [Códigos y canales](15_CodigosYCanalesVenta.md). |
 | Ventas / pagos / Dashboard | [Módulo](modules/ventas.md) | [Dashboard](17_Fase59_Dashboard.md). |
-| Catálogo público | [Módulo](modules/catalogo.md) | [Backend](25_CatalogoPublicoBackend.md), [primera UI](26_CatalogoPublicoUI.md), [marca vigente](27_VirtuosaStore.md), [V1.4 inicial implementada; QA físico pendiente](modules/catalogo-v1-4.md), [ajustes UX aprobados aún pendientes](modules/catalogo-v1-4-ajustes-ux.md). |
+| Catálogo público | [Módulo](modules/catalogo.md) | [Backend](25_CatalogoPublicoBackend.md), [primera UI](26_CatalogoPublicoUI.md), [marca vigente](27_VirtuosaStore.md), [V1.4 implementada; QA físico pendiente](modules/catalogo-v1-4.md), [ajustes UX implementados; QA físico pendiente](modules/catalogo-v1-4-ajustes-ux.md). |
 | Deployment | [Dominios](deployment/domains.md) | [Runbook](deployment/deployment.md), [seguridad](deployment/security.md). |
 
 Las entradas por módulo son mapas de trabajo: no reemplazan ni duplican las

@@ -1,17 +1,18 @@
-# V1.4 — Ajustes de UX tras revisión en iPhone (iteración pendiente)
+# V1.4 — Ajustes de UX tras revisión en iPhone
 
-**Estado: requisitos aprobados el 08/10/2026; NO implementados todavía.**
-Se aplicarán exclusivamente a `feature/catalogo-v1-4`, creada desde
-`v1.3.0` (`b9ab4ee`), **después** de la implementación inicial de V1.4.
-Este documento describe decisiones aprobadas, no evidencia de despliegue, release ni pruebas.
+**Estado: implementación y validación automática completadas; QA físico pendiente.**
+Requisitos aprobados el 08/10/2026 y completados sobre la implementación inicial
+V1.4, cuya base histórica es `v1.3.0` (`b9ab4ee`). Sin release ni despliegue.
+Este documento registra el contrato aprobado y su funcionamiento final; los
+resultados históricos de V1.4 inicial no certifican esta iteración.
 
 **Fuentes:** [contrato y validación de V1.4](catalogo-v1-4.md),
 [catálogo público](catalogo.md), [productos/categorías](productos.md) y
 [guía de agentes](../../AGENTS.md). Este documento es el contrato **aprobado
-para la siguiente iteración de V1.4**; prevalece en los cuatro comportamientos
+para los ajustes UX de V1.4, ya implementados**; prevalece en los cuatro comportamientos
 que amplía o sustituye de la implementación inicial. El resto de V1.4 se conserva.
 
-## Motivo y estado actual verificado
+## Motivo y estado previo de la iteración
 
 La revisión visual del catálogo en `preview.newtonlab.dev` mostró un diálogo
 grande de «Reconectando…», con fondo oscurecido, que bloquea la exploración.
@@ -19,7 +20,7 @@ El usuario confirmó que las tarjetas con «Imagen no disponible» corresponden
 a productos **sin fotografías registradas**: no abrir una incidencia de imágenes
 rotas ni generar imágenes ficticias por esa captura.
 
-Inspección de la rama antes de esta iteración:
+Registro histórico anterior a los ajustes; ya no describe el comportamiento vigente:
 
 - `CatalogoListadoModelo` obtiene el **listado público completo** para
   construir categorías/marcas y, sin filtros, mostrar todas las tarjetas.
@@ -194,8 +195,8 @@ Inspección de la rama antes de esta iteración:
 - La elegibilidad no cambia: unidad `Disponible`, sin reserva y sin venta
   `Registrada`. No publicar existencias, IDs de unidades, costos, rutas
   privadas ni categorías sin publicaciones.
-- No tocar infraestructura, Caddy, Docker, DNS, DeployManager, secretos,
-  producción ni la rama `feature/scanner-operativo-v2-1`.
+- El alcance excluye cambios de infraestructura, Caddy, Docker, DNS,
+  DeployManager, secretos y producción; V2.1 sigue siendo una evolución separada.
 - Preservar galería/zoom, WhatsApp configurable, disponibilidad verde,
   rutas públicas, estilos `store-*` separados de `ui-*`, pruebas
   históricas y compatibilidad de DTO/consumidores actuales.
@@ -237,8 +238,142 @@ Inspección de la rama antes de esta iteración:
    legibles, keyboard/lectores de pantalla, movimiento reducido y
    ausencia de overflow horizontal; verificar Safari/iPhone real y
    Android cuando estén disponibles.
-10. `dotnet build ResellManager.sln`, pruebas focalizadas y suite
-    completa (cambios API/servicios), `npm run test:js`,
-    `npm run css:build`, QA responsive, enlaces y `git diff --check`.
-    **No reutilizar 894/123/76 como evidencia de esta iteración**;
-    conservarlos como resultados históricos de V1.4 inicial.
+10. Compilación de la solución, pruebas focalizadas y suite .NET completa
+    por cambios de API/servicios; regresiones JS, generación de CSS,
+    QA responsive, enlaces y revisión del diff sin errores de whitespace.
+    **894/123/76 son resultados históricos de V1.4 inicial**, no evidencia
+    de esta iteración.
+
+## 7. Funcionamiento implementado
+
+La portada obtiene **tres raíces por bloque**, cada una con hasta diez tarjetas.
+Raíces, hijas y productos se ordenan por `Id` ascendente; ese identificador es
+el cursor único para continuar, sin atribuir al modelo una fecha de publicación.
+Una consulta obtiene las raíces y otra resuelve conjuntamente los carruseles
+mediante existencia del décimo producto anterior elegible; no hay una consulta
+por sección ni materialización del catálogo completo. Una raíz que pierde sus
+publicaciones entre ambas lecturas se omite, conservando el cursor y la
+continuación aunque todo ese bloque quede vacío.
+
+Raíz, hija, búsqueda y marca utilizan páginas de **16** productos. SQLite aplica
+la elegibilidad y todos los filtros, incluida marca, antes del límite; una fila
+extra determina `hasMore`, y `nextCursor` permite avanzar. Cada lectura revalida
+la disponibilidad vigente: el cursor no establece un snapshot ni una reserva.
+Las tarjetas reciben únicamente la portada, sin metadatos ni fotos de galería.
+El endpoint antiguo de array conserva formato, firma y orden para consumidores
+anteriores; la UI vigente consume exclusivamente las nuevas lecturas acotadas.
+Contrato de rutas, DTOs y normalización: [backend público](../25_CatalogoPublicoBackend.md#navegación-y-paginación-v14).
+
+Raíces, marcas e hijas tienen opciones independientes, también paginadas en
+bloques de hasta dieciséis. La marca se agrupa y filtra mediante comparación
+Unicode `Trim` + `OrdinalIgnoreCase` dentro de SQLite, sin alterar su valor
+persistido. El contexto de una categoría reconstruye raíz e hija seleccionada
+al abrir una URL, incluso si esa hija queda fuera del primer bloque de opciones.
+Las opciones no se restringen al resultado de la búsqueda o marca seleccionada.
+
+`IntersectionObserver` solicita el siguiente bloque al acercarse a su sentinel;
+«Cargar más» conserva una alternativa de teclado y para navegadores donde no se
+active. Una petición adicional mantiene las tarjetas previas; su error permite
+reintentar el mismo cursor. El modelo evita solicitudes simultáneas, deduplica
+por ID e ignora respuestas obsoletas al cambiar filtros. El listado de raíz
+muestra «Todos», chips de hijas públicas y regreso a todas las categorías.
+Las URL conservan los tres filtros y el historial de navegación.
+
+El formulario reutilizado de Producto muestra categoría principal y subcategoría
+opcional, precarga ambas desde el ID existente y limpia la hija al cambiar raíz.
+`ProductoInput.CategoriaPrincipalId` es un contexto opcional de validación,
+compatible con los consumidores anteriores; sólo `Producto.CategoriaId` se
+persiste. El servicio comprueba categoría final, raíz real y pertenencia hija→raíz,
+además del límite de dos niveles. No hay columnas, migraciones ni dependencias
+nuevas para estos ajustes.
+
+La preparación muestra `Preparando foto n de total`; la lectura real de cada
+`IBrowserFile` por SignalR muestra `Subiendo foto n de total`. Tras recibirla,
+vuelve a preparación para comprobar firma y conservar la selección en memoria.
+Esto aún no significa persistencia. El guardado transaccional sigue mostrando
+**«Guardando fotografías…»**, sin contador por foto porque el servicio no publica
+ese avance. Un fallo de transferencia permite reintentar el lote conservado,
+y un guardado fallido conserva las fotos preparadas. Lotes inválidos no añaden
+fotografías parcialmente; portada, límite y compensación de archivos se mantienen.
+Contrato detallado: [gestión de fotografías](../24_ImagenPrincipalProducto.md#progreso-y-reintento-en-el-formulario).
+
+La reconexión pública transitoria muestra sólo aviso pequeño en esquina segura,
+spinner y «Reconectando…», sin contador, foco ni backdrop. Fallo y rechazo
+conservan las acciones nativas de recuperación, aun con el circuito caído.
+El modal administrativo y los estados oficiales de Blazor se mantienen.
+
+## 8. Diagnóstico de reconexión y límites de evidencia
+
+La inspección anónima de Preview encontró `data-public-catalog="true"`, el aviso
+público y assets de reconexión coincidentes con la implementación inicial V1.4.
+No permitió identificar de forma verificable el SHA desplegado ni la caché del
+iPhone de la captura. En Edge a 390 px, con pérdida y restauración real del
+circuito provocada desde el navegador, el modal grande **no se reprodujo**.
+Por ello no se atribuye aquella captura a un build antiguo ni a una causa exacta
+que no haya sido demostrada; la comprobación física del navegador afectado sigue
+pendiente. Esta inspección no modificó el despliegue.
+
+Sí se reprodujo un defecto local: al cambiar entre layout administrativo y público
+manteniendo la misma clase de reconexión, el observador original de clases no
+recalculaba la presentación. El diálogo podía seguir abierto aunque la marca
+pública ya estuviera presente. La evidencia local
+`.artifacts/reconnect-ux/layout-diagnostic.json` registra ese estado y su corrección.
+Ahora se observa la marca DOM del layout, se escucha `enhancedload` en **Blazor**
+y se sincroniza al restaurar historial mediante `pageshow`/`popstate`. El nodo de
+reconexión se conserva durante navegación mejorada. No se añadieron hosts
+hardcodeados, polling ni un mecanismo de reconexión paralelo.
+
+Las regresiones de [reconexión](../../tests/ResellManager.Tests/reconnect.test.cjs)
+incluyen cambios de layout con clase idéntica, eventos de navegación/historial,
+estados transitorios y persistentes y conservación del modal administrativo.
+
+## 9. Validación final y QA físico
+
+Validación consolidada el **09/10/2026**, con .NET SDK 10.0.302, Node 24.19.0
+y Edge mediante Playwright. Datos ficticios, SQLite, archivos y claves aislados;
+la inspección de Preview fue sólo lectura. Las cifras 894/.NET, 123/JS y
+76/responsive de V1.4 inicial se conservan exclusivamente como evidencia histórica.
+
+| Validación | Resultado |
+| --- | --- |
+| Compilación de la solución | Correcta; 0 errores y 0 advertencias. |
+| Suite .NET completa | **942/942**; 0 fallos y 0 omitidas. |
+| Foco backend/API de catálogo | **80/80**; elegibilidad, SQL acotado, compatibilidad y privacidad. |
+| Foco UI incremental/ciclo de vida | **30/30**; carreras, reintentos y desmontaje durante importación JS. |
+| Foco Producto/lookup/alta desde Compra | **139/139** tras corregir las regresiones encontradas. |
+| Suite JavaScript | **134/134**; 0 fallos. |
+| Dependencias y generación CSS | Instalación desde lockfile y generación correctas; 0 vulnerabilidades informadas. Asset generado conservado. |
+| QA de navegador a 320/390/768/1440 px | **193 comprobaciones** correctas; 0 errores JavaScript. |
+| Documentación y diff | 153 enlaces locales y 15 anclas verificadas; sin errores de whitespace. |
+
+El [runner de navegador](../../tests/catalogo.browser.mjs) conserva el fallback
+manual y además comprueba un `IntersectionObserver` real. Cubre carruseles de
+0/1/10/más de 10 artículos, grupos acotados, páginas 16/32/48/57, error y reintento
+sin perder tarjetas, opciones ampliables, hija fuera del primer bloque, filtros
+combinados, URL/recarga/historial y respuestas tardías descartadas. Mantiene las
+regresiones de galería, zoom, disponibilidad y enlace WhatsApp.
+
+El flujo administrativo utiliza servicios y archivos reales de prueba: selección
+raíz/hija, progreso observado durante cinco transferencias, portada/orden,
+0/1/8 fotos, rechazo de la novena y firma inválida, guardado fallido y reintento,
+y alta reutilizada desde Compra. Las pruebas instrumentadas cubren además fallo
+de transferencia y compensación. Se revisaron capturas móviles y de escritorio
+sin overflow, con tarjetas legibles y aviso de reconexión pequeño. Evidencia local:
+`.artifacts/catalogo-qa/1791561303063/report.json`, capturas y `photo-progress.json`.
+
+La validación encontró y corrigió regresiones: disposición repetida del
+formulario tras introducir cancelación de fotos y una instantánea de prueba
+anterior a la nueva preselección raíz/hija. También se limpió el lote de fotos
+fallido al deshacer una importación, evitando referencias obsoletas y recuperando
+el guardado; una regresión comprueba conservación de fotos y nueva selección.
+El QA detectó columnas de carrusel comprimidas y texto accesible posicionado
+fuera de su área desplazable; se
+corrigieron las dimensiones y su contención. Estos casos quedaron cubiertos,
+igual que la importación JS tardía al desmontar y los callbacks de sentinel
+obsoletos o rechazados por un circuito caído.
+
+Pendiente en Safari/iPhone y Android reales: carruseles y scroll incremental,
+chips, historial/back-forward, desconexión física y caché, selección múltiple
+cámara/galería, pinch/pan y lectura de etiquetas; también la apertura real de
+WhatsApp en móvil/escritorio. El renderizado y los gestos emulados no certifican
+esos equipos. Los ajustes están implementados, sin release ni despliegue.

@@ -28,7 +28,7 @@ Objetivo: reducir tiempo operativo y mejorar los flujos más frecuentes sin camb
 - Mostrar un fallback cuando no exista imagen.
 - Validar contenido, permisos de acceso y privacidad; evitar exponer archivos no autorizados.
 
-La foto principal tiene implementación y migración existentes; no volver a crearlas siguiendo esta planificación. La galería múltiple ya existe en V1.4; object storage y miniaturas derivadas siguen como optimizaciones futuras. La [iteración UX de V1.4 aprobada y pendiente](modules/catalogo-v1-4-ajustes-ux.md) añade progreso visible por foto y navegación/paginación pública; no trasladar estos ajustes a V2.1 ni darlos por implementados.
+La foto principal tiene implementación y migración existentes; no volver a crearlas siguiendo esta planificación. La galería múltiple ya existe en V1.4; object storage y miniaturas derivadas siguen como optimizaciones futuras. La [iteración UX V1.4 implementada](modules/catalogo-v1-4-ajustes-ux.md) añade selección administrativa raíz/hija, progreso real por foto al preparar/transferir, escaparate y paginación pública acotada. Su guardado atómico conserva spinner sin contador; QA físico, release y despliegue siguen pendientes. Estos ajustes no forman parte de una entrega de V2.1.
 
 ## Búsqueda asistida externa al agregar Producto
 
@@ -318,7 +318,7 @@ Alcance inicial:
 
 No se requieren inicialmente pago en línea, cuentas completas de cliente, promociones complejas, integración automática con la API de WhatsApp ni logística avanzada. Pueden evaluarse después; no son requisitos de la tienda básica V2.4. Un enlace simple `wa.me` con mensaje prellenado para consultar un producto está **implementado en la rama V1.4** (sin release ni despliegue), según [el contrato](modules/catalogo-v1-4.md); no constituye integración automática ni crea pedidos.
 
-**Estado actual:** catálogo, categorías derivadas del listado, búsqueda, detalle, imagen y disponibilidad de lectura ya existen: [Catálogo público](modules/catalogo.md). La evolución hacia carrito/selección y pedidos web sigue siendo planificación V2.4. No está implementada ni autorizada por este roadmap; pagos online tampoco existen. Dominios y ruta canónica pendiente se describen en [Dominios](deployment/domains.md).
+**Estado actual:** catálogo de lectura, escaparate por raíces, navegación por hijas, búsqueda/marca, páginas de productos y opciones públicas independientes ya existen en V1.4: [Catálogo público](modules/catalogo.md). Galería/zoom, disponibilidad y consulta WhatsApp conservan el carácter de lectura. La ampliación V1.4 no tiene release ni despliegue confirmado y su QA físico sigue pendiente. Carrito/selección y pedidos web continúan como planificación V2.4; no están implementados ni autorizados por este roadmap, y pagos online tampoco existen. Dominios y rutas canónicas se describen en [Dominios](deployment/domains.md).
 
 ---
 

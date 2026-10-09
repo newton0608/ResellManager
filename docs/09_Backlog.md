@@ -14,16 +14,18 @@ Contrato: [V1.4 de Virtuosa Store](modules/catalogo-v1-4.md). Rama
 - [x] Reconexión no modal en catálogo público; mantener modal administrativo.
 - [x] Indicador verde `Disponible` sin alterar regla de publicación.
 - [x] Botón WhatsApp en detalle con nombre y enlace canónico precargados; número configurable y ausencia segura si no se configura.
-- [x] Tests automatizados, QA responsive emulado y cierre documental; resultados en [V1.4](modules/catalogo-v1-4.md).
-**Ajustes UX posteriores aprobados; no implementados aún:**
+- [x] Validación inicial: tests automatizados, QA responsive emulado y cierre documental; resultados históricos en [V1.4](modules/catalogo-v1-4.md).
 
-- [ ] Portada pública por raíces: carruseles horizontales de hasta 10 productos por raíz, secciones cargadas progresivamente y «Ver todos».
-- [ ] Vista raíz con chips de hijas y búsqueda/marca combinables; listado real paginado en servidor de 16 en 16, sin descargar el catálogo completo para filtros.
-- [ ] Formulario de Producto/alta desde Compra: selectores raíz→hija y progreso verificable por fotografía al preparar/subir/guardar, con spinner honesto cuando una etapa sea atómica.
-- [ ] Diagnosticar modal visto en Preview y garantizar aviso mínimo no modal en todas las rutas públicas, preservando el modal administrativo.
-- [ ] Pruebas nuevas, QA responsive y cierre documental de los [ajustes aprobados](modules/catalogo-v1-4-ajustes-ux.md); los resultados anteriores no certifican esta iteración.
+**Ajustes UX posteriores implementados:**
 
-- [ ] QA físico Safari/iPhone y Android: pinch/pan, lectura de etiquetas y apertura WhatsApp; emulación no lo certifica.
+- [x] Portada por raíces: bloques de tres carruseles horizontales, hasta diez productos por raíz y «Ver todos».
+- [x] Vista raíz con chips de hijas y búsqueda/marca combinables; listado real en SQLite de dieciséis en dieciséis y opciones públicas independientes acotadas.
+- [x] Formulario de Producto/alta desde Compra: selectores raíz→hija, validación del contexto en servidor y progreso verificable por archivo durante preparación/transferencia; guardado atómico con spinner sin contador.
+- [x] Aviso público mínimo sin modal, sincronizado al cambiar layout y restaurar historial, con modal administrativo conservado. [Diagnóstico](modules/catalogo-v1-4-ajustes-ux.md#8-diagnóstico-de-reconexión-y-límites-de-evidencia) separa defecto local corregido de causa aún no confirmada de la captura en iPhone.
+- [x] Cobertura automática y contratos documentados de [ajustes UX](modules/catalogo-v1-4-ajustes-ux.md); los resultados iniciales no certifican esta iteración.
+- [x] Validación consolidada de ajustes UX: compilación sin advertencias/errores, 942/942 .NET, 134/134 JS, CSS generado y 193 comprobaciones de navegador; enlaces/diff revisados. [Resultados y límites](modules/catalogo-v1-4-ajustes-ux.md#9-validación-final-y-qa-físico).
+
+- [ ] QA físico Safari/iPhone y Android: carruseles/carga incremental, chips, historial, desconexión/caché, selección de fotos, pinch/pan y lectura de etiquetas. Apertura WhatsApp móvil/escritorio. Confirmar causa de la captura original; emulación no lo certifica.
 - [ ] Integración/release/despliegue posteriores, fuera de esta tarea; V2.1 permanece independiente.
 
 ## Backend V1 completado

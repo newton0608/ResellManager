@@ -11,7 +11,13 @@ Base `v1.3.0` (`b9ab4ee`); sin tag, release ni despliegue.
 - Subcategorías de dos niveles y filtro de marca combinable con búsqueda/categoría y URLs compartibles.
 - Reconexión discreta exclusiva de Virtuosa e indicador Disponible verde.
 - Consulta WhatsApp opcional con número/origen canónico configurables, sin crear pedidos.
-- Validación y QA físico pendiente en [V1.4](docs/modules/catalogo-v1-4.md).
+- Portada incremental por categorías raíz: bloques de tres carruseles con hasta diez productos y «Ver todos».
+- Listados reales de dieciséis en dieciséis, opciones públicas paginadas independientes y marca Unicode filtrada en SQLite antes de limitar; endpoint de array compatible.
+- Chips de subcategorías, URLs con filtros e historial restaurables, carga incremental con alternativa manual y reintento que conserva resultados.
+- Selectores administrativos raíz/hija en Producto y alta desde Compra, con validación de pertenencia en servidor sin columnas nuevas.
+- Progreso real de preparación/transferencia por foto, reintento sin duplicados y guardado atómico rotulado sin contador simulado.
+- Reconexión pública mínima sincronizada con cambios de layout, navegación mejorada e historial; modal administrativo conservado. Diagnóstico distingue defecto local corregido de captura física aún sin causa confirmada.
+- Validación inicial histórica en [V1.4](docs/modules/catalogo-v1-4.md); cierre propio y QA físico pendiente de los [ajustes UX](docs/modules/catalogo-v1-4-ajustes-ux.md).
 
 ## v1.3.0 — base etiquetada del 06/10/2026
 

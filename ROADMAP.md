@@ -30,16 +30,20 @@ filtro público por marca, reconexión discreta exclusiva de catálogo, indicado
 verde de disponibilidad y consulta por WhatsApp desde el detalle con número
 configurable](docs/modules/catalogo-v1-4.md). La implementación
 incorpora cambios administrativos puntuales y migración EF, sin alterar la
-operación comercial ni agregar carrito/checkout. V1.4 está implementada y validada automáticamente en esta rama; el QA físico
-queda pendiente. No se ha etiquetado ni desplegado. La rama de
+operación comercial ni agregar carrito/checkout. La validación inicial se conserva
+como histórica; los ajustes UX tienen su propio cierre de validación. QA físico
+pendiente. No se ha etiquetado ni desplegado. La rama de
 V2.1 sigue independiente y su integración se decidirá después.
 
-**Iteración UX aprobada y pendiente antes del cierre de V1.4:** portada por
-categorías raíz con carruseles de hasta 10 productos, listado paginado real
-de 16 en 16, chips de subcategorías, selectores dependientes en administración,
-progreso por foto y reconexión pública realmente discreta. El diagnóstico de
-Preview es parte de la tarea, no evidencia de que la rama esté desplegada.
-Ver [contrato de ajustes UX](docs/modules/catalogo-v1-4-ajustes-ux.md).
+**Iteración UX implementada:** portada por raíces en bloques de tres carruseles
+con hasta diez productos, listados reales de dieciséis en dieciséis, opciones
+públicas acotadas independientes, chips de hijas y restauración de filtros/historial.
+Administración utiliza selección raíz/hija y progreso real de transferencia y
+preparación, sin contador inventado en el guardado atómico. La reconexión mínima
+se sincroniza con cambios de layout y navegación mejorada. El diagnóstico de
+Preview no certifica su SHA desplegado ni la caché del iPhone afectado; el defecto
+local reproducido quedó corregido y la causa exacta de esa captura sigue como QA
+físico pendiente. Ver [contrato y validación propios](docs/modules/catalogo-v1-4-ajustes-ux.md).
 
 ## V2 — Evolución planificada
 
