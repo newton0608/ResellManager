@@ -16,6 +16,10 @@ Categoría es un maestro configurable, no un enum.
 - [V1.4 implementada en esta rama](catalogo-v1-4.md): de cero a ocho imágenes totales
   por producto, portada y orden, zoom público y categorías padre/hija. La migración
   conserva la imagen existente y deja las categorías anteriores como raíces.
+- [Ajustes UX aprobados, aún pendientes](catalogo-v1-4-ajustes-ux.md):
+  selectores dependientes raíz/hija en formularios de Producto (incluida alta
+  desde Compra) e indicador de progreso real por foto al preparar/subir/guardar.
+  No hay cambios nuevos de dominio ni migración autorizados por este ajuste.
 - [Scanner](../29_BarcodeScanner.md): contrato, vendor fijado y pruebas JS/ópticas. Existe validación física posterior en **iPhone 14 Plus + Brave**; la regresión histórica específica de Safari no quedó certificada por esa prueba.
 - [Búsqueda asistida por código de barras](productos-lookup-codigo-barras.md):
   consulta local + proveedores externos, revisión
