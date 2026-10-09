@@ -170,13 +170,16 @@ public sealed class ProductoLookupTests
     {
         var modelo = ModeloManual();
         modelo.ImagenContenido = [1, 2, 3];
-        var antes = modelo.CrearInstantanea();
         var candidato = Candidato() with
         {
             CodigoBarras = Codigo[1..], Marca = "Marca nueva", PesoGramos = 250,
             CategoriaExterna = "Categoría desconocida", ImagenUrl = "https://images.example.com/producto.png"
         };
         using var form = Formulario(modelo, Servicio(new ProveedorFalso("Primero", new ProductoLookupRespuesta(EstadoLookupProveedor.Encontrado, candidato))));
+        // La selección dependiente se inicializa al recibir categorías, antes de iniciar el lookup.
+        var antes = modelo.CrearInstantanea();
+        Assert.Equal(1, antes.CategoriaPrincipalId);
+        Assert.Null(antes.SubcategoriaId);
         await CallAsync(form, "BuscarProductoAsync");
         Call(form, "UsarCandidato");
         Assert.Equal("Encontrado", modelo.Nombre);

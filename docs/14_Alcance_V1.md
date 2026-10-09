@@ -152,7 +152,8 @@ que preserven relaciones e historial.
 
 ❌ OCR.
 
-❌ Integración con WhatsApp.
+❌ Integración automática/API con WhatsApp en el alcance original. La consulta
+manual por enlace se añadió posteriormente en [V1.4](modules/catalogo-v1-4.md).
 
 ❌ Multiusuario avanzado.
 

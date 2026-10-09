@@ -11,8 +11,18 @@ Categoría es un maestro configurable, no un enum.
   barras externo opcional y manual, también capturable con cámara.
 - [Medidas y presentación](../23_MedidasYPresentacionProducto.md): ml o gramos
   opcionales, nunca ambos informados; presentación comercial independiente.
-- [Imagen principal](../24_ImagenPrincipalProducto.md): una referencia privada
+- [Galería e imagen principal](../24_ImagenPrincipalProducto.md): referencias privadas
   a WebP procesado, almacenamiento administrado y compensación ante fallos.
+- [V1.4 implementada](catalogo-v1-4.md): de cero a ocho imágenes totales
+  por producto, portada y orden, zoom público y categorías padre/hija. La migración
+  conserva la imagen existente y deja las categorías anteriores como raíces.
+- [Ajustes UX implementados](catalogo-v1-4-ajustes-ux.md): selectores dependientes
+  de categoría principal y subcategoría opcional en Nuevo/Editar y alta desde
+  Compra. Sólo se persiste `Producto.CategoriaId`; la raíz declarada se valida
+  en servidor mediante el contexto opcional `ProductoInput.CategoriaPrincipalId`.
+  Progreso real por archivo al preparar/transferir mediante SignalR, con
+  «Guardando fotografías…» sin contador durante el guardado atómico. No añade
+  columnas ni migración. QA físico pendiente.
 - [Scanner](../29_BarcodeScanner.md): contrato, vendor fijado y pruebas JS/ópticas. Existe validación física posterior en **iPhone 14 Plus + Brave**; la regresión histórica específica de Safari no quedó certificada por esa prueba.
 - [Búsqueda asistida por código de barras](productos-lookup-codigo-barras.md):
   consulta local + proveedores externos, revisión
@@ -36,6 +46,7 @@ Pruebas existentes en [ResellManager.Tests](../../tests/ResellManager.Tests/):
 `CatalogoModuloTests` (maestros administrativos), `ProductoPrecioTests`,
 `ImagenPrincipalProductoTests`, `CreacionPedidoProductoTests`, `ProductoLookupTests`,
 `ProductoLookupProvidersTests`, `ProductoLookupImagenTests`, `ProductoLookupPreviewTests`,
-`ImagenExternaRedireccionesTests` y `FlujoImagenExternaTests`.
+`ImagenExternaRedireccionesTests`, `FlujoImagenExternaTests`,
+`ProductoCategoriaDependienteTests` y `CompraProductoFlujoTests`.
 Para scanner sigue su guía y `npm run test:js`; para cambios de publicación lee
 [Catálogo público](catalogo.md), cuyo contrato es diferente.

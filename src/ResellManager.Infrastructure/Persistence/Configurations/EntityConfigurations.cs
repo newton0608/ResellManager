@@ -11,6 +11,8 @@ internal sealed class CategoriaConfiguration : IEntityTypeConfiguration<Categori
         b.ToTable("Categorias"); b.HasKey(x => x.Id);
         b.Property(x => x.Nombre).IsRequired().HasMaxLength(100);
         b.Property(x => x.Observaciones).HasMaxLength(500);
+        b.HasOne(x => x.CategoriaPadre).WithMany(x => x.Subcategorias)
+            .HasForeignKey(x => x.CategoriaPadreId).OnDelete(DeleteBehavior.Restrict);
     }
 }
 

@@ -37,9 +37,9 @@
             <label class="text-sm font-medium" for="categoria-productos">Categoría</label>
             <select class="ui-input" id="categoria-productos" @bind="CategoriaId" disabled="@Cargando">
                 <option value="">Todas las categorías</option>
-                @foreach (var categoria in Categorias)
+                @foreach (var categoria in CategoriaPresentacion.Ordenar(Categorias))
                 {
-                    <option value="@categoria.Id">@categoria.Nombre</option>
+                    <option value="@categoria.Id">@CategoriaPresentacion.Etiqueta(categoria)</option>
                 }
             </select>
         </div>
@@ -130,7 +130,7 @@
                                             }
                                         </p>
                                     }
-                                    <span class="inline-flex max-w-full rounded-full bg-ui-canvas px-2.5 py-1 text-xs font-medium leading-5 text-ui-muted [overflow-wrap:anywhere]">@producto.Categoria</span>
+                                    <span class="inline-flex max-w-full rounded-full bg-ui-canvas px-2.5 py-1 text-xs font-medium leading-5 text-ui-muted [overflow-wrap:anywhere]">@CategoriaPresentacion.Etiqueta(producto, Categorias)</span>
                                 </div>
                                 <div class="col-start-2 min-w-0 sm:col-start-3 sm:text-right">
                                     <p class="m-0 text-base font-semibold leading-6 tracking-tight text-ui-ink tabular-nums [overflow-wrap:anywhere] sm:text-lg">@ProductoPresentacion.PrecioSugerido(producto.PrecioSugerido)</p>

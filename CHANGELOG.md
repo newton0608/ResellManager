@@ -2,7 +2,26 @@
 
 Las fechas siguientes corresponden a creación de tags; no son fechas exactas de despliegue. Las GitHub Releases pueden publicarse después usando esos mismos tags, por lo que la fecha de una Release tampoco debe confundirse con la fecha de despliegue.
 
-## Unreleased — main posterior a v1.2.1
+## Unreleased — V1.4 en feature/catalogo-v1-4
+
+Base `v1.3.0` (`b9ab4ee`); sin tag, release ni despliegue.
+
+- Galería de cero a ocho fotos, portada y orden, edición autenticada y migración que preserva referencias históricas.
+- Visor público con zoom/pinch/pan, swipe, teclado, foco y fallback.
+- Subcategorías de dos niveles y filtro de marca combinable con búsqueda/categoría y URLs compartibles.
+- Reconexión discreta exclusiva de Virtuosa e indicador Disponible verde.
+- Consulta WhatsApp opcional con número/origen canónico configurables, sin crear pedidos.
+- Portada incremental por categorías raíz: bloques de tres carruseles con hasta diez productos y «Ver todos».
+- Listados reales de dieciséis en dieciséis, opciones públicas paginadas independientes y marca Unicode filtrada en SQLite antes de limitar; endpoint de array compatible.
+- Chips de subcategorías, URLs con filtros e historial restaurables, carga incremental con alternativa manual y reintento que conserva resultados.
+- Selectores administrativos raíz/hija en Producto y alta desde Compra, con validación de pertenencia en servidor sin columnas nuevas.
+- Progreso real de preparación/transferencia por foto, reintento sin duplicados y guardado atómico rotulado sin contador simulado.
+- Reconexión pública mínima sincronizada con cambios de layout, navegación mejorada e historial; modal administrativo conservado. Diagnóstico distingue defecto local corregido de captura física aún sin causa confirmada.
+- Validación inicial histórica en [V1.4](docs/modules/catalogo-v1-4.md); cierre propio y QA exploratorio parcial satisfactorio en iPhone (navegación, fotografías de cámara y galería); permanecen verificaciones físicas específicas de los [ajustes UX](docs/modules/catalogo-v1-4-ajustes-ux.md).
+
+## v1.3.0 — base etiquetada del 06/10/2026
+
+Referencia: `b9ab4ee`. Conserva las ampliaciones previamente registradas como main posterior a v1.2.1:
 
 - Búsqueda asistida al agregar Producto: coincidencia local primero y fallback externo Open Facts → UPCitemdb, con revisión explícita antes de copiar datos al formulario.
 - Importación reversible de datos externos sin importar precios ni crear categorías; la imagen externa queda pendiente hasta Guardar producto.

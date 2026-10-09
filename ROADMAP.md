@@ -20,7 +20,30 @@ Modelo propuesto, reglas y decisiones abiertas en [Medidas y presentación de pr
 
 ## Ampliaciones ya incorporadas al repositorio
 
-La última base etiquetada, `v1.2.1`, incorpora imagen principal, catálogo público de Virtuosa Store, compras GTQ/USD y hotfix del scanner. `main` contiene además la búsqueda asistida externa por código de barras para Agregar producto y su persistencia segura de imagen; todavía no tiene un tag posterior en este documento. Consulta el [índice](docs/README.md) y el [changelog](CHANGELOG.md). No hay todavía carrito, checkout ni pedidos web; landed cost sigue en [análisis pendiente](docs/modules/landed-cost.md) y desactivación/reactivación en [decisión 025](docs/11_DecisionesDeDiseño.md#025-preservar-clientes-y-productos-con-historial).
+La base etiquetada `v1.3.0` (`b9ab4ee`) incorpora imagen principal, catálogo público de Virtuosa Store, compras GTQ/USD y hotfix del scanner. Esa base contiene además la búsqueda asistida externa por código de barras para Agregar producto y su persistencia segura de imagen. Consulta el [índice](docs/README.md) y el [changelog](CHANGELOG.md). No hay todavía carrito, checkout ni pedidos web; landed cost sigue en [análisis pendiente](docs/modules/landed-cost.md) y desactivación/reactivación en [decisión 025](docs/11_DecisionesDeDiseño.md#025-preservar-clientes-y-productos-con-historial).
+
+## V1.4 — Experiencia de Virtuosa Store (implementada en rama; QA físico parcial satisfactorio)
+
+Rama `feature/catalogo-v1-4` **desde tag `v1.3.0`**. Alcance canónico:
+[Galería de hasta 8 fotos por producto, zoom, subcategorías de dos niveles,
+filtro público por marca, reconexión discreta exclusiva de catálogo, indicador
+verde de disponibilidad y consulta por WhatsApp desde el detalle con número
+configurable](docs/modules/catalogo-v1-4.md). La implementación
+incorpora cambios administrativos puntuales y migración EF, sin alterar la
+operación comercial ni agregar carrito/checkout. La validación inicial se conserva
+como histórica; los ajustes UX tienen su propio cierre de validación. QA físico
+pendiente. No se ha etiquetado ni desplegado. La rama de
+V2.1 sigue independiente y su integración se decidirá después.
+
+**Iteración UX implementada:** portada por raíces en bloques de tres carruseles
+con hasta diez productos, listados reales de dieciséis en dieciséis, opciones
+públicas acotadas independientes, chips de hijas y restauración de filtros/historial.
+Administración utiliza selección raíz/hija y progreso real de transferencia y
+preparación, sin contador inventado en el guardado atómico. La reconexión mínima
+se sincroniza con cambios de layout y navegación mejorada. El diagnóstico de
+Preview no certifica su SHA desplegado ni la caché del iPhone afectado; el defecto
+local reproducido quedó corregido y la causa exacta de esa captura sigue como QA
+físico pendiente. Ver [contrato y validación propios](docs/modules/catalogo-v1-4-ajustes-ux.md).
 
 ## V2 — Evolución planificada
 

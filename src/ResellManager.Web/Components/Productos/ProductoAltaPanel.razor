@@ -16,9 +16,9 @@
     {
         <ProductoForm Modelo="Modelo" Categorias="Categorias" Guardando="Guardando"
                       ErrorMessage="@Error" OnGuardar="GuardarAsync" OnCancelar="OnCancelar"
-                      CategoriasEnOtraPestana="true" />
+                      CategoriasEnOtraPestana="true" OnPreparandoImagenes="@(valor => PreparandoImagenes = valor)" />
     }
-    <button class="ui-button w-full border-ui-control bg-white text-ui-ink hover:bg-ui-canvas sm:w-auto" type="button" disabled="@(Guardando || Cargando)"
+    <button class="ui-button w-full border-ui-control bg-white text-ui-ink hover:bg-ui-canvas sm:w-auto" type="button" disabled="@(Guardando || Cargando || PreparandoImagenes)"
             @onclick="CargarCategoriasAsync">Actualizar categorías</button>
 </section>
 
@@ -29,6 +29,7 @@
     private IReadOnlyList<CategoriaDto> Categorias { get; set; } = [];
     private bool Cargando { get; set; }
     private bool Guardando { get; set; }
+    private bool PreparandoImagenes { get; set; }
     private string? Error { get; set; }
     private ElementReference Titulo;
 
@@ -40,7 +41,7 @@
 
     private async Task CargarCategoriasAsync()
     {
-        if (Cargando || Guardando) return;
+        if (Cargando || Guardando || PreparandoImagenes) return;
         Cargando = true;
         Error = null;
         try { Categorias = await CategoriaService.ListarAsync(); }
@@ -64,11 +65,19 @@
         Error = null;
         try
         {
-            await using var imagen = modelo.ImagenArchivo?.OpenReadStream(
-                ResellManager.Infrastructure.Storage.AlmacenamientoImagenesProductoLocal.TamanoMaximoBytes);
-            var resultado = imagen is null
-                ? await ProductoService.CrearAsync(modelo.ToInput())
-                : await ProductoConImagenService.CrearAsync(modelo.ToInput(), imagen);
+            await using var imagen = modelo.Galeria.Count == 0
+                ? modelo.ImagenContenido is not null
+                    ? new MemoryStream(modelo.ImagenContenido, writable: false)
+                    : modelo.ImagenArchivo?.OpenReadStream(
+                        ResellManager.Infrastructure.Storage.AlmacenamientoImagenesProductoLocal.TamanoMaximoBytes)
+                : null;
+            using var nuevas = new ProductoGaleriaArchivos(modelo);
+            var resultado = modelo.Galeria.Count > 0
+                ? await ProductoConImagenService.CrearGaleriaAsync(
+                    modelo.ToInput(), nuevas.Imagenes, modelo.ToGaleriaEdicion().PortadaIndice)
+                : imagen is null
+                    ? await ProductoService.CrearAsync(modelo.ToInput())
+                    : await ProductoConImagenService.CrearAsync(modelo.ToInput(), imagen);
             if (!resultado.IsSuccess || resultado.Value is null)
             {
                 Error = resultado.ErrorMessage ?? "No fue posible registrar el producto.";

@@ -2,6 +2,33 @@
 
 V1 está en producción. Este backlog conserva entregas de fases y distingue ampliaciones posteriores; sus pendientes V2 no se consideran resueltos por el despliegue. El estado operativo vigente se mantiene en el [runbook V1](deployment/deployment.md) y las versiones en el [changelog](../CHANGELOG.md).
 
+## V1.4 — Mejoras de catálogo (implementada en rama; QA físico parcial satisfactorio)
+
+Contrato: [V1.4 de Virtuosa Store](modules/catalogo-v1-4.md). Rama
+`feature/catalogo-v1-4` desde `v1.3.0`, independiente de V2.1.
+
+- [x] Galería de 0 a 8 fotos por producto, con portada, orden y gestión autenticada; preservar imágenes históricas.
+- [x] Miniaturas y visor público con zoom/pinch, swipe, teclado y accesibilidad.
+- [x] Subcategorías de máximo dos niveles, migración EF y filtros jerárquicos.
+- [x] Filtro público por marca usando `Producto.Marca`, combinable con búsqueda/categoría.
+- [x] Reconexión no modal en catálogo público; mantener modal administrativo.
+- [x] Indicador verde `Disponible` sin alterar regla de publicación.
+- [x] Botón WhatsApp en detalle con nombre y enlace canónico precargados; número configurable y ausencia segura si no se configura.
+- [x] Validación inicial: tests automatizados, QA responsive emulado y cierre documental; resultados históricos en [V1.4](modules/catalogo-v1-4.md).
+
+**Ajustes UX posteriores implementados:**
+
+- [x] Portada por raíces: bloques de tres carruseles horizontales, hasta diez productos por raíz y «Ver todos».
+- [x] Vista raíz con chips de hijas y búsqueda/marca combinables; listado real en SQLite de dieciséis en dieciséis y opciones públicas independientes acotadas.
+- [x] Formulario de Producto/alta desde Compra: selectores raíz→hija, validación del contexto en servidor y progreso verificable por archivo durante preparación/transferencia; guardado atómico con spinner sin contador.
+- [x] Aviso público mínimo sin modal, sincronizado al cambiar layout y restaurar historial, con modal administrativo conservado. [Diagnóstico](modules/catalogo-v1-4-ajustes-ux.md#8-diagnóstico-de-reconexión-y-límites-de-evidencia) separa defecto local corregido de causa aún no confirmada de la captura en iPhone.
+- [x] Cobertura automática y contratos documentados de [ajustes UX](modules/catalogo-v1-4-ajustes-ux.md); los resultados iniciales no certifican esta iteración.
+- [x] Validación consolidada de ajustes UX: compilación sin advertencias/errores, 942/942 .NET, 134/134 JS, CSS generado y 193 comprobaciones de navegador; enlaces/diff revisados. [Resultados y límites](modules/catalogo-v1-4-ajustes-ux.md#9-validación-final-y-qa-físico).
+
+- [x] QA exploratorio comunicado en iPhone: navegación del catálogo y fotografías desde cámara y galería, sin fallos observados por el usuario (09/10/2026; navegador/modelo de la sesión no confirmados).
+- [ ] QA específico restante: Safari, Android, carruseles/carga incremental, chips/historial, desconexión/caché, gestos, accesibilidad y apertura de WhatsApp configurado. Confirmar causa de la captura original; emulación no lo certifica.
+- [ ] Integración/release/despliegue posteriores, fuera de esta tarea; V2.1 permanece independiente.
+
 ## Backend V1 completado
 
 - [x] Separar reserva comercial del estado físico de inventario.

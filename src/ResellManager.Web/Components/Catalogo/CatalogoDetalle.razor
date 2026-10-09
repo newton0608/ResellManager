@@ -5,9 +5,10 @@
 @implements IDisposable
 @inject ICatalogoPublicoClient Cliente
 @inject ILogger<CatalogoDetalle> Logger
+@inject CatalogoWhatsApp WhatsApp
 
 <PageTitle>@(Producto?.Nombre ?? "Producto") | Virtuosa Store</PageTitle>
-<CatalogoDetalleVista Producto="Producto" Cargando="Cargando" NoDisponible="NoDisponible" Error="@Error" OnReintentar="CargarAsync" />
+<CatalogoDetalleVista Producto="Producto" Cargando="Cargando" NoDisponible="NoDisponible" Error="@Error" OnReintentar="CargarAsync" EnlaceWhatsApp="@(Producto is { Disponible: true } ? WhatsApp.CrearEnlace(Producto.Id, Producto.Nombre) : null)" />
 
 @code {
     [Parameter] public int ProductoId { get; set; }

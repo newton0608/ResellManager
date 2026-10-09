@@ -35,7 +35,7 @@ public sealed class CatalogoUiTests
         Assert.DoesNotContain("src=\"/api/catalogo/productos/8/imagen\"", html);
         foreach (var privado in new[] { "Código interno", "Código de barras", "Costo", "Proveedor", "src=\"/productos/7/imagen\"", "Editar producto" })
             Assert.DoesNotContain(privado, html);
-        Assert.Equal(new[] { 2, 1 }, modelo.Categorias.Select(c => c.Id));
+        Assert.Equal(new[] { 1, 2 }, modelo.Categorias.Select(c => c.Id));
     }
 
     [Fact]
@@ -79,8 +79,8 @@ public sealed class CatalogoUiTests
         await modelo.LimpiarAsync();
         Assert.Null(modelo.CategoriaId);
         Assert.Equal(string.Empty, modelo.Termino);
-        Assert.Equal(Camisa, Assert.Single(modelo.Productos));
-        Assert.Single(modelo.Categorias);
+        Assert.Equal(Camisa, Assert.Single(Assert.Single(modelo.Secciones).Productos));
+        Assert.Equal(2, modelo.Categorias.Count);
     }
 
     [Theory]
@@ -92,7 +92,7 @@ public sealed class CatalogoUiTests
         using var modelo = Modelo(api);
         modelo.EstablecerFiltros(null, categoriaId);
         await modelo.CargarAsync();
-        Assert.Equal(new (string?, int?)[] { (null, null), (string.Empty, categoriaId) }, api.Consultas);
+        Assert.Equal(new (string?, int?)[] { (string.Empty, categoriaId) }, api.Consultas);
         var html = await RenderVistaAsync(modelo);
         Assert.Contains($"value=\"{categoriaId}\" selected", html);
         Assert.Equal(2, modelo.Categorias.Count);
@@ -159,7 +159,7 @@ public sealed class CatalogoUiTests
         api.Buscar = (_, _, _) => Task.FromResult<IReadOnlyList<ProductoCatalogoDto>>([Perfume]);
         await modelo.CargarAsync();
         Assert.Null(modelo.Error);
-        Assert.Equal(Perfume, Assert.Single(modelo.Productos));
+        Assert.Equal(Perfume, Assert.Single(Assert.Single(modelo.Secciones).Productos));
     }
 
     [Fact]
@@ -199,6 +199,46 @@ public sealed class CatalogoUiTests
         Assert.Contains("Este producto ya no está disponible", html);
         Assert.Contains("href=\"/catalogo\"", html);
         Assert.DoesNotContain("Reintentar", html);
+    }
+
+    [Fact]
+    public async Task Marca_JerarquiaOpcionesPublicasEstablesYLimpiarTresFiltros()
+    {
+        var api = new ApiPrueba([
+            Perfume with { Marca = " Acmé ", CategoriaPadreId = 3, CategoriaPadreNombre = "Belleza" },
+            Camisa with { Marca = "acmé" }]);
+        using var modelo = Modelo(api);
+        await modelo.CargarAsync();
+        Assert.Single(modelo.Marcas);
+        Assert.Contains(modelo.Categorias, c => c.Id == 3 && c.CategoriaPadreId == null);
+        Assert.DoesNotContain(modelo.Categorias, c => c.Id == 2);
+        modelo.EstablecerFiltros("floral", 3, "Acmé");
+        await modelo.CargarAsync();
+        var html = await RenderVistaAsync(modelo);
+        Assert.Contains("catalogo-marca", html);
+        Assert.Contains("Belleza", html);
+        Assert.Single(modelo.Marcas);
+        Assert.True(modelo.TieneFiltros);
+        await modelo.LimpiarAsync();
+        Assert.Null(modelo.Marca);
+        Assert.Null(modelo.CategoriaId);
+        Assert.Equal(string.Empty, modelo.Termino);
+    }
+
+    [Fact]
+    public async Task Galeria_RenderizaIdsOpacosMiniaturasDiferidasYVisorAccesible()
+    {
+        var fotos = new[] { new ImagenCatalogoDto("opaque1", 0, true), new ImagenCatalogoDto("opaque2", 1, false) };
+        var html = await RenderAsync<CatalogoDetalleVista>(new() { ["Producto"] = Detalle with { Imagenes = fotos }, ["EnlaceWhatsApp"] = "https://wa.me/50255550123?text=hola" });
+        Assert.Contains("/api/catalogo/productos/7/imagenes/opaque1", html);
+        Assert.Contains("loading=\"lazy\"", html);
+        Assert.Contains("data-gallery-dialog", html);
+        Assert.Contains("Cerrar visor", html);
+        Assert.Contains("Restablecer zoom", html);
+        Assert.Contains("Consultar por WhatsApp", html);
+        Assert.DoesNotContain("Ruta", html);
+        var oculto = await RenderAsync<CatalogoDetalleVista>(new() { ["Producto"] = Detalle });
+        Assert.DoesNotContain("Consultar por WhatsApp", oculto);
     }
 
     [Theory]
@@ -255,7 +295,7 @@ public sealed class CatalogoUiTests
     private static CatalogoListadoModelo Modelo(ApiPrueba api) => new(api, NullLogger.Instance);
     private static async Task<string> RenderAsync<T>(Dictionary<string, object?> parametros) where T : IComponent
     {
-        await using var servicios = new ServiceCollection().AddLogging().BuildServiceProvider();
+        await using var servicios = new ServiceCollection().AddLogging().AddSingleton<IJSRuntime>(new JsPrueba([])).BuildServiceProvider();
         await using var renderer = new HtmlRenderer(servicios, servicios.GetRequiredService<ILoggerFactory>());
         return await renderer.Dispatcher.InvokeAsync(async () =>
             WebUtility.HtmlDecode((await renderer.RenderComponentAsync<T>(ParameterView.FromDictionary(parametros))).ToHtmlString()));
@@ -266,8 +306,32 @@ public sealed class CatalogoUiTests
         public List<(string? Termino, int? Categoria)> Consultas { get; } = [];
         public Func<string?, int?, CancellationToken, Task<IReadOnlyList<ProductoCatalogoDto>>> Buscar { get; set; } =
             (_, _, _) => Task.FromResult(productos);
-        public Task<IReadOnlyList<ProductoCatalogoDto>> ListarAsync(string? termino = null, int? categoriaId = null, CancellationToken ct = default)
+        public Task<IReadOnlyList<ProductoCatalogoDto>> ListarAsync(string? termino = null, int? categoriaId = null, CancellationToken ct = default, string? marca = null)
         { Consultas.Add((termino, categoriaId)); return Buscar(termino, categoriaId, ct); }
+        public async Task<CatalogoProductosPaginaDto> ListarPaginaAsync(string? termino, int? categoriaId, string? marca, int? cursor, CancellationToken ct = default)
+        { Consultas.Add((termino, categoriaId)); return new(await Buscar(termino, categoriaId, ct), false, null); }
+        public async Task<CatalogoEscaparatePaginaDto> LeerEscaparateAsync(int? cursor = null, CancellationToken ct = default)
+        {
+            Consultas.Add((null, null));
+            var result = await Buscar(null, null, ct);
+            return new(result.GroupBy(p => p.CategoriaPadreId ?? p.CategoriaId).OrderBy(g => g.Key)
+                .Select(g => new CatalogoSeccionDto(new(g.Key, g.First().CategoriaPadreNombre ?? g.First().Categoria), g.ToArray())).ToArray(), false, null);
+        }
+        public Task<CatalogoCategoriasPaginaDto> LeerRaicesAsync(int? cursor = null, CancellationToken ct = default) => Task.FromResult(new CatalogoCategoriasPaginaDto(
+            productos.Select(p => new CategoriaCatalogoDto(p.CategoriaPadreId ?? p.CategoriaId, p.CategoriaPadreNombre ?? p.Categoria)).DistinctBy(c => c.Id).OrderBy(c => c.Id).ToArray(), false, null));
+        public Task<CatalogoMarcasPaginaDto> LeerMarcasAsync(string? cursor = null, CancellationToken ct = default) => Task.FromResult(new CatalogoMarcasPaginaDto(
+            productos.Select(p => p.Marca?.Trim()).Where(m => !string.IsNullOrWhiteSpace(m)).Select(m => m!).Distinct(StringComparer.OrdinalIgnoreCase).ToArray(), false, null));
+        public Task<CatalogoCategoriaContextoDto?> LeerContextoCategoriaAsync(int id, CancellationToken ct = default)
+        {
+            var p = productos.FirstOrDefault(p => p.CategoriaId == id || p.CategoriaPadreId == id);
+            if (p is null) return Task.FromResult<CatalogoCategoriaContextoDto?>(null);
+            var root = new CategoriaCatalogoDto(p.CategoriaPadreId ?? p.CategoriaId, p.CategoriaPadreNombre ?? p.Categoria);
+            var selected = id == root.Id ? root : new CategoriaCatalogoDto(p.CategoriaId, p.Categoria, root.Id);
+            return Task.FromResult<CatalogoCategoriaContextoDto?>(new(root, selected,
+                new(productos.Where(p => p.CategoriaPadreId == root.Id).Select(p => new CategoriaCatalogoDto(p.CategoriaId, p.Categoria, root.Id)).DistinctBy(p => p.Id).ToArray(), false, null)));
+        }
+        public async Task<CatalogoCategoriasPaginaDto> LeerSubcategoriasAsync(int raizId, int? cursor = null, CancellationToken ct = default) =>
+            (await LeerContextoCategoriaAsync(raizId, ct))?.Subcategorias ?? new([], false, null);
         public Task<ProductoCatalogoDetalleDto?> ObtenerDetalleAsync(int productoId, CancellationToken ct = default) =>
             Task.FromResult<ProductoCatalogoDetalleDto?>(null);
     }

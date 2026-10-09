@@ -1,5 +1,9 @@
 using System.Reflection;
 using Microsoft.AspNetCore.Components;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using ResellManager.Infrastructure.Storage;
+using SkiaSharp;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using ResellManager.Application.Common;
@@ -95,6 +99,118 @@ public sealed class CompraProductoFlujoTests
         var resultado = await new CompraService(test.Db).RegistrarAsync(despues);
         Assert.True(resultado.IsSuccess, resultado.ErrorMessage);
         Assert.Equal(155m, resultado.Value!.Total);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(8)]
+    public async Task AltaDesdeCompra_GuardaGaleriaYPortadaYConservaCompraAbierta(int cantidadFotos)
+    {
+        await using var test = await TestDatabase.CreateAsync();
+        var directorio = Path.Combine(Path.GetTempPath(), "resellmanager-compra-galeria-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var compra = new CompraNueva();
+            var compraModelo = Obtener<CompraFormModel>(compra, "Modelo");
+            compraModelo.Observaciones = "Compra abierta";
+            var linea = compraModelo.Detalles[0];
+            linea.Cantidad = 3;
+            linea.CostoUnitario = 45m;
+            Invocar(compra, "AbrirAlta", linea);
+            var productoService = new ProductoService(test.Db);
+            var almacenamiento = new AlmacenamientoImagenesProductoLocal(
+                Options.Create(new AlmacenamientoImagenesProductoOptions { DirectorioBase = directorio }),
+                NullLogger<AlmacenamientoImagenesProductoLocal>.Instance);
+            var fotosService = new ProductoConImagenService(productoService, almacenamiento, test.Db,
+                NullLogger<ProductoConImagenService>.Instance);
+            var panel = new ProductoAltaPanel();
+            Establecer(panel, "ProductoService", productoService);
+            Establecer(panel, "ProductoConImagenService", fotosService);
+            Establecer(panel, "CategoriaService", new CategoriaService(test.Db));
+            Establecer(panel, "Logger", NullLogger<ProductoAltaPanel>.Instance);
+            Establecer(panel, "OnCreado", EventCallback.Factory.Create<ProductoDto>(new object(),
+                producto => Invocar(compra, "ProductoCreado", producto)));
+            await InvocarAsync(panel, "CargarCategoriasAsync");
+            var productoModelo = new ProductoFormModel { Nombre = "Producto con galería", CategoriaId = test.Categoria.Id };
+            using var bitmap = new SKBitmap(16, 24);
+            bitmap.Erase(SKColors.Blue);
+            using var imagen = SKImage.FromBitmap(bitmap);
+            using var datos = imagen.Encode(SKEncodedImageFormat.Png, 90);
+            for (var i = 0; i < cantidadFotos; i++)
+                productoModelo.Galeria.Add(new ProductoImagenFormModel
+                {
+                    Contenido = datos.ToArray(),
+                    EsPortada = i == cantidadFotos - 1,
+                });
+            await InvocarAsync(panel, "GuardarAsync", productoModelo);
+            Assert.Null(Obtener<string?>(panel, "Error"));
+            Assert.NotNull(linea.ProductoSeleccionado);
+            Assert.Same(compraModelo, Obtener<CompraFormModel>(compra, "Modelo"));
+            Assert.Equal("Compra abierta", compraModelo.Observaciones);
+            Assert.Equal(3, linea.Cantidad);
+            Assert.Equal(45m, linea.CostoUnitario);
+            var productoId = linea.ProductoSeleccionado.Id;
+            var fotos = await test.Db.ProductoImagenes.AsNoTracking().Where(x => x.ProductoId == productoId)
+                .OrderBy(x => x.Orden).ToListAsync();
+            Assert.Equal(cantidadFotos, fotos.Count);
+            Assert.Equal(fotos.Last().RutaRelativa, linea.ProductoSeleccionado.ImagenPrincipalRuta);
+            Assert.Equal(cantidadFotos, Directory.GetFiles(directorio, "*.webp", SearchOption.AllDirectories).Length);
+        }
+        finally
+        {
+            if (Directory.Exists(directorio)) Directory.Delete(directorio, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task AltaDesdeCompra_FalloDeGuardadoConservaBytesOrdenYPortadaYReintentaSinDuplicar()
+    {
+        await using var test = await TestDatabase.CreateAsync();
+        var directorio = Path.Combine(Path.GetTempPath(), "resellmanager-compra-reintento-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var productos = new ProductoService(test.Db);
+            var almacenamiento = new AlmacenamientoImagenesProductoLocal(
+                Options.Create(new AlmacenamientoImagenesProductoOptions { DirectorioBase = directorio }),
+                NullLogger<AlmacenamientoImagenesProductoLocal>.Instance);
+            var panel = new ProductoAltaPanel();
+            Establecer(panel, "ProductoService", productos);
+            Establecer(panel, "ProductoConImagenService", new ProductoConImagenService(productos, almacenamiento, test.Db,
+                NullLogger<ProductoConImagenService>.Instance));
+            Establecer(panel, "CategoriaService", new CategoriaService(test.Db));
+            Establecer(panel, "Logger", NullLogger<ProductoAltaPanel>.Instance);
+            await InvocarAsync(panel, "CargarCategoriasAsync");
+            var modelo = new ProductoFormModel { Nombre = "Guardar con reintento", CategoriaId = test.Categoria.Id, PrecioSugerido = -1 };
+            using var bitmap = new SKBitmap(16, 24);
+            bitmap.Erase(SKColors.Green);
+            using var imagen = SKImage.FromBitmap(bitmap);
+            using var datos = imagen.Encode(SKEncodedImageFormat.Png, 90);
+            modelo.Galeria.Add(new ProductoImagenFormModel { Contenido = datos.ToArray() });
+            modelo.Galeria.Add(new ProductoImagenFormModel { Contenido = datos.ToArray(), EsPortada = true });
+            var seleccion = modelo.Galeria.ToArray();
+            await InvocarAsync(panel, "GuardarAsync", modelo);
+            Assert.NotNull(Obtener<string?>(panel, "Error"));
+            Assert.Equal(seleccion, modelo.Galeria);
+            Assert.True(seleccion[1].EsPortada);
+            Assert.All(seleccion, x => Assert.Equal(datos.ToArray(), x.Contenido));
+            Assert.Single(await test.Db.Productos.AsNoTracking().ToListAsync());
+            Assert.Empty(await test.Db.ProductoImagenes.AsNoTracking().ToListAsync());
+            Assert.Empty(Directory.GetFiles(directorio, "*.webp", SearchOption.AllDirectories));
+            modelo.PrecioSugerido = 1;
+            await InvocarAsync(panel, "GuardarAsync", modelo);
+            Assert.Null(Obtener<string?>(panel, "Error"));
+            var guardado = await test.Db.Productos.AsNoTracking().SingleAsync(x => x.Nombre == modelo.Nombre);
+            var fotos = await test.Db.ProductoImagenes.AsNoTracking().Where(x => x.ProductoId == guardado.Id).OrderBy(x => x.Orden).ToListAsync();
+            Assert.Equal(2, fotos.Count);
+            Assert.Equal(fotos[1].RutaRelativa, guardado.ImagenPrincipalRuta);
+            Assert.Equal(2, Directory.GetFiles(directorio, "*.webp", SearchOption.AllDirectories).Length);
+            Assert.Equal(seleccion, modelo.Galeria);
+        }
+        finally
+        {
+            if (Directory.Exists(directorio)) Directory.Delete(directorio, recursive: true);
+        }
     }
 
     [Fact]

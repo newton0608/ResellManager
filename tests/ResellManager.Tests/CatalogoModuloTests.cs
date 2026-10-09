@@ -236,6 +236,7 @@ public sealed class CatalogoModuloIntegracionTests : PruebaWebAislada
         var categoriaService = new CategoriaServiceFalso(
             [new CategoriaDto(3, "Ropa de prueba", "Categoría desde servicio")]);
         var productoService = new ProductoServiceFalso();
+        var imagenesService = new ProductoImagenServiceFalso();
         using var aplicacion = factory.WithWebHostBuilder(builder =>
         {
             builder.ConfigureTestServices(services =>
@@ -244,6 +245,8 @@ public sealed class CatalogoModuloIntegracionTests : PruebaWebAislada
                 services.RemoveAll<IProductoService>();
                 services.AddSingleton<ICategoriaService>(categoriaService);
                 services.AddSingleton<IProductoService>(productoService);
+                services.RemoveAll<IProductoConImagenService>();
+                services.AddSingleton<IProductoConImagenService>(imagenesService);
             });
         });
         using var cliente = CrearCliente(aplicacion);
@@ -281,6 +284,7 @@ public sealed class CatalogoModuloIntegracionTests : PruebaWebAislada
         Assert.True(categoriaService.ObtenerFueInvocado);
         Assert.True(productoService.ListarFueInvocado);
         Assert.True(productoService.ObtenerFueInvocado);
+        Assert.True(imagenesService.ObtenerFueInvocado);
     }
 
     [Theory]
@@ -372,6 +376,28 @@ public sealed class CatalogoModuloIntegracionTests : PruebaWebAislada
 
         Assert.True(valor.Success);
         return WebUtility.HtmlDecode(valor.Groups[1].Value);
+    }
+
+    private sealed class ProductoImagenServiceFalso : IProductoConImagenService
+    {
+        public bool ObtenerFueInvocado { get; private set; }
+        public Task<ServiceResult<IReadOnlyList<ImagenProductoDto>>> ObtenerGaleriaAsync(int id, CancellationToken ct = default)
+        {
+            ObtenerFueInvocado = true;
+            return Task.FromResult(id == 7
+                ? ServiceResult<IReadOnlyList<ImagenProductoDto>>.Ok([])
+                : ServiceResult<IReadOnlyList<ImagenProductoDto>>.Failure("Producto no encontrado."));
+        }
+        public Task<ServiceResult<ProductoDto>> CrearAsync(ProductoInput input, Stream? imagen, CancellationToken ct = default)
+            => throw new NotSupportedException();
+        public Task<ServiceResult<ProductoDto>> EditarAsync(int id, ProductoInput input, Stream? imagen, bool eliminarImagen, CancellationToken ct = default)
+            => throw new NotSupportedException();
+        public Task<ServiceResult<ProductoDto>> CrearGaleriaAsync(ProductoInput input, IReadOnlyList<Stream> imagenes, int portadaIndice = 0, CancellationToken ct = default, bool validarCodigoBarras = false)
+            => throw new NotSupportedException();
+        public Task<ServiceResult<ProductoDto>> EditarGaleriaAsync(int id, ProductoInput input, GaleriaProductoEdicion galeria, IReadOnlyList<Stream> nuevas, CancellationToken ct = default)
+            => throw new NotSupportedException();
+        public Task<ServiceResult<ImagenProductoLectura>> AbrirImagenAsync(int id, Guid imagenId, CancellationToken ct = default)
+            => throw new NotSupportedException();
     }
 
     private sealed class CategoriaServiceFalso(IReadOnlyList<CategoriaDto> categorias)

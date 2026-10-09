@@ -12,6 +12,7 @@ public sealed class AlmacenamientoImagenesProductoLocal : IAlmacenamientoImagene
 {
     public const long TamanoMaximoBytes = 8 * 1024 * 1024;
     public const int LadoMaximo = 1200;
+    public const int LadoMaximoGaleria = 2000;
     private const int PixelesMaximos = 25_000_000;
     private readonly string directorioBase;
     private readonly string directorioTemporal;
@@ -28,8 +29,14 @@ public sealed class AlmacenamientoImagenesProductoLocal : IAlmacenamientoImagene
         this.logger = logger;
     }
 
-    public async Task<ServiceResult<ImagenProductoPreparada>> PrepararAsync(
-        Stream contenido, CancellationToken ct = default)
+    public Task<ServiceResult<ImagenProductoPreparada>> PrepararAsync(Stream contenido, CancellationToken ct = default)
+        => PrepararConLimiteAsync(contenido, LadoMaximo, 82, ct);
+
+    public Task<ServiceResult<ImagenProductoPreparada>> PrepararGaleriaAsync(Stream contenido, CancellationToken ct = default)
+        => PrepararConLimiteAsync(contenido, LadoMaximoGaleria, 88, ct);
+
+    private async Task<ServiceResult<ImagenProductoPreparada>> PrepararConLimiteAsync(
+        Stream contenido, int ladoMaximo, int calidad, CancellationToken ct)
     {
         var id = Guid.NewGuid().ToString("N");
         var rutaOriginal = Path.Combine(directorioTemporal, $"RAW-{id}.tmp");
@@ -57,7 +64,7 @@ public sealed class AlmacenamientoImagenesProductoLocal : IAlmacenamientoImagene
                     throw new InvalidDataException("La imagen está vacía.");
             }
 
-            await ValidarYProcesarAsync(rutaOriginal, rutaProcesada, ct);
+            await ValidarYProcesarAsync(rutaOriginal, rutaProcesada, ladoMaximo, calidad, ct);
             preparada = true;
             return ServiceResult<ImagenProductoPreparada>.Ok(new ImagenProductoPreparada(identificador));
         }
@@ -160,7 +167,7 @@ public sealed class AlmacenamientoImagenesProductoLocal : IAlmacenamientoImagene
         }
     }
 
-    private static async Task ValidarYProcesarAsync(string origen, string destino, CancellationToken ct)
+    private static async Task ValidarYProcesarAsync(string origen, string destino, int ladoMaximo, int calidad, CancellationToken ct)
     {
         var encabezado = new byte[12];
         await using (var archivo = File.OpenRead(origen))
@@ -185,7 +192,7 @@ public sealed class AlmacenamientoImagenesProductoLocal : IAlmacenamientoImagene
             throw new InvalidDataException("La imagen está dañada o no es válida.");
         using var orientada = AplicarOrientacion(bitmap, codec.EncodedOrigin);
         var fuente = orientada ?? bitmap;
-        var escala = Math.Min(1d, (double)LadoMaximo / Math.Max(fuente.Width, fuente.Height));
+        var escala = Math.Min(1d, (double)ladoMaximo / Math.Max(fuente.Width, fuente.Height));
         var ancho = Math.Max(1, (int)Math.Round(fuente.Width * escala));
         var alto = Math.Max(1, (int)Math.Round(fuente.Height * escala));
         using var redimensionada = escala == 1d ? null : fuente.Resize(
@@ -194,8 +201,8 @@ public sealed class AlmacenamientoImagenesProductoLocal : IAlmacenamientoImagene
         if (escala != 1d && redimensionada is null)
             throw new InvalidDataException("No fue posible redimensionar la imagen.");
         using var imagen = SKImage.FromBitmap(redimensionada ?? fuente);
-        using var datos = imagen.Encode(SKEncodedImageFormat.Webp, 82);
-        if (datos is null)
+        using var datos = imagen.Encode(SKEncodedImageFormat.Webp, calidad);
+        if (datos is null || datos.Size > TamanoMaximoBytes)
             throw new InvalidDataException("No fue posible convertir la imagen a WebP.");
         await using var salida = new FileStream(destino, FileMode.CreateNew, FileAccess.Write,
             FileShare.None, 64 * 1024, FileOptions.Asynchronous);

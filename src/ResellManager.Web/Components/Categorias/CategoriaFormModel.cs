@@ -9,13 +9,15 @@ public sealed class CategoriaFormModel
     public string Nombre { get; set; } = string.Empty;
 
     public string? Observaciones { get; set; }
+    public int? CategoriaPadreId { get; set; }
 
-    public CategoriaInput ToInput() => new(Nombre, Observaciones);
+    public CategoriaInput ToInput() => new(Nombre, Observaciones, CategoriaPadreId);
 
     public static CategoriaFormModel FromDto(CategoriaDto categoria) =>
         new()
         {
             Nombre = categoria.Nombre,
             Observaciones = categoria.Observaciones,
+            CategoriaPadreId = categoria.CategoriaPadreId,
         };
 }
