@@ -2,7 +2,7 @@
 
 V1 está en producción. Este backlog conserva entregas de fases y distingue ampliaciones posteriores; sus pendientes V2 no se consideran resueltos por el despliegue. El estado operativo vigente se mantiene en el [runbook V1](deployment/deployment.md) y las versiones en el [changelog](../CHANGELOG.md).
 
-## V1.4 — Mejoras de catálogo (implementada en rama; QA físico pendiente)
+## V1.4 — Mejoras de catálogo (implementada en rama; QA físico parcial satisfactorio)
 
 Contrato: [V1.4 de Virtuosa Store](modules/catalogo-v1-4.md). Rama
 `feature/catalogo-v1-4` desde `v1.3.0`, independiente de V2.1.
@@ -25,7 +25,8 @@ Contrato: [V1.4 de Virtuosa Store](modules/catalogo-v1-4.md). Rama
 - [x] Cobertura automática y contratos documentados de [ajustes UX](modules/catalogo-v1-4-ajustes-ux.md); los resultados iniciales no certifican esta iteración.
 - [x] Validación consolidada de ajustes UX: compilación sin advertencias/errores, 942/942 .NET, 134/134 JS, CSS generado y 193 comprobaciones de navegador; enlaces/diff revisados. [Resultados y límites](modules/catalogo-v1-4-ajustes-ux.md#9-validación-final-y-qa-físico).
 
-- [ ] QA físico Safari/iPhone y Android: carruseles/carga incremental, chips, historial, desconexión/caché, selección de fotos, pinch/pan y lectura de etiquetas. Apertura WhatsApp móvil/escritorio. Confirmar causa de la captura original; emulación no lo certifica.
+- [x] QA exploratorio comunicado en iPhone: navegación del catálogo y fotografías desde cámara y galería, sin fallos observados por el usuario (09/10/2026; navegador/modelo de la sesión no confirmados).
+- [ ] QA específico restante: Safari, Android, carruseles/carga incremental, chips/historial, desconexión/caché, gestos, accesibilidad y apertura de WhatsApp configurado. Confirmar causa de la captura original; emulación no lo certifica.
 - [ ] Integración/release/despliegue posteriores, fuera de esta tarea; V2.1 permanece independiente.
 
 ## Backend V1 completado
