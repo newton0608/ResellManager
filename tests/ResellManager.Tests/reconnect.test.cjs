@@ -6,7 +6,7 @@ const path = require("node:path");
 const vm = require("node:vm");
 const script = fs.readFileSync(path.resolve(__dirname, "../../src/ResellManager.Web/wwwroot/reconnect.js"), "utf8");
 
-function fixture(reconnect = async () => true, publicCatalog = false) {
+function fixture(reconnect = async () => true, publicCatalog = false, loading = false) {
     const classes = new Set(["components-reconnect-hide"]);
     const attributes = {};
     const focus = [];
@@ -20,6 +20,12 @@ function fixture(reconnect = async () => true, publicCatalog = false) {
     const current = { innerText: "4" };
     const maximum = { innerText: "8" };
     let observer;
+    let layoutObserver;
+    const body = {};
+    const documentListeners = {};
+    const windowListeners = {};
+    const blazorListeners = {};
+    let layoutObserverOptions;
     let observerOptions;
     let observerCount = 0;
     let calls = 0;
@@ -39,7 +45,7 @@ function fixture(reconnect = async () => true, publicCatalog = false) {
         addEventListener: (name, callback) => listeners[`modal:${name}`] = callback,
     };
     const context = {
-        document: { querySelector: () => publicCatalog ? {} : null, getElementById: id => ({
+        document: { body, readyState: loading ? "loading" : "complete", addEventListener: (name, callback) => documentListeners[name] = callback, querySelector: () => publicCatalog ? {} : null, getElementById: id => ({
             "components-reconnect-modal": modal,
             "store-reconnect": notice,
             "store-reconnect-message": noticeMessage,
@@ -51,12 +57,16 @@ function fixture(reconnect = async () => true, publicCatalog = false) {
             "components-reconnect-max-retries": maximum,
         })[id] },
         window: {
-            Blazor: { reconnect: () => { calls++; return reconnect(); } },
+            Blazor: loading ? undefined : { reconnect: () => { calls++; return reconnect(); }, addEventListener: (name, callback) => blazorListeners[name] = callback },
+            addEventListener: (name, callback) => windowListeners[name] = callback,
             location: { reload: () => reloads++ },
         },
         MutationObserver: class {
-            constructor(callback) { observer = callback; observerCount++; }
-            observe(target, options) { assert.equal(target, modal); observerOptions = options; }
+            constructor(callback) { this.callback = callback; observerCount++; }
+            observe(target, options) {
+                if (target === modal) { observer = this.callback; observerOptions = options; }
+                else { assert.equal(target, body); layoutObserver = this.callback; layoutObserverOptions = options; }
+            }
         },
     };
     vm.runInNewContext(script, context);
@@ -70,6 +80,17 @@ function fixture(reconnect = async () => true, publicCatalog = false) {
         clickReload: () => listeners["reload:click"](),
         cancel: event => listeners["modal:cancel"](event),
         initializeAgain: () => vm.runInNewContext(script, context),
+        layout: (value, notify = true) => { publicCatalog = value; if (notify) layoutObserver(); },
+        pageShow: () => windowListeners.pageshow(),
+        popState: () => windowListeners.popstate(),
+        enhancedLoad: () => blazorListeners.enhancedload(),
+        loadFramework: () => {
+            context.window.Blazor = { reconnect: () => { calls++; return reconnect(); }, addEventListener: (name, callback) => blazorListeners[name] = callback };
+            documentListeners.DOMContentLoaded();
+        },
+        get enhancedLoadRegistered() { return typeof blazorListeners.enhancedload === "function"; },
+        get layoutObserverOptions() { return layoutObserverOptions; },
+        get documentListeners() { return documentListeners; },
         get calls() { return calls; },
         get reloads() { return reloads; },
         get observerOptions() { return observerOptions; },
@@ -168,7 +189,7 @@ test("Escape no permite descartar la protección de desconexión", () => {
 test("la navegación mejorada no instala otro observador sobre el modal permanente", async () => {
     const ui = fixture();
     ui.initializeAgain();
-    assert.equal(ui.observerCount, 1);
+    assert.equal(ui.observerCount, 2);
     ui.state("failed");
     await ui.clickRetry();
     assert.equal(ui.calls, 1);
@@ -196,4 +217,76 @@ test("fallo/rechazo público conserva acciones nativas sin circuito", async () =
     assert.equal(ui.modal.open, false);
     ui.clickNoticeReload();
     assert.equal(ui.reloads, 1);
+});
+
+test("el cambio de marca de layout actualiza la presentación aunque Blazor conserve el estado", () => {
+    const ui = fixture();
+    ui.state("show");
+    assert.equal(ui.modal.open, true);
+    ui.layout(true);
+    assert.equal(ui.modal.open, false);
+    assert.equal(ui.notice.hidden, false);
+    ui.layout(false);
+    assert.equal(ui.modal.open, true);
+    assert.equal(ui.notice.hidden, true);
+    assert.equal(ui.layoutObserverOptions.subtree, true);
+    assert.equal(ui.layoutObserverOptions.childList, true);
+    assert.deepEqual(Array.from(ui.layoutObserverOptions.attributeFilter), ["data-public-catalog"]);
+});
+
+test("enhancedload se suscribe a Blazor y reevalúa el layout permanente", () => {
+    const ui = fixture();
+    assert.equal(ui.enhancedLoadRegistered, true);
+    assert.equal(ui.documentListeners.enhancedload, undefined);
+    ui.state("failed");
+    ui.layout(true, false);
+    ui.enhancedLoad();
+    assert.equal(ui.modal.open, false);
+    assert.equal(ui.noticeRetry.hidden, false);
+});
+
+test("el script anterior al framework registra enhancedload tras DOMContentLoaded", () => {
+    const ui = fixture(async () => true, true, true);
+    assert.equal(ui.enhancedLoadRegistered, false);
+    ui.loadFramework();
+    assert.equal(ui.enhancedLoadRegistered, true);
+    ui.state("show");
+    ui.enhancedLoad();
+    assert.equal(ui.modal.open, false);
+    assert.equal(ui.notice.hidden, false);
+});
+
+test("pageshow y popstate reevalúan el layout al restaurar atrás/adelante o bfcache", () => {
+    const ui = fixture();
+    ui.state("rejected");
+    ui.layout(true, false);
+    ui.pageShow();
+    assert.equal(ui.modal.open, false);
+    assert.equal(ui.noticeReload.hidden, false);
+    ui.layout(false, false);
+    ui.popState();
+    assert.equal(ui.modal.open, true);
+    assert.equal(ui.notice.hidden, true);
+});
+
+test("mutaciones de contenido no vuelven a enfocar el modal de administración", () => {
+    const ui = fixture();
+    ui.state("show");
+    const focused = ui.focus.length;
+    ui.layout(false);
+    ui.layout(false);
+    assert.equal(ui.focus.length, focused);
+});
+
+test("fallo de reintento público mantiene aviso y permite recuperar sin recargar", async () => {
+    const ui = fixture(async () => { throw new Error("offline"); }, true);
+    ui.state("failed");
+    await ui.clickNoticeRetry();
+    assert.equal(ui.hasState("failed"), true);
+    assert.equal(ui.notice.hidden, false);
+    assert.equal(ui.noticeRetry.hidden, false);
+    assert.equal(ui.noticeRetry.disabled, false);
+    assert.equal(ui.modal.open, false);
+    assert.equal(ui.focus.length, 0);
+    assert.equal(ui.reloads, 0);
 });

@@ -1,104 +1,161 @@
-<section class="store-hero" aria-labelledby="titulo-catalogo">
-    <p class="store-eyebrow">Virtuosa Store · Catálogo</p>
-    <h1 id="titulo-catalogo" class="store-hero-title">Encuentra lo que va contigo.</h1>
-    <p class="store-hero-copy">Ropa, accesorios, perfumes y más. Descubre nuestra selección disponible.</p>
-</section>
+@implements IAsyncDisposable
+@inject IJSRuntime JS
 
-<section id="productos" aria-labelledby="titulo-seleccion" aria-busy="@(Modelo.Cargando ? "true" : "false")">
-    <div class="store-collection-head">
-        <div>
-            <p class="store-eyebrow">La colección</p>
-            <h2 id="titulo-seleccion" class="store-section-title">Para explorar hoy</h2>
-            <p class="store-section-subtitle">Piezas para cada estilo y ocasión.</p>
-        </div>
-    </div>
-    <div class="store-filter-row" aria-label="Filtrar productos">
-        <div class="store-filter-field">
-            <label class="store-filter-label" for="catalogo-categoria">Categoría</label>
-            <select @key="Modelo.Categorias" id="catalogo-categoria" name="categoriaId" class="store-input"
-                    value="@(Modelo.CategoriaId?.ToString() ?? "")"
-                    @onchange="CambiarCategoriaAsync" disabled="@(!Modelo.CategoriasCargadas)">
-                <option value="">Todas las categorías</option>
-                @if (Modelo.CategoriaId is { } seleccionada && !Modelo.Categorias.Any(c => c.Id == seleccionada))
-                {
-                    <option value="@seleccionada">Categoría no disponible</option>
-                }
-                @foreach (var categoria in Modelo.Categorias)
-                {
-                    <option value="@categoria.Id">@(categoria.PadreId.HasValue ? "↳ " : "")@categoria.Nombre</option>
-                }
-            </select>
-        </div>
-        <div class="store-filter-field">
-            <label class="store-filter-label" for="catalogo-marca">Marca</label>
-            <select @key="Modelo.Marcas" id="catalogo-marca" name="marca" class="store-input" value="@(Modelo.Marca ?? "")"
-                    @onchange="CambiarMarcaAsync" disabled="@(!Modelo.CategoriasCargadas)">
-                <option value="">Todas las marcas</option>
-                @if (!string.IsNullOrWhiteSpace(Modelo.Marca) && !Modelo.Marcas.Contains(Modelo.Marca, StringComparer.OrdinalIgnoreCase))
-                {
-                    <option value="@Modelo.Marca">Marca no disponible</option>
-                }
-                @foreach (var marca in Modelo.Marcas)
-                {
-                    <option value="@marca">@marca</option>
-                }
-            </select>
-        </div>
-        @if (!string.IsNullOrWhiteSpace(Modelo.Termino))
-        {
-            <span class="store-active-filter">Búsqueda: @Modelo.Termino.Trim()</span>
-        }
-        @if (Modelo.TieneFiltros)
-        {
-            <button class="store-button store-button--quiet" type="button" @onclick="OnLimpiar">Limpiar</button>
-        }
-        @if (!Modelo.Cargando && Modelo.Error is null)
-        {
-            <span class="store-product-count" aria-live="polite">@Modelo.Productos.Count @(Modelo.Productos.Count == 1 ? "producto" : "productos")</span>
-        }
-    </div>
-
-    @if (Modelo.Cargando)
+<div @ref="Elemento" class="store-exploration">
+    @if (Modelo.EsPortada)
     {
-        <p class="store-loading" role="status" aria-live="polite">
-            <span class="store-spinner" aria-hidden="true"></span>Cargando productos…
-        </p>
+        <section class="store-hero" aria-labelledby="titulo-catalogo">
+            <p class="store-eyebrow">Virtuosa Store · Catálogo</p>
+            <h1 id="titulo-catalogo" class="store-hero-title">Encuentra lo que va contigo.</h1>
+            <p class="store-hero-copy">Explora nuestra selección por categoría.</p>
+        </section>
     }
-    @if (Modelo.Error is not null)
-    {
-        <CatalogoEstado Titulo="El catálogo no está disponible por el momento" Mensaje="@Modelo.Error" EsError="true" OnAccion="OnReintentar" />
-    }
-    else if (Modelo.Productos.Count > 0)
-    {
-        <div class="store-grid">
-            @foreach (var producto in Modelo.Productos)
+    <section id="productos" aria-labelledby="titulo-seleccion" aria-busy="@(Modelo.Cargando ? "true" : "false")">
+        <div class="store-exploration-head">
+            <h2 id="titulo-seleccion" class="store-section-title">@(Modelo.EsPortada ? "Explora por categoría" : Modelo.Contexto?.Raiz.Nombre ?? "Resultados del catálogo")</h2>
+            @if (Modelo.TieneFiltros)
             {
-                <ProductoCatalogoTarjeta @key="producto.Id" Producto="producto" />
+                <button type="button" class="store-button store-button--quiet" @onclick="OnLimpiar">Ver todas las categorías</button>
             }
         </div>
-    }
-    else if (Modelo.Cargando)
-    {
-        <div class="store-grid" aria-hidden="true">
-            @for (var i = 0; i < 4; i++)
+        <div class="store-filter-row" aria-label="Filtrar productos">
+            <div class="store-filter-field">
+                <label class="store-filter-label" for="catalogo-categoria">Categoría principal</label>
+                <select @key="Modelo.Categorias" id="catalogo-categoria" name="categoriaId" class="store-input"
+                        value="@(CategoriaRaizId?.ToString() ?? "")" @onchange="CambiarCategoriaAsync" disabled="@(!Modelo.CategoriasCargadas)">
+                    <option value="">Todas las categorías</option>
+                    @if (CategoriaRaizId is { } raiz && !Modelo.Categorias.Any(c => c.Id == raiz))
+                    {
+                        <option value="@raiz">@(Modelo.Contexto?.Raiz.Nombre ?? "Categoría no disponible")</option>
+                    }
+                    @foreach (var categoria in Modelo.Categorias)
+                    {
+                        <option value="@categoria.Id">@categoria.Nombre</option>
+                    }
+                </select>
+                @if (Modelo.HayMasRaices)
+                {
+                    <button type="button" class="store-option-more" disabled="@Modelo.CargandoOpciones" @onclick="Modelo.CargarMasRaicesAsync">Más categorías disponibles</button>
+                }
+            </div>
+            <div class="store-filter-field">
+                <label class="store-filter-label" for="catalogo-marca">Marca</label>
+                <select @key="Modelo.Marcas" id="catalogo-marca" name="marca" class="store-input" value="@(Modelo.Marca ?? "")"
+                        @onchange="CambiarMarcaAsync" disabled="@(!Modelo.CategoriasCargadas)">
+                    <option value="">Todas las marcas</option>
+                    @if (!string.IsNullOrWhiteSpace(Modelo.Marca) && !Modelo.Marcas.Contains(Modelo.Marca, StringComparer.OrdinalIgnoreCase))
+                    {
+                        <option value="@Modelo.Marca">@Modelo.Marca</option>
+                    }
+                    @foreach (var marca in Modelo.Marcas) { <option value="@marca">@marca</option> }
+                </select>
+                @if (Modelo.HayMasMarcas)
+                {
+                    <button type="button" class="store-option-more" disabled="@Modelo.CargandoOpciones" @onclick="Modelo.CargarMasMarcasAsync">Más marcas disponibles</button>
+                }
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Modelo.Termino))
             {
-                <div class="store-skeleton">
-                    <div class="store-skeleton-photo"></div>
-                    <div class="store-skeleton-lines"><i></i><i></i><i></i></div>
+                <span class="store-active-filter">Búsqueda: @Modelo.Termino.Trim()</span>
+            }
+            @if (Modelo.TieneFiltros)
+            {
+                <button type="button" class="store-button store-button--quiet" @onclick="OnLimpiar">Limpiar</button>
+            }
+        </div>
+        @if (Modelo.Contexto is { } contexto)
+        {
+            <nav class="store-subcategories" aria-label="Subcategorías de @contexto.Raiz.Nombre">
+                <button type="button" class="store-chip" aria-pressed="@(Modelo.CategoriaId == contexto.Raiz.Id ? "true" : "false")"
+                        @onclick="() => OnCategoria.InvokeAsync(contexto.Raiz.Id)">Todos</button>
+                @foreach (var hija in HijasVisibles)
+                {
+                    <button type="button" class="store-chip" aria-pressed="@(Modelo.CategoriaId == hija.Id ? "true" : "false")"
+                            @onclick="() => OnCategoria.InvokeAsync(hija.Id)">@hija.Nombre</button>
+                }
+                @if (contexto.Subcategorias.HasMore)
+                {
+                    <button type="button" class="store-option-more" disabled="@Modelo.CargandoOpciones" @onclick="Modelo.CargarMasSubcategoriasAsync">Más subcategorías</button>
+                }
+            </nav>
+        }
+        @if (Modelo.ErrorOpciones is not null)
+        {
+            <div class="store-page-error" role="alert"><p>@Modelo.ErrorOpciones</p><button type="button" class="store-button store-button--quiet" @onclick="Modelo.ReintentarOpcionesAsync">Reintentar opciones</button></div>
+        }
+        @if (Modelo.Cargando)
+        {
+            <p class="store-loading" role="status" aria-live="polite"><span class="store-spinner" aria-hidden="true"></span>Cargando productos…</p>
+            <div class="store-grid store-page-skeletons" aria-hidden="true">
+                @for (var i = 0; i < 4; i++) { <div class="store-skeleton"><div class="store-skeleton-photo"></div></div> }
+            </div>
+        }
+        else if (Modelo.Error is not null)
+        {
+            <CatalogoEstado Titulo="El catálogo no está disponible por el momento" Mensaje="@Modelo.Error" EsError="true" OnAccion="OnReintentar" />
+        }
+        else
+        {
+            @if (Modelo.EsPortada)
+            {
+                @foreach (var seccion in Modelo.Secciones)
+                {
+                    <section class="store-category-section" data-store-section aria-labelledby="@($"categoria-{seccion.Categoria.Id}")">
+                        <div class="store-category-head">
+                            <h2 id="@($"categoria-{seccion.Categoria.Id}")">@seccion.Categoria.Nombre</h2>
+                            <div class="store-category-actions">
+                                <button type="button" class="store-button store-button--quiet" data-store-carousel-delta="-1" aria-label="Productos anteriores de @seccion.Categoria.Nombre" disabled>←</button>
+                                <button type="button" class="store-button store-button--quiet" data-store-carousel-delta="1" aria-label="Productos siguientes de @seccion.Categoria.Nombre">→</button>
+                                <a class="store-text-link" href="/catalogo?categoriaId=@seccion.Categoria.Id" @onclick="() => OnCategoria.InvokeAsync(seccion.Categoria.Id)" @onclick:preventDefault>Ver todos<span class="sr-only"> de @seccion.Categoria.Nombre</span></a>
+                            </div>
+                        </div>
+                        <ul class="store-carousel" data-store-carousel tabindex="0" aria-label="Productos de @seccion.Categoria.Nombre">
+                            @foreach (var producto in seccion.Productos) { <li><ProductoCatalogoTarjeta @key="producto.Id" Producto="producto" /></li> }
+                        </ul>
+                    </section>
+                }
+            }
+            else if (Modelo.Productos.Count > 0)
+            {
+                <p class="store-product-count" aria-live="polite">@Modelo.Productos.Count productos mostrados</p>
+                <div class="store-grid">
+                    @foreach (var producto in Modelo.Productos) { <ProductoCatalogoTarjeta @key="producto.Id" Producto="producto" /> }
                 </div>
             }
-        </div>
-    }
-    else if (Modelo.TieneFiltros)
-    {
-        <CatalogoEstado Titulo="No encontramos productos con estos filtros" Mensaje="Prueba con otro nombre o explora todas las categorías."
-                        TextoAccion="Ver todos los productos" OnAccion="OnLimpiar" />
-    }
-    else
-    {
-        <CatalogoEstado Titulo="Por ahora no hay productos disponibles" Mensaje="Vuelve a consultar más adelante para descubrir nuestra selección." />
-    }
-</section>
+            @if (!Modelo.HayMas && Modelo.Productos.Count == 0 && Modelo.Secciones.Count == 0)
+            {
+                @if (Modelo.TieneFiltros)
+                {
+                    <CatalogoEstado Titulo="No encontramos productos con estos filtros" Mensaje="Prueba otra búsqueda o explora las categorías."
+                                    TextoAccion="Ver todos los productos" OnAccion="OnLimpiar" />
+                }
+                else
+                {
+                    <CatalogoEstado Titulo="Por ahora no hay productos disponibles" Mensaje="Vuelve a consultar más adelante para descubrir nuestra selección." />
+                }
+            }
+            @if (Modelo.ErrorMas is not null)
+            {
+                <div class="store-page-error" role="alert"><p>@Modelo.ErrorMas</p><button type="button" class="store-button store-button--quiet" @onclick="OnMas">Reintentar carga</button></div>
+            }
+            <div class="store-page-footer">
+                @if (Modelo.CargandoMas)
+                {
+                    <p class="store-loading" role="status" aria-live="polite"><span class="store-spinner" aria-hidden="true"></span>Cargando más…</p>
+                }
+                @if (Modelo.HayMas)
+                {
+                    <div @key="@(Modelo.SiguienteCursor)" data-store-sentinel data-enabled="@(!Modelo.CargandoMas && Modelo.ErrorMas is null ? "true" : "false")" aria-hidden="true"></div>
+                    <button type="button" class="store-button store-button--quiet" disabled="@Modelo.CargandoMas" @onclick="OnMas">@(Modelo.EsPortada ? "Cargar más categorías" : "Cargar más productos")</button>
+                }
+                else if (Modelo.Productos.Count > 0 || Modelo.Secciones.Count > 0)
+                {
+                    <p role="status">@(Modelo.EsPortada ? "Estas son todas las categorías disponibles." : "Has visto todos los resultados.")</p>
+                }
+            </div>
+        }
+    </section>
+</div>
 
 @code {
     [Parameter, EditorRequired] public CatalogoListadoModelo Modelo { get; set; } = null!;
@@ -106,6 +163,48 @@
     [Parameter] public EventCallback<string?> OnMarca { get; set; }
     [Parameter] public EventCallback OnLimpiar { get; set; }
     [Parameter] public EventCallback OnReintentar { get; set; }
+    [Parameter] public EventCallback OnMas { get; set; }
+    private ElementReference Elemento;
+    private IJSObjectReference? Modulo;
+    private DotNetObjectReference<CatalogoVista>? Referencia;
+    private bool Descartado;
+    private bool Inicializando;
+    private int? CategoriaRaizId => Modelo.Contexto?.Raiz.Id ?? Modelo.CategoriaId;
+    private IEnumerable<CategoriaCatalogoDto> HijasVisibles => Modelo.Contexto is not { } c ? []
+        : c.Subcategorias.Items.Concat(c.Seleccionada.CategoriaPadreId.HasValue ? [c.Seleccionada] : []).DistinctBy(x => x.Id).OrderBy(x => x.Id);
     private Task CambiarMarcaAsync(ChangeEventArgs e) => OnMarca.InvokeAsync(e.Value?.ToString());
     private Task CambiarCategoriaAsync(ChangeEventArgs e) => OnCategoria.InvokeAsync(int.TryParse(e.Value?.ToString(), out var id) ? id : null);
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Descartado || Inicializando) return;
+        Inicializando = true;
+        try
+        {
+            if (Modulo is null)
+            {
+                var nuevo = await JS.InvokeAsync<IJSObjectReference>("import", "./catalogo-exploracion.js");
+                if (Descartado) { await nuevo.DisposeAsync(); return; }
+                Modulo = nuevo;
+                Referencia = DotNetObjectReference.Create(this);
+                await Modulo.InvokeVoidAsync("iniciar", Elemento, Referencia);
+            }
+            if (!Descartado) await Modulo.InvokeVoidAsync("actualizar", Elemento);
+        }
+        catch (JSDisconnectedException) when (Descartado) { }
+        finally { Inicializando = false; }
+    }
+    [JSInvokable] public async Task CargarMasDesdeScrollAsync()
+    {
+        if (Descartado || Modelo.Cargando || Modelo.CargandoMas || !Modelo.HayMas || Modelo.ErrorMas is not null) return;
+        await OnMas.InvokeAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+    public async ValueTask DisposeAsync()
+    {
+        Descartado = true;
+        Referencia?.Dispose();
+        if (Modulo is null) return;
+        try { await Modulo.InvokeVoidAsync("destruir", Elemento); await Modulo.DisposeAsync(); }
+        catch (JSDisconnectedException) { }
+    }
 }

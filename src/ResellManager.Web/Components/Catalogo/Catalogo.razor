@@ -6,11 +6,11 @@
 @inject ICatalogoPublicoClient Cliente
 @inject ILogger<Catalogo> Logger
 @inject BusquedaTiendaEstado Busqueda
-@inject IJSRuntime JS
+@inject NavigationManager Navegacion
 
 <PageTitle>Catálogo | Virtuosa Store</PageTitle>
 <CatalogoVista Modelo="Modelo" OnCategoria="FiltrarCategoriaAsync" OnMarca="FiltrarMarcaAsync"
-               OnLimpiar="LimpiarAsync" OnReintentar="Modelo.CargarAsync" />
+               OnLimpiar="LimpiarAsync" OnReintentar="Modelo.CargarAsync" OnMas="Modelo.CargarMasAsync" />
 
 @code {
     [SupplyParameterFromQuery(Name = "termino")] public string? TerminoInicial { get; set; }
@@ -47,7 +47,7 @@
     private async Task BuscarDesdeEncabezadoAsync(string termino)
     {
         var carga = Modelo.BuscarAsync(termino);
-        await ActualizarUrlAsync();
+        await ActualizarUrlAsync(reemplazar: true);
         await InvokeAsync(StateHasChanged);
         await carga;
         if (!Descartado) await InvokeAsync(StateHasChanged);
@@ -78,12 +78,17 @@
         await Modelo.FiltrarMarcaAsync(marca);
         await ActualizarUrlAsync();
     }
-    private async Task ActualizarUrlAsync()
+    private Task ActualizarUrlAsync(bool reemplazar = false)
     {
-        if (Descartado) return;
-        var modulo = await JS.InvokeAsync<IJSObjectReference>("import", "./catalogo-publico.js");
-        try { await modulo.InvokeVoidAsync("actualizarUrl", Modelo.Termino, Modelo.CategoriaId, Modelo.Marca); }
-        finally { await modulo.DisposeAsync(); }
+        if (Descartado) return Task.CompletedTask;
+        var termino = string.IsNullOrWhiteSpace(Modelo.Termino) ? null : Modelo.Termino.Trim();
+        var marca = string.IsNullOrWhiteSpace(Modelo.Marca) ? null : Modelo.Marca;
+        var uri = Navegacion.GetUriWithQueryParameters(new Dictionary<string, object?>
+        { ["termino"] = termino, ["categoriaId"] = Modelo.CategoriaId, ["marca"] = marca });
+        // El modelo ya consultó estos filtros; el router conserva historial y back/forward.
+        Anterior = (termino, Modelo.CategoriaId, marca);
+        if (Navegacion.Uri != uri) Navegacion.NavigateTo(uri, replace: reemplazar);
+        return Task.CompletedTask;
     }
 
     public void Dispose()

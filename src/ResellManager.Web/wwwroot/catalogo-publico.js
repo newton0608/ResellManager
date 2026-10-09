@@ -43,3 +43,30 @@ export function actualizarUrl(termino, categoriaId, marca) {
     }
     window.history.replaceState(window.history.state, "", url);
 }
+
+// Nuevas lecturas acotadas. La ruta anterior conserva su contrato para otros consumidores.
+function query(filtros = {}) {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(filtros)) {
+        if (value != null && String(value).trim() !== '') params.set(key, String(value).trim());
+    }
+    return params.toString() ? `?${params}` : '';
+}
+export function pagina(termino, categoriaId, marca, cursor) {
+    return consultar(`api/catalogo/productos/pagina${query({ termino, categoriaId, marca, cursor, tamano: 16 })}`, 'pagina');
+}
+export function escaparate(cursor) {
+    return consultar(`api/catalogo/productos/escaparate${query({ cursor, tamano: 3 })}`, 'escaparate');
+}
+export function raices(cursor) {
+    return consultar(`api/catalogo/productos/raices${query({ cursor, tamano: 16 })}`, 'raices');
+}
+export function marcas(cursor) {
+    return consultar(`api/catalogo/productos/marcas${query({ cursor, tamano: 16 })}`, 'marcas');
+}
+export function contexto(categoriaId) {
+    return consultar(`api/catalogo/productos/categorias/${categoriaId}/contexto`, 'contexto', true);
+}
+export function hijas(raizId, cursor) {
+    return consultar(`api/catalogo/productos/categorias/${raizId}/hijas${query({ cursor, tamano: 16 })}`, 'hijas');
+}

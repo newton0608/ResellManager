@@ -5,16 +5,18 @@ con la administración. No hay carrito, checkout, pedidos web ni pagos online;
 la consulta por WhatsApp abre un enlace externo y no registra pedidos.
 La ampliación hacia una tienda está [planeada para V2.4](../19_V2_Pendientes.md#v24--canal-público--tienda-en-línea).
 
-**V1.4 implementada en esta rama, sin release ni despliegue:** [Galería (máximo 8 fotos), zoom,
+**V1.4 implementada, sin release ni despliegue:** [Galería (máximo 8 fotos), zoom,
 subcategorías de dos niveles, filtro por marca, reconexión discreta pública,
-indicador verde y consulta por WhatsApp](catalogo-v1-4.md). Se desarrolla en una rama separada
-partiendo de `v1.3.0`; no incluye ni fusiona V2.1.
+indicador verde y consulta por WhatsApp](catalogo-v1-4.md). Su base histórica es
+`v1.3.0`; V2.1 es una evolución independiente.
 
-**Ajustes aprobados pendientes de implementación:** [portada con carruseles
-por categoría raíz, paginación real, navegación raíz→subcategorías,
-progreso de fotos y aviso mínimo de reconexión](catalogo-v1-4-ajustes-ux.md).
-El listado actual todavía descarga todos los productos elegibles; el nuevo
-contrato lo sustituirá sin alterar la elegibilidad ni el carácter solo lectura.
+**Ajustes UX implementados:** [portada con carruseles por categoría raíz,
+paginación real, navegación raíz→subcategorías, progreso de fotos y aviso mínimo
+de reconexión](catalogo-v1-4-ajustes-ux.md). La portada carga tres raíces por
+bloque y hasta diez productos por carrusel; raíz, hija, búsqueda y marca consumen
+páginas de dieciséis, con opciones públicas independientes. El endpoint de array
+anterior mantiene compatibilidad. QA físico pendiente; elegibilidad y lectura
+anónima sin cambios.
 
 ## Contratos y límites
 
@@ -42,6 +44,7 @@ contrato lo sustituirá sin alterar la elegibilidad ni el carácter solo lectura
   [cliente de lectura](../../src/ResellManager.Web/Catalogo/CatalogoPublicoClient.cs)
   y [JS del catálogo](../../src/ResellManager.Web/wwwroot/catalogo-publico.js).
 - Pruebas: `CatalogoPublicoTests`, `CatalogoPublicoEndpointsTests`,
+  `CatalogoPaginacionTests`, `CatalogoIncrementalUiTests`,
   `CatalogoUiTests` y `VirtuosaStoreUiTests`, en
   [ResellManager.Tests](../../tests/ResellManager.Tests/).
 

@@ -34,3 +34,19 @@ test('lectura nueva cancela request anterior; 404 detalle es estado no disponibl
     assert.equal(await f.context.detalle(999), null);
     assert.throws(() => f.context.detalle('../file'), /Producto no válido/);
 });
+
+test('nuevas lecturas acotadas nunca llaman el listado array para filtros/carruseles', async () => {
+    const f = fixture(async () => ({ ok: true, json: async () => ({ items: [], hasMore: false, nextCursor: null }) }));
+    await f.context.pagina(' Á & B ', 19, ' Marca ', 16);
+    await f.context.escaparate(3); await f.context.raices(16); await f.context.marcas('Z & Á');
+    await f.context.contexto(19); await f.context.hijas(3, 16);
+    assert.deepEqual(f.calls.map(([url]) => url.pathname), [
+        '/api/catalogo/productos/pagina', '/api/catalogo/productos/escaparate', '/api/catalogo/productos/raices',
+        '/api/catalogo/productos/marcas', '/api/catalogo/productos/categorias/19/contexto', '/api/catalogo/productos/categorias/3/hijas']);
+    assert.equal(f.calls[0][0].searchParams.get('tamano'), '16');
+    assert.equal(f.calls[0][0].searchParams.get('cursor'), '16');
+    assert.equal(f.calls[0][0].searchParams.get('termino'), 'Á & B');
+    assert.equal(f.calls[1][0].searchParams.get('tamano'), '3');
+    assert.equal(f.calls[3][0].searchParams.get('cursor'), 'Z & Á');
+    assert.ok(f.calls.every(([,opts]) => opts.cache === 'no-store' && opts.credentials === 'omit'));
+});

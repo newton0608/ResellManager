@@ -12,12 +12,15 @@
     const states = ["show", "hide", "failed", "rejected"];
     let previousState = "hide";
     let retrying = false;
+    let previousPublicCatalog;
+    const isPublicCatalog = () => !!document.querySelector?.('[data-public-catalog="true"]');
 
     // Observar solo la presentación que administra Blazor; no sustituir su reconexión.
     function syncPresentation() {
         const state = states.find(value => modal.classList.contains(`components-reconnect-${value}`)) || "hide";
         modal.setAttribute("aria-busy", String(state === "show"));
-        const publicCatalog = !!document.querySelector?.('[data-public-catalog="true"]');
+        const publicCatalog = isPublicCatalog();
+        previousPublicCatalog = publicCatalog;
         if (notice) {
             notice.hidden = !publicCatalog || state === "hide";
             notice.dataset.state = state;
@@ -75,8 +78,23 @@
     retryButton.addEventListener("click", retry);
     noticeRetry?.addEventListener("click", retry);
     noticeReload?.addEventListener("click", () => window.location.reload());
-    // Volver a evaluar el layout después de navegación mejorada, sin polling.
-    document.addEventListener?.("enhancedload", syncPresentation);
+    // El modal es permanente, pero el layout cambia durante navegación mejorada.
+    // enhancedload pertenece a Blazor, no a document. Observar la marca también
+    // cubre reemplazos del DOM y restauración de historial sin depender de rutas.
+    const syncLayout = () => {
+        if (isPublicCatalog() !== previousPublicCatalog) syncPresentation();
+    };
+    new MutationObserver(syncLayout).observe(document.body, {
+        childList: true, subtree: true, attributes: true, attributeFilter: ["data-public-catalog"]
+    });
+    const registerEnhancedNavigation = () => window.Blazor?.addEventListener?.("enhancedload", syncPresentation);
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", registerEnhancedNavigation, { once: true });
+    } else {
+        registerEnhancedNavigation();
+    }
+    window.addEventListener?.("pageshow", syncPresentation);
+    window.addEventListener?.("popstate", syncLayout);
 
     reloadButton.addEventListener("click", () => window.location.reload());
     syncPresentation();
