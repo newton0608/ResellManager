@@ -1,12 +1,15 @@
 <div class="store-media">
-    <div class="store-image-placeholder" aria-hidden="@((Decorativa || (TieneImagen && !Fallida)) ? "true" : null)">
-        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-            <rect x="9" y="9" width="30" height="30" rx="5" />
-            <circle cx="19" cy="19" r="3" />
-            <path d="m10 34 9-9 7 7 5-5 8 8" />
-        </svg>
-        <span>Imagen no disponible</span>
-    </div>
+    @if (!TieneImagen || Fallida)
+    {
+        <div class="store-image-placeholder" aria-hidden="@(Decorativa ? "true" : null)">
+            <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <rect x="9" y="9" width="30" height="30" rx="5" />
+                <circle cx="19" cy="19" r="3" />
+                <path d="m10 34 9-9 7 7 5-5 8 8" />
+            </svg>
+            <span>Imagen no disponible</span>
+        </div>
+    }
     @if (TieneImagen && !Fallida)
     {
         <img src="/api/catalogo/productos/@ProductoId/imagen" alt="@(Decorativa ? "" : Nombre)"
