@@ -20,6 +20,10 @@ anónima sin cambios.
 
 ## Contratos y límites
 
+- Las tarjetas públicas solo muestran «Imagen no disponible» si el producto no tiene
+  fotografía o si la carga de la imagen falla. Cuando existe una imagen válida,
+  el placeholder no se renderiza detrás: las transparencias conservan el fondo
+  neutro de la tarjeta, sin texto superpuesto.
 - [Backend público](../25_CatalogoPublicoBackend.md) es la referencia de campos,
   disponibilidad comercial, lecturas HTTP y protección de imágenes.
 - [Primera UI](../26_CatalogoPublicoUI.md) conserva arquitectura/validación histórica;
