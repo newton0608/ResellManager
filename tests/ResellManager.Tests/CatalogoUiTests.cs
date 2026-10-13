@@ -171,6 +171,24 @@ public sealed class CatalogoUiTests
         Assert.DoesNotContain("/productos/", html);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ProductoConImagen_NoMuestraPlaceholderBajoFotografiasTransparentes(bool decorativa)
+    {
+        var html = await RenderAsync<ImagenCatalogo>(new()
+        {
+            ["ProductoId"] = Perfume.Id,
+            ["Nombre"] = Perfume.Nombre,
+            ["TieneImagen"] = true,
+            ["Decorativa"] = decorativa
+        });
+
+        Assert.Contains("src=\"/api/catalogo/productos/7/imagen\"", html);
+        Assert.DoesNotContain("store-image-placeholder", html);
+        Assert.DoesNotContain("Imagen no disponible", html);
+    }
+
     [Fact]
     public async Task Detalle_ComercialMuestraNombrePrecioDescripcionYMedidasSinCamposVacios()
     {
