@@ -50,9 +50,11 @@ Existen `v1.0.0 → 3f2d264` y `v1.0.1 → 97da64e`, pero no prueban qué imagen
 | 24 | Logs y alertas accionables | 🟡 | Se usa `ILogger` y Docker rota `json-file`. Falta decidir formato estructurado/correlación, retención, destino y alertas mínimas. |
 | 25 | Restauración del backup probada | ✅ / 🟡 | Restore real realizado y verificado según confirmación operativa del responsable. Falta incorporar el registro detallado y alcance de comprobaciones; no se certifican todos los controles ni el rollback de aplicación. Véase el runbook. |
 
-## Importación temporal de productos (implementada, solo rama feature)
+## Importación temporal de productos
 
-La [API de importación temporal](../modules/importacion-temporal-productos.md) está deshabilitada por defecto y no se ha desplegado. Solo acepta peticiones locales al contenedor con Host de loopback, sin cabeceras de proxy, clave temporal y vencimiento de hasta 24 horas. Valida el tamaño real del cuerpo aunque no incluya Content-Length; limita las partes multipart, la frecuencia y serializa las altas de la herramienta para revalidar duplicados. La auditoría registra ruta y estado sin credenciales ni cuerpos de productos. El despliegue debe admitir localhost en AllowedHosts; la excepción a la redirección HTTPS se limita a solicitudes de importación con origen y Host de loopback. Rechaza tráfico externo aun con token válido. Antes de habilitarla en producción deben comprobarse desde fuera el rechazo de escrituras, los límites de solicitudes/archivos, el almacenamiento privado de secretos, el respaldo y la revocación efectiva.
+La [API de importación temporal](../modules/importacion-temporal-productos.md) fue integrada y desplegada el 15/10/2026; sigue deshabilitada por defecto. Solo acepta peticiones locales al contenedor con Host de loopback, sin cabeceras de proxy, clave temporal y vencimiento de hasta 24 horas. Limita el tamaño real del cuerpo y las partes multipart, la frecuencia y los reintentos; la auditoría registra ruta y estado sin credenciales ni cuerpos completos.
+
+El despliegue agregó localhost a AllowedHosts y comprobó el rechazo de las tres rutas por el dominio público aun con clave válida y X-Forwarded-For falsificado. La excepción a HTTPS solo permite la ruta de importación con origen y Host de loopback. El registro canónico documenta imagen, respaldo y caducidad de la autorización concreta, sin secretos. Las copias operativas y la configuración permanecen privadas en el servidor; revocar una configuración por entorno exige aplicarla al proceso, no solo editar el archivo. No se creó inventario ni se cargaron productos de prueba en producción.
 
 ## Operación y observabilidad
 
