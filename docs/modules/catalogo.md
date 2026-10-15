@@ -5,7 +5,7 @@ con la administración. No hay carrito, checkout, pedidos web ni pagos online;
 la consulta por WhatsApp abre un enlace externo y no registra pedidos.
 La ampliación hacia una tienda está [planeada para V2.4](../19_V2_Pendientes.md#v24--canal-público--tienda-en-línea).
 
-**V1.4 implementada, sin release ni despliegue:** [Galería (máximo 8 fotos), zoom,
+**V1.4 implementada y desplegada en producción el 12/10/2026, sin nuevo tag ni GitHub Release:** [Galería (máximo 8 fotos), zoom,
 subcategorías de dos niveles, filtro por marca, reconexión discreta pública,
 indicador verde y consulta por WhatsApp](catalogo-v1-4.md). Su base histórica es
 `v1.3.0`; V2.1 es una evolución independiente.
@@ -20,6 +20,10 @@ anónima sin cambios.
 
 ## Contratos y límites
 
+- Las tarjetas públicas solo muestran «Imagen no disponible» si el producto no tiene
+  fotografía o si la carga de la imagen falla. Cuando existe una imagen válida,
+  el placeholder no se renderiza detrás: las transparencias conservan el fondo
+  neutro de la tarjeta, sin texto superpuesto.
 - [Backend público](../25_CatalogoPublicoBackend.md) es la referencia de campos,
   disponibilidad comercial, lecturas HTTP y protección de imágenes.
 - [Primera UI](../26_CatalogoPublicoUI.md) conserva arquitectura/validación histórica;
