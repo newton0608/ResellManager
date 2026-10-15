@@ -297,6 +297,14 @@ tras Forwarded Headers; no confía en XFF de proxies desconocidos. Los contadore
 al proceso y se reinician al recrearlo. Identity conserva su lockout por cuenta.
 No hay limiter global ni límites para SignalR, archivos estáticos o /health.
 
+En la rama de [importación temporal de productos](../modules/importacion-temporal-productos.md),
+las tres rutas administrativas tienen una política separada `ImportacionProductos`: 20 solicitudes
+por minuto por IP, sin cola. Está deshabilitada por defecto y aún no se ha desplegado;
+no cambia la política de login ni introduce un límite global. Para habilitarla,
+`AllowedHosts` debe incluir explícitamente `localhost` además de los dominios actuales.
+Solo su ruta con origen y Host de loopback omite la redirección HTTPS para operar
+dentro del contenedor; el tráfico externo y las demás rutas conservan la redirección.
+
 Orden relevante: Forwarded Headers → headers (OnStarting) → exception handler/HSTS en Production
 → redirección HTTPS → estáticos/páginas de estado → routing → rate limiter → autenticación
 → autorización → antiforgery → endpoints. El limiter va después de routing porque la política

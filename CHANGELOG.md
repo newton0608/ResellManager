@@ -4,6 +4,8 @@ Las fechas siguientes corresponden a creación de tags; no son fechas exactas de
 
 ## Unreleased — V1.4 integrada en main y develop
 
+- API administrativa de importación temporal de productos y galerías: validación sin escrituras, detección de duplicados, acceso local con token de caducidad corta, deshabilitada por defecto y sin creación de inventario. **Solo rama feature, sin despliegue.**
+
 Base `v1.3.0` (`b9ab4ee`); integrada a `main` mediante PR #17 y a `develop` mediante PR #16. Sin nuevo tag, release ni despliegue.
 
 - Galería de cero a ocho fotos, portada y orden, edición autenticada y migración que preserva referencias históricas.
