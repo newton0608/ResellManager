@@ -1,6 +1,6 @@
 # Importación temporal de productos mediante API administrativa
 
-**Estado: implementada en rama feature; sin integración ni despliegue.** Es una herramienta operativa restringida, deshabilitada por defecto. No es una API pública de Virtuosa Store ni una integración permanente de terceros.
+**Estado: implementada e integrada en main y develop; desplegada en producción el 15/10/2026.** Es una herramienta operativa restringida, deshabilitada por defecto. No es una API pública de Virtuosa Store ni una integración permanente de terceros.
 
 ## Objetivo y límites
 
@@ -78,4 +78,16 @@ Pruebas: `ImportacionTemporalProductosTests` e `ImportacionTemporalEndpointsInte
 
 Verificación aislada del **2026-10-15**: build de la solución sin advertencias ni errores; **39/39** pruebas específicas y **981/981** en la suite .NET completa, sin omitidas. Ejecutadas en contenedor SDK .NET 10 con red desactivada, código de entrada en solo lectura y almacenamiento temporal de pruebas; sin montar datos de producción.
 
-El despliegue permanece pendiente. Requiere respaldo previo, compatibilidad con la versión de producción, autorización explícita, configuración privada, prueba real de aislamiento externo y revocación. La API pública `/api/catalogo/productos` permanece exclusivamente de lectura.
+El despliegue del 15/10/2026 verificó la operación local y el rechazo a través del dominio público. Futuras actualizaciones requieren respaldo previo, compatibilidad con producción, autorización explícita, configuración privada y comprobación de aislamiento y revocación. La API pública `/api/catalogo/productos` permanece exclusivamente de lectura.
+
+## Registro de despliegue — 15/10/2026
+
+- Integración: PR #22 a develop y PR #23 a main; main en el despliegue: `046a181244ebbb61b9e1391cb1fd8b176339b0bf`.
+- Fuente construida: `5dea8bb39ab791f6e5c9b212ae7f65ff195939da`, con árbol idéntico al main de despliegue y el hotfix de fotografías transparentes conservado. La versión combinada pasó **983/983** pruebas .NET, sin omitidas, y build sin advertencias ni errores. La imagen Release también se construyó correctamente.
+- Imagen desplegada: `resellmanager:import-5dea8bb`, también etiquetada `resellmanager:v1`; ID `sha256:030821bb70ee970ce8490791db7e820002378adff4248a6d4eedec8b8e3c5b7d`.
+- Imagen anterior preservada: `resellmanager:pre-import-api-20261015T155359Z`, ID `sha256:1dd80ee86d6a12011cd5568330a5e9a123d8252708b981dfa0c78166b3f619a4`. No hay migraciones nuevas.
+- Respaldo consistente con la aplicación detenida: `/opt/resellmanager/backups/import-api-20261015T155359Z/data-20261015T155359Z.tar.gz`, 3 673 882 bytes, con checksum acompañante. Incluye database, comprobantes, dataprotection y productos; el SQLite extraído en una ruta temporal pasó `PRAGMA integrity_check`. El directorio operativo también conserva la configuración anterior y un manifiesto privado, sin publicar secretos en Git.
+- Se recreó únicamente ResellManager; Caddy, sus certificados y los otros servicios no se reiniciaron. Se conservaron los cuatro montajes persistentes y no se publicó un puerto de aplicación.
+- Verificaciones reales: `/health` respondió OK; login, catálogo administrativo y Virtuosa Store respondieron 200. Desde loopback: estado 200, lote vacío 400, creación sin confirmación 409 y clave inválida 404. Por el dominio público, estado, validación y creación devolvieron 404 aun usando la clave válida y un X-Forwarded-For falsificado. Estas sondas no crearon productos ni inventario.
+- Configuración operativa: localhost añadido a AllowedHosts, credencial privada y autorización hasta **2026-10-16T15:54:01Z** (16/10/2026, 09:54, Guatemala). Es una ventana histórica concreta; comprobar configuración y estado actuales antes de reutilizarla. La API conserva la deshabilitación predeterminada y deniega acceso al vencer. La clave no está en este documento.
+- Límites: no se importó el lote real de productos/fotografías; no se ejecutó una restauración ni un rollback real de aplicación en este despliegue. La imagen y configuración anteriores quedaron preparadas para recuperación, lo que no sustituye ensayar ese procedimiento.
