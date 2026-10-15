@@ -4,10 +4,11 @@ Las fechas siguientes corresponden a creación de tags; no son fechas exactas de
 
 ## Unreleased — V1.4 integrada en main y develop
 
+Base `v1.3.0` (`b9ab4ee`); integrada a `main` mediante PR #17 y a `develop` mediante PR #16. Sin nuevo tag ni GitHub Release; V1.4 fue desplegada en producción el 12/10/2026. El hotfix visual de este apartado se integró mediante PR #20 (merge `23be9e3`) y se desplegó en producción el 12/10/2026 (hora Guatemala), con 944/944 pruebas .NET satisfactorias, imagen Docker validada y respaldo consistente previo.
+
 - API administrativa de importación temporal de productos y galerías: validación sin escrituras, detección de duplicados, acceso local con token de caducidad corta, deshabilitada por defecto y sin creación de inventario. **Solo rama feature, sin despliegue.**
 
-Base `v1.3.0` (`b9ab4ee`); integrada a `main` mediante PR #17 y a `develop` mediante PR #16. Sin nuevo tag, release ni despliegue.
-
+- Hotfix visual: las tarjetas del catálogo no renderizan «Imagen no disponible» detrás de fotografías con transparencia; el fallback permanece para imágenes ausentes o fallidas.
 - Galería de cero a ocho fotos, portada y orden, edición autenticada y migración que preserva referencias históricas.
 - Visor público con zoom/pinch/pan, swipe, teclado, foco y fallback.
 - Subcategorías de dos niveles y filtro de marca combinable con búsqueda/categoría y URLs compartibles.
