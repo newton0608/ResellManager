@@ -68,7 +68,7 @@ public sealed class ProductionSecurityTests : PruebaWebAislada
     }
 
     [Fact]
-    public void RateLimiting_SinPoliticaGlobal_SoloPostAccountLoginTienePolitica()
+    public void RateLimiting_SinPoliticaGlobal_SoloLoginEImportacionTienenPolitica()
     {
         using var client = CrearCliente(factory);
         var options = factory.Services.GetRequiredService<IOptions<RateLimiterOptions>>().Value;
@@ -77,10 +77,22 @@ public sealed class ProductionSecurityTests : PruebaWebAislada
             .OfType<RouteEndpoint>()
             .Where(endpoint => endpoint.Metadata.GetMetadata<EnableRateLimitingAttribute>() is not null)
             .ToList();
-        var login = Assert.Single(endpoints);
-        Assert.Equal("/account/login", login.RoutePattern.RawText);
+        Assert.Equal(new[]
+        {
+            "/account/login",
+            "/api/admin/importacion-productos/crear",
+            "/api/admin/importacion-productos/estado",
+            "/api/admin/importacion-productos/validar"
+        }, endpoints.Select(endpoint => endpoint.RoutePattern.RawText).Order().ToArray());
+        var login = Assert.Single(endpoints.Where(endpoint => endpoint.RoutePattern.RawText == "/account/login"));
         Assert.Equal("Login", login.Metadata.GetMetadata<EnableRateLimitingAttribute>()!.PolicyName);
         Assert.Equal("POST", Assert.Single(login.Metadata.GetMetadata<HttpMethodMetadata>()!.HttpMethods));
+        foreach (var endpoint in endpoints.Where(endpoint => endpoint != login))
+        {
+            Assert.Equal("ImportacionProductos", endpoint.Metadata.GetMetadata<EnableRateLimitingAttribute>()!.PolicyName);
+            Assert.Equal(endpoint.RoutePattern.RawText!.EndsWith("/estado", StringComparison.Ordinal) ? "GET" : "POST",
+                Assert.Single(endpoint.Metadata.GetMetadata<HttpMethodMetadata>()!.HttpMethods));
+        }
     }
 
     [Theory]

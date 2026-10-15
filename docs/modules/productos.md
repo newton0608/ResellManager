@@ -23,6 +23,7 @@ Categoría es un maestro configurable, no un enum.
   Progreso real por archivo al preparar/transferir mediante SignalR, con
   «Guardando fotografías…» sin contador durante el guardado atómico. No añade
   columnas ni migración. QA físico pendiente.
+- [Importación temporal mediante API](importacion-temporal-productos.md): contrato de herramienta restringida para cargar productos y fotografías desde un agente, sin SQL directo ni alta de inventario. **Implementada y validada en rama feature; sin despliegue.**
 - [Scanner](../29_BarcodeScanner.md): contrato, vendor fijado y pruebas JS/ópticas. Existe validación física posterior en **iPhone 14 Plus + Brave**; la regresión histórica específica de Safari no quedó certificada por esa prueba.
 - [Búsqueda asistida por código de barras](productos-lookup-codigo-barras.md):
   consulta local + proveedores externos, revisión

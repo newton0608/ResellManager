@@ -28,6 +28,15 @@ builder.Services.AddProductionHosting(builder.Configuration);
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("ImportacionProductos", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 20,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+            AutoReplenishment = true
+        }));
     options.AddPolicy("Login", context => RateLimitPartition.GetFixedWindowLimiter(
         // Normalizar IPv4/IPv4-mapped; solo usar la IP resuelta por Forwarded Headers.
         context.Connection.RemoteIpAddress?.MapToIPv6().ToString() ?? "unknown",
@@ -137,7 +146,10 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+// Solo la herramienta de importación en loopback puede operar por HTTP dentro del contenedor.
+// El resto de rutas, incluido cualquier acceso externo a la API, conserva HTTPS.
+app.UseWhen(context => !ImportacionTemporalProductosEndpoints.EsSolicitudLocal(context),
+    branch => branch.UseHttpsRedirection());
 app.UseStaticFiles();
 app.UseStatusCodePagesWithReExecute("/no-encontrado");
 app.Use(async (contexto, siguiente) =>
@@ -161,6 +173,7 @@ app.UseAntiforgery();
 app.MapGet("/health", () => Results.Text("OK")).AllowAnonymous();
 app.MapCatalogoPublico();
 app.MapProductoGaleriaEndpoints();
+app.MapImportacionTemporalProductos();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode(options => options.ContentSecurityFrameAncestorsPolicy = "'none'");

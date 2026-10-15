@@ -17,6 +17,11 @@ el pedido técnico automáticamente. Las ventas son completas en sus artículos.
 - Venta Directa conserva dos operaciones (crear Pedido y registrar Venta);
   no presupongas atomicidad conjunta ni idempotencia distribuida. Las
   protecciones de concurrencia adicionales continúan en V2.3.
+- **V2.1 aprobado, implementación pendiente:** [scanner operativo en Venta
+  Directa e Inventario](scanner-operativo-v2-1.md). En Venta Directa el código
+  identifica un Producto local, muestra unidades elegibles restantes, solicita
+  cantidad y agrega N unidades físicas concretas sin inventar FIFO/LIFO ni una
+  política de costo. El buscador manual y la revalidación final se conservan.
 
 ## Dónde trabajar y validar
 

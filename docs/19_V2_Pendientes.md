@@ -38,20 +38,34 @@ Esta ampliación no equivale a la integración operativa del lector en Venta Dir
 
 ## Lectura de códigos de barras con la cámara
 
-La captura de `Producto.CodigoBarras` con cámara durante alta/edición ya está implementada; el motor vigente y sus límites se documentan en [Scanner](29_BarcodeScanner.md). En el código actual, `ProductoForm` sigue siendo el consumidor funcional del componente `BarcodeScanner`; Venta Directa e Inventario todavía no lo integran. La integración operativa del lector en esos flujos y en búsquedas donde aporte velocidad permanece planificada para **V2.1**.
+La captura de `Producto.CodigoBarras` con cámara durante alta/edición ya está implementada; el motor vigente y sus límites se documentan en [Scanner](29_BarcodeScanner.md). En el código actual, `ProductoForm` sigue siendo el consumidor funcional del componente `BarcodeScanner`; Venta Directa e Inventario todavía no lo integran.
+
+**Los requisitos de integración para Venta Directa e Inventario ya están aprobados; la implementación sigue pendiente.** El contrato canónico es [Scanner operativo en Venta Directa e Inventario](modules/scanner-operativo-v2-1.md). No reinterpretar esta sección como autorización para inventar otros consumidores o reglas de selección de inventario.
 
 ### Objetivo
 
 Permitir que la usuaria pueda escanear `Producto.CodigoBarras` desde un teléfono o dispositivo con cámara para localizar productos rápidamente y reducir la captura manual durante la operación diaria.
 
-### Alcance operativo previsto para V2.1
+### Alcance operativo aprobado para V2.1
 
-- Reutilizar el lector de cámara de V1.1 para leer códigos de barras compatibles.
-- Buscar el producto mediante `Producto.CodigoBarras` después de una lectura exitosa.
-- Integrar el escaneo principalmente con **Venta Directa** e **Inventario**.
-- Evaluar su uso también en búsquedas y selección de productos donde aporte velocidad real al flujo.
-- Mantener siempre la búsqueda/captura manual como alternativa cuando no haya cámara, no exista permiso o el código no pueda leerse.
-- Mostrar errores claros cuando el código leído no corresponda a ningún producto registrado.
+- Reutilizar el lector de cámara vigente; no crear otro decoder.
+- Buscar exclusivamente el producto local mediante `Producto.CodigoBarras`
+  después de una lectura confirmada.
+- **Venta Directa:** mostrar cuántas unidades físicas elegibles quedan,
+  descontando las ya agregadas; pedir una cantidad con 1 por defecto y máximo
+  igual a la disponibilidad; agregar N unidades concretas al formulario y
+  conservar revisión/revalidación final.
+- **Inventario:** si existe el producto, navegar directamente a
+  `/productos/{id}`, aunque en ese momento tenga cero unidades disponibles.
+- Mantener siempre búsqueda/captura manual como alternativa.
+- Mostrar errores claros cuando el código no corresponda a un producto local o
+  cuando el producto no tenga unidades elegibles para la venta.
+- No consultar Open Facts/UPCitemdb desde estos flujos y no ofrecer alta de
+  Producto como consecuencia del escaneo operativo.
+- No introducir FIFO, LIFO, orden por costo ni otra política de selección de
+  inventario no aprobada.
+- Otros consumidores del scanner quedan para evaluación posterior y no forman
+  parte automática de esta implementación.
 
 ### Regla de datos
 
@@ -71,19 +85,24 @@ Al extender el lector a flujos operativos se deberá evaluar:
 - seguridad y privacidad: la cámara solo debe activarse por acción explícita de la usuaria;
 - una solución web compatible con la arquitectura Blazor existente, evitando dependencias innecesarias.
 
-### Criterio de experiencia esperado
+### Criterio de experiencia aprobado
 
-Flujo objetivo para Venta Directa:
+En Venta Directa, escanear identifica el Producto pero no registra una venta:
+primero se muestra la disponibilidad restante, la usuaria elige cuántas unidades
+agregar y el sistema incorpora esa cantidad de unidades físicas elegibles al
+formulario actual. Si ya había unidades de ese Producto agregadas, se descuentan
+de la disponibilidad mostrada. La validación previa al registro continúa siendo
+obligatoria y un cambio concurrente no puede sustituir ni reducir artículos
+silenciosamente.
 
-1. La usuaria abre **Venta Directa**.
-2. Selecciona **Escanear código**.
-3. La aplicación solicita/usa la cámara.
-4. Se lee `Producto.CodigoBarras`.
-5. Se localiza el producto correspondiente.
-6. La usuaria confirma o agrega el producto a la operación.
-7. Si no puede escanearse, puede buscarse manualmente sin bloquear la venta.
+En Inventario, una coincidencia local navega directamente al detalle
+administrativo del Producto. Una lectura inexistente permanece en Inventario y
+muestra error sin destruir innecesariamente los filtros actuales.
 
-Esta mejora debe acelerar la operación, no convertir el escaneo en requisito obligatorio para vender o consultar inventario.
+Esta mejora debe acelerar la operación, no convertir el escaneo en requisito
+obligatorio para vender o consultar inventario. Los casos de error, cantidad,
+selección de unidades y pruebas obligatorias están detallados en el
+[contrato operativo](modules/scanner-operativo-v2-1.md).
 
 ## Analítica de uso y telemetría de producto
 

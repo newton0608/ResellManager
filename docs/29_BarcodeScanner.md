@@ -221,6 +221,18 @@ Durante la validación operativa posterior se abrió el scanner en vivo contra P
 
 No quedó registrado que esta comprobación usara exactamente el mismo código que había fallado en v1.2.0 ni se repitió la prueba en Safari. Por ello la evidencia permite afirmar **scanner en vivo validado físicamente en iPhone 14 Plus + Brave**, pero no certificar específicamente la regresión histórica de Safari.
 
+## Integración operativa V2.1
+
+**Requisitos aprobados; implementación pendiente (06/10/2026).** El mismo
+`BarcodeScanner` se reutilizará en Venta Directa e Inventario sin modificar su
+contrato óptico por defecto. El comportamiento posterior a `OnDetected`,
+cantidades, disponibilidad, navegación, errores y exclusiones está definido en
+[Scanner operativo en Venta Directa e Inventario](modules/scanner-operativo-v2-1.md).
+
+Esta planificación no convierte `IProductoLookupService` ni los proveedores
+externos en parte del scanner operativo: esos flujos consultarán únicamente los
+datos locales de ResellManager.
+
 ## Auditoría npm (2026-10-05)
 
 El reporte de `npm audit --json` y `npm explain braces` identifica esta cadena,
