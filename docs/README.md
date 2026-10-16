@@ -33,6 +33,7 @@ como tales en el [registro de decisiones](11_DecisionesDeDiseño.md).
 | Compras / proveedores | [Módulo](modules/compras.md) | [Comprobantes](16_Fase58_ComprasYComprobantes.md), [GTQ/USD](28_MonedasDeCompra.md). |
 | Inventario | [Módulo](modules/inventario.md) | Reglas físicas, recepción y [scanner operativo V2.1](modules/scanner-operativo-v2-1.md) aprobado pendiente. |
 | Pedidos / reservas | [Módulo](modules/pedidos.md) | [Códigos y canales](15_CodigosYCanalesVenta.md). |
+| Encargos USA de clientes (futuro) | [Diseño funcional](modules/encargos-usa.md) | Recepción por WhatsApp, búsqueda por la madre, cotización/aceptación, anticipo opcional, agrupación por variante y logística mixta. **No implementado.** |
 | Ventas / pagos / Dashboard | [Módulo](modules/ventas.md) | [Dashboard](17_Fase59_Dashboard.md), [scanner operativo V2.1](modules/scanner-operativo-v2-1.md) aprobado pendiente. |
 | Catálogo público | [Módulo](modules/catalogo.md) | [Backend](25_CatalogoPublicoBackend.md), [primera UI](26_CatalogoPublicoUI.md), [marca vigente](27_VirtuosaStore.md), [V1.4 implementada; QA físico parcial](modules/catalogo-v1-4.md), [ajustes UX implementados; QA físico parcial](modules/catalogo-v1-4-ajustes-ux.md). |
 | Deployment | [Dominios](deployment/domains.md) | [Runbook](deployment/deployment.md), [seguridad](deployment/security.md). |
