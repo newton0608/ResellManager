@@ -90,6 +90,7 @@ guía. El [índice](docs/README.md) distingue contratos, planes y registros hist
 | Compras / proveedores / monedas | [Compras](docs/modules/compras.md) |
 | Inventario / recepción | [Inventario](docs/modules/inventario.md) |
 | Pedidos / reservas | [Pedidos](docs/modules/pedidos.md) |
+| Encargos USA de clientes (solo diseño) | [Encargos](docs/modules/encargos-usa.md) |
 | Ventas / pagos / Dashboard | [Ventas](docs/modules/ventas.md) |
 | Catálogo público / Virtuosa Store | [Catálogo](docs/modules/catalogo.md) |
 | Landed cost / importaciones futuras | [Análisis pendiente](docs/modules/landed-cost.md) |
