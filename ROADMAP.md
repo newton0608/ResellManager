@@ -55,6 +55,10 @@ físico pendiente. Ver [contrato y validación propios](docs/modules/catalogo-v1
 
 Alcance, prioridades y exclusiones en [Pendientes V2](docs/19_V2_Pendientes.md). La tienda básica corresponde a V2.4, no a una V4; ecommerce avanzado no es un requisito inicial.
 
+### Módulo futuro de Encargos USA — diseño funcional, sin implementación
+
+Se conserva la [especificación de Encargos de clientes en EE. UU.](docs/modules/encargos-usa.md): usuario/hermana (y eventual chatbot) reciben solicitudes; solo las confirmadas para búsqueda llegan a la madre; la madre busca y determina el precio; el cliente acepta antes de comprar; el anticipo es opcional a criterio de la madre; solicitudes iguales pueden agruparse para búsqueda sin fusionar clientes ni importes; una caja puede transportar encargos y stock manteniendo su separación comercial. Quedan pendientes estados definitivos, permisos, anticipos/contabilidad, asignaciones y validación operativa con la madre. No altera los módulos implementados de Pedidos, Compras ni Inventario y no autoriza desarrollo.
+
 ## V3 — Candidatos posteriores
 
 El candidato principal es conteo físico / toma de inventario, con revisión de diferencias y ajustes explícitos, nunca automáticos por una discrepancia de conteo.
