@@ -52,7 +52,7 @@
                         }
                         @if (ProductoLocalCoincide)
                         {
-                            <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/productos/@Ronda!.ProductoLocal!.Id">Consultar producto existente</a>
+                            <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" target="@(CategoriasEnOtraPestana ? "_blank" : null)" rel="@(CategoriasEnOtraPestana ? "noopener" : null)" href="/productos/@Ronda!.ProductoLocal!.Id">Consultar producto existente</a>
                         }
                         @if (Ronda?.Intentos.Count > 0)
                         {
