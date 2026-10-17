@@ -5,7 +5,7 @@ V1 está en producción. Este backlog conserva entregas de fases y distingue amp
 ## V1.4 — Mejoras de catálogo (integrada en main/develop; QA físico parcial satisfactorio)
 
 Contrato: [V1.4 de Virtuosa Store](modules/catalogo-v1-4.md). Rama
-`feature/catalogo-v1-4` desde `v1.3.0`; integrada a `main` (PR #17) y `develop` (PR #16). La implementación V2.1 permanece independiente.
+`feature/catalogo-v1-4` desde `v1.3.0`; integrada a `main` (PR #17) y `develop` (PR #16). Posteriormente, el scanner V2.1 se integró en `develop` el 17/10/2026 (`0c7cead`); su [validación integrada](auditorias/scanner-v2-1-integration-audit-20261017.md) sigue abierta.
 
 - [x] Galería de 0 a 8 fotos por producto, con portada, orden y gestión autenticada; preservar imágenes históricas.
 - [x] Miniaturas y visor público con zoom/pinch, swipe, teclado y accesibilidad.
@@ -27,7 +27,7 @@ Contrato: [V1.4 de Virtuosa Store](modules/catalogo-v1-4.md). Rama
 
 - [x] QA exploratorio comunicado en iPhone: navegación del catálogo y fotografías desde cámara y galería, sin fallos observados por el usuario (09/10/2026; navegador/modelo de la sesión no confirmados).
 - [ ] QA específico restante: Safari, Android, carruseles/carga incremental, chips/historial, desconexión/caché, gestos, accesibilidad y apertura de WhatsApp configurado. Confirmar causa de la captura original; emulación no lo certifica.
-- [x] Integración de V1.4 en `main` y `develop` (PR #17 y #16), conservando la documentación V2.1 en `develop` sin incorporar su implementación.
+- [x] Integración de V1.4 en `main` y `develop` (PR #17 y #16), conservando en ese momento la documentación V2.1 sin incorporar su implementación. El scanner V2.1 se integró posteriormente en `develop` el 17/10/2026.
 - [ ] Tag, release y despliegue V1.4: no ejecutados; requieren decisión posterior.
 
 ## Backend V1 completado
@@ -97,7 +97,9 @@ Contrato: [V1.4 de Virtuosa Store](modules/catalogo-v1-4.md). Rama
 - [x] V2.1: base del scanner en Venta Directa e Inventario implementada y validada automáticamente según el [contrato operativo](modules/scanner-operativo-v2-1.md).
 - [x] V2.1: agrupar Venta Directa por lote de agregado: Producto ×N, códigos físicos, un solo Precio final por unidad y la misma agrupación en revisión; agregados separados del mismo Producto permanecen como lotes independientes.
 - [x] V2.1: integrar scanner en Nueva compra; coincidencia local selecciona Producto y código inexistente puede abrir Registrar producto reutilizando el alta asistida, regresando autoseleccionado al detalle original.
-- [ ] V2.1: validar físicamente la implementación final de los consumidores operativos con cámara y registrar dispositivo/versiones exactos; no extrapolar evidencia histórica de Producto.
+- [x] V2.1: integración del scanner en `develop` (`0c7cead`, 17/10/2026), conservando catálogo V1.4 y API temporal.
+- [ ] V2.1: resolver el bloqueo de compilación del entorno auditado y cerrar regresión integrada, combinación scanner/galería y CSS generado según el [diagnóstico y criterios](auditorias/scanner-v2-1-integration-audit-20261017.md).
+- [ ] V2.1: completar bitácora física reproducible de los consumidores operativos con cámara y dispositivo/versiones exactos; aceptación funcional declarada por usuario el 17/10/2026, sin extrapolar evidencia histórica de Producto.
 - [ ] Diseñar devoluciones y cambios para unidades entregadas.
 
 ---

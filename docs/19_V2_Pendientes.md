@@ -45,6 +45,12 @@ Motor, formatos y privacidad permanecen en [Scanner](29_BarcodeScanner.md);
 comportamiento, criterios y evidencia actual en el
 [contrato V2.1](modules/scanner-operativo-v2-1.md#ajustes-implementados-y-validados--06102026).
 
+**Estado posterior — 17/10/2026:** scanner integrado en `develop` (`0c7cead`).
+La validación del 06/10 es histórica; el conjunto integrado presenta un bloqueo
+de compilación en el SDK auditado. La aceptación funcional fue comunicada por
+el usuario, sin bitácora reproducible por dispositivo/versiones. Ver
+[diagnóstico y plan de cierre](auditorias/scanner-v2-1-integration-audit-20261017.md).
+
 Venta Directa presenta lotes independientes por acción, con códigos físicos,
 precio común por unidad y subtotal en formulario/revisión; persistencia y
 revalidación siguen por unidad. Inventario conserva su navegación local.
@@ -56,6 +62,9 @@ ese subflujo de alta; no se dispara desde el escaneo operativo.
 - [x] Agrupación por lote de agregado en formulario y revisión de Venta Directa.
 - [x] Scanner en Nueva compra y alta asistida opcional para código inexistente.
 - [x] Pruebas y QA responsive ampliados para ambos ajustes.
+- [x] Integración del scanner operativo en `develop` el 17/10/2026.
+- [ ] Cerrar compilación, regresión integrada y sincronización del CSS según el
+  [diagnóstico](auditorias/scanner-v2-1-integration-audit-20261017.md).
 - [ ] Validar físicamente la implementación final con cámara y registrar
   dispositivo, sistema y navegador/versiones exactos.
 

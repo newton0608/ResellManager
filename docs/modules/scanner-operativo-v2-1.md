@@ -1,11 +1,12 @@
 # V2.1 — Scanner operativo en Venta Directa, Inventario y Nueva compra
 
-**Estado: implementación V2.1 con pruebas automatizadas; el 17/10/2026 el usuario confirmó recordar haber probado los flujos de Venta Directa, Inventario y Nueva compra. Evidencia física declarada por usuario, sin bitácora reproducible de navegador/versiones para cada flujo. Integración en desarrollo, sin afirmar despliegue.**
+**Estado: scanner V2.1 integrado en `develop` el 17/10/2026 (`0c7cead`), con pruebas automatizadas históricas y aceptación funcional declarada por el usuario. La auditoría del conjunto integrado detectó un bloqueo de compilación con SDK 10.0.112; regresión integrada y bitácora física reproducible pendientes. Sin afirmar release ni despliegue.** Ver [diagnóstico, evidencia y plan de cierre](../auditorias/scanner-v2-1-integration-audit-20261017.md).
 
 Este documento conserva el contrato aprobado y describe su implementación en
 **Venta Directa**, **Inventario** y **Nueva compra**, reutilizando el scanner de códigos de barras
 existente. La evidencia automatizada y los límites del cierre se registran más
-abajo. No implica merge, release ni despliegue de esta rama.
+abajo. La integración en `develop` está confirmada; la evidencia histórica no
+certifica release, despliegue ni validación del conjunto integrado.
 
 El motor, formatos soportados, privacidad, modos de captura y contrato actual de
 `BarcodeScanner` siguen definidos en [Scanner de códigos de producto](../29_BarcodeScanner.md).
@@ -631,4 +632,4 @@ El usuario responsable del proyecto indicó en conversación que **recuerda habe
 
 La prueba con **iPhone 14 Plus y Brave del 06/10/2026** está documentada para el lector en el flujo de **Agregar producto**; no consta en esta confirmación el navegador, versión exacta ni dispositivo empleados en cada prueba operativa de V2.1. No atribuir automáticamente esas tres pruebas al iPhone ni certificar Safari. La falta de bitácora técnica no invalida la confirmación del usuario, pero limita la reproducibilidad y cobertura demostrable del QA.
 
-La integración de código se realiza sobre la versión reciente de `develop`, preservando el catálogo V1.4, el guardado de galerías y la API temporal. Validar compilación, pruebas automatizadas y generación de CSS en el conjunto integrado antes de su despliegue.
+La integración de código quedó incorporada en `develop` mediante `0c7cead`, preservando el catálogo V1.4, el guardado de galerías y la API temporal. La [verificación posterior del mismo día](../auditorias/scanner-v2-1-integration-audit-20261017.md) registra el bloqueo de compilación, la comparación de CSS y las validaciones pendientes del conjunto integrado; no sustituye ni reescribe los resultados históricos anteriores.

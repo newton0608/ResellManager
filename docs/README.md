@@ -59,7 +59,8 @@ decisiones en lugar de abrir una segunda colección ADR con decisiones repetidas
 | [Alcance V1](14_Alcance_V1.md) / [cierre V1](18_Fase510_CierreV1.md) | Alcance/evidencia de fases anteriores; no contienen todas las ampliaciones actuales. |
 | [Changelog](../CHANGELOG.md) | Tags/versiones y estado Unreleased; no certifica despliegue. `.github/workflows/release.yml` publica GitHub Releases desde tags. |
 | [Diagramas](diagrams/) | Material editable conservado; contrastar contratos ampliados con código/configuración EF. |
-| [Auditoría documental 05/10/2026](documentation-audit.md) | Base, reorganización, contradicciones y límites de esta revisión. |
+| [Auditoría documental 05/10/2026](auditorias/documentation-audit.md) | Base, reorganización, contradicciones y límites de esta revisión. |
+| [Verificación de scanner V2.1 17/10/2026](auditorias/scanner-v2-1-integration-audit-20261017.md) | Estado de develop, resoluciones históricas, bloqueo de compilación, CSS y plan de validación integrada; sin merge ni despliegue. |
 
 ## Separación entre documentación y ejecución
 

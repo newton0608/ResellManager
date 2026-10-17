@@ -28,11 +28,11 @@ backup/systemd. No se accedió al VPS, DB real, DNS o DeployManager.
 
 | Ruta anterior | Ruta canónica actual |
 | --- | --- |
-| `docs/07_Arquitectura.md` | [architecture/overview.md](architecture/overview.md) |
-| `docs/08_ReglasDelNegocio.md` | [architecture/domain-rules.md](architecture/domain-rules.md) |
-| `docs/10_BaseDeDatos.md` | [architecture/persistence.md](architecture/persistence.md) |
-| `docs/21_Despliegue_V1.md` | [deployment/deployment.md](deployment/deployment.md) |
-| `docs/22_Seguridad_Produccion.md` | [deployment/security.md](deployment/security.md) |
+| `docs/07_Arquitectura.md` | [architecture/overview.md](../architecture/overview.md) |
+| `docs/08_ReglasDelNegocio.md` | [architecture/domain-rules.md](../architecture/domain-rules.md) |
+| `docs/10_BaseDeDatos.md` | [architecture/persistence.md](../architecture/persistence.md) |
+| `docs/21_Despliegue_V1.md` | [deployment/deployment.md](../deployment/deployment.md) |
+| `docs/22_Seguridad_Produccion.md` | [deployment/security.md](../deployment/security.md) |
 
 Se trasladó el contenido útil y se actualizaron enlaces relativos entrantes y
 salientes, incluidos anchors; no se mantienen copias paralelas. Los demás
@@ -64,7 +64,7 @@ integre esta rama; no se añadieron stubs duplicados.
 - `docs/deployment/`: `domains.md`, `deployment.md`, `security.md`.
 - `docs/11_DecisionesDeDiseño.md`: registro numerado canónico, sin ADRs duplicados.
 - Resto de documentación numerada: requisitos/contexto, guías especializadas,
-  roadmaps y evidencia histórica, inventariados en el [índice](README.md).
+  roadmaps y evidencia histórica, inventariados en el [índice](../README.md).
 - `docs/diagrams/`: los diez diagramas drawio existentes, conservados.
 - `docs/20261003_AddPurchaseCurrencies.sql`: SQL de referencia existente, sin cambios.
 
@@ -85,8 +85,12 @@ integre esta rama; no se añadieron stubs duplicados.
 | Requisitos/diagramas/alcance original no contienen todas las ampliaciones posteriores | Mantener material histórico y referir al índice/código/configuración EF; no afirmar sincronización completa de diagramas. |
 
 Nota posterior del 08/10/2026: múltiples fotos y consulta WhatsApp se implementan
-en [V1.4](modules/catalogo-v1-4.md); las conclusiones anteriores conservan
+en [V1.4](../modules/catalogo-v1-4.md); las conclusiones anteriores conservan
 el estado de la auditoría original. Scanner operativo/V2.1 sigue independiente.
+
+Nota posterior del 17/10/2026: el scanner operativo V2.1 ya se integró en
+`develop` (`0c7cead`). Su [verificación y plan de cierre](scanner-v2-1-integration-audit-20261017.md)
+registran el estado posterior, conservando como histórica la nota del 08/10.
 
 ## Decisiones y datos que siguen abiertos
 
@@ -126,4 +130,4 @@ SHA autorreferencial. No se autoriza merge a develop/main.
 
 Recomendación de flujo: acordar requisitos → actualizar guía canónica y criterios
 de aceptación → prompt corto con referencias → implementación y validación
-proporcional. [Índice](README.md#flujo-para-futuras-tareas-de-codex) contiene el ejemplo.
+proporcional. [Índice](../README.md#flujo-para-futuras-tareas-de-codex) contiene el ejemplo.
