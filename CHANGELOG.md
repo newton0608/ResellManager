@@ -4,6 +4,8 @@ Las fechas siguientes corresponden a creación de tags; no son fechas exactas de
 
 ## Unreleased — V1.4 integrada en main y develop
 
+- Scanner operativo V2.1 integrado en `develop`: lector en Venta Directa, Inventario y Nueva compra; agrupación de unidades por acción con precio común y selección asistida de producto. El usuario confirmó haber probado los tres flujos en dispositivo real; sin registro reproducible de navegador/versiones por flujo y sin afirmar despliegue en producción.
+
 Base `v1.3.0` (`b9ab4ee`); integrada a `main` mediante PR #17 y a `develop` mediante PR #16. Sin nuevo tag ni GitHub Release; V1.4 fue desplegada en producción el 12/10/2026. El hotfix visual de este apartado se integró mediante PR #20 (merge `23be9e3`) y se desplegó en producción el 12/10/2026 (hora Guatemala), con 944/944 pruebas .NET satisfactorias, imagen Docker validada y respaldo consistente previo.
 
 - API administrativa de importación temporal de productos y galerías: validación sin escrituras, detección de duplicados, acceso local con token de caducidad corta, deshabilitada por defecto y sin creación de inventario. **Integrada mediante PR #22 y #23; desplegada el 15/10/2026, conservando el hotfix del catálogo.**

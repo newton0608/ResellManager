@@ -4,6 +4,7 @@
 @implements IDisposable
 @inject IRegistroCompraConComprobanteService RegistroCompraService
 @inject ITipoCambioReferenciaService TipoCambioReferenciaService
+@inject IConsultaProductoCodigoBarras ConsultaProductos
 @inject NavigationManager Navigation
 @inject ILogger<CompraNueva> Logger
 
@@ -22,17 +23,18 @@
     }
     @if (DetalleAlta is not null)
     {
-        <ProductoAltaPanel OnCreado="ProductoCreado" OnCancelar="CerrarAlta" />
+        <ProductoAltaPanel @key="DetalleAlta" CodigoInicial="@CodigoAlta" LookupHabilitado="@(CodigoAlta is not null)"
+            OnCreado="ProductoCreado" OnCancelar="CerrarAlta" OnAvisoImagen="aviso => AvisoImagenProducto = aviso" />
     }
     @if (ConfirmacionProducto is not null)
     {
-        <p class="rounded-2xl border border-solid border-ui-success/20 bg-ui-success/5 px-4 py-3 text-sm leading-6 text-ui-success" role="status">@ConfirmacionProducto</p>
+        <p class="rounded-2xl border border-solid border-ui-success/20 bg-ui-success/5 px-4 py-3 text-sm leading-6 text-ui-success" role="status">@ConfirmacionProducto @AvisoImagenProducto</p>
     }
 
     <section class="min-w-0" aria-label="Formulario de compra">
         <EditForm Model="Modelo" OnValidSubmit="RevisarCompra" class="entity-form grid min-w-0 gap-6">
             <DataAnnotationsValidator />
-            <fieldset class="m-0 grid min-w-0 max-w-full gap-6 border-0 p-0" disabled="@(Guardando || AltaAbierta)">
+            <fieldset class="m-0 grid min-w-0 max-w-full gap-6 border-0 p-0" disabled="@SeleccionBloqueada">
                 @if (!string.IsNullOrWhiteSpace(ErrorGuardado))
                 {
                     <div class="mensaje-error rounded-2xl border border-solid border-ui-danger/20 bg-ui-danger/5 px-4 py-3 text-sm leading-6 text-ui-danger" role="alert">@ErrorGuardado</div>
@@ -70,7 +72,7 @@
                             }
                         </div>
                         <div class="grid min-w-0 gap-2 sm:col-span-2">
-                            <ProveedorBuscador Seleccionado="ProveedorSeleccionado" Deshabilitado="@(Guardando || AltaAbierta)"
+                            <ProveedorBuscador Seleccionado="ProveedorSeleccionado" Deshabilitado="@SeleccionBloqueada"
                                                OnSeleccionado="SeleccionarProveedor" OnAgregar="AbrirAltaProveedor" />
                             <ValidationMessage For="() => Modelo.ProveedorId" />
                         </div>
@@ -149,7 +151,7 @@
                             <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-detalles-compra">Productos de la compra</h2>
                             <p class="m-0 text-sm leading-6 text-ui-muted">Revisa cantidades y costos; el total se confirma al registrar la compra.</p>
                         </div>
-                        <button class="ui-button shrink-0 border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" type="button" disabled="@Guardando" @onclick="AgregarFila">Agregar producto</button>
+                        <button class="ui-button shrink-0 border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" type="button" disabled="@SeleccionBloqueada" @onclick="AgregarFila">Agregar producto</button>
                     </div>
                     <div class="grid min-w-0 gap-4">
                         @for (var index = 0; index < Modelo.Detalles.Count; index++)
@@ -160,7 +162,7 @@
                                 <div class="flex items-center justify-between gap-3">
                                     <h3 class="m-0 text-base font-semibold leading-6 text-ui-ink">Detalle @numero</h3>
                                     <button class="ui-button border-ui-danger/30 bg-white text-ui-danger hover:bg-ui-danger/5" type="button"
-                                            disabled="@(Guardando || Modelo.Detalles.Count == 1)"
+                                            disabled="@(SeleccionBloqueada || Modelo.Detalles.Count == 1)"
                                             aria-label="Quitar detalle @numero"
                                             @onclick="() => QuitarFila(detalle)">Quitar</button>
                                 </div>
@@ -168,9 +170,28 @@
                                     <div class="col-span-2 min-w-0 xl:col-span-1">
                                         <ProductoBuscador Id="@($"producto-compra-{numero}")"
                                                           Seleccionado="detalle.ProductoSeleccionado"
-                                                          Deshabilitado="@(Guardando || AltaAbierta)"
+                                                          Deshabilitado="@SeleccionBloqueada"
                                                           OnSeleccionado="producto => SeleccionarProducto(detalle, producto)"
                                                           OnRegistrar="() => AbrirAlta(detalle)" />
+                                        <div class="mt-3 grid min-w-0 gap-2" aria-busy="@(BuscandoCodigo && ReferenceEquals(DetalleCodigo, detalle) ? "true" : "false")">
+                                            <BarcodeScanner Disabled="@SeleccionBloqueada" OnDetected="codigo => CodigoEscaneadoAsync(detalle, codigo)" />
+                                            @if (ReferenceEquals(DetalleCodigo, detalle))
+                                            {
+                                                @if (BuscandoCodigo)
+                                                {
+                                                    <p class="m-0 text-sm leading-6 text-ui-muted" role="status" aria-live="polite">Buscando producto...</p>
+                                                }
+                                                @if (ErrorCodigo is not null)
+                                                {
+                                                    <p class="m-0 rounded-2xl bg-ui-danger/5 p-3 text-sm leading-6 text-ui-danger [overflow-wrap:anywhere]" role="alert">@ErrorCodigo</p>
+                                                }
+                                                @if (CodigoNoRegistrado is not null)
+                                                {
+                                                    <button class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" type="button" disabled="@SeleccionBloqueada"
+                                                        @onclick="() => RegistrarCodigoNoEncontrado(detalle)">Registrar producto</button>
+                                                }
+                                            }
+                                        </div>
                                     </div>
                                     <div class="grid min-w-0 gap-2">
                                         <label class="text-sm font-medium" for="cantidad-compra-@numero">Cantidad <span aria-hidden="true">*</span></label>
@@ -217,7 +238,7 @@
                             <p class="m-0 text-sm leading-6 text-ui-muted">Adjunta una imagen JPG, JPEG, PNG, WebP o un PDF de hasta 10 MB.</p>
                         </div>
                         <label class="rm-receipt-toggle ui-button shrink-0 justify-start border-ui-control bg-ui-canvas text-left text-ui-ink has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ui-accent has-disabled:cursor-not-allowed has-disabled:border-ui-border has-disabled:text-ui-muted">
-                            <InputCheckbox class="m-0 size-5 shrink-0 accent-ui-accent" @bind-Value="Modelo.AdjuntarComprobante" disabled="@Guardando" />
+                            <InputCheckbox class="m-0 size-5 shrink-0 accent-ui-accent" @bind-Value="Modelo.AdjuntarComprobante" disabled="@SeleccionBloqueada" />
                             Adjuntar comprobante
                         </label>
                     </div>
@@ -245,7 +266,7 @@
                                                id="comprobante-archivo"
                                                OnChange="SeleccionarArchivo"
                                                accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
-                                               disabled="@Guardando" />
+                                               disabled="@SeleccionBloqueada" />
                                     @if (ArchivoSeleccionado is not null)
                                     {
                                         <p class="m-0 grid min-w-0 gap-1 rounded-2xl border border-solid border-ui-border bg-ui-canvas px-4 py-3 text-sm leading-6" role="status">
@@ -266,7 +287,7 @@
 
                 <p class="m-0 text-xs leading-5 text-ui-muted"><span aria-hidden="true">*</span> Campos obligatorios</p>
                 <div class="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
-                    <button class="ui-button bg-ui-accent text-white hover:bg-ui-accent-hover" type="submit" disabled="@(Guardando || AltaAbierta)">
+                    <button class="ui-button bg-ui-accent text-white hover:bg-ui-accent-hover" type="submit" disabled="@SeleccionBloqueada">
                         @(Guardando ? "Registrando y procesando..." : "Revisar compra")
                     </button>
                     <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/compras">Cancelar</a>
@@ -335,6 +356,14 @@
     private bool AltaProveedor { get; set; }
     private bool AltaAbierta => AltaProveedor || DetalleAlta is not null;
     private bool RevisandoCompra { get; set; }
+    private bool BuscandoCodigo { get; set; }
+    private DetalleCompraFormModel? DetalleCodigo { get; set; }
+    private string? ErrorCodigo { get; set; }
+    private string? CodigoNoRegistrado { get; set; }
+    private string? CodigoAlta { get; set; }
+    private string? AvisoImagenProducto { get; set; }
+    private CancellationTokenSource? ConsultaCodigo;
+    private bool SeleccionBloqueada => Guardando || RevisandoCompra || AltaAbierta || BuscandoCodigo || Eliminado;
     private DetalleCompraFormModel? DetalleAlta { get; set; }
     private string? ConfirmacionProducto { get; set; }
     private IBrowserFile? ArchivoSeleccionado { get; set; }
@@ -351,7 +380,7 @@
 
     private async Task CambiarMonedaAsync(ChangeEventArgs evento)
     {
-        if (Guardando || !Enum.TryParse<MonedaCompra>(evento.Value?.ToString(), out var moneda) || !Enum.IsDefined(moneda)) return;
+        if (SeleccionBloqueada || !Enum.TryParse<MonedaCompra>(evento.Value?.ToString(), out var moneda) || !Enum.IsDefined(moneda)) return;
         Modelo.CambiarMoneda(moneda);
         await ConsultarReferenciaAsync();
     }
@@ -415,6 +444,7 @@
     {
         Eliminado = true;
         VersionConsulta++;
+        ConsultaCodigo?.Cancel();
         ConsultaReferencia?.Cancel();
         ConsultaReferencia?.Dispose();
         ConsultaReferencia = null;
@@ -425,15 +455,16 @@
 
     private void SeleccionarProveedor(ProveedorDto? proveedor)
     {
-        if (Guardando) return;
+        if (SeleccionBloqueada) return;
         ProveedorSeleccionado = proveedor;
         Modelo.ProveedorId = proveedor?.Id ?? 0;
     }
 
     private void AbrirAltaProveedor()
     {
-        if (Guardando || AltaAbierta) return;
+        if (SeleccionBloqueada) return;
         ConfirmacionProducto = null;
+        AvisoImagenProducto = null;
         AltaProveedor = true;
     }
 
@@ -441,14 +472,15 @@
 
     private void ProveedorCreado(ProveedorDto proveedor)
     {
+        if (Guardando || Eliminado) return;
+        CerrarAltaProveedor();
         SeleccionarProveedor(proveedor);
         ConfirmacionProducto = $"Proveedor {proveedor.Nombre} registrado y seleccionado.";
-        CerrarAltaProveedor();
     }
 
     private void RevisarCompra()
     {
-        if (Guardando || AltaAbierta) return;
+        if (SeleccionBloqueada) return;
         ErrorGuardado = ValidacionFormulario.PrimerError(Modelo) ?? ValidarFormulario();
         RevisandoCompra = ErrorGuardado is null;
     }
@@ -458,7 +490,7 @@
 
     private void CambiarOrigen(ChangeEventArgs evento)
     {
-        if (Guardando || !Enum.TryParse<OrigenCompra>(evento.Value?.ToString(), out var origen))
+        if (SeleccionBloqueada || !Enum.TryParse<OrigenCompra>(evento.Value?.ToString(), out var origen))
             return;
 
         Modelo.Origen = origen;
@@ -470,43 +502,101 @@
 
     private void AgregarFila()
     {
-        if (!Guardando)
+        if (!SeleccionBloqueada)
             Modelo.Detalles.Add(new DetalleCompraFormModel());
     }
 
     private void SeleccionarProducto(DetalleCompraFormModel detalle, ProductoDto? producto)
     {
-        if (Guardando || !Modelo.Detalles.Contains(detalle)) return;
+        if (SeleccionBloqueada || !Modelo.Detalles.Contains(detalle)) return;
+        AplicarProducto(detalle, producto);
+    }
+
+    private void AplicarProducto(DetalleCompraFormModel detalle, ProductoDto? producto)
+    {
         detalle.ProductoSeleccionado = producto;
         detalle.ProductoId = producto?.Id ?? 0;
+        if (ReferenceEquals(DetalleCodigo, detalle)) LimpiarConsultaCodigo();
     }
 
     private void AbrirAlta(DetalleCompraFormModel detalle)
     {
-        if (Guardando || AltaAbierta || !Modelo.Detalles.Contains(detalle)) return;
+        if (SeleccionBloqueada || !Modelo.Detalles.Contains(detalle)) return;
         ConfirmacionProducto = null;
+        AvisoImagenProducto = null;
+        CodigoAlta = null;
         DetalleAlta = detalle;
     }
 
-    private void CerrarAlta() => DetalleAlta = null;
+    private void CerrarAlta()
+    {
+        DetalleAlta = null;
+        CodigoAlta = null;
+    }
 
     private void ProductoCreado(ProductoDto producto)
     {
-        if (DetalleAlta is null) return;
-        SeleccionarProducto(DetalleAlta, producto);
+        if (Eliminado || DetalleAlta is null || !Modelo.Detalles.Contains(DetalleAlta)) return;
+        AplicarProducto(DetalleAlta, producto);
         ConfirmacionProducto = $"Producto {producto.Nombre} registrado y seleccionado. Continúa con cantidad y costo unitario.";
         CerrarAlta();
     }
 
+    private async Task CodigoEscaneadoAsync(DetalleCompraFormModel detalle, string codigo)
+    {
+        if (SeleccionBloqueada || !Modelo.Detalles.Contains(detalle)) return;
+        LimpiarConsultaCodigo();
+        DetalleCodigo = detalle;
+        BuscandoCodigo = true;
+        using var cancelacion = new CancellationTokenSource();
+        ConsultaCodigo = cancelacion;
+        try
+        {
+            var producto = await ConsultaProductos.ObtenerPorCodigoBarrasAsync(codigo, cancelacion.Token);
+            if (Eliminado || cancelacion.IsCancellationRequested || !Modelo.Detalles.Contains(detalle)) return;
+            if (producto is not null) AplicarProducto(detalle, producto);
+            else
+            {
+                CodigoNoRegistrado = codigo;
+                ErrorCodigo = "No hay ningún producto registrado con este código de barras. Puedes registrarlo o continuar con la búsqueda manual.";
+            }
+        }
+        catch (OperationCanceledException) when (cancelacion.IsCancellationRequested) { }
+        catch (Exception ex)
+        {
+            if (Eliminado) return;
+            Logger.LogError(ex, "No fue posible consultar el producto escaneado para la compra.");
+            ErrorCodigo = "No pudimos consultar el producto. Vuelve a escanear o continúa con la búsqueda manual.";
+        }
+        finally { BuscandoCodigo = false; ConsultaCodigo = null; }
+    }
+
+    private void RegistrarCodigoNoEncontrado(DetalleCompraFormModel detalle)
+    {
+        if (SeleccionBloqueada || !ReferenceEquals(DetalleCodigo, detalle) || CodigoNoRegistrado is null
+            || !Modelo.Detalles.Contains(detalle)) return;
+        var codigo = CodigoNoRegistrado;
+        AbrirAlta(detalle);
+        CodigoAlta = codigo;
+        LimpiarConsultaCodigo();
+    }
+
+    private void LimpiarConsultaCodigo()
+    {
+        DetalleCodigo = null;
+        CodigoNoRegistrado = null;
+        ErrorCodigo = null;
+    }
+
     private void QuitarFila(DetalleCompraFormModel detalle)
     {
-        if (!Guardando && Modelo.Detalles.Count > 1)
+        if (!SeleccionBloqueada && Modelo.Detalles.Count > 1)
             Modelo.Detalles.Remove(detalle);
     }
 
     private void SeleccionarArchivo(InputFileChangeEventArgs evento)
     {
-        if (Guardando)
+        if (SeleccionBloqueada)
             return;
 
         ErrorArchivo = null;
@@ -520,7 +610,7 @@
 
     private async Task GuardarAsync()
     {
-        if (Guardando || AltaAbierta)
+        if (Guardando || AltaAbierta || BuscandoCodigo || Eliminado)
             return;
 
         ErrorGuardado = ValidarFormulario();

@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @using ResellManager.Domain.Enums
 @inject IInventarioService InventarioService
+@inject IConsultaProductoCodigoBarras ConsultaProductos
 @inject ILogger<Inventario> Logger
 @inject NavigationManager Navigation
 
@@ -21,15 +22,30 @@
         <div class="rounded-2xl border border-solid border-ui-success/20 bg-ui-success/5 px-4 py-3 text-sm leading-6 text-ui-success" role="status">@MensajeExito</div>
     }
 
+    <section class="ui-card grid min-w-0 gap-3 p-4 sm:p-5" aria-label="Abrir producto por código de barras" aria-busy="@(BuscandoCodigo ? "true" : "false")">
+        <div class="grid min-w-0 gap-3 sm:flex sm:items-center sm:justify-between">
+            <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink">Abrir producto por código</h2>
+            <BarcodeScanner Disabled="@ScannerBloqueado" OnDetected="CodigoEscaneadoAsync" />
+        </div>
+        @if (BuscandoCodigo)
+        {
+            <p class="m-0 text-sm leading-6 text-ui-muted" role="status" aria-live="polite">Buscando producto...</p>
+        }
+        @if (!string.IsNullOrWhiteSpace(ErrorCodigo))
+        {
+            <p class="m-0 rounded-2xl bg-ui-danger/5 p-3 text-sm leading-6 text-ui-danger [overflow-wrap:anywhere]" role="alert">@ErrorCodigo</p>
+        }
+    </section>
+
     <form class="ui-card grid min-w-0 gap-4 p-4 sm:grid-cols-2 sm:p-5 xl:grid-cols-[minmax(0,1fr)_14rem_auto]" @onsubmit="BuscarAsync" @onsubmit:preventDefault>
         <div class="grid min-w-0 gap-2 sm:col-span-2 xl:col-auto [&>label]:text-sm [&>label]:font-semibold">
             <label for="buscar-unidad">Buscar unidad</label>
             <input class="ui-input" id="buscar-unidad" type="search" placeholder="Producto, código de producto o código de unidad"
-                   @bind="Termino" @bind:event="oninput" />
+                   @bind="Termino" @bind:event="oninput" disabled="@Ocupado" />
         </div>
         <div class="grid min-w-0 gap-2 [&>label]:text-sm [&>label]:font-semibold">
             <label for="estado-unidad">Estado físico</label>
-            <select class="ui-input" id="estado-unidad" @bind="EstadoFiltro">
+            <select class="ui-input" id="estado-unidad" @bind="EstadoFiltro" disabled="@Ocupado">
                 <option value="">Todos los estados</option>
                 @foreach (var estado in Enum.GetValues<EstadoUnidadInventario>())
                 {
@@ -62,7 +78,9 @@
         </div>
     }
 
-    <RecepcionCompras @ref="Recepcion" OnRecibido="RecargarDespuesDeOperacionAsync" />
+    <fieldset class="m-0 min-w-0 border-0 p-0" disabled="@BuscandoCodigo">
+        <RecepcionCompras @ref="Recepcion" OnRecibido="RecargarDespuesDeOperacionAsync" />
+    </fieldset>
 
     @if (Cargando)
     {
@@ -223,7 +241,31 @@
     private string? MensajeExito { get; set; }
 
     private bool FiltrosActivos => !string.IsNullOrWhiteSpace(Termino) || EstadoFiltro.HasValue;
-    private bool Ocupado => Cargando || UnidadProcesandoId.HasValue;
+    private bool Ocupado => Cargando || UnidadProcesandoId.HasValue || BuscandoCodigo;
+    private bool ScannerBloqueado => Ocupado || UnidadEntrega is not null || UnidadPerdida is not null;
+    private bool BuscandoCodigo { get; set; }
+    private string? ErrorCodigo { get; set; }
+
+    private async Task CodigoEscaneadoAsync(string codigo)
+    {
+        if (ScannerBloqueado) return;
+        BuscandoCodigo = true;
+        ErrorCodigo = null;
+        try
+        {
+            var producto = await ConsultaProductos.ObtenerPorCodigoBarrasAsync(codigo);
+            if (producto is null)
+                ErrorCodigo = "No hay ningún producto registrado con este código de barras. Puedes continuar con la búsqueda manual.";
+            else
+                Navigation.NavigateTo($"/productos/{producto.Id}");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "No fue posible buscar el producto escaneado desde Inventario.");
+            ErrorCodigo = "No pudimos consultar el producto. Vuelve a escanear o continúa con la búsqueda manual.";
+        }
+        finally { BuscandoCodigo = false; }
+    }
 
     protected override Task OnParametersSetAsync()
     {
@@ -255,6 +297,7 @@
 
     private async Task BuscarAsync()
     {
+        if (BuscandoCodigo) return;
         if (!FiltrosActivos)
         {
             await CargarInventarioAsync();
@@ -283,6 +326,7 @@
 
     private async Task LimpiarFiltrosAsync()
     {
+        if (BuscandoCodigo) return;
         Termino = string.Empty;
         EstadoFiltro = null;
         MensajeExito = null;
