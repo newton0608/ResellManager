@@ -1,6 +1,6 @@
 # V2.1 — Scanner operativo en Venta Directa, Inventario y Nueva compra
 
-**Estado: scanner V2.1 integrado en `develop` el 17/10/2026 (`0c7cead`); correcciones posteriores de compilación y alta asistida con galería verificadas en la rama de correcciones, sin merge final ni despliegue.** [Cierre técnico](../auditorias/scanner-v2-1-cierre-tecnico-20261017.md): 1.037 pruebas .NET, 134 JS y QA óptico/operativo/catálogo/circuito real correctos. La aceptación funcional declarada se conserva; la validación física reproducible queda a cargo del usuario. El [diagnóstico inicial](../auditorias/scanner-v2-1-integration-audit-20261017.md) mantiene la evidencia de fallo anterior.
+**Estado: scanner V2.1 y correcciones de compilación/alta con galería integrados en `develop` y `main` el 17/10/2026, tras la validación física confirmada por el usuario en iPhone 14 Plus con Brave. Sin afirmar despliegue.** [Cierre técnico](../auditorias/scanner-v2-1-cierre-tecnico-20261017.md): 1.037 pruebas .NET, 134 JS y QA óptico/operativo/catálogo/circuito real correctos; incluye la aceptación física y sus límites de evidencia. El [diagnóstico inicial](../auditorias/scanner-v2-1-integration-audit-20261017.md) mantiene la evidencia de fallo anterior.
 
 Este documento conserva el contrato aprobado y describe su implementación en
 **Venta Directa**, **Inventario** y **Nueva compra**, reutilizando el scanner de códigos de barras
@@ -445,9 +445,9 @@ obligatoria de esta feature; está planificada por separado donde aporte valor.
   integración o markup relacionado.
 - [x] Revisar UI al menos en los anchos móviles ya usados por el proyecto
   (320/390 px) y escritorio, sin overflow horizontal.
-- [ ] Después de implementar, validar físicamente el flujo operativo con cámara
-  en un dispositivo real; registrar dispositivo/navegador exactos sin extrapolar
-  esa evidencia a navegadores no probados.
+- [x] Validación física de la rama corregida confirmada por el usuario en iPhone
+  14 Plus con Brave el 17/10/2026; las versiones exactas y el desglose de casos
+  no fueron comunicados. Ver [aceptación y límites](../auditorias/scanner-v2-1-cierre-tecnico-20261017.md#validación-física-comunicada-por-usuario--17102026).
 
 ---
 
@@ -649,4 +649,14 @@ sintéticos, y fotografía de fixture con el decoder real. Comprueba Compra,
 Inventario sin unidades y Venta Directa con lotes/precios independientes. Utiliza
 las mismas variables de Playwright/canal del QA óptico; los artefactos locales
 quedan en `.artifacts/scanner-operativo-interactivo/`. No certifica cámara física
-ni Safari. Esa validación queda a cargo del usuario, sin afirmar merge final.
+ni Safari. En ese cierre técnico todavía estaba pendiente la aceptación física;
+la confirmación posterior se registra en la sección siguiente.
+
+## Aceptación física e integración posteriores — 17/10/2026
+
+Tras ese cierre técnico, el usuario confirmó la validación física en **iPhone
+14 Plus con Brave** y solicitó integrar las correcciones en `develop` y `main`.
+La integración no presentó conflictos. La [aceptación y sus límites](../auditorias/scanner-v2-1-cierre-tecnico-20261017.md#validación-física-comunicada-por-usuario--17102026)
+se registran en el cierre de la auditoría; no se inventan versiones, casos
+individuales ni evidencia de Safari. Las secciones del 06/10 y el cierre técnico
+previo conservan el estado que realmente tenían al validarse.

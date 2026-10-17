@@ -38,7 +38,7 @@ Esta ampliación no equivale a la integración operativa del lector en Venta Dir
 
 ## Lectura de códigos de barras con la cámara
 
-**Implementación inicial y ajustes tras Preview completados y validados
+**Estado histórico: implementación inicial y ajustes tras Preview completados y validados
 automáticamente (06/10/2026); QA físico final pendiente.** `ProductoForm`,
 `VentaDirectaForm`, `Inventario` y `CompraNueva` reutilizan `BarcodeScanner`.
 Motor, formatos y privacidad permanecen en [Scanner](29_BarcodeScanner.md);
@@ -48,9 +48,9 @@ comportamiento, criterios y evidencia actual en el
 **Estado posterior — 17/10/2026:** scanner integrado en `develop` (`0c7cead`).
 La validación del 06/10 es histórica. El bloqueo de compilación identificado en
 el [diagnóstico inicial](auditorias/scanner-v2-1-integration-audit-20261017.md) y
-la regresión integrada quedaron resueltos/verificados en la rama de correcciones,
-sin merge final; ver [cierre técnico](auditorias/scanner-v2-1-cierre-tecnico-20261017.md).
-La validación física reproducible queda a cargo del usuario.
+la regresión integrada quedaron resueltos/verificados e integrados en `develop`
+y `main` tras la aceptación física; ver [cierre técnico](auditorias/scanner-v2-1-cierre-tecnico-20261017.md).
+El usuario confirmó la validación física en iPhone 14 Plus con Brave; versiones exactas y desglose de casos no comunicados.
 
 Venta Directa presenta lotes independientes por acción, con códigos físicos,
 precio común por unidad y subtotal en formulario/revisión; persistencia y
@@ -65,9 +65,9 @@ ese subflujo de alta; no se dispara desde el escaneo operativo.
 - [x] Pruebas y QA responsive ampliados para ambos ajustes.
 - [x] Integración del scanner operativo en `develop` el 17/10/2026.
 - [x] Cerrar compilación, regresión integrada y sincronización del CSS según el
-  [cierre técnico](auditorias/scanner-v2-1-cierre-tecnico-20261017.md), en la rama de correcciones y sin merge final.
-- [ ] Validar físicamente la implementación final con cámara y registrar
-  dispositivo, sistema y navegador/versiones exactos.
+  [cierre técnico](auditorias/scanner-v2-1-cierre-tecnico-20261017.md), integrado en `develop` y `main`.
+- [x] Validación física de la rama corregida confirmada por el usuario en iPhone
+  14 Plus con Brave el 17/10/2026; metadatos disponibles y límites en el cierre técnico.
 
 ## Analítica de uso y telemetría de producto
 

@@ -14,7 +14,7 @@ GTQ continúa siendo la moneda base del resto del negocio.
   congelado, redondeo en backend, compatibilidad histórica y fallback manual.
 - Flete, courier, impuestos y prorrateo no están incluidos en esa conversión:
   [landed cost sigue en análisis](landed-cost.md).
-- **Scanner en Nueva compra implementado; QA físico pendiente:** ver
+- **Scanner en Nueva compra implementado; aceptación física en iPhone 14 Plus + Brave registrada:** ver
   [contrato operativo](scanner-operativo-v2-1.md#compras--integración-aprobada-tras-probar-preview).
   Un código local selecciona el Producto en el detalle y conserva el modelo
   Producto + Cantidad + Costo unitario. Si no existe, puede ofrecer **Registrar
@@ -22,7 +22,7 @@ GTQ continúa siendo la moneda base del resto del negocio.
   puede consultar Open Facts/UPCitemdb. Al guardar, el Producto nuevo vuelve
   autoseleccionado al detalle original sin perder la Compra en preparación.
   Cancelación/fallo conservan el formulario y el comprobante; evidencia en el
-  [cierre de ajustes](scanner-operativo-v2-1.md#ajustes-implementados-y-validados--06102026).
+  [cierre de ajustes](scanner-operativo-v2-1.md#ajustes-implementados-y-validados--06102026). La [aceptación física posterior](../auditorias/scanner-v2-1-cierre-tecnico-20261017.md#validación-física-comunicada-por-usuario--17102026) conserva el alcance declarado por el usuario y sus metadatos disponibles.
 
 ## Dónde trabajar y validar
 

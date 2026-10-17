@@ -17,7 +17,7 @@ el pedido técnico automáticamente. Las ventas son completas en sus artículos.
 - Venta Directa conserva dos operaciones (crear Pedido y registrar Venta);
   no presupongas atomicidad conjunta ni idempotencia distribuida. Las
   protecciones de concurrencia adicionales continúan en V2.3.
-- **Scanner operativo V2.1 y lotes implementados; QA físico pendiente:**
+- **Scanner operativo V2.1 y lotes implementados; aceptación física en iPhone 14 Plus + Brave registrada:**
   [contrato operativo](scanner-operativo-v2-1.md). Cada acción de agregado forma
   un lote independiente con Producto `×N`, códigos físicos, precio por unidad y
   subtotal en formulario/revisión. Editar el precio afecta sus N unidades; quitar
@@ -36,7 +36,7 @@ Pruebas existentes en [ResellManager.Tests](../../tests/ResellManager.Tests/):
 `VentaInvariantesTests`, `VentaPagoReporteTests`, `Fase57VentaPagoTests`,
 `PagoBusquedaRevisionTests`, `DashboardTests`, `DashboardUxTests` y
 [ScannerOperativoTests](../../tests/ResellManager.Tests/ScannerOperativoTests.cs).
-La evidencia y el criterio físico pendiente del scanner se registran en el
-[contrato operativo](scanner-operativo-v2-1.md#ajustes-implementados-y-validados--06102026).
+La evidencia histórica y la aceptación física posterior del scanner se registran en el
+[contrato operativo](scanner-operativo-v2-1.md#aceptación-física-e-integración-posteriores--17102026).
 Para cambios compartidos de dinero/inventario, ejecuta también la suite completa
 y revisa la [decisión 015](../11_DecisionesDeDiseño.md#015-el-saldo-requiere-endurecimiento-de-concurrencia-después-de-completar-la-ui).

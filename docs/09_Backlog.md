@@ -5,7 +5,7 @@ V1 está en producción. Este backlog conserva entregas de fases y distingue amp
 ## V1.4 — Mejoras de catálogo (integrada en main/develop; QA físico parcial satisfactorio)
 
 Contrato: [V1.4 de Virtuosa Store](modules/catalogo-v1-4.md). Rama
-`feature/catalogo-v1-4` desde `v1.3.0`; integrada a `main` (PR #17) y `develop` (PR #16). Posteriormente, el scanner V2.1 se integró en `develop` el 17/10/2026 (`0c7cead`); el [cierre técnico posterior](auditorias/scanner-v2-1-cierre-tecnico-20261017.md) queda en la rama de correcciones, sin merge final y con validación física a cargo del usuario.
+`feature/catalogo-v1-4` desde `v1.3.0`; integrada a `main` (PR #17) y `develop` (PR #16). Posteriormente, el scanner V2.1 se integró en `develop` el 17/10/2026 (`0c7cead`); el [cierre técnico posterior](auditorias/scanner-v2-1-cierre-tecnico-20261017.md) registra las correcciones integradas en `develop` y `main` tras la validación física confirmada en iPhone 14 Plus con Brave.
 
 - [x] Galería de 0 a 8 fotos por producto, con portada, orden y gestión autenticada; preservar imágenes históricas.
 - [x] Miniaturas y visor público con zoom/pinch, swipe, teclado y accesibilidad.
@@ -98,8 +98,8 @@ Contrato: [V1.4 de Virtuosa Store](modules/catalogo-v1-4.md). Rama
 - [x] V2.1: agrupar Venta Directa por lote de agregado: Producto ×N, códigos físicos, un solo Precio final por unidad y la misma agrupación en revisión; agregados separados del mismo Producto permanecen como lotes independientes.
 - [x] V2.1: integrar scanner en Nueva compra; coincidencia local selecciona Producto y código inexistente puede abrir Registrar producto reutilizando el alta asistida, regresando autoseleccionado al detalle original.
 - [x] V2.1: integración del scanner en `develop` (`0c7cead`, 17/10/2026), conservando catálogo V1.4 y API temporal.
-- [x] V2.1: resolver el bloqueo de compilación del entorno auditado y cerrar regresión integrada, combinación scanner/galería y CSS generado según el [cierre técnico](auditorias/scanner-v2-1-cierre-tecnico-20261017.md), en la rama de correcciones y sin merge final.
-- [ ] V2.1: completar bitácora física reproducible de los consumidores operativos con cámara y dispositivo/versiones exactos; aceptación funcional declarada por usuario el 17/10/2026, sin extrapolar evidencia histórica de Producto.
+- [x] V2.1: resolver el bloqueo de compilación del entorno auditado y cerrar regresión integrada, combinación scanner/galería y CSS generado según el [cierre técnico](auditorias/scanner-v2-1-cierre-tecnico-20261017.md), integrado en `develop` y `main` tras la aceptación física.
+- [x] V2.1: validación física de la rama corregida confirmada por el usuario en iPhone 14 Plus con Brave (17/10/2026); aceptación registrada en el [cierre técnico](auditorias/scanner-v2-1-cierre-tecnico-20261017.md). Versiones exactas y desglose de casos no comunicados; no certifica Safari.
 - [ ] Diseñar devoluciones y cambios para unidades entregadas.
 
 ---

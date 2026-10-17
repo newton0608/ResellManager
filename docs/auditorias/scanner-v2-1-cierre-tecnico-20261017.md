@@ -1,8 +1,8 @@
 # Scanner V2.1 — cierre técnico del plan, 17/10/2026
 
-**Estado: correcciones implementadas y verificadas en la rama
-`hotfix/scanner-v2-1-validacion-integrada`, sin merge final ni despliegue. La
-validación física queda a cargo del usuario.** Este registro continúa el
+**Estado: correcciones verificadas e integradas en `develop` y `main` tras la
+validación física confirmada por el usuario en iPhone 14 Plus con Brave el
+17/10/2026. Sin afirmar despliegue.** Este registro continúa el
 [diagnóstico original](scanner-v2-1-integration-audit-20261017.md); sus resultados
 de fallo se conservan como evidencia anterior a la corrección.
 
@@ -102,7 +102,19 @@ Evidencia local no versionada:
 Se inspeccionaron capturas móviles de lotes/alta y de escritorio con el circuito
 real. No se utilizó producción, datos reales ni infraestructura de despliegue.
 
-## Estado del plan y pendiente físico
+## Validación física comunicada por usuario — 17/10/2026
+
+El usuario confirmó haber realizado la validación física de la rama corregida
+en **iPhone 14 Plus con navegador Brave**, después de su publicación en GitHub.
+Esta confirmación cierra la aceptación física pendiente para ese entorno y
+acompaña la integración solicitada en `develop` y `main`.
+
+La evidencia es declarada por el usuario. No se comunicaron versiones exactas
+de iOS/Brave, desglose de casos por flujo ni SHA de la instancia probada; no se
+añaden esos datos ni se certifica Safari u otros dispositivos/navegadores.
+Los resultados automatizados anteriores se conservan con su alcance original.
+
+## Estado del plan
 
 - [x] Recuperar compilación y diferenciar el bloqueo previo de la integración del scanner.
 - [x] Validar área y suite .NET completa.
@@ -110,11 +122,9 @@ real. No se utilizó producción, datos reales ni infraestructura de despliegue.
 - [x] Regenerar y conservar CSS sin cambiar vendor.
 - [x] Completar QA óptico, operativo, catálogo y circuito real con datos sintéticos.
 - [x] Reconciliar contrato, planificación e historial, conservando evidencia histórica.
-- [ ] Validación física del usuario: Venta Directa, Inventario y Nueva compra;
-  registrar dispositivo, sistema y navegador/versiones. Incluir lectura repetida,
-  lotes/precios, inexistente/cancelación, Producto sin unidades y alta con comprobante.
-  La regresión específica de Safari sigue sin certificarse.
+- [x] Aceptación física de la rama corregida confirmada por el usuario en iPhone
+  14 Plus con Brave el 17/10/2026; alcance y metadatos disponibles registrados arriba.
 
-El diagnóstico documental se integró localmente en develop antes de estas
-correcciones. Este cierre técnico corresponde a la rama de correcciones; no
-afirma su integración final, publicación ni versión desplegada.
+El diagnóstico documental se integró en develop antes de estas correcciones.
+La rama corregida se publicó en GitHub y se integró en `develop` y `main` tras
+la aceptación física, sin conflictos. No se creó tag/release ni se inició despliegue.

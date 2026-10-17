@@ -1,8 +1,8 @@
 # Verificación de develop y scanner V2.1 — 17/10/2026
 
 **Seguimiento posterior:** el [cierre técnico del plan](scanner-v2-1-cierre-tecnico-20261017.md)
-registra las correcciones y validaciones en la rama de correcciones, sin merge
-final. Este documento conserva el diagnóstico original anterior a esos cambios.
+registra las correcciones, la aceptación física en iPhone 14 Plus con Brave y
+su integración en `develop` y `main`. Este documento conserva el diagnóstico original anterior a esos cambios.
 
 ## Resultado y alcance
 
