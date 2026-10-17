@@ -86,7 +86,8 @@
             ServiceResult<ProductoDto> resultado;
             if (modelo.Galeria.Count > 0)
                 resultado = await ProductoConImagenService.CrearGaleriaAsync(
-                    modelo.ToInput(), nuevas.Imagenes, modelo.ToGaleriaEdicion().PortadaIndice);
+                    modelo.ToInput(), nuevas.Imagenes, modelo.ToGaleriaEdicion().PortadaIndice,
+                    validarCodigoBarras: LookupHabilitado);
             else if (LookupHabilitado)
             {
                 var alta = await AltaProductoAsistidaService.CrearAsistidoAsync(

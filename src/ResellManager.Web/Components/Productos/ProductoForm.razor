@@ -394,8 +394,8 @@
                     : bytes.Length >= 8 && bytes.AsSpan(0, 8).SequenceEqual(
                         new byte[] { 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a })
                         ? "image/png"
-                        : bytes.Length >= 12 && bytes.AsSpan(0, 4).SequenceEqual("RIFF"u8)
-                            && bytes.AsSpan(8, 4).SequenceEqual("WEBP"u8)
+                        : bytes.Length >= 12 && bytes.AsSpan(0, 4).SequenceEqual(new byte[] { 0x52, 0x49, 0x46, 0x46 })
+                            && bytes.AsSpan(8, 4).SequenceEqual(new byte[] { 0x57, 0x45, 0x42, 0x50 })
                             ? "image/webp" : null;
                 if (tipo is null)
                 {

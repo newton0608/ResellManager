@@ -407,10 +407,10 @@ public sealed partial class ScannerOperativoTests
         public ImagenExternaNoDisponible Imagenes { get; } = new();
         public List<UnidadVentaDirectaFormModel> Articulos => Get<List<UnidadVentaDirectaFormModel>>(Componente, "Unidades");
 
-        private Vista(TestDatabase test)
+        private Vista(TestDatabase test, IAlmacenamientoImagenesProducto? almacenamiento = null)
         {
             var productos = new ProductoService(test.Db);
-            var conImagen = new ProductoConImagenService(productos, null!, test.Db, NullLogger<ProductoConImagenService>.Instance, Imagenes);
+            var conImagen = new ProductoConImagenService(productos, almacenamiento!, test.Db, NullLogger<ProductoConImagenService>.Instance, Imagenes);
             Consulta = new(productos);
             Seleccion = new(new SeleccionOperativaService(test.Db));
             servicios = new ServiceCollection().AddLogging().AddSingleton(test.Db)
@@ -428,9 +428,10 @@ public sealed partial class ScannerOperativoTests
                 .BuildServiceProvider();
             renderer = new(servicios, servicios.GetRequiredService<ILoggerFactory>());
         }
-        public static async Task<Vista> CrearAsync(TestDatabase test, bool inventario = false, bool compra = false)
+        public static async Task<Vista> CrearAsync(TestDatabase test, bool inventario = false, bool compra = false,
+            IAlmacenamientoImagenesProducto? almacenamiento = null)
         {
-            var vista = new Vista(test);
+            var vista = new Vista(test, almacenamiento);
             vista.raiz = await vista.renderer.Dispatcher.InvokeAsync(async () =>
             {
                 var raiz = vista.renderer.BeginRenderingComponent(compra ? typeof(CompraNueva) : inventario ? typeof(Inventario) : typeof(VentaDirectaForm),
