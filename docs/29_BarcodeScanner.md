@@ -223,6 +223,12 @@ No quedó registrado que esta comprobación usara exactamente el mismo código q
 
 ## Integración operativa V2.1
 
+**Estado posterior — 17/10/2026:** integración en `develop` confirmada; correcciones
+de compilación/alta con galería y regresión automatizada cerradas en la rama de
+correcciones según el [cierre técnico](auditorias/scanner-v2-1-cierre-tecnico-20261017.md).
+Incluye QA con circuito Blazor real y fotografías de fixtures. La validación física
+queda a cargo del usuario; los resultados del 06/10 siguientes son históricos.
+
 **Implementación y ajustes aprobados tras Preview completados; QA físico final
 pendiente (06/10/2026).** `ProductoForm`, `VentaDirectaForm`, `Inventario` y
 `CompraNueva` reutilizan `BarcodeScanner` sin modificar su contrato ni el motor.

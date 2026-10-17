@@ -53,3 +53,7 @@ Pruebas existentes en [ResellManager.Tests](../../tests/ResellManager.Tests/):
 `ProductoCategoriaDependienteTests` y `CompraProductoFlujoTests`.
 Para scanner sigue su guía y `npm run test:js`; para cambios de publicación lee
 [Catálogo público](catalogo.md), cuyo contrato es diferente.
+
+La [regresión integrada del scanner](../auditorias/scanner-v2-1-cierre-tecnico-20261017.md)
+añade `ScannerOperativoGaleriaTests`: alta asistida desde Compra con galería,
+portada/subcategoría, reintento/cancelación y código registrado durante la edición.

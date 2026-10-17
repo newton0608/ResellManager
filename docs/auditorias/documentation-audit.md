@@ -130,4 +130,5 @@ SHA autorreferencial. No se autoriza merge a develop/main.
 
 Recomendación de flujo: acordar requisitos → actualizar guía canónica y criterios
 de aceptación → prompt corto con referencias → implementación y validación
-proporcional. [Índice](../README.md#flujo-para-futuras-tareas-de-codex) contiene el ejemplo.
+proporcional. El [índice](../README.md#separación-entre-documentación-y-ejecución)
+explica la separación vigente entre documentación y ejecución.

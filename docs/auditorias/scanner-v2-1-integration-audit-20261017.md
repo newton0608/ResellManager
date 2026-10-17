@@ -1,5 +1,9 @@
 # Verificación de develop y scanner V2.1 — 17/10/2026
 
+**Seguimiento posterior:** el [cierre técnico del plan](scanner-v2-1-cierre-tecnico-20261017.md)
+registra las correcciones y validaciones en la rama de correcciones, sin merge
+final. Este documento conserva el diagnóstico original anterior a esos cambios.
+
 ## Resultado y alcance
 
 **La integración existe en Git, pero su validación técnica está bloqueada por

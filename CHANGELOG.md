@@ -4,6 +4,8 @@ Las fechas siguientes corresponden a creación de tags; no son fechas exactas de
 
 ## Unreleased — V1.4 integrada en main y develop
 
+- Correcciones de scanner V2.1, verificadas en la rama de correcciones y sin merge final: compilación Razor compatible con SDK 10.0.112 y comprobación de código registrado durante el alta asistida con galería manual. CSS regenerado; regresión automatizada con circuito Blazor real. [Cierre técnico](docs/auditorias/scanner-v2-1-cierre-tecnico-20261017.md); validación física a cargo del usuario, sin despliegue.
+
 - Scanner operativo V2.1 integrado en `develop`: lector en Venta Directa, Inventario y Nueva compra; agrupación de unidades por acción con precio común y selección asistida de producto. El usuario confirmó haber probado los tres flujos en dispositivo real; sin registro reproducible de navegador/versiones por flujo y sin afirmar despliegue en producción.
 
 Base `v1.3.0` (`b9ab4ee`); integrada a `main` mediante PR #17 y a `develop` mediante PR #16. Sin nuevo tag ni GitHub Release; V1.4 fue desplegada en producción el 12/10/2026. El hotfix visual de este apartado se integró mediante PR #20 (merge `23be9e3`) y se desplegó en producción el 12/10/2026 (hora Guatemala), con 944/944 pruebas .NET satisfactorias, imagen Docker validada y respaldo consistente previo.

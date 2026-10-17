@@ -61,6 +61,7 @@ decisiones en lugar de abrir una segunda colección ADR con decisiones repetidas
 | [Diagramas](diagrams/) | Material editable conservado; contrastar contratos ampliados con código/configuración EF. |
 | [Auditoría documental 05/10/2026](auditorias/documentation-audit.md) | Base, reorganización, contradicciones y límites de esta revisión. |
 | [Verificación de scanner V2.1 17/10/2026](auditorias/scanner-v2-1-integration-audit-20261017.md) | Estado de develop, resoluciones históricas, bloqueo de compilación, CSS y plan de validación integrada; sin merge ni despliegue. |
+| [Cierre técnico de scanner V2.1 17/10/2026](auditorias/scanner-v2-1-cierre-tecnico-20261017.md) | Correcciones y regresión del conjunto integrado, sin merge final; validación física a cargo del usuario. |
 
 ## Separación entre documentación y ejecución
 

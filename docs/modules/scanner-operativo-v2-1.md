@@ -1,6 +1,6 @@
 # V2.1 — Scanner operativo en Venta Directa, Inventario y Nueva compra
 
-**Estado: scanner V2.1 integrado en `develop` el 17/10/2026 (`0c7cead`), con pruebas automatizadas históricas y aceptación funcional declarada por el usuario. La auditoría del conjunto integrado detectó un bloqueo de compilación con SDK 10.0.112; regresión integrada y bitácora física reproducible pendientes. Sin afirmar release ni despliegue.** Ver [diagnóstico, evidencia y plan de cierre](../auditorias/scanner-v2-1-integration-audit-20261017.md).
+**Estado: scanner V2.1 integrado en `develop` el 17/10/2026 (`0c7cead`); correcciones posteriores de compilación y alta asistida con galería verificadas en la rama de correcciones, sin merge final ni despliegue.** [Cierre técnico](../auditorias/scanner-v2-1-cierre-tecnico-20261017.md): 1.037 pruebas .NET, 134 JS y QA óptico/operativo/catálogo/circuito real correctos. La aceptación funcional declarada se conserva; la validación física reproducible queda a cargo del usuario. El [diagnóstico inicial](../auditorias/scanner-v2-1-integration-audit-20261017.md) mantiene la evidencia de fallo anterior.
 
 Este documento conserva el contrato aprobado y describe su implementación en
 **Venta Directa**, **Inventario** y **Nueva compra**, reutilizando el scanner de códigos de barras
@@ -633,3 +633,20 @@ El usuario responsable del proyecto indicó en conversación que **recuerda habe
 La prueba con **iPhone 14 Plus y Brave del 06/10/2026** está documentada para el lector en el flujo de **Agregar producto**; no consta en esta confirmación el navegador, versión exacta ni dispositivo empleados en cada prueba operativa de V2.1. No atribuir automáticamente esas tres pruebas al iPhone ni certificar Safari. La falta de bitácora técnica no invalida la confirmación del usuario, pero limita la reproducibilidad y cobertura demostrable del QA.
 
 La integración de código quedó incorporada en `develop` mediante `0c7cead`, preservando el catálogo V1.4, el guardado de galerías y la API temporal. La [verificación posterior del mismo día](../auditorias/scanner-v2-1-integration-audit-20261017.md) registra el bloqueo de compilación, la comparación de CSS y las validaciones pendientes del conjunto integrado; no sustituye ni reescribe los resultados históricos anteriores.
+
+## Cierre técnico posterior del plan — 17/10/2026
+
+El [cierre técnico de la auditoría](../auditorias/scanner-v2-1-cierre-tecnico-20261017.md)
+documenta la compilación recuperada, la validación de código registrado durante
+el alta asistida con fotos, la galería/subcategoría/portada y el CSS regenerado.
+`ScannerOperativoGaleriaTests` amplía el renderizador existente con almacenamiento
+temporal real. El alta asistida con galería activa la comprobación de código
+existente del servicio; si se registró durante la edición, mantiene el formulario
+y la Compra sin crear otro Producto ni fotografías parciales.
+
+El QA `qa:scanner-operativo-interactivo` usa un circuito Blazor real, usuario y DB
+sintéticos, y fotografía de fixture con el decoder real. Comprueba Compra,
+Inventario sin unidades y Venta Directa con lotes/precios independientes. Utiliza
+las mismas variables de Playwright/canal del QA óptico; los artefactos locales
+quedan en `.artifacts/scanner-operativo-interactivo/`. No certifica cámara física
+ni Safari. Esa validación queda a cargo del usuario, sin afirmar merge final.
