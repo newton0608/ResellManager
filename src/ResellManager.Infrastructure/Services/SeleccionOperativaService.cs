@@ -56,6 +56,14 @@ public sealed class SeleccionOperativaService(ResellManagerDbContext db) : ISele
     public async Task<bool> UnidadesDirectasDisponiblesAsync(IReadOnlyCollection<int> ids, CancellationToken ct = default) =>
         ids.Count > 0 && ids.Distinct().Count() == ids.Count && await Elegibles(null, null).CountAsync(x => ids.Contains(x.Id), ct) == ids.Count;
 
+    public async Task<IReadOnlyList<UnidadInventarioDto>> ListarUnidadesDirectasAsync(int productoId,
+        IReadOnlyCollection<int>? excluir = null, CancellationToken ct = default)
+    {
+        var consulta = Elegibles(productoId, null);
+        if (excluir is { Count: > 0 }) consulta = consulta.Where(x => !excluir.Contains(x.Id));
+        return await InventarioService.Query(consulta.OrderBy(x => x.CodigoInterno).ThenBy(x => x.Id)).ToListAsync(ct);
+    }
+
     public async Task<IReadOnlyList<PendienteClienteDto>> PendientesClienteAsync(int clienteId, CancellationToken ct = default)
     {
         var reservas = await db.UnidadesInventario.AsNoTracking()

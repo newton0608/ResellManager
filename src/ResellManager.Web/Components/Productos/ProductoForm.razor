@@ -52,7 +52,7 @@
                         }
                         @if (ProductoLocalCoincide)
                         {
-                            <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/productos/@Ronda!.ProductoLocal!.Id">Consultar producto existente</a>
+                            <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" target="@(CategoriasEnOtraPestana ? "_blank" : null)" rel="@(CategoriasEnOtraPestana ? "noopener" : null)" href="/productos/@Ronda!.ProductoLocal!.Id">Consultar producto existente</a>
                         }
                         @if (Ronda?.Intentos.Count > 0)
                         {
@@ -394,8 +394,8 @@
                     : bytes.Length >= 8 && bytes.AsSpan(0, 8).SequenceEqual(
                         new byte[] { 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a })
                         ? "image/png"
-                        : bytes.Length >= 12 && bytes.AsSpan(0, 4).SequenceEqual("RIFF"u8)
-                            && bytes.AsSpan(8, 4).SequenceEqual("WEBP"u8)
+                        : bytes.Length >= 12 && bytes.AsSpan(0, 4).SequenceEqual(new byte[] { 0x52, 0x49, 0x46, 0x46 })
+                            && bytes.AsSpan(8, 4).SequenceEqual(new byte[] { 0x57, 0x45, 0x42, 0x50 })
                             ? "image/webp" : null;
                 if (tipo is null)
                 {

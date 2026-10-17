@@ -27,7 +27,9 @@ Categoría es un maestro configurable, no un enum.
 - [Scanner](../29_BarcodeScanner.md): contrato, vendor fijado y pruebas JS/ópticas. Existe validación física posterior en **iPhone 14 Plus + Brave**; la regresión histórica específica de Safari no quedó certificada por esa prueba.
 - [Búsqueda asistida por código de barras](productos-lookup-codigo-barras.md):
   consulta local + proveedores externos, revisión
-  antes de aplicar datos y guardado manual. **Implementado en Agregar producto.**
+  antes de aplicar datos y guardado manual. **Implementado en Agregar producto y en el alta asistida explícita
+  desde el scanner de Nueva compra**; ese consumidor se documenta en el
+  [contrato operativo](scanner-operativo-v2-1.md).
 - No existe estado activo ni desactivación/reactivación de Producto. La política
   acordada es no eliminar físicamente productos desde la aplicación, tengan o no
   historial: siempre se prevé **Desactivar / Reactivar**. La
@@ -51,3 +53,7 @@ Pruebas existentes en [ResellManager.Tests](../../tests/ResellManager.Tests/):
 `ProductoCategoriaDependienteTests` y `CompraProductoFlujoTests`.
 Para scanner sigue su guía y `npm run test:js`; para cambios de publicación lee
 [Catálogo público](catalogo.md), cuyo contrato es diferente.
+
+La [regresión integrada del scanner](../auditorias/scanner-v2-1-cierre-tecnico-20261017.md)
+añade `ScannerOperativoGaleriaTests`: alta asistida desde Compra con galería,
+portada/subcategoría, reintento/cancelación y código registrado durante la edición.

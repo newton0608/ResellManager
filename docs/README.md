@@ -30,10 +30,10 @@ como tales en el [registro de decisiones](11_DecisionesDeDiseño.md).
 | EF / SQLite / archivos | [Persistencia](architecture/persistence.md) | Contratos del esquema y migraciones existentes. |
 | Clientes | [Módulo](modules/clientes.md) | Actividad/saldo; decisión 025 pendiente. |
 | Productos / categorías | [Módulo](modules/productos.md) | [Medidas](23_MedidasYPresentacionProducto.md), [imagen](24_ImagenPrincipalProducto.md), [scanner](29_BarcodeScanner.md), [lookup externo](modules/productos-lookup-codigo-barras.md), [selectores/progreso de fotos implementados](modules/catalogo-v1-4-ajustes-ux.md). |
-| Compras / proveedores | [Módulo](modules/compras.md) | [Comprobantes](16_Fase58_ComprasYComprobantes.md), [GTQ/USD](28_MonedasDeCompra.md). |
-| Inventario | [Módulo](modules/inventario.md) | Reglas físicas, recepción y [scanner operativo V2.1](modules/scanner-operativo-v2-1.md) aprobado pendiente. |
+| Compras / proveedores | [Módulo](modules/compras.md) | [Comprobantes](16_Fase58_ComprasYComprobantes.md), [GTQ/USD](28_MonedasDeCompra.md), [scanner y alta contextual V2.1](modules/scanner-operativo-v2-1.md) implementados; aceptación física en iPhone 14 Plus + Brave registrada en el contrato. |
+| Inventario | [Módulo](modules/inventario.md) | Reglas físicas, recepción y [scanner operativo V2.1](modules/scanner-operativo-v2-1.md) implementado; aceptación física en iPhone 14 Plus + Brave registrada en el contrato. |
 | Pedidos / reservas | [Módulo](modules/pedidos.md) | [Códigos y canales](15_CodigosYCanalesVenta.md). |
-| Ventas / pagos / Dashboard | [Módulo](modules/ventas.md) | [Dashboard](17_Fase59_Dashboard.md), [scanner operativo V2.1](modules/scanner-operativo-v2-1.md) aprobado pendiente. |
+| Ventas / pagos / Dashboard | [Módulo](modules/ventas.md) | [Dashboard](17_Fase59_Dashboard.md), [scanner operativo V2.1](modules/scanner-operativo-v2-1.md) implementado; aceptación física en iPhone 14 Plus + Brave registrada en el contrato. |
 | Catálogo público | [Módulo](modules/catalogo.md) | [Backend](25_CatalogoPublicoBackend.md), [primera UI](26_CatalogoPublicoUI.md), [marca vigente](27_VirtuosaStore.md), [V1.4 implementada; QA físico parcial](modules/catalogo-v1-4.md), [ajustes UX implementados; QA físico parcial](modules/catalogo-v1-4-ajustes-ux.md). |
 | Deployment | [Dominios](deployment/domains.md) | [Runbook](deployment/deployment.md), [seguridad](deployment/security.md). |
 
@@ -59,7 +59,9 @@ decisiones en lugar de abrir una segunda colección ADR con decisiones repetidas
 | [Alcance V1](14_Alcance_V1.md) / [cierre V1](18_Fase510_CierreV1.md) | Alcance/evidencia de fases anteriores; no contienen todas las ampliaciones actuales. |
 | [Changelog](../CHANGELOG.md) | Tags/versiones y estado Unreleased; no certifica despliegue. `.github/workflows/release.yml` publica GitHub Releases desde tags. |
 | [Diagramas](diagrams/) | Material editable conservado; contrastar contratos ampliados con código/configuración EF. |
-| [Auditoría documental 05/10/2026](documentation-audit.md) | Base, reorganización, contradicciones y límites de esta revisión. |
+| [Auditoría documental 05/10/2026](auditorias/documentation-audit.md) | Base, reorganización, contradicciones y límites de esta revisión. |
+| [Verificación de scanner V2.1 17/10/2026](auditorias/scanner-v2-1-integration-audit-20261017.md) | Estado de develop, resoluciones históricas, bloqueo de compilación, CSS y plan de validación integrada; sin merge ni despliegue. |
+| [Cierre técnico de scanner V2.1 17/10/2026](auditorias/scanner-v2-1-cierre-tecnico-20261017.md) | Correcciones integradas en develop/main y validación física confirmada en iPhone 14 Plus + Brave; límites de evidencia registrados. |
 
 ## Separación entre documentación y ejecución
 

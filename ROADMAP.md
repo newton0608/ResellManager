@@ -16,7 +16,7 @@ Pendientes operativos V1: copia automática externa a Raspberry/otro equipo, val
 
 **Implementada y etiquetada en Git.** Existe `v1.1.0` (`832c172`, 27/09/2026); también `v1.2.0` (`7cca3e5`, 03/10/2026) y `v1.2.1` (`835a487`, tag del 05/10/2026 UTC; commit del 04/10/2026). Los tags no prueban la versión ejecutada en producción. Medidas/presentación administrativa y captura de código de barras existen en el código.
 
-Modelo propuesto, reglas y decisiones abiertas en [Medidas y presentación de producto](docs/23_MedidasYPresentacionProducto.md). V1.1 también incluye la captura de `Producto.CodigoBarras` con cámara durante alta y edición, conservando la entrada manual. La integración del lector en Venta Directa e Inventario permanece pendiente en V2.1, pero sus [requisitos operativos ya están aprobados](docs/modules/scanner-operativo-v2-1.md); otros consumidores no forman parte automática de esa entrega. El catálogo público actual ya muestra medidas canónicas y presentación; las equivalencias visuales adicionales siguen pendientes. La evolución a tienda transaccional permanece en V2.4.
+Modelo propuesto, reglas y decisiones abiertas en [Medidas y presentación de producto](docs/23_MedidasYPresentacionProducto.md). V1.1 también incluye la captura de `Producto.CodigoBarras` con cámara durante alta y edición, conservando la entrada manual. El lector en Venta Directa, Inventario y Nueva compra está implementado e integrado en `develop` y `main`, incluidos los ajustes aprobados tras Preview: lotes independientes por acción en Venta Directa y alta asistida explícita desde códigos nuevos en Compra. Su [contrato](docs/modules/scanner-operativo-v2-1.md) conserva las validaciones históricas y la aceptación declarada por el usuario; el [cierre técnico posterior](docs/auditorias/scanner-v2-1-cierre-tecnico-20261017.md) registra compilación y regresión automatizada correctas e integración de las correcciones en `develop` y `main`. El usuario confirmó la validación física en iPhone 14 Plus con Brave el 17/10/2026; no se registraron versiones exactas ni desglose de casos. El catálogo público actual ya muestra medidas canónicas y presentación; las equivalencias visuales adicionales siguen pendientes. La evolución a tienda transaccional permanece en V2.4.
 
 ## Ampliaciones ya incorporadas al repositorio
 
@@ -34,7 +34,7 @@ operación comercial ni agregar carrito/checkout. La validación inicial se cons
 como histórica; los ajustes UX tienen su propio cierre de validación. El QA
 exploratorio en iPhone fue satisfactorio (navegación y fotos de cámara/galería),
 pero quedan verificaciones físicas específicas. Sin nuevo tag, release ni despliegue.
-La implementación V2.1 sigue en PR independiente, sin integrar.
+La implementación del scanner V2.1 se incorporó posteriormente a `develop` el 17/10/2026 (`0c7cead`), conservando V1.4. Las correcciones y su validación automatizada quedaron integradas en `develop` y `main` tras la aceptación física en iPhone 14 Plus con Brave; ver [cierre técnico](docs/auditorias/scanner-v2-1-cierre-tecnico-20261017.md); no se afirma release ni despliegue de V2.1.
 
 **Iteración UX implementada:** portada por raíces en bloques de tres carruseles
 con hasta diez productos, listados reales de dieciséis en dieciséis, opciones
@@ -48,7 +48,7 @@ físico pendiente. Ver [contrato y validación propios](docs/modules/catalogo-v1
 
 ## V2 — Evolución planificada
 
-- V2.1: productividad y experiencia de uso.
+- V2.1: productividad y experiencia de uso; scanner operativo, lotes de Venta Directa y consumidor de Nueva compra, con correcciones y validación automatizada integradas en `develop` y `main`. Validación física confirmada por usuario en iPhone 14 Plus con Brave; [cierre técnico y límites de evidencia](docs/auditorias/scanner-v2-1-cierre-tecnico-20261017.md).
 - V2.2: operación del negocio.
 - V2.3: escalabilidad y multiusuario.
 - V2.4: canal público / tienda en línea básica, con la misma fuente de inventario.

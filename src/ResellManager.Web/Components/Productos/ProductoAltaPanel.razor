@@ -1,6 +1,7 @@
 @inject ICategoriaService CategoriaService
 @inject IProductoService ProductoService
 @inject IProductoConImagenService ProductoConImagenService
+@inject IAltaProductoAsistidaService AltaProductoAsistidaService
 @inject ILogger<ProductoAltaPanel> Logger
 
 <section class="ui-card rm-product-form mb-4 min-w-0 max-w-full space-y-5 border-ui-accent/20 bg-ui-accent/5 p-4 sm:p-6" aria-labelledby="titulo-alta-producto">
@@ -15,8 +16,9 @@
     else
     {
         <ProductoForm Modelo="Modelo" Categorias="Categorias" Guardando="Guardando"
-                      ErrorMessage="@Error" OnGuardar="GuardarAsync" OnCancelar="OnCancelar"
-                      CategoriasEnOtraPestana="true" OnPreparandoImagenes="@(valor => PreparandoImagenes = valor)" />
+                      ErrorMessage="@Error" OnGuardar="GuardarAsync" OnCancelar="CancelarAsync"
+                      LookupHabilitado="LookupHabilitado" BuscarAlIniciar="@(LookupHabilitado && CodigoInicial is not null)"
+                       CategoriasEnOtraPestana="true" OnPreparandoImagenes="@(valor => PreparandoImagenes = valor)" />
     }
     <button class="ui-button w-full border-ui-control bg-white text-ui-ink hover:bg-ui-canvas sm:w-auto" type="button" disabled="@(Guardando || Cargando || PreparandoImagenes)"
             @onclick="CargarCategoriasAsync">Actualizar categorías</button>
@@ -25,6 +27,9 @@
 @code {
     [Parameter] public EventCallback<ProductoDto> OnCreado { get; set; }
     [Parameter] public EventCallback OnCancelar { get; set; }
+    [Parameter] public EventCallback<string?> OnAvisoImagen { get; set; }
+    [Parameter] public string? CodigoInicial { get; set; }
+    [Parameter] public bool LookupHabilitado { get; set; }
     private ProductoFormModel Modelo { get; } = new();
     private IReadOnlyList<CategoriaDto> Categorias { get; set; } = [];
     private bool Cargando { get; set; }
@@ -33,7 +38,12 @@
     private string? Error { get; set; }
     private ElementReference Titulo;
 
-    protected override Task OnInitializedAsync() => CargarCategoriasAsync();
+    protected override Task OnInitializedAsync()
+    {
+        Modelo.CodigoBarras = CodigoInicial;
+        return CargarCategoriasAsync();
+    }
+    private Task CancelarAsync() => Guardando || PreparandoImagenes ? Task.CompletedTask : OnCancelar.InvokeAsync();
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender) await Titulo.FocusAsync();
@@ -72,10 +82,21 @@
                         ResellManager.Infrastructure.Storage.AlmacenamientoImagenesProductoLocal.TamanoMaximoBytes)
                 : null;
             using var nuevas = new ProductoGaleriaArchivos(modelo);
-            var resultado = modelo.Galeria.Count > 0
-                ? await ProductoConImagenService.CrearGaleriaAsync(
-                    modelo.ToInput(), nuevas.Imagenes, modelo.ToGaleriaEdicion().PortadaIndice)
-                : imagen is null
+            string? avisoImagen = null;
+            ServiceResult<ProductoDto> resultado;
+            if (modelo.Galeria.Count > 0)
+                resultado = await ProductoConImagenService.CrearGaleriaAsync(
+                    modelo.ToInput(), nuevas.Imagenes, modelo.ToGaleriaEdicion().PortadaIndice,
+                    validarCodigoBarras: LookupHabilitado);
+            else if (LookupHabilitado)
+            {
+                var alta = await AltaProductoAsistidaService.CrearAsistidoAsync(
+                    modelo.ToInput(), imagen, modelo.ImagenExternaUrl);
+                resultado = alta.Producto;
+                avisoImagen = alta.AvisoImagen;
+            }
+            else
+                resultado = imagen is null
                     ? await ProductoService.CrearAsync(modelo.ToInput())
                     : await ProductoConImagenService.CrearAsync(modelo.ToInput(), imagen);
             if (!resultado.IsSuccess || resultado.Value is null)
@@ -83,6 +104,7 @@
                 Error = resultado.ErrorMessage ?? "No fue posible registrar el producto.";
                 return;
             }
+            await OnAvisoImagen.InvokeAsync(avisoImagen);
             await OnCreado.InvokeAsync(resultado.Value);
         }
         catch (Exception ex)
