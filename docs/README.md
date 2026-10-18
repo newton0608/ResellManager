@@ -35,7 +35,7 @@ como tales en el [registro de decisiones](11_DecisionesDeDiseño.md).
 | Pedidos / reservas | [Módulo](modules/pedidos.md) | [Códigos y canales](15_CodigosYCanalesVenta.md). |
 | Ventas / pagos / Dashboard | [Módulo](modules/ventas.md) | [Dashboard](17_Fase59_Dashboard.md), [scanner operativo V2.1](modules/scanner-operativo-v2-1.md) implementado; aceptación física en iPhone 14 Plus + Brave registrada en el contrato. |
 | Catálogo público | [Módulo](modules/catalogo.md) | [Backend](25_CatalogoPublicoBackend.md), [primera UI](26_CatalogoPublicoUI.md), [marca vigente](27_VirtuosaStore.md), [V1.4 implementada; QA físico parcial](modules/catalogo-v1-4.md), [ajustes UX implementados; QA físico parcial](modules/catalogo-v1-4-ajustes-ux.md). |
-| Deployment | [Dominios](deployment/domains.md) | [Runbook](deployment/deployment.md), [seguridad](deployment/security.md). |
+| Deployment | [Dominios](deployment/domains.md) | [Runbook](deployment/deployment.md), [seguridad](deployment/security.md), [registro productivo v1.4.0](deployment/produccion-v1-4-0-20261017.md). |
 
 Las entradas por módulo son mapas de trabajo: no reemplazan ni duplican las
 especificaciones detalladas enlazadas. Se reutilizó el registro numerado de
@@ -60,8 +60,8 @@ decisiones en lugar de abrir una segunda colección ADR con decisiones repetidas
 | [Changelog](../CHANGELOG.md) | Tags/versiones y estado Unreleased; no certifica despliegue. `.github/workflows/release.yml` publica GitHub Releases desde tags. |
 | [Diagramas](diagrams/) | Material editable conservado; contrastar contratos ampliados con código/configuración EF. |
 | [Auditoría documental 05/10/2026](auditorias/documentation-audit.md) | Base, reorganización, contradicciones y límites de esta revisión. |
-| [Verificación de scanner V2.1 17/10/2026](auditorias/scanner-v2-1-integration-audit-20261017.md) | Estado de develop, resoluciones históricas, bloqueo de compilación, CSS y plan de validación integrada; sin merge ni despliegue. |
-| [Cierre técnico de scanner V2.1 17/10/2026](auditorias/scanner-v2-1-cierre-tecnico-20261017.md) | Correcciones integradas en develop/main y validación física confirmada en iPhone 14 Plus + Brave; límites de evidencia registrados. |
+| [Verificación de scanner V2.1 17/10/2026](auditorias/scanner-v2-1-integration-audit-20261017.md) | Registro histórico de develop, bloqueo de compilación y plan de validación integrada; el cierre técnico y el registro operativo posteriores documentan su resolución y despliegue. |
+| [Cierre técnico de scanner V2.1 17/10/2026](auditorias/scanner-v2-1-cierre-tecnico-20261017.md) | Correcciones integradas en develop/main y validación física confirmada en iPhone 14 Plus + Brave; límites de evidencia registrados. Despliegue posterior en [producción v1.4.0](deployment/produccion-v1-4-0-20261017.md). |
 
 ## Separación entre documentación y ejecución
 

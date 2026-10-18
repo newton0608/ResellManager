@@ -1,12 +1,11 @@
 # V2.1 — Scanner operativo en Venta Directa, Inventario y Nueva compra
 
-**Estado: scanner V2.1 y correcciones de compilación/alta con galería integrados en `develop` y `main` el 17/10/2026, tras la validación física confirmada por el usuario en iPhone 14 Plus con Brave. Sin afirmar despliegue.** [Cierre técnico](../auditorias/scanner-v2-1-cierre-tecnico-20261017.md): 1.037 pruebas .NET, 134 JS y QA óptico/operativo/catálogo/circuito real correctos; incluye la aceptación física y sus límites de evidencia. El [diagnóstico inicial](../auditorias/scanner-v2-1-integration-audit-20261017.md) mantiene la evidencia de fallo anterior.
+**Estado: scanner V2.1 y correcciones de compilación/alta con galería integrados en `develop` y `main` el 17/10/2026, tras la validación física confirmada por el usuario en iPhone 14 Plus con Brave. Desplegados el mismo día a las 22:23 de Guatemala y publicados en la versión global `v1.4.0`.** [Registro de producción](../deployment/produccion-v1-4-0-20261017.md). [Cierre técnico](../auditorias/scanner-v2-1-cierre-tecnico-20261017.md): 1.037 pruebas .NET, 134 JS y QA óptico/operativo/catálogo/circuito real correctos; incluye la aceptación física y sus límites de evidencia. El [diagnóstico inicial](../auditorias/scanner-v2-1-integration-audit-20261017.md) mantiene la evidencia de fallo anterior.
 
 Este documento conserva el contrato aprobado y describe su implementación en
 **Venta Directa**, **Inventario** y **Nueva compra**, reutilizando el scanner de códigos de barras
 existente. La evidencia automatizada y los límites del cierre se registran más
-abajo. La integración en `develop` está confirmada; la evidencia histórica no
-certifica release, despliegue ni validación del conjunto integrado.
+abajo. La evidencia de las fases históricas conserva sus límites; el cierre técnico posterior acredita la regresión integrada y el registro operativo identifica por separado la versión desplegada. «V2.1» es el bloque funcional del scanner; el tag global de esta entrega es `v1.4.0`.
 
 El motor, formatos soportados, privacidad, modos de captura y contrato actual de
 `BarcodeScanner` siguen definidos en [Scanner de códigos de producto](../29_BarcodeScanner.md).

@@ -5,7 +5,7 @@ con la administración. No hay carrito, checkout, pedidos web ni pagos online;
 la consulta por WhatsApp abre un enlace externo y no registra pedidos.
 La ampliación hacia una tienda está [planeada para V2.4](../19_V2_Pendientes.md#v24--canal-público--tienda-en-línea).
 
-**V1.4 implementada y desplegada en producción el 12/10/2026, sin nuevo tag ni GitHub Release:** [Galería (máximo 8 fotos), zoom,
+**V1.4 implementada y desplegada inicialmente el 12/10/2026; publicada posteriormente en la release global `v1.4.0`, con [producción verificada el 17/10/2026](../deployment/produccion-v1-4-0-20261017.md):** [Galería (máximo 8 fotos), zoom,
 subcategorías de dos niveles, filtro por marca, reconexión discreta pública,
 indicador verde y consulta por WhatsApp](catalogo-v1-4.md). Su base histórica es
 `v1.3.0`; V2.1 es una evolución independiente.

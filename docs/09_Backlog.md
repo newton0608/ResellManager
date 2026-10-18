@@ -2,7 +2,7 @@
 
 V1 está en producción. Este backlog conserva entregas de fases y distingue ampliaciones posteriores; sus pendientes V2 no se consideran resueltos por el despliegue. El estado operativo vigente se mantiene en el [runbook V1](deployment/deployment.md) y las versiones en el [changelog](../CHANGELOG.md).
 
-## V1.4 — Mejoras de catálogo (integrada en main/develop; QA físico parcial satisfactorio)
+## V1.4 — Mejoras de catálogo (publicadas en v1.4.0; QA físico específico pendiente)
 
 Contrato: [V1.4 de Virtuosa Store](modules/catalogo-v1-4.md). Rama
 `feature/catalogo-v1-4` desde `v1.3.0`; integrada a `main` (PR #17) y `develop` (PR #16). Posteriormente, el scanner V2.1 se integró en `develop` el 17/10/2026 (`0c7cead`); el [cierre técnico posterior](auditorias/scanner-v2-1-cierre-tecnico-20261017.md) registra las correcciones integradas en `develop` y `main` tras la validación física confirmada en iPhone 14 Plus con Brave.
@@ -28,7 +28,8 @@ Contrato: [V1.4 de Virtuosa Store](modules/catalogo-v1-4.md). Rama
 - [x] QA exploratorio comunicado en iPhone: navegación del catálogo y fotografías desde cámara y galería, sin fallos observados por el usuario (09/10/2026; navegador/modelo de la sesión no confirmados).
 - [ ] QA específico restante: Safari, Android, carruseles/carga incremental, chips/historial, desconexión/caché, gestos, accesibilidad y apertura de WhatsApp configurado. Confirmar causa de la captura original; emulación no lo certifica.
 - [x] Integración de V1.4 en `main` y `develop` (PR #17 y #16), conservando en ese momento la documentación V2.1 sin incorporar su implementación. El scanner V2.1 se integró posteriormente en `develop` el 17/10/2026.
-- [ ] Tag, release y despliegue V1.4: no ejecutados; requieren decisión posterior.
+- [x] Tag Git y GitHub Release global `v1.4.0` sobre `691b1ad`, incluyendo catálogo V1.4, hotfix, API temporal y scanner V2.1.
+- [x] Despliegue de `main` verificado el 17/10/2026, con respaldo consistente, imagen identificada y 15 comprobaciones finales. [Registro de producción](deployment/produccion-v1-4-0-20261017.md).
 
 ## Backend V1 completado
 

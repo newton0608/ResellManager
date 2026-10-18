@@ -2,7 +2,7 @@
 
 **Estado: implementación integrada en `main` y `develop`; validación automática completada, QA exploratorio parcial en iPhone satisfactorio y verificaciones físicas específicas pendientes.**
 Requisitos aprobados el 08/10/2026 y completados sobre la implementación inicial
-V1.4, cuya base histórica es `v1.3.0` (`b9ab4ee`). Sin release ni despliegue.
+V1.4, cuya base histórica es `v1.3.0` (`b9ab4ee`). Publicados dentro de la versión global `v1.4.0`, con [despliegue verificado](../deployment/produccion-v1-4-0-20261017.md). Las verificaciones físicas específicas pendientes conservan su alcance.
 Este documento registra el contrato aprobado y su funcionamiento final; los
 resultados históricos de V1.4 inicial no certifican esta iteración.
 

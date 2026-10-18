@@ -1,9 +1,9 @@
 # V1.4 — Galería, exploración y UX del catálogo público
 
-**Estado: V1.4 y ajustes UX integrados en `main` y `develop` (PR #17 y #16); QA exploratorio parcial satisfactorio en iPhone, otras verificaciones físicas pendientes; sin tag, release ni despliegue.**
+**Estado: V1.4 y ajustes UX integrados en `main` y `develop` (PR #17 y #16), publicados en la release global `v1.4.0`; catálogo desplegado inicialmente el 12/10/2026 y combinación con scanner V2.1 verificada el 17/10/2026.** [Registro operativo](../deployment/produccion-v1-4-0-20261017.md). El QA exploratorio parcial en iPhone fue satisfactorio; se conservan las verificaciones físicas específicas pendientes.
 Alcance inicial acordado el 08/10/2026. Base histórica: tag `v1.3.0`, commit
 `b9ab4eeabc2dd04b587e437243d6e27cb4b5e1e2`. Este documento registra el alcance,
-las decisiones y los contratos de V1.4; no certifica su despliegue.
+las decisiones y los contratos de V1.4; la evidencia de despliegue se mantiene por separado en el registro operativo enlazado arriba.
 
 **Iteración UX posterior implementada:** [escaparate por categorías,
 paginación real, selección dependiente, progreso de fotos y reconexión pública

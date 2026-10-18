@@ -1,6 +1,6 @@
 # Roadmap
 
-Resumen de planificación desde una V1 productiva. Las propuestas V2/V3 no se consideran implementadas.
+Resumen de planificación desde una V1 productiva. Versión global actual: **`v1.4.0`** (`691b1ad`), con [producción verificada el 17/10/2026](docs/deployment/produccion-v1-4-0-20261017.md). Los bloques V2/V3 son planificación; solo las piezas marcadas explícitamente como implementadas, como el scanner V2.1, están entregadas.
 
 ## V1 — Sistema interno en producción
 
@@ -22,7 +22,7 @@ Modelo propuesto, reglas y decisiones abiertas en [Medidas y presentación de pr
 
 La base etiquetada `v1.3.0` (`b9ab4ee`) incorpora imagen principal, catálogo público de Virtuosa Store, compras GTQ/USD y hotfix del scanner. Esa base contiene además la búsqueda asistida externa por código de barras para Agregar producto y su persistencia segura de imagen. Consulta el [índice](docs/README.md) y el [changelog](CHANGELOG.md). No hay todavía carrito, checkout ni pedidos web; landed cost sigue en [análisis pendiente](docs/modules/landed-cost.md) y desactivación/reactivación en [decisión 025](docs/11_DecisionesDeDiseño.md#025-preservar-clientes-y-productos-con-historial).
 
-## V1.4 — Experiencia de Virtuosa Store (integrada en main/develop; QA físico parcial satisfactorio)
+## V1.4 — Experiencia de Virtuosa Store (publicada en v1.4.0; producción verificada)
 
 Originada en `feature/catalogo-v1-4` desde `v1.3.0` e integrada mediante PR #17 a `main` y PR #16 a `develop`. Alcance canónico:
 [Galería de hasta 8 fotos por producto, zoom, subcategorías de dos niveles,
@@ -33,8 +33,8 @@ incorpora cambios administrativos puntuales y migración EF, sin alterar la
 operación comercial ni agregar carrito/checkout. La validación inicial se conserva
 como histórica; los ajustes UX tienen su propio cierre de validación. El QA
 exploratorio en iPhone fue satisfactorio (navegación y fotos de cámara/galería),
-pero quedan verificaciones físicas específicas. Sin nuevo tag, release ni despliegue.
-La implementación del scanner V2.1 se incorporó posteriormente a `develop` el 17/10/2026 (`0c7cead`), conservando V1.4. Las correcciones y su validación automatizada quedaron integradas en `develop` y `main` tras la aceptación física en iPhone 14 Plus con Brave; ver [cierre técnico](docs/auditorias/scanner-v2-1-cierre-tecnico-20261017.md); no se afirma release ni despliegue de V2.1.
+pero quedan verificaciones físicas específicas. El catálogo se desplegó inicialmente el 12/10/2026; la combinación con scanner operativo está publicada como `v1.4.0` y desplegada desde el 17/10/2026. [Registro operativo](docs/deployment/produccion-v1-4-0-20261017.md). El cierre de release no certifica los casos físicos pendientes.
+La implementación del scanner V2.1 se incorporó posteriormente a `develop` el 17/10/2026 (`0c7cead`), conservando V1.4. Las correcciones y su validación automatizada quedaron integradas en `develop` y `main` tras la aceptación física en iPhone 14 Plus con Brave; ver [cierre técnico](docs/auditorias/scanner-v2-1-cierre-tecnico-20261017.md); el despliegue posterior quedó verificado el 17/10/2026 dentro de la release global `v1.4.0`.
 
 **Iteración UX implementada:** portada por raíces en bloques de tres carruseles
 con hasta diez productos, listados reales de dieciséis en dieciséis, opciones

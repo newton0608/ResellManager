@@ -19,7 +19,7 @@ Objetivo: reducir tiempo operativo y mejorar los flujos más frecuentes sin camb
 
 ## Imágenes de productos
 
-**Foto principal ya implementada**: [contrato actual](24_ImagenPrincipalProducto.md). La galería de hasta 8 fotos, portada, zoom y subcategorías están **implementados en la rama V1.4**, sin release ni despliegue; ver [especificación V1.4](modules/catalogo-v1-4.md). Los puntos siguientes conservan el alcance original de V2.1 (especialmente imágenes en flujos operativos) y no deben repetir lo implementado en V1.4.
+**Foto principal ya implementada**: [contrato actual](24_ImagenPrincipalProducto.md). La galería de hasta 8 fotos, portada, zoom y subcategorías están **implementados y publicados en `v1.4.0`**, con [despliegue verificado](deployment/produccion-v1-4-0-20261017.md); ver [especificación V1.4](modules/catalogo-v1-4.md). Los puntos siguientes conservan el alcance original de V2.1 (especialmente imágenes en flujos operativos) y no deben repetir lo implementado en V1.4.
 
 - Producto ya muestra su imagen en listado/detalle y el catálogo público la reutiliza cuando corresponde. Sigue pendiente incorporarla donde aporte valor en Inventario, Venta Directa y otros buscadores operativos.
 - Usar almacenamiento persistente; no guardar imágenes en la base de datos como blobs por defecto. Evaluar object storage para producción.
@@ -28,7 +28,7 @@ Objetivo: reducir tiempo operativo y mejorar los flujos más frecuentes sin camb
 - Mostrar un fallback cuando no exista imagen.
 - Validar contenido, permisos de acceso y privacidad; evitar exponer archivos no autorizados.
 
-La foto principal tiene implementación y migración existentes; no volver a crearlas siguiendo esta planificación. La galería múltiple ya existe en V1.4; object storage y miniaturas derivadas siguen como optimizaciones futuras. La [iteración UX V1.4 implementada](modules/catalogo-v1-4-ajustes-ux.md) añade selección administrativa raíz/hija, progreso real por foto al preparar/transferir, escaparate y paginación pública acotada. Su guardado atómico conserva spinner sin contador; QA físico, release y despliegue siguen pendientes. Estos ajustes no forman parte de una entrega de V2.1.
+La foto principal tiene implementación y migración existentes; no volver a crearlas siguiendo esta planificación. La galería múltiple ya existe en V1.4; object storage y miniaturas derivadas siguen como optimizaciones futuras. La [iteración UX V1.4 implementada](modules/catalogo-v1-4-ajustes-ux.md) añade selección administrativa raíz/hija, progreso real por foto al preparar/transferir, escaparate y paginación pública acotada. Su guardado atómico conserva spinner sin contador; están publicados en `v1.4.0` y desplegados, manteniendo pendientes las verificaciones físicas específicas del catálogo. Estos ajustes no forman parte de una entrega de V2.1.
 
 ## Búsqueda asistida externa al agregar Producto
 
@@ -50,7 +50,7 @@ La validación del 06/10 es histórica. El bloqueo de compilación identificado 
 el [diagnóstico inicial](auditorias/scanner-v2-1-integration-audit-20261017.md) y
 la regresión integrada quedaron resueltos/verificados e integrados en `develop`
 y `main` tras la aceptación física; ver [cierre técnico](auditorias/scanner-v2-1-cierre-tecnico-20261017.md).
-El usuario confirmó la validación física en iPhone 14 Plus con Brave; versiones exactas y desglose de casos no comunicados.
+El usuario confirmó la validación física en iPhone 14 Plus con Brave; versiones exactas y desglose de casos no comunicados. El scanner operativo corregido está desplegado desde el 17/10/2026 y publicado dentro de la versión global `v1.4.0`; ver [registro de producción](deployment/produccion-v1-4-0-20261017.md). Esto no completa los demás objetivos V2.1.
 
 Venta Directa presenta lotes independientes por acción, con códigos físicos,
 precio común por unidad y subtotal en formulario/revisión; persistencia y
@@ -300,9 +300,9 @@ Alcance inicial:
 - creación de una solicitud/pedido dentro de ResellManager reutilizando sus reglas y servicios actuales;
 - revalidación de disponibilidad al procesar la solicitud, sin asumir que consultar un producto equivale a reservarlo.
 
-No se requieren inicialmente pago en línea, cuentas completas de cliente, promociones complejas, integración automática con la API de WhatsApp ni logística avanzada. Pueden evaluarse después; no son requisitos de la tienda básica V2.4. Un enlace simple `wa.me` con mensaje prellenado para consultar un producto está **implementado en la rama V1.4** (sin release ni despliegue), según [el contrato](modules/catalogo-v1-4.md); no constituye integración automática ni crea pedidos.
+No se requieren inicialmente pago en línea, cuentas completas de cliente, promociones complejas, integración automática con la API de WhatsApp ni logística avanzada. Pueden evaluarse después; no son requisitos de la tienda básica V2.4. Un enlace simple `wa.me` con mensaje prellenado para consultar un producto está **implementado y publicado en `v1.4.0`**, con despliegue verificado, según [el contrato](modules/catalogo-v1-4.md); no constituye integración automática ni crea pedidos.
 
-**Estado actual:** catálogo de lectura, escaparate por raíces, navegación por hijas, búsqueda/marca, páginas de productos y opciones públicas independientes ya existen en V1.4: [Catálogo público](modules/catalogo.md). Galería/zoom, disponibilidad y consulta WhatsApp conservan el carácter de lectura. La ampliación V1.4 no tiene release ni despliegue confirmado y su QA físico sigue pendiente. Carrito/selección y pedidos web continúan como planificación V2.4; no están implementados ni autorizados por este roadmap, y pagos online tampoco existen. Dominios y rutas canónicas se describen en [Dominios](deployment/domains.md).
+**Estado actual:** catálogo de lectura, escaparate por raíces, navegación por hijas, búsqueda/marca, páginas de productos y opciones públicas independientes ya existen en V1.4: [Catálogo público](modules/catalogo.md). Galería/zoom, disponibilidad y consulta WhatsApp conservan el carácter de lectura. La ampliación está publicada en `v1.4.0`, con [producción verificada](deployment/produccion-v1-4-0-20261017.md); las verificaciones físicas específicas del catálogo siguen pendientes. Carrito/selección y pedidos web continúan como planificación V2.4; no están implementados ni autorizados por este roadmap, y pagos online tampoco existen. Dominios y rutas canónicas se describen en [Dominios](deployment/domains.md).
 
 ---
 
