@@ -2,7 +2,13 @@
 
 > Configuración versionada revisada el 05/10/2026: el Dockerfile actual usa SDK/runtime .NET 10 sobre Ubuntu Noble/glibc y etapa Node 24 para CSS/vendor. La evidencia operativa del 21/09/2026 se conserva; no demuestra la versión desplegada hoy. Hosts y previews: [Dominios](domains.md).
 
+## Versión productiva verificada — 17/10/2026
+
+La release global **`v1.4.0`** identifica el commit desplegado `691b1ad`. El [registro de producción](produccion-v1-4-0-20261017.md) conserva imagen exacta, respaldo consistente, fecha y 15 comprobaciones HTTP/autorización/assets. La activación no aplicó migraciones y conservó Caddy y la configuración privada. La identificación de esta instalación no convierte los controles históricos pendientes en una auditoría completa de seguridad o recuperación.
+
 ## Estado y límites
+
+Referencia histórica del 21/09/2026; la identificación productiva posterior está en el registro enlazado arriba.
 
 ResellManager está en producción. Esta revisión documental del 21/09/2026 toma como referencia versionada `v1.0.1` y separa las fuentes de evidencia:
 
@@ -181,7 +187,7 @@ Pendientes confirmados y controles cuya evidencia detallada aún debe verificars
 
 - [ ] Implementar y probar copia automática externa a Raspberry/otro equipo; las copias actuales siguen en el mismo VPS.
 - [ ] Validar completamente el rollback de versión de aplicación.
-- [ ] Registrar imagen/commit/digest exactos desplegados y conservar una imagen anterior compatible. Los tags no prueban qué ejecuta el VPS.
+- [x] Imagen/commit/tag exactos de la instalación del 17/10/2026 y referencia de imagen anterior registrados en [producción v1.4.0](produccion-v1-4-0-20261017.md). La comparación de migraciones confirmó compatibilidad de esquema en esta actualización; el ensayo completo de rollback sigue pendiente.
 - [ ] Registrar la evidencia detallada del backup/restore, responsable y objetivos RPO/RTO.
 - [ ] Verificar renovación de certificados y pruebas de Forwarded Headers/proxy confiable, restricciones de red y hosts.
 - [ ] Verificar persistencia de SQLite, comprobantes, Data Protection y Caddy, con permisos mínimos y secretos externos.

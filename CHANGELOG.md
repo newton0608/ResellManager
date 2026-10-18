@@ -2,13 +2,19 @@
 
 Las fechas siguientes corresponden a creación de tags; no son fechas exactas de despliegue. Las GitHub Releases pueden publicarse después usando esos mismos tags, por lo que la fecha de una Release tampoco debe confundirse con la fecha de despliegue.
 
-## Unreleased — V1.4 integrada en main y develop
+## Unreleased
 
-- Correcciones de scanner V2.1 integradas en `develop` y `main` tras validación física confirmada por el usuario en iPhone 14 Plus con Brave (17/10/2026): compilación Razor compatible con SDK 10.0.112 y comprobación de código registrado durante el alta asistida con galería manual. CSS regenerado; regresión automatizada con circuito Blazor real. [Cierre técnico](docs/auditorias/scanner-v2-1-cierre-tecnico-20261017.md); aceptación física y límites registrados, sin afirmar despliegue.
+Sin cambios funcionales posteriores a `v1.4.0` registrados en este cierre. La sincronización documental posterior al despliegue no cambia el código de la release.
 
-- Scanner operativo V2.1 integrado en `develop` y `main`: lector en Venta Directa, Inventario y Nueva compra; agrupación de unidades por acción con precio común y selección asistida de producto. El usuario confirmó haber probado los tres flujos en dispositivo real; sin registro reproducible de navegador/versiones por flujo y sin afirmar despliegue en producción.
+## v1.4.0 — tag del 18/10/2026 UTC (17/10/2026 en Guatemala)
 
-Base `v1.3.0` (`b9ab4ee`); integrada a `main` mediante PR #17 y a `develop` mediante PR #16. Sin nuevo tag ni GitHub Release; V1.4 fue desplegada en producción el 12/10/2026. El hotfix visual de este apartado se integró mediante PR #20 (merge `23be9e3`) y se desplegó en producción el 12/10/2026 (hora Guatemala), con 944/944 pruebas .NET satisfactorias, imagen Docker validada y respaldo consistente previo.
+Referencia: `691b1ad6fe76e31dcdbe9889f5fb19fccc178c50`, exactamente el código desplegado el 17/10/2026 a las 22:23 en Guatemala. [GitHub Release](https://github.com/newton0608/ResellManager/releases/tag/v1.4.0) · [Registro de producción, respaldo y verificaciones](docs/deployment/produccion-v1-4-0-20261017.md). La versión global es `v1.4.0`; «V2.1» identifica el bloque funcional del scanner, no una release global `v2.1.0`.
+
+- Correcciones de scanner V2.1 integradas en `develop` y `main` tras validación física confirmada por el usuario en iPhone 14 Plus con Brave (17/10/2026): compilación Razor compatible con SDK 10.0.112 y comprobación de código registrado durante el alta asistida con galería manual. CSS regenerado; regresión automatizada con circuito Blazor real. [Cierre técnico](docs/auditorias/scanner-v2-1-cierre-tecnico-20261017.md); aceptación física y límites registrados. Despliegue posterior confirmado en el registro de producción de `v1.4.0`.
+
+- Scanner operativo V2.1 integrado en `develop` y `main`: lector en Venta Directa, Inventario y Nueva compra; agrupación de unidades por acción con precio común y selección asistida de producto. El usuario confirmó haber probado los tres flujos en dispositivo real; sin registro reproducible de versiones exactas por flujo. El despliegue de la combinación corregida se verificó el 17/10/2026.
+
+Base `v1.3.0` (`b9ab4ee`); integrada a `main` mediante PR #17 y a `develop` mediante PR #16. V1.4 fue desplegada inicialmente en producción el 12/10/2026, todavía sin tag ni GitHub Release propios en ese momento; el cierre global `v1.4.0` etiqueta la combinación posterior con el scanner V2.1. El hotfix visual de este apartado se integró mediante PR #20 (merge `23be9e3`) y se desplegó en producción el 12/10/2026 (hora Guatemala), con 944/944 pruebas .NET satisfactorias, imagen Docker validada y respaldo consistente previo.
 
 - API administrativa de importación temporal de productos y galerías: validación sin escrituras, detección de duplicados, acceso local con token de caducidad corta, deshabilitada por defecto y sin creación de inventario. **Integrada mediante PR #22 y #23; desplegada el 15/10/2026, conservando el hotfix del catálogo.**
 

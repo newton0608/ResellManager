@@ -2,6 +2,10 @@
 
 > Revisión documental 05/10/2026: .NET 10 y catálogo público ya están implementados. La confirmación operativa histórica se conserva por separado. Consultar [Dominios](domains.md) para hosts y frontera pública; no se inspeccionó el VPS en esta auditoría.
 
+## Evidencia operativa posterior — 17/10/2026
+
+El [registro de producción v1.4.0](produccion-v1-4-0-20261017.md) identifica commit, imagen, respaldo y comprobaciones detrás de Caddy. Se verificaron redirección anónima al login de tres rutas operativas, cabeceras básicas de login y hashes de siete recursos publicados. El respaldo incluye los cuatro directorios persistentes y pasó SHA-256/SQLite quick_check. El despliegue no constituye un ensayo de restore/rollback ni cierra los demás controles pendientes de esta guía.
+
 ## Objetivo
 
 Este documento mantiene una lista de controles de seguridad y operación para ResellManager. No sustituye pruebas, auditorías ni el [runbook de despliegue V1](deployment.md). Debe actualizarse cuando cambie la arquitectura (multiusuario, API pública, tienda, pagos, correo, IA, PostgreSQL, etc.).
