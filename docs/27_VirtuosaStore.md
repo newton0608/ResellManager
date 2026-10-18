@@ -2,7 +2,7 @@
 
 Virtuosa Store es la identidad de la tienda pública de ResellManager. Las vistas `/catalogo` y `/catalogo/{productoId}` consumen el catálogo del mismo backend y el mismo inventario. El sistema administrativo conserva su identidad visual `ui-*`; los estilos de la tienda se definen con tokens y componentes `store-*`. La tienda solo presenta datos comerciales que devuelve la API pública; no calcula disponibilidad ni modifica inventario.
 
-La interfaz está implementada y preparada para servirse desde el dominio público confirmado. La iteración de identidad no cambió proxy, DNS ni Caddy. V1.4 incorpora galería/jerarquía y [ajustes UX](modules/catalogo-v1-4-ajustes-ux.md) ya implementados, sin release ni despliegue de esa ampliación. Las URL usadas por la UI son relativas al origen que sirve la página; este documento no certifica qué versión ejecuta cada host.
+La interfaz está implementada y preparada para servirse desde el dominio público confirmado. La iteración de identidad no cambió proxy, DNS ni Caddy. V1.4 incorpora galería/jerarquía y [ajustes UX](modules/catalogo-v1-4-ajustes-ux.md) publicados en la versión global `v1.4.0`, con [producción verificada](deployment/produccion-v1-4-0-20261017.md). Las URL usadas por la UI son relativas al origen que sirve la página; este documento no certifica qué versión ejecuta cada host.
 
 ## Logos originales
 

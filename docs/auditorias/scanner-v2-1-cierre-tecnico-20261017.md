@@ -2,7 +2,7 @@
 
 **Estado: correcciones verificadas e integradas en `develop` y `main` tras la
 validación física confirmada por el usuario en iPhone 14 Plus con Brave el
-17/10/2026. Sin afirmar despliegue.** Este registro continúa el
+17/10/2026. Este cierre técnico se realizó antes del despliegue.** El [registro operativo posterior](../deployment/produccion-v1-4-0-20261017.md) confirma el despliegue y la identificación global `v1.4.0`, sin alterar la evidencia de esta auditoría. Este registro continúa el
 [diagnóstico original](scanner-v2-1-integration-audit-20261017.md); sus resultados
 de fallo se conservan como evidencia anterior a la corrección.
 
@@ -127,4 +127,4 @@ Los resultados automatizados anteriores se conservan con su alcance original.
 
 El diagnóstico documental se integró en develop antes de estas correcciones.
 La rama corregida se publicó en GitHub y se integró en `develop` y `main` tras
-la aceptación física, sin conflictos. No se creó tag/release ni se inició despliegue.
+la aceptación física, sin conflictos. En aquella integración no se creó tag/release ni se inició despliegue; el [registro operativo posterior](../deployment/produccion-v1-4-0-20261017.md) documenta esos pasos completados después.
