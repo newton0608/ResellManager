@@ -2,7 +2,16 @@
 
 > Configuración versionada revisada el 05/10/2026: el Dockerfile actual usa SDK/runtime .NET 10 sobre Ubuntu Noble/glibc y etapa Node 24 para CSS/vendor. La evidencia operativa del 21/09/2026 se conserva; no demuestra la versión desplegada hoy. Hosts y previews: [Dominios](domains.md).
 
-## Versión productiva verificada — 17/10/2026
+## Instalación activa — hotfix del 22/10/2026, aceptación funcional pendiente
+
+El hotfix de productos del [PR #30](https://github.com/newton0608/ResellManager/pull/30)
+está activo desde el commit `5e16db0`, sin crear una nueva release ni tags Git.
+El [registro de activación](produccion-hotfix-productos-20261022.md) conserva
+respaldo, recuperación del primer intento, comprobaciones técnicas y generación
+de 124 miniaturas existentes. La aceptación funcional en producción sigue pendiente;
+no se actualizará el changelog ni el versionado hasta esa confirmación.
+
+## Release anterior verificada — 17/10/2026
 
 La release global **`v1.4.0`** identifica el commit desplegado `691b1ad`. El [registro de producción](produccion-v1-4-0-20261017.md) conserva imagen exacta, respaldo consistente, fecha y 15 comprobaciones HTTP/autorización/assets. La activación no aplicó migraciones y conservó Caddy y la configuración privada. La identificación de esta instalación no convierte los controles históricos pendientes en una auditoría completa de seguridad o recuperación.
 
@@ -348,8 +357,10 @@ Caddy, bootstrap operativo, backup y restauración REAL.
 
 ## Generación de miniaturas existentes
 
-Disponible con el hotfix de miniaturas administrativas; no implica que ya esté
-instalado o ejecutado en producción. El modo de mantenimiento reutiliza la
+Instalado y ejecutado en producción el 22/10/2026: 124 miniaturas creadas sin
+errores y una segunda ejecución sin recreaciones; ver el
+[registro de activación](produccion-hotfix-productos-20261022.md).
+El modo de mantenimiento reutiliza la
 configuración del host (SQLite y directorio privado de productos), recorre sus
 referencias y genera sólo los derivados faltantes. No aplica migraciones, no
 crea usuarios y no abre un servidor HTTP. Puede interrumpirse y reanudarse.
