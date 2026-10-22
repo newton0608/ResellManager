@@ -13,6 +13,7 @@ public sealed class AlmacenamientoImagenesProductoLocal : IAlmacenamientoImagene
     public const long TamanoMaximoBytes = 8 * 1024 * 1024;
     public const int LadoMaximo = 1200;
     public const int LadoMaximoGaleria = 2000;
+    public const int LadoMaximoMiniatura = 240;
     private const int PixelesMaximos = 25_000_000;
     private readonly string directorioBase;
     private readonly string directorioTemporal;
@@ -42,6 +43,7 @@ public sealed class AlmacenamientoImagenesProductoLocal : IAlmacenamientoImagene
         var rutaOriginal = Path.Combine(directorioTemporal, $"RAW-{id}.tmp");
         var identificador = $"TMP-{id}.webp";
         var rutaProcesada = Path.Combine(directorioTemporal, identificador);
+        var rutaMiniatura = RutaMiniatura(rutaProcesada);
         var preparada = false;
         try
         {
@@ -64,7 +66,7 @@ public sealed class AlmacenamientoImagenesProductoLocal : IAlmacenamientoImagene
                     throw new InvalidDataException("La imagen está vacía.");
             }
 
-            await ValidarYProcesarAsync(rutaOriginal, rutaProcesada, ladoMaximo, calidad, ct);
+            await ValidarYProcesarAsync(rutaOriginal, rutaProcesada, ladoMaximo, calidad, ct, rutaMiniatura);
             preparada = true;
             return ServiceResult<ImagenProductoPreparada>.Ok(new ImagenProductoPreparada(identificador));
         }
@@ -81,13 +83,21 @@ public sealed class AlmacenamientoImagenesProductoLocal : IAlmacenamientoImagene
         finally
         {
             IntentarEliminar(rutaOriginal);
-            if (!preparada) IntentarEliminar(rutaProcesada);
+            if (!preparada)
+            {
+                IntentarEliminar(rutaProcesada);
+                IntentarEliminar(rutaMiniatura);
+            }
         }
     }
 
     public Task<ServiceResult<ImagenProductoGuardada>> ConfirmarAsync(
         ImagenProductoPreparada preparada, int productoId, CancellationToken ct = default)
     {
+        string? definitiva = null;
+        var confirmada = false;
+        var miniaturaMovida = false;
+        var imagenMovida = false;
         try
         {
             ct.ThrowIfCancellationRequested();
@@ -96,11 +106,15 @@ public sealed class AlmacenamientoImagenesProductoLocal : IAlmacenamientoImagene
             var temporal = ResolverTemporal(preparada.IdentificadorTemporal);
             var nombre = $"imagen-principal-{Guid.NewGuid():N}.webp";
             var relativa = $"productos/{productoId}/{nombre}";
-            var definitiva = ResolverDefinitiva(relativa);
+            definitiva = ResolverDefinitiva(relativa);
             if (!File.Exists(temporal))
                 return Task.FromResult(ServiceResult<ImagenProductoGuardada>.Failure("La imagen preparada ya no está disponible."));
             Directory.CreateDirectory(Path.GetDirectoryName(definitiva)!);
+            File.Move(RutaMiniatura(temporal), RutaMiniatura(definitiva), overwrite: false);
+            miniaturaMovida = true;
             File.Move(temporal, definitiva, overwrite: false);
+            imagenMovida = true;
+            confirmada = true;
             return Task.FromResult(ServiceResult<ImagenProductoGuardada>.Ok(new ImagenProductoGuardada(relativa)));
         }
         catch (OperationCanceledException) { throw; }
@@ -109,6 +123,14 @@ public sealed class AlmacenamientoImagenesProductoLocal : IAlmacenamientoImagene
             logger.LogError(ex, "No fue posible confirmar la imagen del producto {ProductoId}.", productoId);
             return Task.FromResult(ServiceResult<ImagenProductoGuardada>.Failure("No fue posible guardar la imagen."));
         }
+        finally
+        {
+            if (!confirmada && definitiva is not null)
+            {
+                if (imagenMovida) IntentarEliminar(definitiva);
+                if (miniaturaMovida) IntentarEliminar(RutaMiniatura(definitiva));
+            }
+        }
     }
 
     public Task<ServiceResult> EliminarTemporalAsync(string identificadorTemporal, CancellationToken ct = default)
@@ -116,7 +138,9 @@ public sealed class AlmacenamientoImagenesProductoLocal : IAlmacenamientoImagene
         try
         {
             ct.ThrowIfCancellationRequested();
-            File.Delete(ResolverTemporal(identificadorTemporal));
+            var ruta = ResolverTemporal(identificadorTemporal);
+            File.Delete(ruta);
+            File.Delete(RutaMiniatura(ruta));
             return Task.FromResult(ServiceResult.Ok());
         }
         catch (FileNotFoundException) { return Task.FromResult(ServiceResult.Ok()); }
@@ -135,6 +159,7 @@ public sealed class AlmacenamientoImagenesProductoLocal : IAlmacenamientoImagene
             ct.ThrowIfCancellationRequested();
             var ruta = ResolverDefinitiva(rutaRelativa);
             if (File.Exists(ruta)) File.Delete(ruta);
+            File.Delete(RutaMiniatura(ruta));
             return Task.FromResult(ServiceResult.Ok());
         }
         catch (OperationCanceledException) { throw; }
@@ -145,19 +170,27 @@ public sealed class AlmacenamientoImagenesProductoLocal : IAlmacenamientoImagene
         }
     }
 
-    public Task<ServiceResult<ImagenProductoLectura>> AbrirLecturaAsync(
-        string rutaRelativa, CancellationToken ct = default)
+    public Task<ServiceResult<ImagenProductoLectura>> AbrirLecturaAsync(string rutaRelativa, CancellationToken ct = default)
+        => AbrirAsync(rutaRelativa, false, ct);
+
+    public Task<ServiceResult<ImagenProductoLectura>> AbrirMiniaturaAsync(string rutaRelativa, CancellationToken ct = default)
+        => AbrirAsync(rutaRelativa, true, ct);
+
+    private Task<ServiceResult<ImagenProductoLectura>> AbrirAsync(
+        string rutaRelativa, bool miniatura, CancellationToken ct)
     {
         try
         {
             ct.ThrowIfCancellationRequested();
             var ruta = ResolverDefinitiva(rutaRelativa);
+            var esMiniatura = miniatura && File.Exists(RutaMiniatura(ruta));
+            if (esMiniatura) ruta = RutaMiniatura(ruta);
             if (!File.Exists(ruta))
                 return Task.FromResult(ServiceResult<ImagenProductoLectura>.Failure("Imagen no disponible."));
             var stream = new FileStream(ruta, FileMode.Open, FileAccess.Read, FileShare.Read,
                 64 * 1024, FileOptions.Asynchronous | FileOptions.SequentialScan);
             return Task.FromResult(ServiceResult<ImagenProductoLectura>.Ok(
-                new ImagenProductoLectura(stream, "image/webp")));
+                new ImagenProductoLectura(stream, "image/webp", esMiniatura)));
         }
         catch (OperationCanceledException) { throw; }
         catch (Exception ex)
@@ -167,7 +200,44 @@ public sealed class AlmacenamientoImagenesProductoLocal : IAlmacenamientoImagene
         }
     }
 
-    private static async Task ValidarYProcesarAsync(string origen, string destino, int ladoMaximo, int calidad, CancellationToken ct)
+    // La publicación por rename impide servir miniaturas incompletas y permite reanudar el lote.
+    public async Task<ServiceResult<bool>> GenerarMiniaturaAsync(string rutaRelativa, CancellationToken ct = default)
+    {
+        string? temporal = null;
+        try
+        {
+            ct.ThrowIfCancellationRequested();
+            var original = ResolverDefinitiva(rutaRelativa);
+            var destino = RutaMiniatura(original);
+            if (!File.Exists(original)) return ServiceResult<bool>.Failure("Imagen no disponible.");
+            if (File.Exists(destino)) return ServiceResult<bool>.Ok(false);
+            temporal = destino + $".{Guid.NewGuid():N}.tmp";
+            await ValidarYProcesarAsync(original, temporal, LadoMaximoMiniatura, 80, ct);
+            ct.ThrowIfCancellationRequested();
+            // Un reemplazo/eliminación concurrente no debe dejar una miniatura huérfana.
+            if (!File.Exists(original)) return ServiceResult<bool>.Failure("Imagen no disponible.");
+            try { File.Move(temporal, destino, overwrite: false); }
+            catch (IOException) when (File.Exists(destino)) { return ServiceResult<bool>.Ok(false); }
+            if (!File.Exists(original))
+            {
+                IntentarEliminar(destino);
+                return ServiceResult<bool>.Failure("Imagen no disponible.");
+            }
+            return ServiceResult<bool>.Ok(true);
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "No fue posible generar una miniatura de producto.");
+            return ServiceResult<bool>.Failure("No fue posible generar la miniatura.");
+        }
+        finally { if (temporal is not null) IntentarEliminar(temporal); }
+    }
+
+    private static string RutaMiniatura(string ruta) => Path.ChangeExtension(ruta, ".miniatura-v1.webp");
+
+    private static async Task ValidarYProcesarAsync(string origen, string destino, int ladoMaximo, int calidad,
+        CancellationToken ct, string? miniatura = null)
     {
         var encabezado = new byte[12];
         await using (var archivo = File.OpenRead(origen))
@@ -192,6 +262,14 @@ public sealed class AlmacenamientoImagenesProductoLocal : IAlmacenamientoImagene
             throw new InvalidDataException("La imagen está dañada o no es válida.");
         using var orientada = AplicarOrientacion(bitmap, codec.EncodedOrigin);
         var fuente = orientada ?? bitmap;
+        await CodificarAsync(fuente, destino, ladoMaximo, calidad, ct);
+        if (miniatura is not null)
+            await CodificarAsync(fuente, miniatura, LadoMaximoMiniatura, 80, ct);
+    }
+
+    private static async Task CodificarAsync(SKBitmap fuente, string destino, int ladoMaximo, int calidad, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
         var escala = Math.Min(1d, (double)ladoMaximo / Math.Max(fuente.Width, fuente.Height));
         var ancho = Math.Max(1, (int)Math.Round(fuente.Width * escala));
         var alto = Math.Max(1, (int)Math.Round(fuente.Height * escala));

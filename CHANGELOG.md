@@ -4,7 +4,9 @@ Las fechas siguientes corresponden a creación de tags; no son fechas exactas de
 
 ## Unreleased
 
-Sin cambios funcionales posteriores a `v1.4.0` registrados en este cierre. La sincronización documental posterior al despliegue no cambia el código de la release.
+- Productos: miniaturas WebP de 240 px en el listado y fotografía grande en detalle; caché privada con URLs versionadas, ETag y reintento acotado con fallback.
+- Generación reanudable de miniaturas para fotografías existentes, sin cambiar originales ni esquema de datos.
+- Regresión de navegación por nombre y botón en móvil/escritorio; el fallo reportado no se reprodujo en el entorno aislado ni en `main`, por lo que sigue pendiente contrastar con el dispositivo afectado.
 
 ## v1.4.0 — tag del 18/10/2026 UTC (17/10/2026 en Guatemala)
 

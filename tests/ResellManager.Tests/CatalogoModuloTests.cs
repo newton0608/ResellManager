@@ -307,12 +307,12 @@ public sealed class CatalogoModuloIntegracionTests : PruebaWebAislada
 
         if (rutaImagen is null)
         {
-            Assert.DoesNotContain("src=\"/productos/7/imagen\"", detalle);
+            Assert.DoesNotContain("src=\"/productos/7/imagen", detalle);
             Assert.Contains("Sin imagen principal", detalle);
         }
         else
         {
-            var imagen = Regex.Match(detalle, "<img[^>]+src=\"/productos/7/imagen\"[^>]*>");
+            var imagen = Regex.Match(detalle, "<img[^>]+src=\"/productos/7/imagen\\?v=[0-9a-f]{24}\"[^>]*>");
             Assert.True(imagen.Success);
             Assert.Contains("alt=\"Blusa Nike negra\"", imagen.Value);
             Assert.DoesNotContain(rutaImagen, detalle);

@@ -94,18 +94,12 @@
             <ul class="m-0 list-none space-y-3 p-0" role="list">
                 @foreach (var producto in ProductosEncontrados)
                 {
-                    <li class="ui-card min-w-0">
+                    <li @key="producto.Id" class="ui-card min-w-0">
                         <article aria-label="@producto.Nombre">
                             <a class="grid min-w-0 grid-cols-[4.5rem_minmax(0,1fr)_1.25rem] items-start gap-x-3 gap-y-2 rounded-3xl p-4 text-ui-ink no-underline transition-colors duration-150 hover:bg-ui-accent/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-accent motion-reduce:transition-none sm:grid-cols-[5rem_minmax(0,1fr)_minmax(8rem,auto)_1.25rem] sm:items-center sm:gap-x-5 sm:p-5" href="/productos/@producto.Id" aria-label="@($"Ver detalle de {producto.Nombre}")">
                                 <span class="row-span-2 flex size-18 items-center justify-center overflow-hidden rounded-2xl border border-solid border-ui-border bg-ui-canvas text-ui-muted sm:row-span-1 sm:size-20">
-                                    @if (producto.ImagenPrincipalRuta is not null)
-                                    {
-                                        <img class="block size-full object-cover" width="80" height="80" src="/productos/@producto.Id/imagen" alt="" loading="lazy" />
-                                    }
-                                    else
-                                    {
-                                        <NavIcon Name="tag" />
-                                    }
+                                    <ImagenProducto ProductoId="producto.Id" Referencia="@producto.ImagenPrincipalRuta"
+                                                    Nombre="@producto.Nombre" Miniatura="true" Decorativa="true" />
                                 </span>
                                 <div class="min-w-0 space-y-1.5">
                                     <h3 class="m-0 text-base font-semibold leading-6 text-ui-ink [overflow-wrap:anywhere]">@producto.Nombre</h3>

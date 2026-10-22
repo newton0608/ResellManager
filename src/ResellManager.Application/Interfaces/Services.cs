@@ -113,6 +113,8 @@ public interface IAlmacenamientoImagenesProducto
     Task<ServiceResult> EliminarTemporalAsync(string identificadorTemporal, CancellationToken ct = default);
     Task<ServiceResult> EliminarAsync(string rutaRelativa, CancellationToken ct = default);
     Task<ServiceResult<ImagenProductoLectura>> AbrirLecturaAsync(string rutaRelativa, CancellationToken ct = default);
+    Task<ServiceResult<ImagenProductoLectura>> AbrirMiniaturaAsync(string rutaRelativa, CancellationToken ct = default);
+    Task<ServiceResult<bool>> GenerarMiniaturaAsync(string rutaRelativa, CancellationToken ct = default);
 }
 
 public interface IProductoConImagenService

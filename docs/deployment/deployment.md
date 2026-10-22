@@ -345,3 +345,46 @@ La ejecución local de estas comprobaciones no sustituye construir/arrancar la i
 el entorno de preparación no dispone de Docker. Siguen pendientes validación de Compose/Caddy
 con sus binarios, SkiaSharp dentro del contenedor, persistencia tras recreación real, QA detrás de
 Caddy, bootstrap operativo, backup y restauración REAL.
+
+## Generación de miniaturas existentes
+
+Disponible con el hotfix de miniaturas administrativas; no implica que ya esté
+instalado o ejecutado en producción. El modo de mantenimiento reutiliza la
+configuración del host (SQLite y directorio privado de productos), recorre sus
+referencias y genera sólo los derivados faltantes. No aplica migraciones, no
+crea usuarios y no abre un servidor HTTP. Puede interrumpirse y reanudarse.
+
+1. Verificar la versión instalada y las rutas del entorno objetivo. Respaldar
+   conjuntamente SQLite y fotografías según este runbook antes de la intervención.
+2. Con el binario del hotfix y la configuración del entorno objetivo, ejecutar
+   desde el directorio de la aplicación:
+
+   ```bash
+   dotnet ResellManager.Web.dll --generar-miniaturas-productos
+   ```
+
+   En el despliegue Compose versionado, desde el directorio del proyecto y una
+   vez actualizado el servicio `resellmanager`, el equivalente es:
+
+   ```bash
+   docker compose exec -T resellmanager dotnet ResellManager.Web.dll --generar-miniaturas-productos
+   ```
+
+3. Revisar el resumen de creadas, existentes y fallidas. El código de salida es
+   0 si no hay fallos, 1 si alguna fotografía falla y 130 ante Ctrl+C. Revisar los
+   logs para referencias sin archivo, dañadas o problemas de permisos; no borrar
+   referencias de productos para ocultar el problema. Un error de configuración
+   o esquema también termina el proceso con error.
+4. Ejecutar de nuevo para comprobar que las ya creadas se omiten. El proceso no
+   vuelve a codificar originales ni modifica productos, portadas o galería.
+5. Verificar listado y detalle autenticados. Antes de completar el lote, la
+   miniatura ausente sirve la grande sin caché. Después sirve el derivado de
+   240 px. Los archivos `.miniatura-v1.webp` residen junto a las fotografías y
+   quedan incluidos en el respaldo del directorio de productos.
+
+Generar fuera de una ventana de ediciones masivas de fotografías. La publicación
+atómica y los nombres únicos evitan archivos parciales y permiten reanudar; el
+proceso no constituye una transacción conjunta entre SQLite y archivos. Para
+revertir la aplicación se puede conservar el par de archivos: la versión anterior
+sigue leyendo la imagen grande y no necesita cambios de esquema. No ejecutar
+limpiezas masivas de derivados como parte de un rollback ordinario.

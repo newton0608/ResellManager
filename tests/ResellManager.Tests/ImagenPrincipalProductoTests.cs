@@ -138,7 +138,7 @@ public sealed class ImagenPrincipalProductoTests
         Assert.False(resultado.IsSuccess);
         Assert.Equal(anterior, (await test.Db.Productos.AsNoTracking().SingleAsync(x => x.Id == creado.Value.Id)).ImagenPrincipalRuta);
         Assert.True(File.Exists(Archivo(carpeta.Ruta, anterior)));
-        Assert.Single(Archivos(carpeta.Ruta));
+        Assert.Equal(2, Archivos(carpeta.Ruta).Length);
     }
 
     [Fact]
@@ -208,6 +208,10 @@ public sealed class ImagenPrincipalProductoTests
             => interior.EliminarAsync(rutaRelativa, ct);
         public Task<ServiceResult<ImagenProductoLectura>> AbrirLecturaAsync(string rutaRelativa, CancellationToken ct = default)
             => interior.AbrirLecturaAsync(rutaRelativa, ct);
+        public Task<ServiceResult<ImagenProductoLectura>> AbrirMiniaturaAsync(string rutaRelativa, CancellationToken ct = default)
+            => interior.AbrirMiniaturaAsync(rutaRelativa, ct);
+        public Task<ServiceResult<bool>> GenerarMiniaturaAsync(string rutaRelativa, CancellationToken ct = default)
+            => interior.GenerarMiniaturaAsync(rutaRelativa, ct);
     }
 
     private sealed class CarpetaTemporal : IDisposable

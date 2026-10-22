@@ -40,7 +40,9 @@ sin URL, query, credenciales ni cuerpo remoto. Un 403/404, contenido inválido,
 destino bloqueado o fallo de archivo conserva el alta sin imagen con el aviso
 existente y sin huérfanos; no se eluden restricciones del CDN.
 
-El detalle y listado administrativos consumen `/productos/{id}/imagen`.
+El detalle administrativo consume `/productos/{id}/imagen?v={version}` y el
+listado `/productos/{id}/miniatura?v={version}`. El contrato de derivados,
+caché y compatibilidad se describe a continuación.
 Para un producto comercialmente disponible, la API pública proyecta
 `TieneImagenPrincipal` y `ImagenCatalogo` carga
 `/api/catalogo/productos/{id}/imagen`. Tener imagen no publica por sí solo un
@@ -96,3 +98,42 @@ mantienen. Se bloquean guardado, cambios de fotos y acciones incompatibles
 durante la operación, sin modal de pantalla completa. `role=status` y
 `aria-live=polite` acompañan al texto; el spinner respeta movimiento reducido.
 QA físico de selección desde cámara/galería sigue pendiente.
+
+## Miniaturas administrativas y caché
+
+El almacenamiento prepara la imagen grande y una miniatura desde la misma
+decodificación orientada. La miniatura es WebP calidad 80, con lado máximo 240 px,
+sin recorte ni ampliación, conservando proporción y transparencia. Usa el nombre
+de la fotografía con sufijo `.miniatura-v1.webp`; no se añade ninguna columna,
+migración ni binario en SQLite. La grande conserva sus límites anteriores.
+Confirmación, compensación, reemplazo y eliminación incluyen ambos archivos.
+Un cambio de portada reutiliza el par asociado a esa fotografía.
+
+Los GET administrativos de portada y miniatura requieren autenticación. La UI
+deriva una versión opaca de la referencia del archivo, sin exponer su ruta; una
+fotografía nueva o un cambio de portada cambia la URL. Una versión que no coincide
+con la portada actual devuelve 404 sin caché, nunca la foto nueva bajo una URL vieja.
+Las respuestas válidas versionadas usan `private, max-age=86400` y ETag distinto
+por representación; las llamadas sin versión revalidan con `private, no-cache`.
+La autorización se comprueba antes de responder a una petición condicional.
+Errores y el fallback heredado usan `private, no-store`; los 404 son vacíos y no
+se convierten en páginas HTML. Los endpoints públicos y los de galería conservan
+su política anterior.
+
+Las fotografías existentes conservan la imagen grande. Hasta generar su derivado,
+el endpoint de miniatura devuelve esa grande sin caché. `ProductoMiniaturasService`
+recorre secuencialmente las referencias persistidas de portada/galería, sin
+duplicarlas, y sólo crea los derivados faltantes. Publica cada resultado mediante
+rename y conserva los originales; un fallo no detiene las demás fotografías y
+se informa en los contadores. El proceso puede reanudarse. Una ausencia de original
+o un archivo dañado se registra como fallo; no se inventa una fotografía.
+La ejecución operativa se describe en el [runbook](deployment/deployment.md#generación-de-miniaturas-existentes).
+
+El componente `ImagenProducto` utiliza miniatura diferida en el listado y grande
+en el detalle, reinicia su estado al cambiar de fotografía y realiza un único
+reintento ante error antes de mostrar un fallback accesible.
+
+Regresiones: `ProductoMiniaturasTests` valida proporción, transparencia, EXIF,
+imágenes pequeñas, limpieza y generación idempotente desde un producto existente.
+`ProductoGaleriaEndpointsTests` verifica autenticación, versión, ETag/304, cambio
+de portada, errores y la transición de fallback grande a miniatura.

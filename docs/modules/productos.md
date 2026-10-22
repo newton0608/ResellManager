@@ -13,6 +13,9 @@ Categoría es un maestro configurable, no un enum.
   opcionales, nunca ambos informados; presentación comercial independiente.
 - [Galería e imagen principal](../24_ImagenPrincipalProducto.md): referencias privadas
   a WebP procesado, almacenamiento administrado y compensación ante fallos.
+  Incluye miniaturas derivadas de 240 px para el listado administrativo, imagen
+  grande en detalle, caché privada versionada y generación reanudable para fotos
+  existentes. Implementado en este hotfix; todavía no desplegado.
 - [V1.4 implementada](catalogo-v1-4.md): de cero a ocho imágenes totales
   por producto, portada y orden, zoom público y categorías padre/hija. La migración
   conserva la imagen existente y deja las categorías anteriores como raíces.
@@ -57,3 +60,8 @@ Para scanner sigue su guía y `npm run test:js`; para cambios de publicación le
 La [regresión integrada del scanner](../auditorias/scanner-v2-1-cierre-tecnico-20261017.md)
 añade `ScannerOperativoGaleriaTests`: alta asistida desde Compra con galería,
 portada/subcategoría, reintento/cancelación y código registrado durante la edición.
+
+La [validación de miniaturas y caché del 22/10/2026](../auditorias/productos-miniaturas-20261022.md)
+incluye generación desde fotografías existentes y navegación por nombre/botón.
+El fallo reportado del nombre no se reprodujo en el entorno aislado ni en `main`;
+su causa y corrección en el dispositivo afectado siguen pendientes de confirmar.

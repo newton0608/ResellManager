@@ -155,7 +155,7 @@ public sealed class CompraProductoFlujoTests
                 .OrderBy(x => x.Orden).ToListAsync();
             Assert.Equal(cantidadFotos, fotos.Count);
             Assert.Equal(fotos.Last().RutaRelativa, linea.ProductoSeleccionado.ImagenPrincipalRuta);
-            Assert.Equal(cantidadFotos, Directory.GetFiles(directorio, "*.webp", SearchOption.AllDirectories).Length);
+            Assert.Equal(cantidadFotos * 2, Directory.GetFiles(directorio, "*.webp", SearchOption.AllDirectories).Length);
         }
         finally
         {
@@ -204,7 +204,7 @@ public sealed class CompraProductoFlujoTests
             var fotos = await test.Db.ProductoImagenes.AsNoTracking().Where(x => x.ProductoId == guardado.Id).OrderBy(x => x.Orden).ToListAsync();
             Assert.Equal(2, fotos.Count);
             Assert.Equal(fotos[1].RutaRelativa, guardado.ImagenPrincipalRuta);
-            Assert.Equal(2, Directory.GetFiles(directorio, "*.webp", SearchOption.AllDirectories).Length);
+            Assert.Equal(4, Directory.GetFiles(directorio, "*.webp", SearchOption.AllDirectories).Length);
             Assert.Equal(seleccion, modelo.Galeria);
         }
         finally

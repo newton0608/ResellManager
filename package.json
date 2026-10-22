@@ -8,6 +8,7 @@
     "test:js": "node --test tests/barcode-scanner.test.mjs tests/ResellManager.Tests/*.test.cjs",
     "qa:scanner": "node tests/barcode-scanner.browser.mjs",
     "qa:catalogo": "node tests/catalogo.browser.mjs",
+    "qa:productos": "node tests/productos.browser.mjs",
     "qa:scanner-operativo": "node tests/scanner-operativo.browser.mjs",
     "qa:scanner-operativo-interactivo": "node tests/scanner-operativo-interactivo.browser.mjs"
   },
