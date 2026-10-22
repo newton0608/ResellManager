@@ -35,7 +35,7 @@ como tales en el [registro de decisiones](11_DecisionesDeDiseño.md).
 | Pedidos / reservas | [Módulo](modules/pedidos.md) | [Códigos y canales](15_CodigosYCanalesVenta.md). |
 | Ventas / pagos / Dashboard | [Módulo](modules/ventas.md) | [Dashboard](17_Fase59_Dashboard.md), [scanner operativo V2.1](modules/scanner-operativo-v2-1.md) implementado; aceptación física en iPhone 14 Plus + Brave registrada en el contrato. |
 | Catálogo público | [Módulo](modules/catalogo.md) | [Backend](25_CatalogoPublicoBackend.md), [primera UI](26_CatalogoPublicoUI.md), [marca vigente](27_VirtuosaStore.md), [V1.4 implementada; QA físico parcial](modules/catalogo-v1-4.md), [ajustes UX implementados; QA físico parcial](modules/catalogo-v1-4-ajustes-ux.md). |
-| Deployment | [Dominios](deployment/domains.md) | [Runbook](deployment/deployment.md), [seguridad](deployment/security.md), [registro productivo v1.4.0](deployment/produccion-v1-4-0-20261017.md). |
+| Deployment | [Dominios](deployment/domains.md) | [Runbook](deployment/deployment.md), [seguridad](deployment/security.md), [producción actual v1.4.1](deployment/produccion-hotfix-productos-20261022.md) y [registro histórico v1.4.0](deployment/produccion-v1-4-0-20261017.md). |
 
 Las entradas por módulo son mapas de trabajo: no reemplazan ni duplican las
 especificaciones detalladas enlazadas. Se reutilizó el registro numerado de

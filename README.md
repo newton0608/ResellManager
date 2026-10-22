@@ -7,7 +7,7 @@ Para trabajar con agentes, comienza por [AGENTS.md](AGENTS.md) y consulta el
 
 ## Estado del proyecto
 
-La última versión publicada es **[`v1.4.0`](https://github.com/newton0608/ResellManager/releases/tag/v1.4.0)**, sobre `691b1ad`, desplegada el **17/10/2026 a las 22:23, Guatemala**. Incluye galería y exploración V1.4 de Virtuosa Store, el hotfix de fotografías transparentes, la API temporal de importación y el scanner operativo V2.1 en Venta Directa, Inventario y Nueva compra. El [registro de producción](docs/deployment/produccion-v1-4-0-20261017.md) relaciona tag, commit, imagen, respaldo y comprobaciones. El código usa .NET 10; la versión global `v1.4.0` y el bloque funcional «V2.1» del scanner son numeraciones distintas.
+La última versión es **[`v1.4.1`](https://github.com/newton0608/ResellManager/releases/tag/v1.4.1)**, sobre `5e16db0`, desplegada el **22/10/2026 a las 13:11:59, Guatemala** y aceptada por el responsable en producción. El hotfix añade miniaturas administrativas WebP, caché privada versionada, generación para fotografías existentes y listado incremental de 20 productos. El usuario confirmó la mejora de velocidad y que desapareció el fallo de navegación al detalle. El [registro de producción](docs/deployment/produccion-hotfix-productos-20261022.md) relaciona tag, commit, imagen, respaldo y verificaciones. Conserva el alcance de `v1.4.0` (catálogo, importación y scanner V2.1); la versión global y los bloques funcionales tienen numeraciones distintas.
 
 ResellManager V1 implementa autenticación privada, clientes, productos/categorías, proveedores, compras y comprobantes privados, inventario/recepción, pedidos y reservas, ventas, pagos y Dashboard. La Fase 5.10 cerró consistencia y UX sin incorporar funcionalidades grandes ni concurrencia fuerte V2.
 
@@ -23,10 +23,11 @@ El [backend del catálogo público](docs/25_CatalogoPublicoBackend.md) ofrece le
 
 ## Versiones
 
-El historial curado se mantiene en [CHANGELOG.md](CHANGELOG.md). Los tags `v*` son la referencia de versión global y se publican además como GitHub Releases. El tag `v1.4.0` identifica exactamente el código desplegado; `main` puede contener después commits exclusivos de documentación. Los nombres V1.4/V2.1 de planes o módulos no crean por sí solos una versión global. El workflow `.github/workflows/release.yml` publica automáticamente tags nuevos y permite publicar manualmente un tag histórico ya existente.
+El historial curado se mantiene en [CHANGELOG.md](CHANGELOG.md). Los tags `v*` son la referencia de versión global y se publican además como GitHub Releases. El tag `v1.4.1` identifica exactamente el código desplegado; `main` puede contener después commits exclusivos de documentación. Los nombres V1.4/V2.1 de planes o módulos no crean por sí solos una versión global. El workflow `.github/workflows/release.yml` publica automáticamente tags nuevos y permite publicar manualmente un tag histórico ya existente.
 
 | Referencia | Estado | Resumen |
 | --- | --- | --- |
+| `v1.4.1` | Tag / GitHub Release / producción aceptada | Miniaturas, caché privada y scroll infinito de Productos; commit `5e16db0`. |
 | `v1.4.0` | Tag / GitHub Release / producción verificada | Catálogo V1.4 y ajustes UX, hotfix de transparencia, API temporal y scanner operativo V2.1; commit `691b1ad`. |
 | `v1.3.0` | Tag / GitHub Release | Búsqueda asistida por código, proveedores externos e imágenes importadas de forma segura. |
 | `v1.2.1` | Tag | Hotfix del scanner Quagga2. |

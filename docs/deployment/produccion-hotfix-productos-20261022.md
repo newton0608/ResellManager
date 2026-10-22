@@ -1,22 +1,35 @@
-# Activación del hotfix de productos — 22/10/2026
+# Producción verificada — v1.4.1, hotfix de productos, 22/10/2026
 
-## Estado
+## Cierre y aceptación
+
+Pablo confirmó después del despliegue una mejora marcada de velocidad y que el
+fallo de navegación también desapareció; dio por terminado el hotfix y autorizó
+el cierre de changelog, documentación, tag e integración del PR #30 a `main`.
+La versión global **`v1.4.1`** identifica el commit exacto que originó la imagen:
+`5e16db03067fa4f4c93227cb59ce713c4cf255c1`. Los commits posteriores son de
+documentación y cierre; no requieren reconstruir ni recrear la aplicación.
+
+La aceptación confirma el comportamiento observado. No identifica por sí sola
+la causa original del fallo ni certifica pruebas individuales no comunicadas.
+
+## Estado histórico durante la activación
 
 El código del [PR #30](https://github.com/newton0608/ResellManager/pull/30)
-está desplegado en producción. El PR permanece abierto; no se hizo merge a
-`main` ni se modificó el checkout operativo. La aceptación funcional en
-producción está pendiente. Por instrucción del responsable no se actualizó
+quedó desplegado en producción. En esa fase el PR permaneció abierto; no se hizo
+merge a `main` ni se modificó el checkout operativo. La aceptación funcional aún
+estaba pendiente. Por instrucción del responsable no se actualizó
 `CHANGELOG.md` durante esta operación ni se crearon tags Git o releases.
 
-La prueba física comunicada por Pablo en iPhone 14 Plus con Brave corresponde
-al candidato anterior al despliegue. No se presenta como una comprobación
-física posterior en producción.
+La prueba física inicial comunicada por Pablo en iPhone 14 Plus con Brave
+correspondía al candidato anterior al despliegue. La confirmación posterior en
+producción se registra por separado en el cierre de este documento.
 
 ## Identificación y continuidad
 
 | Referencia | Evidencia |
 | --- | --- |
 | Código de la imagen | `5e16db03067fa4f4c93227cb59ce713c4cf255c1` |
+| Tag global | `v1.4.1`, sobre el mismo commit de la imagen |
 | Imagen activa | `sha256:40160c8066df39a0e2ea04fcc022a603ef44edf1210d99c770d90052cb8880d6` |
 | Activación correcta | 22/10/2026, 19:11:59 UTC, health `OK` |
 | Construcción | Docker Release desde un archivo Git del SHA fijado; sin cambios de código adicionales |
@@ -57,10 +70,10 @@ La evidencia automatizada previa del código se conserva en el
 ejecutar la suite completa durante la activación; sí se construyó la imagen y
 se ejecutó el procesamiento nativo de imágenes en el contenedor productivo.
 
-## Pendiente de aceptación
+## Alcance de la aceptación posterior
 
-Comprobar con una sesión real en producción la carga inicial, scroll infinito,
-filtros, navegación desde el nombre y el botón, y fotografía completa en detalle.
-Las sondas técnicas no sustituyen esa aceptación ni prueban por sí solas la
-causa original del fallo de navegación. El changelog y los tags permanecen
-pendientes de esa confirmación.
+La confirmación del responsable cierra el hotfix del listado, miniaturas y
+navegación en producción. No se comunicó un desglose de cada filtro, caché o
+gesto ni versiones exactas del navegador/sistema en esa comprobación posterior;
+se conservan los resultados automatizados y sus límites. No se extiende esta
+aceptación a los casos físicos pendientes de otros módulos.

@@ -1,6 +1,6 @@
 # Productos: miniaturas, caché y diagnóstico de navegación — 22/10/2026
 
-## Alcance y estado
+## Alcance y estado histórico de la implementación
 
 Implementación local en `hotfix/productos-imagenes-navegacion`, base
 `e9ab3cfb6616c0352d7ac37892a5dc5182795481` de `develop`.
@@ -109,3 +109,18 @@ Validación de la reconstrucción:
 La paginación reduce la carga inicial, pero no prueba que las imágenes fueran
 la causa del fallo de navegación del dispositivo afectado. Ese diagnóstico sigue
 pendiente; no se fuerza una recarga completa ni se declara corregido el fallo.
+
+## Cierre posterior en producción — 22/10/2026
+
+El código publicado `5e16db0` se desplegó a las 19:11:59 UTC. Se generaron 124
+miniaturas existentes, sin fallos y sin modificar originales; una segunda
+ejecución no recreó ninguna. Las 17 comprobaciones técnicas fueron correctas.
+Después del despliegue, Pablo confirmó la mejora de velocidad y que el fallo
+de navegación desapareció, y dio por terminado el hotfix. Se cierra como
+`v1.4.1`, con integración por PR #30.
+
+La confirmación posterior resuelve el pendiente funcional descrito en las fases
+anteriores; no demuestra una causa raíz aislada ni añade trazas que no se
+capturaron. Los resultados históricos de este documento se conservan como tales.
+Respaldo, incidente inicial ya recuperado, imagen exacta y límites en el
+[registro de producción](../deployment/produccion-hotfix-productos-20261022.md).

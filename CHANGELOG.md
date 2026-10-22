@@ -4,10 +4,16 @@ Las fechas siguientes corresponden a creación de tags; no son fechas exactas de
 
 ## Unreleased
 
+Sin cambios pendientes de publicación.
+
+## v1.4.1 — tag del 22/10/2026
+
+Referencia: `5e16db03067fa4f4c93227cb59ce713c4cf255c1`, exactamente el commit que originó la imagen desplegada el 22/10/2026 a las 19:11:59 UTC (13:11:59 en Guatemala). Integración mediante [PR #30](https://github.com/newton0608/ResellManager/pull/30). [Registro de producción y aceptación](docs/deployment/produccion-hotfix-productos-20261022.md). El cierre documental posterior no cambia el código ejecutado.
+
 - Productos: listado administrativo con scroll infinito en lotes de 20, paginación SQL por cursor, búsqueda/categoría globales y reintento sin perder resultados.
 - Productos: miniaturas WebP de 240 px en el listado y fotografía grande en detalle; caché privada con URLs versionadas, ETag y reintento acotado con fallback.
 - Generación reanudable de miniaturas para fotografías existentes, sin cambiar originales ni esquema de datos.
-- Regresión de navegación por nombre y botón en móvil/escritorio; el fallo reportado no se reprodujo en el entorno aislado ni en `main`, por lo que sigue pendiente contrastar con el dispositivo afectado.
+- Regresión de navegación por nombre y botón en móvil/escritorio. Tras el despliegue, Pablo confirmó la mejora de velocidad y que el fallo de navegación desapareció; hotfix aceptado en producción. La causa original no se determinó de forma aislada.
 
 ## v1.4.0 — tag del 18/10/2026 UTC (17/10/2026 en Guatemala)
 

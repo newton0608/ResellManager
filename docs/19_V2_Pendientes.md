@@ -23,19 +23,18 @@ Objetivo: reducir tiempo operativo y mejorar los flujos más frecuentes sin camb
 
 - Producto ya muestra su imagen en listado/detalle y el catálogo público la reutiliza cuando corresponde. Sigue pendiente incorporarla donde aporte valor en Inventario, Venta Directa y otros buscadores operativos.
 - Usar almacenamiento persistente; no guardar imágenes en la base de datos como blobs por defecto. Evaluar object storage para producción.
-- Miniaturas administrativas implementadas en el hotfix del 22/10/2026, aún sin
-  despliegue: WebP de 240 px, caché privada versionada y generación reanudable
+- Miniaturas administrativas desplegadas y aceptadas en `v1.4.1` el 22/10/2026: WebP de 240 px, caché privada versionada y generación reanudable
   para fotos existentes. Compresión/formatos/límites ya existen; ver
   [contrato vigente](24_ImagenPrincipalProducto.md#miniaturas-administrativas-y-caché).
   Su adopción en el catálogo público y otros consumidores queda pendiente.
 - Listado administrativo de Productos con scroll infinito implementado en el
-  mismo hotfix, aún sin despliegue: lotes de 20, límite SQL, búsqueda/categoría y
+  mismo hotfix `v1.4.1`, desplegado y aceptado en producción: lotes de 20, límite SQL, búsqueda/categoría y
   reintento. Ver [contrato actual](modules/productos.md#listado-administrativo-incremental).
 - Permitir reemplazo y eliminación seguros, con limpieza de archivos sin referencias.
 - Mostrar un fallback cuando no exista imagen.
 - Validar contenido, permisos de acceso y privacidad; evitar exponer archivos no autorizados.
 
-La foto principal tiene implementación y migración existentes; no volver a crearlas siguiendo esta planificación. La galería múltiple ya existe en V1.4; object storage sigue como optimización futura y las miniaturas administrativas ya están implementadas en este hotfix, sin despliegue. La [iteración UX V1.4 implementada](modules/catalogo-v1-4-ajustes-ux.md) añade selección administrativa raíz/hija, progreso real por foto al preparar/transferir, escaparate y paginación pública acotada. Su guardado atómico conserva spinner sin contador; están publicados en `v1.4.0` y desplegados, manteniendo pendientes las verificaciones físicas específicas del catálogo. Estos ajustes no forman parte de una entrega de V2.1.
+La foto principal tiene implementación y migración existentes; no volver a crearlas siguiendo esta planificación. La galería múltiple ya existe en V1.4; object storage sigue como optimización futura y las miniaturas administrativas están desplegadas y aceptadas en `v1.4.1`; ver [registro de producción](deployment/produccion-hotfix-productos-20261022.md). La [iteración UX V1.4 implementada](modules/catalogo-v1-4-ajustes-ux.md) añade selección administrativa raíz/hija, progreso real por foto al preparar/transferir, escaparate y paginación pública acotada. Su guardado atómico conserva spinner sin contador; están publicados en `v1.4.0` y desplegados, manteniendo pendientes las verificaciones físicas específicas del catálogo. Estos ajustes no forman parte de una entrega de V2.1.
 
 ## Búsqueda asistida externa al agregar Producto
 

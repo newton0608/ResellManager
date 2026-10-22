@@ -140,3 +140,9 @@ Regresiones: `ProductoMiniaturasTests` valida proporción, transparencia, EXIF,
 imágenes pequeñas, limpieza y generación idempotente desde un producto existente.
 `ProductoGaleriaEndpointsTests` verifica autenticación, versión, ETag/304, cambio
 de portada, errores y la transición de fallback grande a miniatura.
+
+**Estado operativo — 22/10/2026:** desplegado y aceptado como `v1.4.1`.
+Se generaron 124 miniaturas existentes sin fallos y se verificó la idempotencia
+y conservación de originales. La confirmación posterior del responsable cierra
+el hotfix; evidencia y límites en el
+[registro de producción](deployment/produccion-hotfix-productos-20261022.md).

@@ -2,14 +2,15 @@
 
 > Configuración versionada revisada el 05/10/2026: el Dockerfile actual usa SDK/runtime .NET 10 sobre Ubuntu Noble/glibc y etapa Node 24 para CSS/vendor. La evidencia operativa del 21/09/2026 se conserva; no demuestra la versión desplegada hoy. Hosts y previews: [Dominios](domains.md).
 
-## Instalación activa — hotfix del 22/10/2026, aceptación funcional pendiente
+## Instalación activa — v1.4.1, aceptada en producción el 22/10/2026
 
 El hotfix de productos del [PR #30](https://github.com/newton0608/ResellManager/pull/30)
-está activo desde el commit `5e16db0`, sin crear una nueva release ni tags Git.
+está activo desde el commit `5e16db0`, identificado por el tag `v1.4.1`.
 El [registro de activación](produccion-hotfix-productos-20261022.md) conserva
 respaldo, recuperación del primer intento, comprobaciones técnicas y generación
-de 124 miniaturas existentes. La aceptación funcional en producción sigue pendiente;
-no se actualizará el changelog ni el versionado hasta esa confirmación.
+de 124 miniaturas existentes. Pablo confirmó la mejora de velocidad y la desaparición
+del fallo de navegación en producción; el hotfix queda cerrado. El changelog y
+el versionado se cierran tras esa confirmación, sin reconstruir la aplicación.
 
 ## Release anterior verificada — 17/10/2026
 

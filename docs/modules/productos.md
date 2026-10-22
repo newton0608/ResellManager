@@ -15,7 +15,8 @@ Categoría es un maestro configurable, no un enum.
   a WebP procesado, almacenamiento administrado y compensación ante fallos.
   Incluye miniaturas derivadas de 240 px para el listado administrativo, imagen
   grande en detalle, caché privada versionada y generación reanudable para fotos
-  existentes. Implementado en este hotfix; todavía no desplegado.
+  existentes. Desplegado y aceptado en producción como `v1.4.1` el 22/10/2026;
+  [registro operativo](../deployment/produccion-hotfix-productos-20261022.md).
 - [V1.4 implementada](catalogo-v1-4.md): de cero a ocho imágenes totales
   por producto, portada y orden, zoom público y categorías padre/hija. La migración
   conserva la imagen existente y deja las categorías anteriores como raíces.
@@ -63,12 +64,13 @@ portada/subcategoría, reintento/cancelación y código registrado durante la ed
 
 La [validación de miniaturas y caché del 22/10/2026](../auditorias/productos-miniaturas-20261022.md)
 incluye generación desde fotografías existentes y navegación por nombre/botón.
-El fallo reportado del nombre no se reprodujo en el entorno aislado ni en `main`;
-su causa y corrección en el dispositivo afectado siguen pendientes de confirmar.
+El fallo reportado del nombre no se reprodujo en el entorno aislado ni en `main`.
+Después del despliegue, Pablo confirmó que desapareció y aceptó el hotfix en
+producción. La causa original no se determinó de forma aislada.
 
 ## Listado administrativo incremental
 
-El hotfix incorpora scroll infinito en `/productos`, aún sin despliegue. Se
+El hotfix `v1.4.1`, desplegado y aceptado en producción, incorpora scroll infinito en `/productos`. Se
 cargan 20 productos al abrir y hasta 20 adicionales al acercarse al final.
 `IProductoService.ListarPaginaAsync` filtra, ordena y limita en SQLite: consulta
 como máximo 21 filas para detectar si hay otra página y devuelve hasta 20.
