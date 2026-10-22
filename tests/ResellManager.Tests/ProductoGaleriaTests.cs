@@ -35,7 +35,7 @@ public sealed class ProductoGaleriaTests
         Assert.Equal(cantidad == 0 ? 0 : 1, entidad.Imagenes.Count(x => x.RutaRelativa == entidad.ImagenPrincipalRuta));
         var galeria = await servicio.ObtenerGaleriaAsync(entidad.Id);
         Assert.Equal(cantidad, galeria.Value!.Count);
-        Assert.Equal(cantidad, Archivos(carpeta.Ruta).Length);
+        Assert.Equal(cantidad * 2, Archivos(carpeta.Ruta).Length);
     }
 
     [Fact]
@@ -69,7 +69,7 @@ public sealed class ProductoGaleriaTests
         Assert.False(resultado.IsSuccess);
         Assert.Equal("Producto galería", (await new ProductoService(test.Db).ObtenerPorIdAsync(creado.Value.Id)).Value!.Nombre);
         Assert.Equal(8, await test.Db.ProductoImagenes.CountAsync());
-        Assert.Equal(8, Archivos(carpeta.Ruta).Length);
+        Assert.Equal(16, Archivos(carpeta.Ruta).Length);
         Assert.Equal(0, nuevas.Streams[0].Position);
     }
 
@@ -106,7 +106,7 @@ public sealed class ProductoGaleriaTests
         Assert.Equal(creado.Value.ImagenPrincipalRuta, (await new ProductoService(test.Db).ObtenerPorIdAsync(creado.Value.Id)).Value!.ImagenPrincipalRuta);
         Assert.Equal("Producto galería", (await new ProductoService(test.Db).ObtenerPorIdAsync(creado.Value.Id)).Value!.Nombre);
         Assert.Single(await test.Db.ProductoImagenes.ToListAsync());
-        Assert.Single(Archivos(carpeta.Ruta));
+        Assert.Equal(2, Archivos(carpeta.Ruta).Length);
     }
 
     [Fact]
@@ -176,7 +176,7 @@ public sealed class ProductoGaleriaTests
         Assert.Equal(galeria[2].Id, final[0].Id);
         Assert.Equal(galeria[1].Id, final[2].Id);
         Assert.Equal(final[2], Assert.Single(final.Where(x => x.EsPortada)));
-        Assert.Equal(3, Archivos(carpeta.Ruta).Length);
+        Assert.Equal(6, Archivos(carpeta.Ruta).Length);
         Assert.False(File.Exists(Archivo(carpeta.Ruta, rutaEliminada)));
         var entidad = await test.Db.Productos.AsNoTracking().Include(x => x.Imagenes).SingleAsync(x => x.Id == creado.Value.Id);
         Assert.Equal(entidad.Imagenes.Single(x => x.Id == final[2].Id).RutaRelativa, editado.Value!.ImagenPrincipalRuta);
@@ -214,7 +214,7 @@ public sealed class ProductoGaleriaTests
         Assert.False(resultado.IsSuccess);
         Assert.Equal(creado.Value.ImagenPrincipalRuta, (await new ProductoService(test.Db).ObtenerPorIdAsync(creado.Value.Id)).Value!.ImagenPrincipalRuta);
         Assert.False((await servicio.AbrirImagenAsync(test.Producto.Id, foto.Id)).IsSuccess);
-        Assert.Single(Archivos(carpeta.Ruta));
+        Assert.Equal(2, Archivos(carpeta.Ruta).Length);
     }
 
     [Theory]
@@ -255,7 +255,7 @@ public sealed class ProductoGaleriaTests
         Assert.True(resultado.IsSuccess, resultado.ErrorMessage);
         Assert.Equal(creado.Value.ImagenPrincipalRuta, resultado.Value!.ImagenPrincipalRuta);
         Assert.Equal(2, await test.Db.ProductoImagenes.CountAsync());
-        Assert.Equal(2, Archivos(carpeta.Ruta).Length);
+        Assert.Equal(4, Archivos(carpeta.Ruta).Length);
     }
 
     [Fact]
@@ -293,7 +293,7 @@ public sealed class ProductoGaleriaTests
         Assert.True(resultado.IsSuccess, resultado.ErrorMessage);
         Assert.Equal("Persistido antes del error", resultado.Value!.Nombre);
         Assert.Single(await db.ProductoImagenes.ToListAsync());
-        Assert.Single(Archivos(carpeta.Ruta));
+        Assert.Equal(2, Archivos(carpeta.Ruta).Length);
         Assert.False(File.Exists(Archivo(carpeta.Ruta, creado.Value.ImagenPrincipalRuta!)));
     }
 
@@ -314,7 +314,7 @@ public sealed class ProductoGaleriaTests
             test.Db.ProductoImagenes.Remove(imagen);
             await test.Db.SaveChangesAsync();
         }
-        Assert.Single(Archivos(carpeta.Ruta));
+        Assert.Equal(2, Archivos(carpeta.Ruta).Length);
     }
     [Theory]
     [InlineData(false)]
@@ -361,7 +361,7 @@ public sealed class ProductoGaleriaTests
         Assert.False(resultado.IsSuccess);
         Assert.Contains("No fue posible guardar", resultado.ErrorMessage);
         // Se preservan los archivos al no poder comprobar un commit ambiguo; el estado real solo se vuelve legible después.
-        Assert.Equal(2, Archivos(carpeta.Ruta).Length);
+        Assert.Equal(4, Archivos(carpeta.Ruta).Length);
         Assert.DoesNotContain(Archivos(carpeta.Ruta), x => x.Contains(".temporales", StringComparison.Ordinal));
         fallo.FallarConsultas = false;
         Assert.Single(await db.Productos.AsNoTracking().ToListAsync());
@@ -456,6 +456,10 @@ public sealed class ProductoGaleriaTests
         public Task<ServiceResult> EliminarTemporalAsync(string identificadorTemporal, CancellationToken ct = default) => interior.EliminarTemporalAsync(identificadorTemporal, ct);
         public Task<ServiceResult> EliminarAsync(string rutaRelativa, CancellationToken ct = default) => interior.EliminarAsync(rutaRelativa, ct);
         public Task<ServiceResult<ImagenProductoLectura>> AbrirLecturaAsync(string rutaRelativa, CancellationToken ct = default) => interior.AbrirLecturaAsync(rutaRelativa, ct);
+        public Task<ServiceResult<ImagenProductoLectura>> AbrirMiniaturaAsync(string rutaRelativa, CancellationToken ct = default)
+            => interior.AbrirMiniaturaAsync(rutaRelativa, ct);
+        public Task<ServiceResult<bool>> GenerarMiniaturaAsync(string rutaRelativa, CancellationToken ct = default)
+            => interior.GenerarMiniaturaAsync(rutaRelativa, ct);
     }
     private sealed class FalloConfirmacion(IAlmacenamientoImagenesProducto interior, bool cancelar) : IAlmacenamientoImagenesProducto
     {
@@ -474,5 +478,9 @@ public sealed class ProductoGaleriaTests
         public Task<ServiceResult> EliminarTemporalAsync(string identificadorTemporal, CancellationToken ct = default) => interior.EliminarTemporalAsync(identificadorTemporal, ct);
         public Task<ServiceResult> EliminarAsync(string rutaRelativa, CancellationToken ct = default) => interior.EliminarAsync(rutaRelativa, ct);
         public Task<ServiceResult<ImagenProductoLectura>> AbrirLecturaAsync(string rutaRelativa, CancellationToken ct = default) => interior.AbrirLecturaAsync(rutaRelativa, ct);
+        public Task<ServiceResult<ImagenProductoLectura>> AbrirMiniaturaAsync(string rutaRelativa, CancellationToken ct = default)
+            => interior.AbrirMiniaturaAsync(rutaRelativa, ct);
+        public Task<ServiceResult<bool>> GenerarMiniaturaAsync(string rutaRelativa, CancellationToken ct = default)
+            => interior.GenerarMiniaturaAsync(rutaRelativa, ct);
     }
 }

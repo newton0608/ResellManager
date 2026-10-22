@@ -61,7 +61,7 @@ public sealed partial class ScannerOperativoTests
         Assert.Equal(2, galeria.Length);
         Assert.Equal(galeria[1].RutaRelativa, producto.ImagenPrincipalRuta);
         Assert.Equal(hija.Id, producto.CategoriaId);
-        Assert.Equal(2, Directory.GetFiles(fotos.Ruta, "*.webp", SearchOption.AllDirectories).Length);
+        Assert.Equal(4, Directory.GetFiles(fotos.Ruta, "*.webp", SearchOption.AllDirectories).Length);
         CompararCompra(antes with { Detalles = antes.Detalles.Select((d, i) => i == 1 ? d with { ProductoId = producto.Id } : d).ToArray() }, compra.ToInput("COM-PRUEBA"));
         Assert.Equal(datosComprobante, compra.ToDatosComprobante());
         Assert.Same(comprobante, Get<IBrowserFile>(vista.Componente, "ArchivoSeleccionado"));

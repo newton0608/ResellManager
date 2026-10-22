@@ -282,7 +282,8 @@ public sealed class CatalogoModuloIntegracionTests : PruebaWebAislada
         Assert.DoesNotContain(">Utilidad<", detalle, StringComparison.OrdinalIgnoreCase);
         Assert.True(categoriaService.ListarFueInvocado);
         Assert.True(categoriaService.ObtenerFueInvocado);
-        Assert.True(productoService.ListarFueInvocado);
+        Assert.True(productoService.PaginaFueInvocada);
+        Assert.False(productoService.ListarFueInvocado);
         Assert.True(productoService.ObtenerFueInvocado);
         Assert.True(imagenesService.ObtenerFueInvocado);
     }
@@ -307,12 +308,12 @@ public sealed class CatalogoModuloIntegracionTests : PruebaWebAislada
 
         if (rutaImagen is null)
         {
-            Assert.DoesNotContain("src=\"/productos/7/imagen\"", detalle);
+            Assert.DoesNotContain("src=\"/productos/7/imagen", detalle);
             Assert.Contains("Sin imagen principal", detalle);
         }
         else
         {
-            var imagen = Regex.Match(detalle, "<img[^>]+src=\"/productos/7/imagen\"[^>]*>");
+            var imagen = Regex.Match(detalle, "<img[^>]+src=\"/productos/7/imagen\\?v=[0-9a-f]{24}\"[^>]*>");
             Assert.True(imagen.Success);
             Assert.Contains("alt=\"Blusa Nike negra\"", imagen.Value);
             Assert.DoesNotContain(rutaImagen, detalle);
@@ -438,6 +439,14 @@ public sealed class CatalogoModuloIntegracionTests : PruebaWebAislada
 
     private sealed class ProductoServiceFalso(string? rutaImagen = null) : IProductoService
     {
+        public bool PaginaFueInvocada { get; private set; }
+        public Task<ProductoPaginaDto> ListarPaginaAsync(string? termino = null, int? categoriaId = null,
+            ProductoCursorDto? cursor = null, int tamano = 20, CancellationToken ct = default)
+        {
+            PaginaFueInvocada = true;
+            return Task.FromResult(new ProductoPaginaDto([producto], false, null));
+        }
+
         private readonly ProductoDto producto =
             new(
                 7,

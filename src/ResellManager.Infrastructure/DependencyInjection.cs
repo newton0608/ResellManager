@@ -61,6 +61,7 @@ public static class DependencyInjection
             .ConfigurePrimaryHttpMessageHandler(DestinoImagenProductoSeguro.CrearHandler);
         services.AddScoped<ICatalogoPublicoService, CatalogoPublicoService>();
         services.AddScoped<IAlmacenamientoImagenesProducto, AlmacenamientoImagenesProductoLocal>();
+        services.AddScoped<ProductoMiniaturasService>();
         services.AddScoped<ProductoConImagenService>();
         services.AddScoped<IProductoConImagenService>(sp => sp.GetRequiredService<ProductoConImagenService>());
         services.AddScoped<IAltaProductoAsistidaService>(sp => sp.GetRequiredService<ProductoConImagenService>());

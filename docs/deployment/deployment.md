@@ -2,7 +2,17 @@
 
 > Configuración versionada revisada el 05/10/2026: el Dockerfile actual usa SDK/runtime .NET 10 sobre Ubuntu Noble/glibc y etapa Node 24 para CSS/vendor. La evidencia operativa del 21/09/2026 se conserva; no demuestra la versión desplegada hoy. Hosts y previews: [Dominios](domains.md).
 
-## Versión productiva verificada — 17/10/2026
+## Instalación activa — v1.4.1, aceptada en producción el 22/10/2026
+
+El hotfix de productos del [PR #30](https://github.com/newton0608/ResellManager/pull/30)
+está activo desde el commit `5e16db0`, identificado por el tag `v1.4.1`.
+El [registro de activación](produccion-hotfix-productos-20261022.md) conserva
+respaldo, recuperación del primer intento, comprobaciones técnicas y generación
+de 124 miniaturas existentes. Pablo confirmó la mejora de velocidad y la desaparición
+del fallo de navegación en producción; el hotfix queda cerrado. El changelog y
+el versionado se cierran tras esa confirmación, sin reconstruir la aplicación.
+
+## Release anterior verificada — 17/10/2026
 
 La release global **`v1.4.0`** identifica el commit desplegado `691b1ad`. El [registro de producción](produccion-v1-4-0-20261017.md) conserva imagen exacta, respaldo consistente, fecha y 15 comprobaciones HTTP/autorización/assets. La activación no aplicó migraciones y conservó Caddy y la configuración privada. La identificación de esta instalación no convierte los controles históricos pendientes en una auditoría completa de seguridad o recuperación.
 
@@ -345,3 +355,48 @@ La ejecución local de estas comprobaciones no sustituye construir/arrancar la i
 el entorno de preparación no dispone de Docker. Siguen pendientes validación de Compose/Caddy
 con sus binarios, SkiaSharp dentro del contenedor, persistencia tras recreación real, QA detrás de
 Caddy, bootstrap operativo, backup y restauración REAL.
+
+## Generación de miniaturas existentes
+
+Instalado y ejecutado en producción el 22/10/2026: 124 miniaturas creadas sin
+errores y una segunda ejecución sin recreaciones; ver el
+[registro de activación](produccion-hotfix-productos-20261022.md).
+El modo de mantenimiento reutiliza la
+configuración del host (SQLite y directorio privado de productos), recorre sus
+referencias y genera sólo los derivados faltantes. No aplica migraciones, no
+crea usuarios y no abre un servidor HTTP. Puede interrumpirse y reanudarse.
+
+1. Verificar la versión instalada y las rutas del entorno objetivo. Respaldar
+   conjuntamente SQLite y fotografías según este runbook antes de la intervención.
+2. Con el binario del hotfix y la configuración del entorno objetivo, ejecutar
+   desde el directorio de la aplicación:
+
+   ```bash
+   dotnet ResellManager.Web.dll --generar-miniaturas-productos
+   ```
+
+   En el despliegue Compose versionado, desde el directorio del proyecto y una
+   vez actualizado el servicio `resellmanager`, el equivalente es:
+
+   ```bash
+   docker compose exec -T resellmanager dotnet ResellManager.Web.dll --generar-miniaturas-productos
+   ```
+
+3. Revisar el resumen de creadas, existentes y fallidas. El código de salida es
+   0 si no hay fallos, 1 si alguna fotografía falla y 130 ante Ctrl+C. Revisar los
+   logs para referencias sin archivo, dañadas o problemas de permisos; no borrar
+   referencias de productos para ocultar el problema. Un error de configuración
+   o esquema también termina el proceso con error.
+4. Ejecutar de nuevo para comprobar que las ya creadas se omiten. El proceso no
+   vuelve a codificar originales ni modifica productos, portadas o galería.
+5. Verificar listado y detalle autenticados. Antes de completar el lote, la
+   miniatura ausente sirve la grande sin caché. Después sirve el derivado de
+   240 px. Los archivos `.miniatura-v1.webp` residen junto a las fotografías y
+   quedan incluidos en el respaldo del directorio de productos.
+
+Generar fuera de una ventana de ediciones masivas de fotografías. La publicación
+atómica y los nombres únicos evitan archivos parciales y permiten reanudar; el
+proceso no constituye una transacción conjunta entre SQLite y archivos. Para
+revertir la aplicación se puede conservar el par de archivos: la versión anterior
+sigue leyendo la imagen grande y no necesita cambios de esquema. No ejecutar
+limpiezas masivas de derivados como parte de un rollback ordinario.

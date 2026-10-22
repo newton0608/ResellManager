@@ -13,6 +13,10 @@ Categoría es un maestro configurable, no un enum.
   opcionales, nunca ambos informados; presentación comercial independiente.
 - [Galería e imagen principal](../24_ImagenPrincipalProducto.md): referencias privadas
   a WebP procesado, almacenamiento administrado y compensación ante fallos.
+  Incluye miniaturas derivadas de 240 px para el listado administrativo, imagen
+  grande en detalle, caché privada versionada y generación reanudable para fotos
+  existentes. Desplegado y aceptado en producción como `v1.4.1` el 22/10/2026;
+  [registro operativo](../deployment/produccion-hotfix-productos-20261022.md).
 - [V1.4 implementada](catalogo-v1-4.md): de cero a ocho imágenes totales
   por producto, portada y orden, zoom público y categorías padre/hija. La migración
   conserva la imagen existente y deja las categorías anteriores como raíces.
@@ -57,3 +61,45 @@ Para scanner sigue su guía y `npm run test:js`; para cambios de publicación le
 La [regresión integrada del scanner](../auditorias/scanner-v2-1-cierre-tecnico-20261017.md)
 añade `ScannerOperativoGaleriaTests`: alta asistida desde Compra con galería,
 portada/subcategoría, reintento/cancelación y código registrado durante la edición.
+
+La [validación de miniaturas y caché del 22/10/2026](../auditorias/productos-miniaturas-20261022.md)
+incluye generación desde fotografías existentes y navegación por nombre/botón.
+El fallo reportado del nombre no se reprodujo en el entorno aislado ni en `main`.
+Después del despliegue, Pablo confirmó que desapareció y aceptó el hotfix en
+producción. La causa original no se determinó de forma aislada.
+
+## Listado administrativo incremental
+
+El hotfix `v1.4.1`, desplegado y aceptado en producción, incorpora scroll infinito en `/productos`. Se
+cargan 20 productos al abrir y hasta 20 adicionales al acercarse al final.
+`IProductoService.ListarPaginaAsync` filtra, ordena y limita en SQLite: consulta
+como máximo 21 filas para detectar si hay otra página y devuelve hasta 20.
+No se obtiene todo el catálogo para recortarlo en el navegador ni se ejecuta un
+conteo total. El contador de la pantalla informa productos **cargados**.
+
+Se conserva el orden alfabético por nombre, con ID como desempate; en búsquedas,
+las coincidencias exactas de código interno o barras tienen prioridad. El cursor
+conserva prioridad, nombre e ID y no depende de que la fila anterior siga
+existiendo. Es válido para el término y categoría aplicados; cada nueva búsqueda
+o «Limpiar» descarta resultados/cursor y comienza desde la primera página.
+La búsqueda sigue siendo global sobre todos los productos, combinable con la
+categoría exacta seleccionada. Escribir o seleccionar opciones sin pulsar Buscar
+no cambia los filtros de las cargas siguientes.
+
+El listado serializa sus solicitudes y evita duplicar IDs. Ante error al cargar
+otra página conserva lo mostrado, detiene la carga automática y ofrece reintento.
+«Cargar más productos» permite avanzar por teclado o sin IntersectionObserver.
+Al finalizar no hay nuevas solicitudes y se informa que están todos los resultados.
+Al navegar se cancela la lectura pendiente y se desconecta el observer. El patrón
+de sentinel sigue el existente del catálogo público, sin modificar ese consumidor.
+
+No es una instantánea transaccional: altas o cambios de nombre concurrentes pueden
+requerir reiniciar la búsqueda para aparecer en el orden actualizado. Los métodos
+anteriores `ListarAsync` y `BuscarAsync` conservan sus contratos para otros flujos.
+No se añaden migraciones ni dependencias.
+
+Regresiones: `ProductoPaginacionTests` verifica límites SQL, nombres repetidos,
+prioridad exacta, filtros y continuidad sin la fila del cursor; `ProductosListadoTests`
+cubre serialización, filtros aplicados, reintento y cancelación. Las pruebas JS
+de `productos-listado` cubren montaje/desmontaje y callbacks de cursores antiguos;
+`npm run qa:productos` valida scroll real y fallback manual en navegador.

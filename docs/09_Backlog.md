@@ -31,6 +31,11 @@ Contrato: [V1.4 de Virtuosa Store](modules/catalogo-v1-4.md). Rama
 - [x] Tag Git y GitHub Release global `v1.4.0` sobre `691b1ad`, incluyendo catálogo V1.4, hotfix, API temporal y scanner V2.1.
 - [x] Despliegue de `main` verificado el 17/10/2026, con respaldo consistente, imagen identificada y 15 comprobaciones finales. [Registro de producción](deployment/produccion-v1-4-0-20261017.md).
 
+## Hotfix de productos v1.4.1 completado
+
+- [x] Miniaturas administrativas, caché privada y scroll infinito; generación de 124 miniaturas existentes y aceptación del responsable en producción. [Cierre y evidencia](deployment/produccion-hotfix-productos-20261022.md).
+- [x] Cierre de changelog/documentación y tag `v1.4.1` sobre el código desplegado `5e16db0`; integración mediante PR #30.
+
 ## Backend V1 completado
 
 - [x] Separar reserva comercial del estado físico de inventario.

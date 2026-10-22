@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using ResellManager.Application.Interfaces;
 using ResellManager.Infrastructure;
 using ResellManager.Infrastructure.Storage;
+using ResellManager.Infrastructure.Services;
 using ResellManager.Web.Components;
 using ResellManager.Web.Catalogo;
 using ResellManager.Web.Endpoints;
@@ -122,6 +123,25 @@ _ = app.Services.GetRequiredService<IOptions<AlmacenamientoComprobantesOptions>>
 _ = app.Services.GetRequiredService<IOptions<AlmacenamientoImagenesProductoOptions>>().Value;
 _ = app.Services.GetRequiredService<IOptions<ForwardedHeadersOptions>>().Value;
 _ = app.Services.GetRequiredService<IOptions<Microsoft.AspNetCore.DataProtection.KeyManagement.KeyManagementOptions>>().Value;
+if (args.Contains("--generar-miniaturas-productos", StringComparer.Ordinal))
+{
+    // Modo de mantenimiento explícito: no migra, no crea usuarios y no abre el servidor HTTP.
+    using var cancelacion = new CancellationTokenSource();
+    ConsoleCancelEventHandler cancelar = (_, evento) => { evento.Cancel = true; cancelacion.Cancel(); };
+    Console.CancelKeyPress += cancelar;
+    try
+    {
+        await using var scope = app.Services.CreateAsyncScope();
+        var resultado = await scope.ServiceProvider.GetRequiredService<ProductoMiniaturasService>()
+            .GenerarPendientesAsync(cancelacion.Token);
+        Console.WriteLine($"Miniaturas: {resultado.Creadas} creadas, {resultado.Existentes} existentes, {resultado.Fallidas} fallidas.");
+        Environment.ExitCode = resultado.Fallidas == 0 ? 0 : 1;
+    }
+    catch (OperationCanceledException) { Environment.ExitCode = 130; }
+    finally { Console.CancelKeyPress -= cancelar; await app.DisposeAsync(); }
+    return;
+}
+
 await app.InicializarBaseDatosAsync();
 await app.CrearUsuarioInicialSiEstaConfiguradoAsync();
 
@@ -239,23 +259,7 @@ app.MapGet(
     )
     .RequireAuthorization();
 
-app.MapGet("/productos/{productoId:int}/imagen", async (
-    int productoId,
-    IProductoService productos,
-    IAlmacenamientoImagenesProducto almacenamiento,
-    HttpContext contexto,
-    CancellationToken ct) =>
-{
-    var producto = await productos.ObtenerPorIdAsync(productoId, ct);
-    if (!producto.IsSuccess || string.IsNullOrWhiteSpace(producto.Value?.ImagenPrincipalRuta))
-        return Results.NotFound();
-    var imagen = await almacenamiento.AbrirLecturaAsync(producto.Value.ImagenPrincipalRuta, ct);
-    if (!imagen.IsSuccess || imagen.Value is null)
-        return Results.NotFound();
-    contexto.Response.Headers.CacheControl = "private, no-store";
-    contexto.Response.Headers.XContentTypeOptions = "nosniff";
-    return Results.File(imagen.Value.Contenido, imagen.Value.ContentType);
-}).RequireAuthorization();
+app.MapProductoImagenEndpoints();
 
 app.Run();
 

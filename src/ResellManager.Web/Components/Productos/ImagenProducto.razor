@@ -1,0 +1,42 @@
+@if (!string.IsNullOrWhiteSpace(Referencia) && !Fallida)
+{
+    <img @key="Url" class="@Clase" width="@Ancho" height="@Alto" src="@Url"
+         alt="@(Decorativa ? "" : Nombre)" loading="@(Miniatura ? "lazy" : "eager")"
+         decoding="async" @onerror="AlFallar" />
+}
+else
+{
+    <span role="img" aria-label="@(Referencia is null ? "Sin imagen" : "Imagen no disponible")">
+        <NavIcon Name="tag" />
+    </span>
+}
+
+@code {
+    [Parameter] public int ProductoId { get; set; }
+    [Parameter] public string? Referencia { get; set; }
+    [Parameter] public string Nombre { get; set; } = string.Empty;
+    [Parameter] public bool Miniatura { get; set; }
+    [Parameter] public bool Decorativa { get; set; }
+    [Parameter] public string Clase { get; set; } = "block size-full object-cover";
+    [Parameter] public int Ancho { get; set; } = 80;
+    [Parameter] public int Alto { get; set; } = 80;
+    private int Intentos;
+    private bool Fallida;
+    private (int, string?, bool)? Anterior;
+    private string Url => $"/productos/{ProductoId}/{(Miniatura ? "miniatura" : "imagen")}?v={ImagenProductoVersion.Obtener(Referencia!)}"
+        + (Intentos == 0 ? "" : "&reintento=1");
+
+    protected override void OnParametersSet()
+    {
+        var actual = (ProductoId, Referencia, Miniatura);
+        if (Anterior == actual) return;
+        Anterior = actual;
+        Intentos = 0;
+        Fallida = false;
+    }
+
+    private void AlFallar()
+    {
+        if (Intentos++ > 0) Fallida = true;
+    }
+}

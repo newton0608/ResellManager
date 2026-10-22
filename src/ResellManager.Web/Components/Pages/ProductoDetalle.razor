@@ -39,7 +39,8 @@
                     <div class="mx-auto flex aspect-[4/3] max-h-64 w-full min-w-0 items-center justify-center overflow-hidden rounded-2xl border border-solid border-ui-border bg-ui-canvas">
                         @if (Producto.ImagenPrincipalRuta is not null)
                         {
-                            <img class="block size-full object-contain" width="640" height="480" src="/productos/@Producto.Id/imagen" alt="@Producto.Nombre" />
+                            <ImagenProducto ProductoId="Producto.Id" Referencia="@Producto.ImagenPrincipalRuta" Nombre="@Producto.Nombre"
+                                            Clase="block size-full object-contain" Ancho="640" Alto="480" />
                         }
                         else
                         {

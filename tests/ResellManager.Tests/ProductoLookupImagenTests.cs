@@ -104,7 +104,7 @@ public sealed class ProductoLookupImagenTests
         Assert.Null(resultado.AvisoImagen);
         Assert.Equal(0, descarga.Llamadas);
         Assert.EndsWith(".webp", resultado.Producto.Value!.ImagenPrincipalRuta);
-        Assert.Single(carpeta.Archivos());
+        Assert.Equal(2, carpeta.Archivos().Length);
     }
 
     [Theory]
@@ -159,7 +159,7 @@ public sealed class ProductoLookupImagenTests
         Assert.True(resultado.Producto.IsSuccess, resultado.Producto.ErrorMessage);
         Assert.Null(resultado.AvisoImagen);
         Assert.Equal(1, descarga.Llamadas);
-        var archivo = Assert.Single(carpeta.Archivos());
+        var archivo = Assert.Single(carpeta.Archivos().Where(x => !x.EndsWith(".miniatura-v1.webp", StringComparison.Ordinal)));
         using var codec = SKCodec.Create(archivo);
         Assert.Equal(SKEncodedImageFormat.Webp, codec!.EncodedFormat);
         Assert.DoesNotContain("https", resultado.Producto.Value!.ImagenPrincipalRuta!);
@@ -288,5 +288,7 @@ public sealed class ProductoLookupImagenTests
         public Task<ServiceResult> EliminarTemporalAsync(string id, CancellationToken ct = default) => inner.EliminarTemporalAsync(id, ct);
         public Task<ServiceResult> EliminarAsync(string ruta, CancellationToken ct = default) => inner.EliminarAsync(ruta, ct);
         public Task<ServiceResult<ImagenProductoLectura>> AbrirLecturaAsync(string ruta, CancellationToken ct = default) => inner.AbrirLecturaAsync(ruta, ct);
+        public Task<ServiceResult<ImagenProductoLectura>> AbrirMiniaturaAsync(string ruta, CancellationToken ct = default) => inner.AbrirMiniaturaAsync(ruta, ct);
+        public Task<ServiceResult<bool>> GenerarMiniaturaAsync(string ruta, CancellationToken ct = default) => inner.GenerarMiniaturaAsync(ruta, ct);
     }
 }

@@ -1,6 +1,6 @@
 # Roadmap
 
-Resumen de planificación desde una V1 productiva. Versión global actual: **`v1.4.0`** (`691b1ad`), con [producción verificada el 17/10/2026](docs/deployment/produccion-v1-4-0-20261017.md). Los bloques V2/V3 son planificación; solo las piezas marcadas explícitamente como implementadas, como el scanner V2.1, están entregadas.
+Resumen de planificación desde una V1 productiva. Versión global actual: **`v1.4.1`** (`5e16db0`), con [producción aceptada el 22/10/2026](docs/deployment/produccion-hotfix-productos-20261022.md). Los bloques V2/V3 son planificación; solo las piezas marcadas explícitamente como implementadas, como el scanner V2.1, están entregadas.
 
 ## V1 — Sistema interno en producción
 
@@ -45,6 +45,10 @@ se sincroniza con cambios de layout y navegación mejorada. El diagnóstico de
 Preview no certifica su SHA desplegado ni la caché del iPhone afectado; el defecto
 local reproducido quedó corregido y la causa exacta de esa captura sigue como QA
 físico pendiente. Ver [contrato y validación propios](docs/modules/catalogo-v1-4-ajustes-ux.md).
+
+## Hotfix v1.4.1 — Productos (cerrado)
+
+Miniaturas administrativas WebP, caché privada versionada, generación reanudable para fotografías existentes y scroll infinito de 20 productos por página. Desplegado el 22/10/2026 y aceptado por Pablo: mejora de velocidad y desaparición del fallo de navegación. [Contrato](docs/modules/productos.md) · [Registro de producción](docs/deployment/produccion-hotfix-productos-20261022.md). La causa original no se determinó de forma aislada.
 
 ## V2 — Evolución planificada
 

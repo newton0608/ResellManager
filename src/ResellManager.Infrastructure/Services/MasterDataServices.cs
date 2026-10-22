@@ -293,6 +293,41 @@ public sealed class CategoriaService(ResellManagerDbContext db) : ICategoriaServ
 
 public sealed class ProductoService(ResellManagerDbContext db) : IProductoService, IConsultaProductoCodigoBarras
 {
+    public async Task<ProductoPaginaDto> ListarPaginaAsync(string? termino = null, int? categoriaId = null,
+        ProductoCursorDto? cursor = null, int tamano = 20, CancellationToken ct = default)
+    {
+        if (tamano is < 1 or > 20) throw new ArgumentOutOfRangeException(nameof(tamano));
+        if (cursor is { Id: <= 0 } || cursor is { Nombre: null }) throw new ArgumentException("Cursor inválido.", nameof(cursor));
+        var texto = (termino ?? string.Empty).Trim().ToLowerInvariant();
+        IQueryable<Producto> consulta = db.Productos.AsNoTracking();
+        if (texto.Length > 0)
+            consulta = consulta.Where(x => x.Nombre.ToLower().Contains(texto)
+                || x.CodigoInterno.ToLower().Contains(texto)
+                || (x.CodigoBarras != null && x.CodigoBarras.ToLower().Contains(texto)));
+        if (categoriaId.HasValue) consulta = consulta.Where(x => x.CategoriaId == categoriaId.Value);
+        var filas = consulta.Select(x => new { Producto = x, Exacta = texto.Length > 0
+            && (x.CodigoInterno.ToLower() == texto || (x.CodigoBarras != null && x.CodigoBarras.ToLower() == texto)) });
+        if (cursor is not null)
+            filas = filas.Where(x => (cursor.CoincidenciaExacta && !x.Exacta)
+                || (x.Exacta == cursor.CoincidenciaExacta
+                    && (string.Compare(x.Producto.Nombre, cursor.Nombre) > 0
+                        || (x.Producto.Nombre == cursor.Nombre && x.Producto.Id > cursor.Id))));
+        var pagina = await filas.OrderByDescending(x => x.Exacta).ThenBy(x => x.Producto.Nombre).ThenBy(x => x.Producto.Id)
+            .Take(tamano + 1)
+            .Select(x => new
+            {
+                Producto = new ProductoDto(x.Producto.Id, x.Producto.CodigoInterno, x.Producto.CodigoBarras,
+                    x.Producto.Nombre, x.Producto.Descripcion, x.Producto.Marca, x.Producto.Modelo, x.Producto.Color,
+                    x.Producto.Talla, x.Producto.PrecioSugerido, x.Producto.CategoriaId, x.Producto.Categoria.Nombre,
+                    x.Producto.ContenidoMl, x.Producto.PesoGramos, x.Producto.Presentacion, x.Producto.ImagenPrincipalRuta),
+                x.Exacta
+            }).ToListAsync(ct);
+        var hayMas = pagina.Count > tamano;
+        if (hayMas) pagina.RemoveAt(tamano);
+        var siguiente = hayMas ? new ProductoCursorDto(pagina[^1].Producto.Nombre, pagina[^1].Producto.Id, pagina[^1].Exacta) : null;
+        return new(pagina.Select(x => x.Producto).ToList(), hayMas, siguiente);
+    }
+
     public async Task<ServiceResult<ProductoDto>> CrearAsync(
         ProductoInput input,
         CancellationToken ct = default

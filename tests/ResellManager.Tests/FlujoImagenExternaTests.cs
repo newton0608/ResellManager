@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using ResellManager.Application.DTOs;
+using ResellManager.Application.Common;
 using ResellManager.Application.Interfaces;
 using ResellManager.Application.Services;
 using ResellManager.Domain.Entities;
@@ -105,17 +106,17 @@ public sealed class FlujoImagenExternaTests
             var partes = ruta.Split('/');
             var archivo = Path.Combine(carpeta, partes[1], partes[2]);
             Assert.True(File.Exists(archivo), archivo);
-            Assert.Single(Directory.GetFiles(carpeta, "*", SearchOption.AllDirectories));
+            Assert.Equal(2, Directory.GetFiles(carpeta, "*", SearchOption.AllDirectories).Length);
         }
 
         await IniciarSesionAsync(administrativa);
         using var privada = await administrativa.GetAsync($"/productos/{id}/imagen");
         var bytesPrivados = await AssertWebpAsync(privada);
         var detalle = WebUtility.HtmlDecode(await administrativa.GetStringAsync($"/productos/{id}"));
-        Assert.Contains($"src=\"/productos/{id}/imagen\"", detalle);
+        Assert.Contains($"src=\"/productos/{id}/imagen?v={ImagenProductoVersion.Obtener(ruta)}\"", detalle);
         Assert.DoesNotContain("Sin imagen principal", detalle);
         var listado = await administrativa.GetStringAsync("/productos");
-        Assert.Contains($"src=\"/productos/{id}/imagen\"", listado);
+        Assert.Contains($"src=\"/productos/{id}/miniatura?v={ImagenProductoVersion.Obtener(ruta)}\"", listado);
         using var accesoPrivadoAnonimo = await anonima.GetAsync($"/productos/{id}/imagen");
         Assert.Equal(HttpStatusCode.Redirect, accesoPrivadoAnonimo.StatusCode);
 

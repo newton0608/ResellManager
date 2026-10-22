@@ -379,5 +379,7 @@ public sealed class ImportacionTemporalEndpointsIntegracionTests : PruebaWebAisl
         public Task<ServiceResult> EliminarTemporalAsync(string id, CancellationToken ct = default) => interior.EliminarTemporalAsync(id, ct);
         public Task<ServiceResult> EliminarAsync(string ruta, CancellationToken ct = default) => interior.EliminarAsync(ruta, ct);
         public Task<ServiceResult<ImagenProductoLectura>> AbrirLecturaAsync(string ruta, CancellationToken ct = default) => interior.AbrirLecturaAsync(ruta, ct);
+        public Task<ServiceResult<ImagenProductoLectura>> AbrirMiniaturaAsync(string ruta, CancellationToken ct = default) => interior.AbrirMiniaturaAsync(ruta, ct);
+        public Task<ServiceResult<bool>> GenerarMiniaturaAsync(string ruta, CancellationToken ct = default) => interior.GenerarMiniaturaAsync(ruta, ct);
     }
 }
