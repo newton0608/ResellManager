@@ -39,6 +39,8 @@ public interface ICategoriaService
 
 public interface IProductoService
 {
+    Task<ProductoPaginaDto> ListarPaginaAsync(string? termino = null, int? categoriaId = null,
+        ProductoCursorDto? cursor = null, int tamano = 20, CancellationToken ct = default);
     Task<ServiceResult<ProductoDto>> CrearAsync(
         ProductoInput input,
         CancellationToken ct = default

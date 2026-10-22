@@ -79,3 +79,33 @@ conectables de laptop y VPS estaban offline durante el trabajo.
 Pendientes operativos: publicación del hotfix cuando se indique, generación del
 lote en el entorno objetivo y QA físico en el navegador afectado. La emulación
 Chromium no certifica Safari/iPhone ni el comportamiento detrás de Caddy.
+
+## Reconstrucción autorizada y listado incremental
+
+El commit local `9d32ae6` comunicado para el scroll infinito dejó de estar
+presente en la copia disponible y no pudo recuperarse del reflog ni de objetos
+sin referencia. El usuario autorizó reconstruir ese cambio sobre `f0c24c0` y
+publicarlo únicamente en `hotfix/productos-imagenes-navegacion`. La reconstrucción
+genera un SHA nuevo; no se afirma haber recuperado el objeto Git anterior.
+
+Se restableció la carga de 20 productos por página, con filtros y orden en SQL,
+cursor por prioridad/nombre/ID, límite de 21 filas para detectar continuidad,
+solicitudes serializadas, reintento sin perder resultados y cancelación al navegar.
+La búsqueda sigue siendo global y el contador expresa productos cargados.
+Contrato: [listado incremental](../modules/productos.md#listado-administrativo-incremental).
+
+Validación de la reconstrucción:
+
+- Solución compilada con cero warnings y errores.
+- Suite completa: **1053 pruebas .NET aprobadas**.
+- Suite JS: **140 pruebas aprobadas**.
+- QA real en navegador: **20 → 40 → 43** productos en 390 y 1440 px, sin
+  duplicados; búsqueda global por nombre/código, filtro de categoría y Limpiar.
+- Fallback manual sin IntersectionObserver, reintento de imagen y reutilización
+  de caché comprobados. Se usaron SQLite y archivos sintéticos en un directorio
+  temporal aislado mediante `PRODUCTOS_QA_DIRECTORY`.
+- `git diff --check` sin errores. Sin migraciones ni dependencias nuevas.
+
+La paginación reduce la carga inicial, pero no prueba que las imágenes fueran
+la causa del fallo de navegación del dispositivo afectado. Ese diagnóstico sigue
+pendiente; no se fuerza una recarga completa ni se declara corregido el fallo.

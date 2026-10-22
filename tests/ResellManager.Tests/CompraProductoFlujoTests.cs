@@ -247,6 +247,8 @@ public sealed class CompraProductoFlujoTests
 
     private sealed class ProductoFalso : IProductoService
     {
+        public Task<ProductoPaginaDto> ListarPaginaAsync(string? termino = null, int? categoriaId = null,
+            ProductoCursorDto? cursor = null, int tamano = 20, CancellationToken ct = default) => throw new NotSupportedException();
         public ProductoDto Producto { get; } = new(1, "PRO-PRUEBA", null, "Camisa", null, null, null, null, null, 0, 1, "Ropa");
         public List<(string, int?)> Consultas { get; } = [];
         public Task<IReadOnlyList<ProductoDto>> BuscarAsync(string termino, CancellationToken ct = default, int? limite = null, int? categoriaId = null)

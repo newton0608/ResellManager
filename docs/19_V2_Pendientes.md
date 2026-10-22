@@ -28,6 +28,9 @@ Objetivo: reducir tiempo operativo y mejorar los flujos más frecuentes sin camb
   para fotos existentes. Compresión/formatos/límites ya existen; ver
   [contrato vigente](24_ImagenPrincipalProducto.md#miniaturas-administrativas-y-caché).
   Su adopción en el catálogo público y otros consumidores queda pendiente.
+- Listado administrativo de Productos con scroll infinito implementado en el
+  mismo hotfix, aún sin despliegue: lotes de 20, límite SQL, búsqueda/categoría y
+  reintento. Ver [contrato actual](modules/productos.md#listado-administrativo-incremental).
 - Permitir reemplazo y eliminación seguros, con limpieza de archivos sin referencias.
 - Mostrar un fallback cuando no exista imagen.
 - Validar contenido, permisos de acceso y privacidad; evitar exponer archivos no autorizados.

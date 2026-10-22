@@ -4,6 +4,7 @@ Las fechas siguientes corresponden a creación de tags; no son fechas exactas de
 
 ## Unreleased
 
+- Productos: listado administrativo con scroll infinito en lotes de 20, paginación SQL por cursor, búsqueda/categoría globales y reintento sin perder resultados.
 - Productos: miniaturas WebP de 240 px en el listado y fotografía grande en detalle; caché privada con URLs versionadas, ETag y reintento acotado con fallback.
 - Generación reanudable de miniaturas para fotografías existentes, sin cambiar originales ni esquema de datos.
 - Regresión de navegación por nombre y botón en móvil/escritorio; el fallo reportado no se reprodujo en el entorno aislado ni en `main`, por lo que sigue pendiente contrastar con el dispositivo afectado.

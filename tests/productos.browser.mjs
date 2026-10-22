@@ -10,7 +10,7 @@ const { chromium } = await import(process.env.PRODUCTOS_PLAYWRIGHT_MODULE
     ? pathToFileURL(process.env.PRODUCTOS_PLAYWRIGHT_MODULE).href : 'playwright');
 const root = process.env.PRODUCTOS_PROJECT_ROOT || fileURLToPath(new URL('../', import.meta.url));
 const baseline = process.env.PRODUCTOS_QA_BASELINE === '1';
-const artifacts = resolve(root, '.artifacts/productos', String(Date.now()));
+const artifacts = process.env.PRODUCTOS_QA_DIRECTORY || resolve(root, '.artifacts/productos', String(Date.now()));
 await mkdir(artifacts, { recursive: true });
 const reservation = createServer();
 await new Promise(r => reservation.listen(0, '127.0.0.1', r));
@@ -140,6 +140,73 @@ try {
         assert.ok(solicitudes <= 6);
         await page.unroute(patron);
         checks.push('Error transitorio: un reintento; error permanente: fallback sin bucle');
+
+        await open('/categorias/nueva');
+        await fill('categoria-nombre', 'Otra categoría QA');
+        await page.getByRole('button', { name: 'Guardar categoría', exact: true }).click();
+        await page.waitForURL(/\/categorias\?/);
+        for (let i = 1; i <= 41; i++) {
+            await open('/productos/nuevo');
+            await fill('producto-nombre', `Producto QA Lote ${String(i).padStart(2, '0')}`);
+            await fill('producto-precio-sugerido', '120');
+            await page.locator('#producto-categoria').selectOption({ label: i <= 35 ? 'Categoría QA Productos' : 'Otra categoría QA' });
+            await page.getByRole('button', { name: 'Guardar producto', exact: true }).click();
+            await page.waitForURL(/\/productos(?:\?|$)/);
+        }
+        const count = async n => page.waitForFunction(n => document.querySelectorAll('article[aria-label]').length === n, n);
+        async function siguiente(n) {
+            await page.locator('[data-productos-sentinel]').evaluate(node => node.scrollIntoView({ block: 'end', behavior: 'instant' }));
+            await count(n);
+            await page.waitForLoadState('networkidle');
+        }
+        for (const width of [390, 1440]) {
+            await page.setViewportSize({ width, height: 1000 });
+            await open('/productos');
+            await count(20);
+            await siguiente(40);
+            await siguiente(43);
+            assert.equal(await page.locator('[data-productos-sentinel]').count(), 0);
+            const nombres = await page.locator('article[aria-label]').evaluateAll(items => items.map(i => i.getAttribute('aria-label')));
+            assert.equal(new Set(nombres).size, 43);
+            assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+            await page.screenshot({ path: resolve(artifacts, `scroll-${width}.png`) });
+            checks.push(`${width}px: scroll real 20 → 40 → 43, sin duplicados y con fin de resultados`);
+        }
+        await fill('buscar-producto', 'Lote');
+        await page.getByRole('button', { name: 'Buscar', exact: true }).click();
+        await count(20);
+        assert.ok((await page.locator('article[aria-label]').evaluateAll(items => items.map(i => i.getAttribute('aria-label')))).every(name => name.includes('Lote')));
+        await siguiente(40); await siguiente(41);
+        await page.getByRole('button', { name: 'Limpiar', exact: true }).click();
+        await count(20);
+        await page.locator('#categoria-productos').selectOption({ label: 'Categoría QA Productos' });
+        const cursorAnterior = await page.locator('[data-productos-sentinel]').elementHandle();
+        await page.getByRole('button', { name: 'Buscar', exact: true }).click();
+        await page.waitForFunction(node => !node.isConnected, cursorAnterior);
+        await count(20); await siguiente(37);
+        assert.equal(await page.locator('article[aria-label="Producto QA Lote 36"]').count(), 0);
+        const codigoVerde = await page.locator('article[aria-label="Producto QA Verde"] span.font-mono').innerText();
+        await fill('buscar-producto', codigoVerde);
+        await page.getByRole('button', { name: 'Buscar', exact: true }).click();
+        await count(1);
+        await page.locator('article[aria-label="Producto QA Verde"]').waitFor();
+        await page.getByRole('button', { name: 'Limpiar', exact: true }).click();
+        await count(20);
+        checks.push('Búsqueda global por nombre/código, filtro de categoría y Limpiar reinician la paginación');
+
+        const manual = await browser.newContext({ storageState: await context.storageState(), viewport: { width: 390, height: 1000 } });
+        await manual.addInitScript(() => { window.IntersectionObserver = undefined; });
+        const fallback = await manual.newPage();
+        await fallback.goto(address + '/productos');
+        await fallback.waitForLoadState('networkidle');
+        assert.equal(await fallback.locator('article[aria-label]').count(), 20);
+        await fallback.getByRole('button', { name: 'Cargar más productos', exact: true }).click();
+        await fallback.waitForFunction(() => document.querySelectorAll('article[aria-label]').length === 40);
+        await fallback.getByRole('button', { name: 'Cargar más productos', exact: true }).click();
+        await fallback.waitForFunction(() => document.querySelectorAll('article[aria-label]').length === 43);
+        assert.equal(await fallback.getByRole('button', { name: 'Cargar más productos', exact: true }).count(), 0);
+        await manual.close();
+        checks.push('Sin IntersectionObserver: botón manual conserva carga 20 → 40 → 43');
     }
     assert.deepEqual(errors, []);
     console.log(JSON.stringify({ artifacts, checks }, null, 2));

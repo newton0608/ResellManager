@@ -1,12 +1,14 @@
 @page "/productos"
 @rendermode InteractiveServer
+@implements IAsyncDisposable
+@inject IJSRuntime JS
 @inject IProductoService ProductoService
 @inject ICategoriaService CategoriaService
 @inject ILogger<Productos> Logger
 
 <PageTitle>Productos | ResellManager</PageTitle>
 
-<div class="min-w-0 space-y-6 pb-4">
+<div class="min-w-0 space-y-6 pb-4" @ref="ElementoListado">
     <section class="flex items-start justify-between gap-4" aria-labelledby="titulo-productos">
         <div class="min-w-0 space-y-2">
             <p class="m-0 text-xs font-semibold tracking-wide text-ui-muted uppercase">Catálogo</p>
@@ -30,12 +32,12 @@
             <div class="relative min-w-0">
                 <svg class="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-ui-muted" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 4 4" /></svg>
                 <input class="ui-input pl-11" id="buscar-producto" type="search" placeholder="Nombre, código interno o código de barras"
-                       @bind="Termino" @bind:event="oninput" />
+                       @bind="Termino" @bind:event="oninput" disabled="@Ocupado" />
             </div>
         </div>
         <div class="grid min-w-0 gap-2">
             <label class="text-sm font-medium" for="categoria-productos">Categoría</label>
-            <select class="ui-input" id="categoria-productos" @bind="CategoriaId" disabled="@Cargando">
+            <select class="ui-input" id="categoria-productos" @bind="CategoriaId" disabled="@Ocupado">
                 <option value="">Todas las categorías</option>
                 @foreach (var categoria in CategoriaPresentacion.Ordenar(Categorias))
                 {
@@ -44,10 +46,10 @@
             </select>
         </div>
         <div class="flex gap-2">
-            <button class="ui-button flex-1 bg-ui-accent text-white hover:bg-ui-accent-hover" type="submit" disabled="@Cargando">Buscar</button>
+            <button class="ui-button flex-1 bg-ui-accent text-white hover:bg-ui-accent-hover" type="submit" disabled="@Ocupado">Buscar</button>
             @if (!string.IsNullOrWhiteSpace(Termino) || BusquedaActiva || CategoriaId.HasValue)
             {
-                <button class="ui-button flex-1 border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" type="button" disabled="@Cargando" @onclick="LimpiarBusquedaAsync">Limpiar</button>
+                <button class="ui-button flex-1 border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" type="button" disabled="@Ocupado" @onclick="LimpiarBusquedaAsync">Limpiar</button>
             }
         </div>
     </form>
@@ -88,7 +90,7 @@
         <section class="min-w-0 space-y-4" aria-labelledby="titulo-listado-productos">
             <div class="flex flex-wrap items-center justify-between gap-2 px-1">
                 <h2 class="m-0 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-listado-productos">Listado de productos</h2>
-                <span class="text-sm text-ui-muted">@ProductosEncontrados.Count @(ProductosEncontrados.Count == 1 ? "producto" : "productos")</span>
+                <span class="text-sm text-ui-muted">@ProductosEncontrados.Count @(ProductosEncontrados.Count == 1 ? "producto cargado" : "productos cargados")</span>
             </div>
 
             <ul class="m-0 list-none space-y-3 p-0" role="list">
@@ -149,18 +151,56 @@
                     </li>
                 }
             </ul>
+            @if (HayMas)
+            {
+                <div @key="(VersionBusqueda, SiguienteCursor)" data-productos-sentinel
+                     data-enabled="@(!Ocupado && ErrorMas is null ? "true" : "false")" aria-hidden="true"></div>
+                @if (ErrorMas is not null)
+                {
+                    <p class="mensaje-error text-sm text-ui-danger" role="alert">@ErrorMas</p>
+                }
+                <div class="flex justify-center">
+                    <button class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" type="button"
+                            disabled="@Ocupado" @onclick="CargarMasAsync">
+                        @(CargandoMas ? "Cargando más productos…" : ErrorMas is not null ? "Reintentar carga" : "Cargar más productos")
+                    </button>
+                </div>
+                @if (CargandoMas)
+                {
+                    <p class="m-0 text-sm text-ui-muted" role="status" aria-live="polite">Cargando el siguiente grupo de productos…</p>
+                }
+            }
+            else
+            {
+                <p class="m-0 text-center text-sm text-ui-muted" role="status">Mostrando todos los resultados.</p>
+            }
         </section>
     }
 </div>
 
 @code {
-    private IReadOnlyList<ProductoDto> ProductosEncontrados { get; set; } = [];
+    private List<ProductoDto> ProductosEncontrados { get; } = [];
+    private readonly HashSet<int> IdsCargados = [];
+    private readonly CancellationTokenSource Vida = new();
     private IReadOnlyList<CategoriaDto> Categorias { get; set; } = [];
     private int? CategoriaId { get; set; }
     private string Termino { get; set; } = string.Empty;
+    private string TerminoAplicado = string.Empty;
+    private int? CategoriaAplicada;
     private bool BusquedaActiva { get; set; }
-    private bool Cargando { get; set; } = true;
+    private bool Cargando { get; set; }
+    private bool CargandoMas;
+    private bool HayMas;
+    private ProductoCursorDto? SiguienteCursor;
+    private int VersionBusqueda;
     private string? ErrorMessage { get; set; }
+    private string? ErrorMas;
+    private bool Ocupado => Cargando || CargandoMas;
+    private ElementReference ElementoListado;
+    private IJSObjectReference? Modulo;
+    private DotNetObjectReference<Productos>? Referencia;
+    private bool Descartado;
+    private bool Inicializando;
 
     [SupplyParameterFromQuery(Name = "mensaje")]
     public string? Mensaje { get; set; }
@@ -175,61 +215,114 @@
 
     protected override Task OnInitializedAsync() => CargarProductosAsync();
 
+    private void Anexar(ProductoPaginaDto pagina)
+    {
+        ProductosEncontrados.AddRange(pagina.Items.Where(x => IdsCargados.Add(x.Id)));
+        HayMas = pagina.HayMas;
+        SiguienteCursor = pagina.SiguienteCursor;
+    }
+
     private async Task CargarProductosAsync()
     {
+        if (Descartado || Ocupado) return;
         Cargando = true;
         ErrorMessage = null;
-        BusquedaActiva = !string.IsNullOrWhiteSpace(Termino) || CategoriaId.HasValue;
-
+        ErrorMas = null;
+        TerminoAplicado = Termino.Trim();
+        CategoriaAplicada = CategoriaId;
+        BusquedaActiva = TerminoAplicado.Length > 0 || CategoriaAplicada.HasValue;
+        VersionBusqueda++;
+        ProductosEncontrados.Clear();
+        IdsCargados.Clear();
+        SiguienteCursor = null;
+        HayMas = false;
+        var ct = Vida.Token;
         try
         {
-            Categorias = await CategoriaService.ListarAsync();
-            ProductosEncontrados = BusquedaActiva
-                ? await ProductoService.BuscarAsync(Termino, categoriaId: CategoriaId)
-                : await ProductoService.ListarAsync();
+            Categorias = await CategoriaService.ListarAsync(ct);
+            var pagina = await ProductoService.ListarPaginaAsync(TerminoAplicado, CategoriaAplicada, ct: ct);
+            if (!Descartado) Anexar(pagina);
         }
+        catch (OperationCanceledException) when (Descartado) { }
         catch (Exception ex)
         {
             Logger.LogError(ex, "No fue posible cargar el listado de productos.");
             ErrorMessage = "No pudimos cargar los productos. Intenta nuevamente.";
         }
-        finally
-        {
-            Cargando = false;
-        }
+        finally { Cargando = false; }
     }
 
-    private async Task BuscarAsync()
+    private async Task CargarMasAsync()
     {
-        if (string.IsNullOrWhiteSpace(Termino) && !CategoriaId.HasValue)
-        {
-            await CargarProductosAsync();
-            return;
-        }
-
-        Cargando = true;
-        ErrorMessage = null;
-        BusquedaActiva = true;
-
+        if (Descartado || Ocupado || !HayMas) return;
+        CargandoMas = true;
+        ErrorMas = null;
+        var ct = Vida.Token;
         try
         {
-            ProductosEncontrados = await ProductoService.BuscarAsync(Termino, categoriaId: CategoriaId);
+            var pagina = await ProductoService.ListarPaginaAsync(TerminoAplicado, CategoriaAplicada, SiguienteCursor, ct: ct);
+            if (!Descartado) Anexar(pagina);
         }
+        catch (OperationCanceledException) when (Descartado) { }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "No fue posible buscar productos.");
-            ErrorMessage = "No pudimos realizar la búsqueda. Intenta nuevamente.";
+            Logger.LogError(ex, "No fue posible cargar otra página de productos.");
+            ErrorMas = "No pudimos cargar más productos. Puedes reintentar sin perder los que ya aparecen.";
         }
-        finally
-        {
-            Cargando = false;
-        }
+        finally { CargandoMas = false; }
     }
+
+    private Task BuscarAsync() => CargarProductosAsync();
 
     private async Task LimpiarBusquedaAsync()
     {
+        if (Ocupado) return;
         Termino = string.Empty;
         CategoriaId = null;
         await CargarProductosAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Descartado || Inicializando) return;
+        Inicializando = true;
+        try
+        {
+            if (Modulo is null)
+            {
+                var nuevo = await JS.InvokeAsync<IJSObjectReference>("import", "./productos-listado.js");
+                if (Descartado) { await nuevo.DisposeAsync(); return; }
+                Modulo = nuevo;
+                Referencia = DotNetObjectReference.Create(this);
+                await Modulo.InvokeVoidAsync("iniciar", ElementoListado, Referencia);
+            }
+            if (!Descartado) await Modulo.InvokeVoidAsync("actualizar", ElementoListado);
+        }
+        catch (Exception ex) when (ex is JSException or TaskCanceledException)
+        {
+            Logger.LogDebug(ex, "La carga automática no está disponible; se conserva el botón de cargar más.");
+        }
+        finally { Inicializando = false; }
+    }
+
+    [JSInvokable]
+    public async Task CargarMasDesdeScrollAsync()
+    {
+        if (Descartado || Ocupado || !HayMas || ErrorMas is not null) return;
+        var carga = CargarMasAsync();
+        await InvokeAsync(StateHasChanged);
+        await carga;
+        if (!Descartado) await InvokeAsync(StateHasChanged);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        Descartado = true;
+        Vida.Cancel();
+        Vida.Dispose();
+        Referencia?.Dispose();
+        if (Modulo is null) return;
+        try { await Modulo.InvokeVoidAsync("destruir", ElementoListado); await Modulo.DisposeAsync(); }
+        catch (Exception ex) when (ex is JSDisconnectedException or TaskCanceledException) { }
     }
 }

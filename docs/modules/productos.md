@@ -65,3 +65,39 @@ La [validación de miniaturas y caché del 22/10/2026](../auditorias/productos-m
 incluye generación desde fotografías existentes y navegación por nombre/botón.
 El fallo reportado del nombre no se reprodujo en el entorno aislado ni en `main`;
 su causa y corrección en el dispositivo afectado siguen pendientes de confirmar.
+
+## Listado administrativo incremental
+
+El hotfix incorpora scroll infinito en `/productos`, aún sin despliegue. Se
+cargan 20 productos al abrir y hasta 20 adicionales al acercarse al final.
+`IProductoService.ListarPaginaAsync` filtra, ordena y limita en SQLite: consulta
+como máximo 21 filas para detectar si hay otra página y devuelve hasta 20.
+No se obtiene todo el catálogo para recortarlo en el navegador ni se ejecuta un
+conteo total. El contador de la pantalla informa productos **cargados**.
+
+Se conserva el orden alfabético por nombre, con ID como desempate; en búsquedas,
+las coincidencias exactas de código interno o barras tienen prioridad. El cursor
+conserva prioridad, nombre e ID y no depende de que la fila anterior siga
+existiendo. Es válido para el término y categoría aplicados; cada nueva búsqueda
+o «Limpiar» descarta resultados/cursor y comienza desde la primera página.
+La búsqueda sigue siendo global sobre todos los productos, combinable con la
+categoría exacta seleccionada. Escribir o seleccionar opciones sin pulsar Buscar
+no cambia los filtros de las cargas siguientes.
+
+El listado serializa sus solicitudes y evita duplicar IDs. Ante error al cargar
+otra página conserva lo mostrado, detiene la carga automática y ofrece reintento.
+«Cargar más productos» permite avanzar por teclado o sin IntersectionObserver.
+Al finalizar no hay nuevas solicitudes y se informa que están todos los resultados.
+Al navegar se cancela la lectura pendiente y se desconecta el observer. El patrón
+de sentinel sigue el existente del catálogo público, sin modificar ese consumidor.
+
+No es una instantánea transaccional: altas o cambios de nombre concurrentes pueden
+requerir reiniciar la búsqueda para aparecer en el orden actualizado. Los métodos
+anteriores `ListarAsync` y `BuscarAsync` conservan sus contratos para otros flujos.
+No se añaden migraciones ni dependencias.
+
+Regresiones: `ProductoPaginacionTests` verifica límites SQL, nombres repetidos,
+prioridad exacta, filtros y continuidad sin la fila del cursor; `ProductosListadoTests`
+cubre serialización, filtros aplicados, reintento y cancelación. Las pruebas JS
+de `productos-listado` cubren montaje/desmontaje y callbacks de cursores antiguos;
+`npm run qa:productos` valida scroll real y fallback manual en navegador.

@@ -132,6 +132,9 @@ La ejecución operativa se describe en el [runbook](deployment/deployment.md#gen
 El componente `ImagenProducto` utiliza miniatura diferida en el listado y grande
 en el detalle, reinicia su estado al cambiar de fotografía y realiza un único
 reintento ante error antes de mostrar un fallback accesible.
+El [listado administrativo incremental](modules/productos.md#listado-administrativo-incremental)
+incorpora esas miniaturas en grupos de 20 productos; no renderiza todo el catálogo
+al abrir el módulo.
 
 Regresiones: `ProductoMiniaturasTests` valida proporción, transparencia, EXIF,
 imágenes pequeñas, limpieza y generación idempotente desde un producto existente.
