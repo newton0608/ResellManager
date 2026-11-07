@@ -48,6 +48,7 @@ decisiones en lugar de abrir una segunda colección ADR con decisiones repetidas
 | [ROADMAP](../ROADMAP.md) | Versiones y evolución prevista, sin afirmar implementación. |
 | [V2](19_V2_Pendientes.md) / [V3](20_V3_Pendientes.md) | Planes; distinguir ampliaciones de lo ya incorporado. |
 | [Landed cost](modules/landed-cost.md) | Análisis pendiente; no hay modelo definitivo. |
+| [Requisitos de Movimientos, Ajustes, Saldos Iniciales y CF](modules/requisitos-movimientos-ajustes-y-consumidor-final.md) | Especificación funcional pendiente de implementación; incluye reglas, riesgos y criterios de aceptación. |
 | [Backlog](09_Backlog.md) | Entregas históricas por fase y pendientes. |
 | [Ideas futuras](12_IdeasFuturas.md) | Exploración, no compromisos automáticos. |
 | [Problema](00_Problema.md) / [objetivo](01_Objetivo.md) | Contexto del negocio. |
