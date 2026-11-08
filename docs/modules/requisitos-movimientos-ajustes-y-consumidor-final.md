@@ -1,8 +1,8 @@
 # ResellManager — Requerimientos: Movimientos y Ajustes, Saldos Iniciales y Consumidor Final (CF)
 
-> **Estado:** Propuesta funcional para revisión, **no implementada** mediante este documento.  
+> **Estado:** Requisitos funcionales aprobados, **pendientes de implementación**; diseño técnico por definir.  
 > **Proyecto:** ResellManager  
-> **Fecha del documento:** 2026-11-07  
+> **Fecha del documento:** 2026-11-07 · decisiones actualizadas 2026-11-07  
 > **Alcance de este archivo:** requisitos de negocio y criterios de aceptación; no establece una implementación técnica definitiva.  
 > **Control de versiones:** especificación funcional versionada en Git; su inclusión no implica implementación.
 
@@ -17,55 +17,58 @@ Se requiere resolver **dos capacidades principales**, relacionadas pero independ
 
 ResellManager debe seguir siendo la **fuente oficial de los saldos y movimientos**, conservando trazabilidad. Los mensajes por WhatsApp, si se utilizan, son notificaciones y no sustituyen los registros del sistema.
 
-## 2. Principios y decisiones funcionales acordadas
+## 2. Principios y decisiones funcionales aprobadas
 
-- Los **saldos iniciales** representan la deuda pendiente a una **fecha de corte**, no la reconstrucción de compras y pagos previos.
-- Registrar un saldo inicial o un ajuste de deuda **no debe crear ventas ficticias, cambiar existencias ni contabilizar dinero recibido**.
-- Se creará un módulo administrativo **«Movimientos y Ajustes»** para consulta, correcciones controladas, reversiones y auditoría.
-- La captura/importación de saldos iniciales se ofrecerá preferentemente desde **Clientes**, pero generará movimientos visibles en el historial financiero central.
-- Los movimientos originales deben conservarse. Los cambios relevantes se registrarán mediante **movimientos compensatorios o reversiones auditables**, no mediante edición silenciosa del historial.
-- **Consumidor Final (CF)** será una opción para **Venta Directa**, preferiblemente preseleccionada, que no exigirá registrar nombre, teléfono ni datos inventados.
-- Las operaciones CF serán **de contado/pago completo**. No se habilitarán crédito ni abonos pendientes asociados a un CF genérico.
-- Cada venta CF debe conservar sus propios productos, cantidades, importes, medio(s) de pago y fecha; todas las ventas CF **no se deben fusionar en una única operación**.
-- Antes de decidir tablas, entidades o relaciones, revisar la arquitectura y los contratos existentes del repositorio, así como `AGENTS.md` y la documentación por módulos.
+- **Una sola migración inicial global**, preparada por carga manual y CSV y **confirmada una única vez** por un administrador. La **fecha de corte es la fecha de esa confirmación**, común para todos los clientes. La aplicación de los saldos es **atómica: todos o ninguno**.
+- Según lo informado por el negocio, actualmente en ResellManager hay productos pero no ventas ni abonos registrados; se deberá **verificar este supuesto antes de migrar**. La presencia de movimientos anteriores bloquea la confirmación hasta resolver discrepancias, evitando duplicar la deuda.
+- Cada saldo inicial representa la deuda real pendiente, no las compras y abonos históricos. **No genera ventas, pedidos, cobros ni cambios de inventario**.
+- **Omitir saldos Q0 y rechazar saldos negativos/a favor** en la primera entrega. El sistema no debe permitir sobreabonos que creen saldo a favor; si una venta se paga con más efectivo del necesario, se calcula el cambio.
+- Una vez confirmada y cerrada la migración, no se admite otra carga de apertura. Las correcciones posteriores se harán mediante **Movimientos y Ajustes**, con historial y motivo, sin borrar los hechos originales.
+- **Solo cuentas administradoras** podrán confirmar la migración, crear ajustes o revertirlos. Como **todavía no hay un sistema general de roles**, debe implementarse una autorización administrativa **mínima y segura** con Identity, validada en backend y concedida explícitamente a cuentas concretas.
+- En **Venta Directa** habrá dos opciones de comprador: **Consumidor Final** (predeterminada) o **seleccionar cliente existente**. Bajo CF se podrán introducir **nombre y apellido opcionales**. Si se dejan vacíos, aparecerá «Consumidor Final (CF)»; si se introducen, quedarán guardados **solo en la venta**, sin crear cliente ni exigir teléfono.
+- CF será **exclusivamente de contado**, con **uno o varios métodos de pago** por venta y pago completo obligatorio. Cada medio tendrá un importe propio asociado a la venta concreta; nunca se usará un cliente genérico con pagos globales mezclados.
+- Los usuarios autorizados a vender podrán **solicitar una anulación**, pero solamente un administrador podrá **aprobarla o rechazarla**. Mientras esté pendiente, no se modifica la venta, los cobros ni el inventario.
+- Una anulación CF aprobada será **completa** (no parcial), con **devolución del dinero realmente registrada** y tratamiento auditado de inventario. Se permitirá devolver por un método **distinto al original**. Las unidades aptas podrán regresar al inventario disponible; las dañadas/no aptas se mantendrán trazables, **sin volver a stock vendible**. La aceptación de una devolución es decisión del negocio.
+- La primera implementación incluirá **exportaciones reales a Excel (.xlsx) y PDF** del historial de movimientos, estados de cuenta por cliente, resumen de migración y ventas CF. **CSV** será el formato de **importación inicial**; XLSX importable no es requisito de esta entrega.
+- ResellManager seguirá siendo la **fuente oficial** de datos financieros; WhatsApp permanece como canal de notificación.
 
-## 3. Alcance A — Saldos iniciales de clientes
+## 3. Alcance A — Migración inicial única de saldos
 
-### 3.1 Registro individual
+### 3.1 Preparación de la migración
 
-**SI-01.** Desde la ficha de un cliente existente, un usuario autorizado podrá registrar un **saldo inicial pendiente**.
+**SI-01.** Habilitar una **única migración inicial para todo el negocio**, preparada desde Clientes. El administrador podrá introducir deudas manualmente y/o subir un archivo CSV a una **vista previa** sin aplicar todavía movimientos financieros.
 
-**SI-02.** Datos mínimos: cliente, importe, fecha de corte y usuario que efectúa el registro. Observación o referencia del origen: opcional, pero recomendada.
+**SI-02.** El CSV utilizará una plantilla accesible con datos suficientes para identificar al cliente (teléfono, nombre y apellido; ID existente si procede), deuda positiva y observaciones opcionales. La plantilla, separador, formato de moneda y codificación se definirán en diseño técnico.
 
-**SI-03.** El saldo inicial se mostrará en el estado de cuenta con una etiqueta inequívoca, por ejemplo **«Saldo inicial / Deuda anterior a ResellManager»**.
+**SI-03.** Clientes registrados continúan requiriendo **teléfono**. Se espera contar con los teléfonos de los deudores; los faltantes deberán resolverse antes de confirmar. No crear clientes incompletos silenciosamente.
 
-**SI-04.** La operación no creará productos, pedidos, ventas ni entradas/salidas de caja.
+**SI-04.** En la preparación se podrá encontrar o crear clientes, revisar importes, identificar coincidencias ambiguas y duplicados y corregirlos. **No fusionar clientes automáticamente** por coincidencia de nombres.
 
-**SI-05.** El saldo inicial se tomará en cuenta en el saldo pendiente del cliente a partir de la fecha de corte definida, evitando sumar dos veces deudas representadas ya por movimientos del sistema.
+**SI-05.** La vista previa mostrará filas válidas, errores por fila, clientes, importes, omitidos y **total de la cartera a migrar**, sin cambiar saldos reales.
 
-**SI-06.** Si el cliente ya tiene movimientos o un saldo inicial, el sistema advertirá del riesgo de duplicidad y exigirá un tratamiento explícito; no se sumará un segundo saldo inicial automáticamente.
+**SI-06.** Solo aceptar deudas **mayores que Q0**. Omitir y reportar saldos Q0; rechazar negativos, importes inválidos o ambiguos y filas no resueltas.
 
-### 3.2 Importación masiva
+### 3.2 Confirmación y cierre
 
-**SI-07.** Permitir importar saldos mediante archivo **CSV o XLSX** (formato final sujeto a las capacidades existentes del sistema). Como mínimo: identificador de cliente o datos suficientes para localizarlo, importe y fecha de corte; observaciones opcionales.
+**SI-07.** Solo un **administrador** puede confirmar la operación. El sistema verificará nuevamente permisos, unicidad de los registros, estado global de migración y ausencia de movimientos que provocarían duplicados.
 
-**SI-08.** Ofrecer una **vista previa** antes de confirmar: cliente identificado, saldo, filas válidas, errores, duplicados y total agregado.
+**SI-08.** La **fecha de corte** será el **día de la confirmación**. Guardar también hora exacta, usuario, identificador del lote y vínculos de cada saldo a su origen. No permitir elegir una fecha retroactiva para esta migración.
 
-**SI-09.** Identificar posibles clientes existentes por sus identificadores disponibles; **no fusionar automáticamente** coincidencias ambiguas. Permitir resolver coincidencias y crear clientes faltantes desde el flujo si corresponde.
+**SI-09.** La confirmación será **atómica (todo o nada)**. Ante errores, discrepancias o filas pendientes, no aplicar una parte del lote. El resultado debe ser recuperable sin saldos parcialmente aplicados.
 
-**SI-10.** Rechazar importes inválidos y filas ambiguas; señalar errores con número de fila. La política sobre saldos en cero o a favor del cliente deberá definirse antes de implementar.
+**SI-10.** Proteger la operación con idempotencia persistente contra doble clic, reconexión y reintentos; el mismo lote y la misma migración global no pueden confirmarse dos veces.
 
-**SI-11.** Evitar doble aplicación del mismo archivo/lote por reintentos, doble clic o importaciones repetidas (mecanismo de idempotencia/validación de duplicados).
+**SI-11.** Tras una confirmación exitosa, cerrar **definitivamente** la función de saldos iniciales: no se permiten altas posteriores como «segunda migración». Las correcciones se registran únicamente como **ajustes auditables** autorizados.
 
-**SI-12.** Registrar quién importó, fecha, lote y resultado. Conservar la trazabilidad entre cada saldo generado y la importación de origen.
+**SI-12.** Si se detecta actividad financiera preexistente inesperada (el negocio indica que solo hay productos cargados), **bloquear** el cierre hasta revisar y resolver la discrepancia; no sumar deudas dos veces.
 
-### 3.3 Operaciones posteriores
+### 3.3 Después de migrar
 
-**SI-13.** Abonos, nuevas ventas al crédito y otros movimientos válidos modificarán el saldo del cliente normalmente **después de la migración**.
+**SI-13.** Cada deuda se mostrará como **«Saldo inicial / Deuda anterior a ResellManager»**, sin crear pedidos, productos, ventas ni cobros ficticios.
 
-**SI-14.** Los movimientos previos a la fecha de corte **no se reconstruirán** solo para justificar el saldo inicial.
+**SI-14.** Los abonos posteriores y las nuevas ventas al crédito modificarán normalmente el saldo; no es necesario reconstruir compras o pagos anteriores a la fecha de corte.
 
-**SI-15.** Una deuda mal importada se corregirá por el mecanismo autorizado de **Movimientos y Ajustes**, sin borrar su registro original.
+**SI-15.** El lote, resultado, usuario y total podrán **exportarse a Excel (.xlsx) y PDF** desde la primera entrega; las exportaciones no crean ni cambian movimientos.
 
 ## 4. Alcance B — Módulo «Movimientos y Ajustes»
 
@@ -91,7 +94,7 @@ ResellManager debe seguir siendo la **fuente oficial de los saldos y movimientos
 
 **MA-09.** No permitir modificaciones silenciosas del importe o motivo de un movimiento aplicado. Para corregirlo, generar un movimiento vinculado y trazable.
 
-**MA-10.** Definir y validar el tratamiento de ajustes que produzcan **saldo a favor** o saldo negativo antes de habilitarlos (ver decisiones pendientes).
+**MA-10.** No permitir ajustes que produzcan **saldo negativo/a favor** en esta entrega. Los cambios que reducen deuda se limitan a Q0; no generar anticipos implícitos.
 
 ### 4.3 Reversiones y auditoría
 
@@ -107,58 +110,82 @@ ResellManager debe seguir siendo la **fuente oficial de los saldos y movimientos
 
 ### 4.4 Acceso y seguridad
 
-**MA-16.** Solo roles autorizados podrán crear/importar saldos, ajustar o revertir. Los permisos de consulta podrán separarse de los de modificación.
+**MA-16.** Solo **administradores expresamente habilitados** podrán confirmar la migración, crear ajustes y revertir movimientos financieros elegibles; los permisos de consulta podrán diferenciarse. No se exige un sistema general de roles, pero sí autorización mínima segura sobre Identity.
 
 **MA-17.** La validación de permisos y reglas críticas ocurrirá en el backend, no solo en la interfaz.
 
 **MA-18.** Evitar cambios duplicados ante reintentos o solicitudes concurrentes; las operaciones financieras deberán ser atómicas.
 
+**MA-19.** **Exportar XLSX y PDF** del historial global y por cliente, con filtros aplicados, fechas, referencias, importes y totales, sin confundir pagos reales con ajustes. La exportación debe respetar permisos y no truncar registros por paginación.
+
 ## 5. Alcance C — Consumidor Final (CF) en Venta Directa
 
-### 5.1 Flujo de venta
+### 5.1 Selección de comprador
 
-**CF-01.** En **Venta Directa**, el campo Cliente ofrecerá **«Consumidor Final (CF)»** además de buscar/seleccionar un cliente existente.
+**CF-01.** Mostrar **solo dos opciones**: «Consumidor Final (CF)», seleccionada inicialmente, y «Seleccionar cliente existente». No introducir un tercer tipo de comprador.
 
-**CF-02.** CF será la opción predeterminada propuesta, siempre que sea compatible con el flujo actual y no sobrescriba una selección ya realizada.
+**CF-02.** Bajo CF ofrecer **nombre y apellido opcionales**. Si ambos quedan vacíos, mostrar «Consumidor Final (CF)». Si se informa uno o ambos, almacenar lo escrito como datos **de esa venta**, sin registrar cliente nuevo ni exigir teléfono.
 
-**CF-03.** El sistema permitirá concluir una venta CF **sin crear antes un cliente registrado** y sin exigir nombre, teléfono o identificadores ficticios.
+**CF-03.** La identificación ocasional no genera cuenta corriente ni vincula compras futuras por coincidencia de nombre. Cada venta conserva su ID independiente.
 
-**CF-04.** El operador podrá cambiar de CF a cliente existente y viceversa antes de confirmar, sin perder indebidamente el detalle de los productos escaneados.
+**CF-04.** Cambiar entre CF y cliente registrado antes de confirmar no debe borrar productos, lotes del scanner, cantidades o precios ni sobrescribir una selección existente.
 
-**CF-05.** La operación será de **pago completo**. El importe pagado deberá cubrir el total conforme a las reglas actuales de cobro; no se permitirá registrar deuda, venta al crédito o abono futuro bajo CF.
+**CF-05.** CF no podrá usarse en créditos, reservas personalizadas ni operaciones con saldos pendientes, incluso cuando el comprador haya escrito su nombre.
 
-**CF-06.** Mantener compatibilidad con el **scanner** y el flujo real de Venta Directa, incluyendo la creación automática del pedido técnico y la venta cuando corresponda en la arquitectura actual.
+### 5.2 Cobro y consistencia
 
-**CF-07.** Registrar por cada venta CF: identificador único, productos/cantidades, precios e importes aplicados, fecha, usuario, medio(s) de pago permitidos y referencias de documentos generados.
+**CF-06.** CF es de **pago completo obligatorio**. Admitir un solo medio o **pagos mixtos** (efectivo, transferencia u otros medios habilitados), registrando importe aplicado por método y por venta.
 
-**CF-08.** Incluir ventas CF en los reportes y totales de ventas normales, sin generar un estado de cuenta o deuda individual para un consumidor anónimo.
+**CF-07.** Los importes aplicados sumarán exactamente el total de la venta. Si se entrega efectivo excedente, calcular **cambio**; el sobrante no crea crédito ni se registra como abono.
 
-**CF-09.** En historial, comprobantes y reportes, identificar la operación como **«Consumidor Final»**, diferenciando cada venta por su identificador y no por un cliente ficticio compartido.
+**CF-08.** Backend rechazará cobros insuficientes, importes negativos y sumas inconsistentes. Aplicar reglas de precisión monetaria, idempotencia y concurrencia.
 
-### 5.2 Restricciones y casos límite
+**CF-09.** Mantener scanner, lotes y creación automática de pedido técnico. La creación de pedido, venta, cobro e inventario se diseñará como operación **atómica e idempotente**.
 
-**CF-10.** El backend rechazará intentos de guardar ventas CF con saldo pendiente, aun si se manipula la petición o falla la validación del frontend.
+**CF-10.** Cada venta conserva artículos, precios, cantidades, fecha, usuario, nombre opcional, referencias y cobros. No usar un cliente CF genérico con pagos globales que mezcle operaciones independientes.
 
-**CF-11.** CF **no será seleccionable** en flujos que requieran identificación del deudor, reserva personalizada, historial de abonos o compromisos de pago, salvo definición posterior explícita.
+**CF-11.** Las ventas CF cuentan normalmente en ventas y utilidad; no generan cartera anónima ni deuda a cliente CF.
 
-**CF-12.** Una devolución, cancelación o corrección de una venta CF conservará la referencia a la venta original y seguirá las reglas actuales de inventario/caja; no se resolverá mediante ajustes genéricos de deuda.
+### 5.3 Anulación completa y devolución
 
-**CF-13.** Decidir la representación técnica más segura después de revisar el modelo existente: **cliente especial interno** frente a **venta sin `ClienteId`** (u otra alternativa compatible). No asumir todavía ninguna de ellas como decisión cerrada.
+**CF-12.** Esta entrega comprende **solo anulación completa** de una venta CF, no devoluciones parciales.
 
-**CF-14.** Distinguir esta opción operativa de los requisitos fiscales/tributarios de facturación o FEL: el texto «CF» no debe interpretarse por sí solo como cumplimiento de emisión fiscal; integrar las reglas fiscales vigentes cuando corresponda.
+**CF-13.** Un usuario autorizado a vender podrá **solicitar** anulación con motivo, fecha y usuario. Hasta su aprobación, la venta continúa vigente y no se modifica inventario ni se presume dinero devuelto.
+
+**CF-14.** **Solo administrador** podrá aprobar o rechazar la solicitud, con registro de motivo, fecha, responsable y estado. Si se rechaza, no hay efecto financiero ni de inventario.
+
+**CF-15.** La aprobación conserva venta y cobros originales, registra la anulación y exige tratamiento del dinero y productos, sin permitir doble aprobación, doble devolución o restitución duplicada.
+
+**CF-16.** El dinero devuelto tendrá registro de **importe, método efectivamente utilizado, fecha y responsable**, relacionado con la venta; puede devolverse por método **distinto al del cobro original**. Una anulación no equivale automáticamente a una devolución efectuada.
+
+**CF-17.** La recepción de productos debe registrar su condición: **aptos para reventa** podrán volver al inventario disponible; **no aptos o dañados** quedarán trazados fuera del stock vendible. La decisión comercial de aceptar/rechazar una devolución corresponde al negocio.
+
+**CF-18.** La implementación distinguirá estados pendientes, aprobados, rechazados y confirmación de efectos efectivos. Ante errores externos (dinero no devuelto, producto no recibido), no marcar como completado lo que todavía no ocurrió; definir recuperación segura en diseño técnico.
+
+**CF-19.** No usar ajustes de saldo como sustituto de la anulación: ésta debe preservar efectos propios de caja/cobros e inventario.
+
+### 5.4 Informes y fiscalidad
+
+**CF-20.** Exportar **XLSX y PDF** del reporte de ventas CF desde la primera entrega, con filtros, fecha, número de venta, comprador mostrado, medios de cobro, importes y estado de anulación.
+
+**CF-21.** La etiqueta «CF» no implica facturación electrónica o FEL; este desarrollo no incorpora emisión fiscal automática.
+
+**CF-22.** Permisos, reintentos, trazabilidad y validaciones críticas deben verificarse en backend y mantenerse consistentes con venta, pedido, cobro e inventario.
 
 ## 6. Integración con módulos existentes
 
 | Módulo / área | Comportamiento esperado |
 | --- | --- |
-| **Clientes** | Captura individual y masiva de saldos iniciales; estado de cuenta con origen de cada movimiento. |
-| **Ventas y Venta Directa** | Crédito solo con cliente identificable; ventas CF de pago completo; preservar flujo actual del scanner. |
-| **Abonos / Pagos** | Abonos reales disminuyen deuda; no se confunden con ajustes que solo modifican el saldo contable. |
-| **Inventario / Pedidos** | Saldos iniciales y ajustes no alteran existencias ni crean pedidos. Ventas CF siguen las reglas normales. |
-| **Dashboard / Reportes** | Distinguir ventas, cobros, cartera inicial y ajustes para evitar inflar indicadores de ventas o ingresos. |
-| **Bitácora** | ResellManager conserva el registro oficial de movimientos y autoría. |
-| **Portal de clientes (futuro)** | Mostrar saldo inicial, abonos y movimientos propios, sin inventar artículos de compras antiguas. |
-| **WhatsApp (actual/futuro)** | Solo canal de aviso o resumen; no es el libro mayor ni origen oficial del saldo. |
+| **Clientes** | Preparación de la única migración, teléfono obligatorio, estado de cuenta coherente con saldo inicial, abonos y ajustes. |
+| **Ventas y Venta Directa** | CF predeterminado con nombre y apellido opcionales, alternativa de cliente registrado, cobro completo y mixto, anulación completa con aprobación. |
+| **Abonos / Pagos** | Abonos de clientes registrados disminuyen deuda sin excedente a favor; cobros CF vinculados a cada venta y diferenciados por medio. |
+| **Inventario / Pedidos / Scanner** | Pedidos técnicos y lotes sin regresiones; venta/anulación mantienen integridad, productos no aptos no vuelven a stock disponible. |
+| **Seguridad / Identity** | Permiso administrativo mínimo explícito, sin sistema de roles completo; solicitantes de anulación y aprobadores diferenciados. |
+| **Dashboard / Reportes** | Separar ventas, utilidad, cobros, cartera inicial, ajustes, anulaciones y devoluciones; evitar dobles registros. |
+| **Exportaciones** | **Excel (.xlsx) y PDF** de historial, estado de cuenta por cliente, resumen de migración y ventas CF; aplicar filtros y respetar permisos. |
+| **Bitácora** | Autor, fecha real y efectiva, motivo, estado y referencias de cambios y decisiones. |
+| **Portal de clientes (futuro)** | Mostrar saldos y abonos reales sin inventar ventas antiguas. |
+| **WhatsApp (actual/futuro)** | Solo notificaciones, nunca fuente oficial del saldo. |
 
 ## 7. Reglas de consistencia y modelo conceptual
 
@@ -170,6 +197,10 @@ Estas son **necesidades lógicas**, no nombres obligatorios de entidades ni dise
 - Un **pago real** y una **corrección de deuda** son hechos distintos.
 - Un movimiento aplicado no debe borrarse de forma que desaparezca la evidencia financiera.
 - Deben evitarse duplicados de importación, reintentos y reversiones.
+- La migración inicial es **única, global y atómica**, con corte automático al confirmar. No hay nuevas aperturas después del cierre.
+- La solicitud de anulación no cambia aún el estado económico; se diferencia de la aprobación, de la devolución real del dinero y de la recepción/condición de los productos.
+- Los cobros CF permiten varios métodos sin cartera pendiente; los importes aplicados equivalen al total y el efectivo excedente es cambio.
+- Las exportaciones **XLSX/PDF** deben representar el conjunto filtrado completo, totales consistentes y controles de permisos.
 - Antes de añadir entidades/tablas, comprobar si existe una bitácora, libro de movimientos o infraestructura de transacciones reutilizable.
 
 ### Ejemplo de saldo inicial + actividad nueva
@@ -185,47 +216,64 @@ Un ajuste que aumente el saldo Q150.00 tampoco significa que hubo una nueva vent
 
 ## 8. Criterios de aceptación (escenarios mínimos)
 
-1. **Migración individual:** dado un cliente previo con Q1,250 de deuda real, al registrar el saldo inicial, el estado de cuenta muestra Q1,250; no aparecen ventas ni productos ficticios.
-2. **Abono posterior:** sobre ese saldo, al registrar un abono real de Q300, la deuda se actualiza a Q950 y ambos movimientos conservan tipos y referencias distintos.
-3. **Importación:** un archivo con clientes válidos, duplicados y filas con error presenta vista previa; no aplica importes erróneos ni repite lotes accidentalmente.
-4. **Ajuste positivo:** un usuario autorizado registra un ajuste de +Q150 con motivo y ve el saldo correcto, sin alterar inventario ni ingresos por ventas.
-5. **Ajuste negativo:** una corrección de -Q100 queda reflejada y auditada; no se presenta falsamente como abono recibido.
-6. **Reversión:** una reversión válida conserva el original, su motivo y su vínculo, y un segundo intento no produce efecto duplicado.
-7. **Permisos:** un usuario sin permiso puede ser rechazado por backend aunque invoque la API directamente.
-8. **Venta CF exitosa:** seleccionar CF, escanear productos, cobrar el total y guardar registra una venta completa, sin crear un cliente nuevo ni saldo a cobrar.
-9. **Venta CF con deuda:** intentar cerrar una venta CF sin pago completo es rechazado, tanto desde UI como desde API.
-10. **Reportes:** las ventas CF suman como ventas normales; los saldos iniciales y ajustes no inflan ventas ni cobros.
-11. **Historial:** las consultas de un cliente muestran saldo inicial, abonos y ajustes con orden, fecha, usuario y referencias comprensibles.
-12. **Integridad:** ante fallos de red o doble envío, no se duplican cargos, importaciones o ventas.
+1. **Migración global:** capturar o importar CSV para todos los clientes, revisar filas y totales, y confirmar una sola vez con corte automático del día y responsable.
+2. **Atomicidad:** ante un error de validación, persistencia o reconexión no se aplica parte del lote; doble confirmación no genera saldos duplicados.
+3. **Cierre:** una migración confirmada bloquea una segunda. Una corrección posterior solo se hace con ajuste autorizado y trazado.
+4. **Saldos:** Q1,250 de deuda inicial generan Q1,250 sin ventas ficticias; un abono posterior Q300 produce Q950.
+5. **Datos erróneos:** CSV con duplicados, teléfonos faltantes, coincidencias ambiguas o valores inválidos impide confirmar; Q0 se omite y los negativos se rechazan.
+6. **Actividad previa:** al detectar ventas/pagos ya registrados antes de la migración, se bloquea la confirmación y no se duplica la deuda.
+7. **Ajustes:** cargo +Q150 o descuento -Q100 refleja saldos correctos y auditoría, sin crear ventas ni ingresos; ajuste que produciría saldo negativo se rechaza.
+8. **Reversión:** conserva original, responsable y motivo; un segundo intento no produce efectos adicionales.
+9. **Permisos:** usuarios sin permiso administrativo no pueden confirmar migración ni ajustar o revertir, incluso mediante backend directo; los permisos no se asignan a todos por defecto.
+10. **CF predeterminado:** sin nombre/apellido queda CF. Con nombre y/o apellido, el dato aparece en esa venta sin crear cliente o requerir teléfono.
+11. **Cliente existente:** cambiar de CF a cliente registrado preserva scanner, lotes, cantidades y precios.
+12. **Pagos mixtos:** venta Q500 con Q300 efectivo y Q200 transferencia registra dos importes asociados a la venta y Q0 pendiente.
+13. **Cambio:** Q600 entregados en efectivo para Q500 implican Q100 de cambio, sin saldo a favor ni abono; menos de Q500 impide cerrar CF.
+14. **Solicitud pendiente:** vendedor solicita anulación; hasta que el administrador decida, venta/cobro/inventario permanecen vigentes.
+15. **Rechazo:** solicitud rechazada queda auditada sin efectos operativos.
+16. **Aprobación y devolución:** administrador anula venta completa; se registra dinero realmente devuelto, incluso por otro medio, y se impiden dobles efectos.
+17. **Inventario:** producto apto regresa a disponible y no apto queda fuera de stock vendible, ambos trazables.
+18. **Exportaciones:** historial global, estado de cuenta por cliente, migración y ventas CF generan **XLSX y PDF** con filtros, importes, totales, fechas y estados correctos.
+19. **Integridad:** fallos de red, concurrencia o reintentos no duplican pedido, venta, cobro, devolución ni inventario.
+20. **Regresión:** dashboard y reportes no confunden apertura/ajuste con venta/cobro; scanner, Pedidos, Clientes y Ventas siguen funcionando.
 
 ## 9. Fuera del alcance de esta propuesta
 
-- Reconstrucción de cada venta y abono histórico previo al saldo inicial.
-- Automatización de WhatsApp o implementación del portal público de estados de cuenta.
-- Implementación completa de facturación electrónica o nuevos medios de pago.
-- Contabilidad general completa o caja/bancos desde cero.
-- Rediseño integral de Ventas, Pedidos, Inventario y Clientes más allá de las integraciones necesarias.
+- Reconstruir compras y abonos históricos anteriores a la apertura.
+- **Importar XLSX** en esta primera entrega: la importación inicial será **CSV** (aunque **sí se exportará a Excel .xlsx y PDF** desde el inicio).
+- Segundas migraciones de apertura, saldos a favor, crédito bajo CF y devoluciones parciales.
+- Sistema general de roles (excepto autorización administrativa mínima sobre Identity).
+- WhatsApp automatizado, portal público de estado de cuenta, FEL y contabilidad/caja completa.
+- Rediseños fuera de las integraciones financieras indispensables.
 
-## 10. Decisiones pendientes antes de programar
+## 10. Decisiones cerradas y pendientes de diseño técnico
 
-1. **Migración:** ¿qué reglas aplicar cuando el cliente ya registra actividad después de la fecha de corte? Definir validación, bloqueo o procedimiento de reconciliación para evitar duplicidad.
-2. **Importación:** formato inicial (CSV, XLSX o ambos), plantilla exacta y resolución de coincidencias entre clientes.
-3. **Saldos especiales:** permitir solo deuda positiva o también saldos cero/a favor; y qué hacer si un ajuste vuelve el saldo negativo.
-4. **Permisos:** roles específicos que podrán importar, ajustar, revertir y consultar auditoría.
-5. **Reversiones:** qué tipos de movimientos podrán revertirse desde este módulo y cuáles deberán usar su propio flujo de negocio.
-6. **CF y base de datos:** elegir cliente interno especial, `ClienteId` opcional u otra opción según el esquema actual y sus restricciones.
-7. **Cobros CF:** determinar si el pago completo puede dividirse entre varios métodos y cómo tratar redondeos/cambio.
-8. **Fechas y periodos:** decidir si se permiten registros retroactivos y cómo tratar periodos cerrados.
-9. **Presentación:** ubicación definitiva de las pantallas, etiquetas, permisos e integración en el menú existente.
+### 10.1 Funcionalmente aprobadas
+
+Quedan aprobadas las reglas descritas en **§2–§9**: una migración única con CSV y corte automático, sin saldo a favor; ajustes auditados solo por administradores; CF predeterminado con datos opcionales; cobro completo/mixto con cambio; solicitud de anulación por vendedor y aprobación administrativa; devolución completa real y clasificación apto/no apto; exportación XLSX/PDF en la primera entrega.
+
+### 10.2 Definir durante el diseño técnico (sin cambiar silenciosamente reglas comerciales)
+
+1. Representación de CF en persistencia, relaciones de Pedido/Venta, cobro asociado a cada venta y control transaccional del scanner.
+2. Entidades/estados de lote único, movimiento de apertura, ajustes, reversiones elegibles, solicitud y anulación de venta, devolución efectiva y condición de inventario.
+3. Mecanismo mínimo seguro para designar cuentas administradoras sobre Identity; permisos de consulta separados y controles de backend, sin implementar aún roles generales.
+4. Plantilla CSV exacta, conciliación y manejo de coincidencias de clientes; bloqueos ante actividad financiera preexistente.
+5. Reportes y archivos XLSX/PDF: campos, formato, bibliotecas, filtros, rendimiento, seguridad y modo de descarga.
+6. Reglas de precisión/redondeo, fecha efectiva frente a fecha de registro y recuperación de efectos externos que no puedan ejecutarse en una sola transacción (p. ej. reembolso bancario).
+7. Tipos de reversión permitidos desde Movimientos y Ajustes frente a casos que deben usar su propio proceso de negocio.
+8. Ubicación definitiva de pantallas y etiquetas, sin introducir nuevas modalidades de comprador o reglas de crédito.
+
+Si aparece un caso comercial no cubierto, **documentarlo y pedir una decisión antes de implementarlo**, sin tratar las propuestas técnicas como políticas ya aprobadas.
 
 ## 11. Orden de implementación sugerido
 
-1. **Auditoría del sistema actual:** leer `AGENTS.md`, arquitectura, módulos de Clientes, Ventas, Abonos, Scanner, Pedidos e Inventario; identificar entidades y reglas existentes.
-2. **Diseño de movimientos:** definir contratos, integridad, tipos de movimiento, permisos, bitácora y pruebas.
-3. **Saldos iniciales:** captura individual, vista en historial y después importación masiva con vista previa/idempotencia.
-4. **Movimientos y Ajustes:** consulta, ajustes autorizados y reversiones compatibles.
-5. **Consumidor Final en Venta Directa:** flujo UI/API, validación de pago completo, compatibilidad con scanner/pedido técnico y reportes.
-6. **Pruebas integrales:** verificar consistencia financiera, inventario, reportes, permisos y no regresiones; documentar los cambios antes de desplegar.
+1. **Diseño técnico primero:** revisar AGENTS.md, código y pruebas actuales de saldos, pagos, Identity, inventario, pedidos, scanner y reportes; aprobar entidades, estados, permisos, transacciones y casos de error antes de migraciones.
+2. **Base financiera + migración única:** unificar saldos, preparar carga manual/CSV, validar y confirmar atómicamente con corte único y cierre definitivo.
+3. **Movimientos y Ajustes:** historial global, ajustes, reversión elegible, auditoría y permisos administrativos.
+4. **CF en Venta Directa:** selección con nombre opcional, cliente existente, pagos mixtos, cambio y operación atómica de venta.
+5. **Anulaciones CF:** solicitud, aprobación/rechazo, devolución real y retorno de inventario apto/no apto.
+6. **Exportación XLSX y PDF:** de las cuatro vistas definidas; incluirla en la **primera entrega**, no dejarla como mejora posterior.
+7. **Validación y documentación:** build, suite completa, tests de concurrencia, permisos, idempotencia, datos sintéticos, QA móvil y scanner; conciliar documentación del módulo, decisiones y pendientes cuando el código se implemente.
 
 ---
 
