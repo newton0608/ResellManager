@@ -48,6 +48,7 @@ decisiones en lugar de abrir una segunda colección ADR con decisiones repetidas
 | [ROADMAP](../ROADMAP.md) | Versiones y evolución prevista, sin afirmar implementación. |
 | [V2](19_V2_Pendientes.md) / [V3](20_V3_Pendientes.md) | Planes; distinguir ampliaciones de lo ya incorporado. |
 | [Landed cost](modules/landed-cost.md) | Análisis pendiente; no hay modelo definitivo. |
+| [Requisitos de Productos y Catálogo](modules/requisitos-productos-catalogo-etiquetas-costos.md) | **Aprobado, pendiente de implementación:** variantes vinculadas, precios desde móvil, filtros, etiquetas, costos desconocidos, notas de corrección y reportes auditables. |
 | [Requisitos de Movimientos, Ajustes, Saldos Iniciales y CF](modules/requisitos-movimientos-ajustes-y-consumidor-final.md) | Especificación funcional pendiente de implementación; incluye reglas, riesgos y criterios de aceptación. |
 | [Backlog](09_Backlog.md) | Entregas históricas por fase y pendientes. |
 | [Ideas futuras](12_IdeasFuturas.md) | Exploración, no compromisos automáticos. |
