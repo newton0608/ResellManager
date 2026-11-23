@@ -40,6 +40,10 @@ Categoría es un maestro configurable, no un enum.
   [decisión 025](../11_DecisionesDeDiseño.md#025-preservar-clientes-y-productos-con-historial)
   todavía no está implementada. Quitar la imagen no equivale a borrar Producto.
 
+## Requisitos aprobados, pendientes de implementación
+
+- [Productos, Catálogo, Etiquetas y Costos](requisitos-productos-catalogo-etiquetas-costos.md): variantes vinculadas, asignación rápida de precios desde móvil, filtros avanzados, etiquetas por producto con código interno escaneable y costos desconocidos. **Especificación funcional; no describe comportamiento implementado.**
+
 ## Dónde trabajar y validar
 
 Los contratos están en [Services.cs](../../src/ResellManager.Application/Interfaces/Services.cs).
