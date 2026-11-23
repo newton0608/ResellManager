@@ -18,6 +18,8 @@ páginas de dieciséis, con opciones públicas independientes. El endpoint de ar
 anterior mantiene compatibilidad. QA físico pendiente; elegibilidad y lectura
 anónima sin cambios.
 
+**Requisitos futuros aprobados, no implementados:** [Productos, Catálogo, Etiquetas y Costos](requisitos-productos-catalogo-etiquetas-costos.md) incluye variantes individuales en resultados, opciones agotadas en detalle, enlaces directos a fichas agotadas y «Consultar precio» por WhatsApp.
+
 ## Contratos y límites
 
 - Las tarjetas públicas solo muestran «Imagen no disponible» si el producto no tiene
