@@ -1,5 +1,8 @@
 # Ventas, pagos y Dashboard
 
+**Ampliación implementada en rama, sin despliegue:** [Movimientos, CF y operaciones de productos](operaciones-financieras-y-productos.md) describe los contratos nuevos y los límites de validación.
+
+
 **Estado: implementado.** Toda venta pertenece a un pedido; Venta Directa crea
 el pedido técnico automáticamente. Las ventas son completas en sus artículos.
 
@@ -14,9 +17,8 @@ el pedido técnico automáticamente. Las ventas son completas en sus artículos.
 - [Precio y utilidad](../architecture/domain-rules.md#producto-precios-y-utilidad)
   y [Dashboard](../17_Fase59_Dashboard.md): métricas con datos reales, no agregados
   financieros reconstruidos en Razor.
-- Venta Directa conserva dos operaciones (crear Pedido y registrar Venta);
-  no presupongas atomicidad conjunta ni idempotencia distribuida. Las
-  protecciones de concurrencia adicionales continúan en V2.3.
+- Venta Directa utiliza ahora un caso de uso transaccional e idempotente para pedido,
+  venta, unidades y cobros CF. La robustez distribuida adicional continúa en V2.3.
 - **Scanner operativo V2.1 y lotes implementados; aceptación física en iPhone 14 Plus + Brave registrada:**
   [contrato operativo](scanner-operativo-v2-1.md). Cada acción de agregado forma
   un lote independiente con Producto `×N`, códigos físicos, precio por unidad y

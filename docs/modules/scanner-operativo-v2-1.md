@@ -11,10 +11,12 @@ El motor, formatos soportados, privacidad, modos de captura y contrato actual de
 `BarcodeScanner` siguen definidos en [Scanner de códigos de producto](../29_BarcodeScanner.md).
 No deben duplicarse ni reemplazarse para esta tarea.
 
+**Ampliación 22/11/2026 en rama:** el resolver local admite códigos internos completos para etiquetas y conserva el motor óptico. Venta Directa incorpora comprador CF/cliente y registro atómico; ver [contrato vigente](operaciones-financieras-y-productos.md). La evidencia física anterior no certifica las nuevas etiquetas.
+
 ## Objetivo
 
 Reducir el tiempo necesario para localizar mercancía durante una venta presencial
-o una consulta de inventario y seleccionar artículos al preparar una compra, usando `Producto.CodigoBarras` como acceso rápido
+o una consulta de inventario y seleccionar artículos al preparar una compra, usando `Producto.CodigoBarras` o `CodigoInterno` como acceso rápido
 a datos que **ya existen localmente en ResellManager**.
 
 El escaneo operativo selecciona datos locales y conserva la búsqueda manual.
@@ -26,7 +28,7 @@ cuando un código no existe; ese subflujo reutiliza el lookup y el guardado vige
 - La cámara se activa únicamente por acción explícita de la usuaria.
 - Reutilizar el componente `BarcodeScanner` vigente y su `OnDetected`; no crear
   otro decoder, otro flujo JS ni otra dependencia de lectura.
-- El valor confirmado por el scanner se busca como `Producto.CodigoBarras`.
+- El valor confirmado se resuelve exactamente como `Producto.CodigoBarras` o `CodigoInterno`; varias coincidencias se rechazan.
 - La coincidencia operativa es local. **No consultar Open Facts, UPCitemdb ni
   ningún otro proveedor externo** desde el escaneo de Venta Directa, Inventario
   o Nueva compra. La excepción pertenece sólo al alta explícita de Producto en Compra.
@@ -57,7 +59,7 @@ Flujo:
 2. Selecciona **Escanear código**.
 3. Confirma un código desde el `BarcodeScanner`.
 4. ResellManager busca una coincidencia local exacta por
-   `Producto.CodigoBarras`.
+   `Producto.CodigoBarras` o `CodigoInterno`, rechazando ambigüedades.
 5. Si el producto existe, calcula cuántas **unidades elegibles para Venta
    Directa** quedan disponibles para agregar.
 6. Se presenta el producto y la cantidad disponible, por ejemplo:
@@ -231,7 +233,7 @@ Flujo:
 2. Selecciona **Escanear código**.
 3. Confirma un código desde el `BarcodeScanner`.
 4. ResellManager busca una coincidencia local exacta por
-   `Producto.CodigoBarras`.
+   `Producto.CodigoBarras` o `CodigoInterno`, rechazando ambigüedades.
 5. Si existe, navega directamente al detalle administrativo actual del producto:
    `/productos/{id}`.
 6. Si no existe, permanece en Inventario, muestra un mensaje claro y conserva la
@@ -268,7 +270,7 @@ Flujo aprobado:
    de compra en el que está trabajando.
 2. Confirma el código mediante el `BarcodeScanner` existente.
 3. ResellManager realiza primero una coincidencia local exacta por
-   `Producto.CodigoBarras`.
+   `Producto.CodigoBarras` o `CodigoInterno`, rechazando ambigüedades.
 4. Si existe, selecciona ese Producto en el detalle usando el mismo comportamiento
    funcional que `ProductoBuscador`.
 5. En una línea nueva la cantidad inicial continúa siendo `1`; la usuaria puede

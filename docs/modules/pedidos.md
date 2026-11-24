@@ -1,5 +1,8 @@
 # Pedidos y reservas
 
+**Ampliación implementada en rama, sin despliegue:** [Movimientos, CF y operaciones de productos](operaciones-financieras-y-productos.md) describe los contratos nuevos y los límites de validación.
+
+
 **Estado: implementado.** Apartado se resuelve con Pedido + DetallePedido +
 reserva de unidad; no existe una entidad Apartado ni una segunda reserva.
 

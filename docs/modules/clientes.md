@@ -1,5 +1,8 @@
 # Clientes y actividad
 
+**Ampliación implementada en rama, sin despliegue:** [Movimientos, CF y operaciones de productos](operaciones-financieras-y-productos.md) describe los contratos nuevos y los límites de validación.
+
+
 **Estado: implementado.** Cliente es un maestro comercial, distinto de la cuenta
 Identity que inicia sesión. Nombres y teléfono son obligatorios. El módulo ofrece
 alta, edición, búsqueda por nombre/teléfono, listado y detalle con saldo/actividad.

@@ -1,5 +1,8 @@
 # Catálogo público de Virtuosa Store
 
+**Ampliación implementada en rama, sin despliegue:** [Movimientos, CF y operaciones de productos](operaciones-financieras-y-productos.md) describe los contratos nuevos y los límites de validación.
+
+
 **Estado: implementado como catálogo de lectura.** Comparte productos/inventario
 con la administración. No hay carrito, checkout, pedidos web ni pagos online;
 la consulta por WhatsApp abre un enlace externo y no registra pedidos.
@@ -18,7 +21,7 @@ páginas de dieciséis, con opciones públicas independientes. El endpoint de ar
 anterior mantiene compatibilidad. QA físico pendiente; elegibilidad y lectura
 anónima sin cambios.
 
-**Requisitos futuros aprobados, no implementados:** [Productos, Catálogo, Etiquetas y Costos](requisitos-productos-catalogo-etiquetas-costos.md) incluye variantes individuales en resultados, opciones agotadas en detalle, enlaces directos a fichas agotadas y «Consultar precio» por WhatsApp.
+**Ampliación implementada en rama, pendiente de validación operativa:** [Productos, Catálogo, Etiquetas y Costos](requisitos-productos-catalogo-etiquetas-costos.md) incluye variantes individuales en resultados, opciones agotadas en detalle, enlaces directos a fichas agotadas y «Consultar precio» por WhatsApp.
 
 ## Contratos y límites
 

@@ -28,6 +28,7 @@ como tales en el [registro de decisiones](11_DecisionesDeDiseño.md).
 | Capas y responsabilidades | [Arquitectura](architecture/overview.md) | Referencias reales entre proyectos y mapa de código/pruebas. |
 | Invariantes | [Reglas del negocio](architecture/domain-rules.md) | Estados físicos, reserva, venta, saldo y costos. |
 | EF / SQLite / archivos | [Persistencia](architecture/persistence.md) | Contratos del esquema y migraciones existentes. |
+| Movimientos y operaciones nuevas | [Contrato de implementación](modules/operaciones-financieras-y-productos.md) | Apertura, ajustes, CF, anulaciones, precios, variantes, etiquetas y costos; sin despliegue. |
 | Clientes | [Módulo](modules/clientes.md) | Actividad/saldo; decisión 025 pendiente. |
 | Productos / categorías | [Módulo](modules/productos.md) | [Medidas](23_MedidasYPresentacionProducto.md), [imagen](24_ImagenPrincipalProducto.md), [scanner](29_BarcodeScanner.md), [lookup externo](modules/productos-lookup-codigo-barras.md), [selectores/progreso de fotos implementados](modules/catalogo-v1-4-ajustes-ux.md). |
 | Compras / proveedores | [Módulo](modules/compras.md) | [Comprobantes](16_Fase58_ComprasYComprobantes.md), [GTQ/USD](28_MonedasDeCompra.md), [scanner y alta contextual V2.1](modules/scanner-operativo-v2-1.md) implementados; aceptación física en iPhone 14 Plus + Brave registrada en el contrato. |
@@ -48,8 +49,9 @@ decisiones en lugar de abrir una segunda colección ADR con decisiones repetidas
 | [ROADMAP](../ROADMAP.md) | Versiones y evolución prevista, sin afirmar implementación. |
 | [V2](19_V2_Pendientes.md) / [V3](20_V3_Pendientes.md) | Planes; distinguir ampliaciones de lo ya incorporado. |
 | [Landed cost](modules/landed-cost.md) | Análisis pendiente; no hay modelo definitivo. |
-| [Requisitos de Productos y Catálogo](modules/requisitos-productos-catalogo-etiquetas-costos.md) | **Aprobado, pendiente de implementación:** variantes vinculadas, precios desde móvil, filtros, etiquetas, costos desconocidos, notas de corrección y reportes auditables. |
-| [Requisitos de Movimientos, Ajustes, Saldos Iniciales y CF](modules/requisitos-movimientos-ajustes-y-consumidor-final.md) | Especificación funcional pendiente de implementación; incluye reglas, riesgos y criterios de aceptación. |
+| [Requisitos de Productos y Catálogo](modules/requisitos-productos-catalogo-etiquetas-costos.md) | Implementado en rama; requisitos aprobados, con pruebas físicas/operativas pendientes según el contrato de implementación. |
+| [Requisitos de Movimientos, Ajustes, Saldos Iniciales y CF](modules/requisitos-movimientos-ajustes-y-consumidor-final.md) | Implementado en rama; apertura, ajustes, CF, anulaciones y exportaciones. Ver contrato de implementación y validación. |
+| [Plan de implementación de Movimientos y Productos](planes/movimientos-ajustes-cf-y-productos.md) | Paquetes propuestos, dependencias, criterios de cierre y validación para ambos bloques aprobados. |
 | [Backlog](09_Backlog.md) | Entregas históricas por fase y pendientes. |
 | [Ideas futuras](12_IdeasFuturas.md) | Exploración, no compromisos automáticos. |
 | [Problema](00_Problema.md) / [objetivo](01_Objetivo.md) | Contexto del negocio. |

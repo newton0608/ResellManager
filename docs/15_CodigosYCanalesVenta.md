@@ -55,7 +55,7 @@ El archivo del comprobante se nombra al prepararlo, separado de `NumeroDocumento
 
 `TipoPedido` describe la operación: Importación, Catálogo, Apartado o Venta directa. `CanalVenta` describe cómo se originó comercialmente.
 
-`TipoPedido.VentaDirecta` conserva su valor persistido y clasifica exclusivamente los pedidos creados por el flujo específico de Venta Directa. No es seleccionable en Nuevo pedido. La lista única `TiposPedidoManual.Permitidos` contiene Importacion, Catalogo y Apartado; alimenta el selector y valida modelo y `PedidoService.CrearManualAsync`, que rechaza VentaDirecta incluso con un input manipulado. El flujo directo conserva `CrearAsync`, el pedido automático `PED-VD-`, la venta `VEN-VD-` y sus reintentos.
+`TipoPedido.VentaDirecta` conserva su valor persistido y clasifica exclusivamente los pedidos creados por el flujo específico de Venta Directa. No es seleccionable en Nuevo pedido. La lista única `TiposPedidoManual.Permitidos` contiene Importacion, Catalogo y Apartado; alimenta el selector y valida modelo y `PedidoService.CrearManualAsync`, que rechaza VentaDirecta incluso con un input manipulado. La ampliación CF en rama utiliza `IVentaDirectaService` para confirmar pedido `PED-VD-`, venta `VEN-VD-`, unidades y cobros juntos con idempotencia persistente. Los servicios de pedidos existentes conservan su contrato para otros consumidores.
 
 Valores persistidos de CanalVenta:
 
@@ -88,4 +88,4 @@ La deuda, inventario disponible y utilidad no se sustituyen por métricas de con
 
 ## 7. Límites V1 / pendientes V2
 
-Siguen fuera de esta implementación la concurrencia fuerte de saldo/reservas, la posible orquestación atómica Pedido + Venta Directa, una numeración humana más corta, roles, administración de usuarios, devoluciones, ecommerce e integraciones automáticas. Deshabilitar botones evita doble submit del formulario; no es una garantía frente a procesos o usuarios concurrentes.
+La [ampliación financiera y productos](modules/operaciones-financieras-y-productos.md), implementada en rama, añade registro atómico de Venta Directa, autorización puntual, anulación completa CF y protección transaccional/concurrencia EF. Publica el código interno completo como referencia comercial y lo admite en el resolver local, sin cambiar su generación ni acortarlo. El sistema general de roles, administración de usuarios, escalado distribuido, cambios/devoluciones adicionales, ecommerce e integraciones automáticas siguen fuera de alcance. La evidencia física anterior no certifica etiquetas nuevas.

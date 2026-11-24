@@ -10,17 +10,19 @@ pedido (`OrigenCompra.Catalogo` / `TipoPedido.Catalogo`), **no** el catálogo we
 de inventario libre. Las decisiones pendientes conservan ese estado en el
 [registro de decisiones](../11_DecisionesDeDiseño.md).
 
+La ampliación del 22/11/2026 está implementada en rama, sin despliegue: [operaciones financieras y productos](../modules/operaciones-financieras-y-productos.md). Sus contratos CF, apertura y costos complementan las reglas V1 siguientes.
+
 ## UnidadInventario
 
 - Una `UnidadInventario` representa una unidad física real de un `Producto`.
-- `EstadoUnidadInventario` describe únicamente el ciclo físico/logístico: `Comprada`, `EnTransito`, `Disponible`, `Vendida`, `Entregada` y `Perdida`.
+- `EstadoUnidadInventario` describe únicamente el ciclo físico/logístico: `Comprada`, `EnTransito`, `Disponible`, `Vendida`, `Entregada`, `Perdida`, `NoApta` y `DevueltaEnRevision`.
 - Una unidad solo puede estar en un estado físico a la vez; una reserva no es un estado físico.
 - Las unidades de compra local y de `EnvioHermano` se generan `Disponible` y con `FechaIngreso`.
 - Las unidades de importación se generan `Comprada`, sin `FechaIngreso`, y pueden pasar manualmente a `EnTransito`.
 - `Comprada` y `EnTransito` solo pasan a `Disponible` mediante recepción de mercancía.
 - `Disponible` pasa a `Vendida` únicamente al registrar una venta válida.
 - `Vendida` puede pasar manualmente a `Entregada`; solo una cancelación válida de venta puede devolverla a `Disponible`.
-- `Entregada` no cambia en el flujo V1 actual.
+- La devolución CF aprobada admite recibir unidades vendidas o entregadas en `DevueltaEnRevision`; solo al completar todos los reembolsos y recepciones quedan `Disponible` o `NoApta`. El flujo ordinario no cambia unidades entregadas.
 - `Comprada` o `EnTransito` pueden pasar a `Perdida`, previa confirmación. No se admite desde `Disponible`, `Vendida` o `Entregada`; es irreversible en V1.
 - Marcar `Perdida` elimina `DetallePedidoReservaId` si existía, pero conserva unidad, compra, costo e historial y no reduce la cantidad solicitada del pedido. No genera reembolsos, ajustes contables automáticos ni un flujo de recuperación de pérdidas.
 - Una unidad `Perdida` no puede recibirse, reservarse o venderse; no cuenta como mercancía recibida ni pendiente de recibir. Las pérdidas se muestran por separado en el resumen de recepción.
@@ -36,7 +38,7 @@ de inventario libre. Las decisiones pendientes conservan ese estado en el
 - Pueden reservarse unidades físicas `Comprada`, `EnTransito` o `Disponible`.
 - Un pedido `Catalogo` nunca puede reservar una unidad física; los demás tipos de pedido pueden hacerlo cuando el flujo lo requiera.
 - La reserva no está restringida exclusivamente a pedidos `Apartado`.
-- Una unidad `Vendida`, `Entregada` o `Perdida` no puede reservarse.
+- Una unidad `Vendida`, `Entregada`, `Perdida`, `NoApta` o `DevueltaEnRevision` no puede reservarse.
 - La unidad y el detalle reservado deben corresponder al mismo producto.
 - Una unidad reservada no puede venderse para un pedido distinto.
 - Una unidad reservada `Disponible` puede venderse para el pedido de su reserva; registrar esa venta consume la asociación de reserva. La liberación final de todas las reservas se rige por la invariante de Pedidos y ventas descrita abajo.
@@ -49,9 +51,9 @@ de inventario libre. Las decisiones pendientes conservan ese estado en el
 ## Clientes y pagos
 
 - Un cliente puede tener varias ventas, deudas, reservas y pagos.
-- Un pago pertenece globalmente al cliente, nunca a una venta.
+- Un `Pago` pertenece globalmente al cliente, nunca a una venta. Los cobros CF son hechos distintos asociados a su venta y no crean cartera.
 - Un pago debe ser mayor que cero y no puede superar la deuda actual.
-- El saldo no se almacena: se calcula como la suma de `PrecioFinal` de ventas `Registrada` menos la suma de pagos.
+- El saldo no se almacena: se calcula con ventas registradas de clientes identificados menos pagos globales, más apertura y ajustes/reversiones firmados. CF queda excluido.
 - Limitar por mes la actividad mostrada no limita el saldo. Las pendientes actuales no se filtran por antigüedad y excluyen reservas pertenecientes a pedidos `Cancelado` o `Completado`, además de unidades ya entregadas.
 
 ## Pedidos y ventas
@@ -68,9 +70,9 @@ de inventario libre. Las decisiones pendientes conservan ese estado en el
 - Puede sustituirse una unidad reservada A por otra B del mismo producto, `Disponible` y sin reserva ajena: B pasa a `Vendida` y queda sin reserva; A pierde únicamente `DetallePedidoReservaId` y conserva exactamente su estado físico previo (`Comprada`, `EnTransito` o `Disponible`). Las unidades no utilizadas no se borran ni cancelan. Si la transacción falla, no se confirma una liberación parcial.
 - Una venta se registra como transacción completa y no admite agregar artículos posteriormente.
 - Una compra posterior del mismo cliente requiere otro pedido y otra venta.
-- Una venta `Registrada` cuenta para el saldo; una venta `Cancelada` no cuenta.
+- Una venta `Registrada` de cliente identificado cuenta para su saldo; una venta `Cancelada` y CF no cuentan.
 - Antes de cancelar una venta se calcula el saldo del cliente excluyéndola. Si quedaría negativo por pagos ya registrados, la cancelación se rechaza hasta ajustar o devolver esos pagos.
-- Una cancelación válida conserva detalles históricos, cambia la venta a `Cancelada`, devuelve el pedido a `Pendiente` y libera a `Disponible` las unidades que siguen `Vendida`. No restaura reservas antiguas. Para revender una unidad liberada se utiliza otro pedido, conservando la venta cancelada y sin permitir dos ventas `Registrada` simultáneas para la misma unidad.
+- La cancelación ordinaria de cliente identificado conserva detalles históricos, cambia la venta a `Cancelada`, devuelve el pedido a `Pendiente` y libera a `Disponible` las unidades que siguen `Vendida`. No restaura reservas antiguas. Para revender una unidad liberada se utiliza otro pedido, conservando la venta cancelada y sin permitir dos ventas `Registrada` simultáneas para la misma unidad.
 - Si alguna unidad está `Entregada`, la cancelación simple se rechaza y requiere un flujo futuro de devolución o cambio.
 
 ## Catálogo
@@ -96,7 +98,7 @@ de inventario libre. Las decisiones pendientes conservan ese estado en el
 - `FechaCompra` y `FechaIngreso` pueden ser distintas.
 - La recepción registra la fecha real de ingreso y cambia `Comprada`/`EnTransito` a `Disponible`.
 - La recepción se opera por Compra y Proveedor y puede ser parcial. Una confirmación solo incluye unidades de una misma Compra; las pendientes de recibir no seleccionadas conservan su estado `Comprada`/`EnTransito` y las reservas vigentes se conservan también en las recibidas.
-- Recibir una unidad `Disponible`, `Vendida`, `Entregada` o `Perdida` se rechaza.
+- La recepción de compra rechaza una unidad `Disponible`, `Vendida`, `Entregada`, `Perdida`, `NoApta` o `DevueltaEnRevision`; la recepción CF tiene su proceso específico.
 - La recepción no crea unidades nuevas.
 
 ## Producto, precios y utilidad
@@ -104,13 +106,13 @@ de inventario libre. Las decisiones pendientes conservan ese estado en el
 - `Producto` describe el tipo de artículo y puede tener muchas unidades físicas.
 - `Producto.PrecioSugerido` debe ser mayor o igual que cero y es solo referencia/default para captura.
 - `DetalleVenta.PrecioFinal` es el precio real y puede ser menor, igual o mayor que `PrecioSugerido`.
-- El costo no pertenece al producto: en inventario es un snapshot de `UnidadInventario.Costo`; en catálogo es `DetalleVenta.CostoUnitario`.
-- La utilidad usa `PrecioFinal - CostoUnitario`; nunca usa `PrecioSugerido`.
+- El costo no pertenece al producto. Compra, unidad y venta distinguen costo conocido/desconocido; la venta conserva su snapshot original. Las notas inmutables permiten una consulta revisada con corte explícito, sin sobrescribir hechos históricos.
+- La utilidad calculable usa precio final menos costo conocido; nunca usa `PrecioSugerido`. Las líneas desconocidas se informan aparte, sin asumir costo cero.
 - Para catálogo, una futura regla de comisión podrá ayudar a derivar o verificar la ganancia, pero no debe sustituir el historial transaccional ni recalcular ventas antiguas con porcentajes nuevos.
 
 ## Fuera del flujo V1 actual
 
 - La autenticación está implementada desde Fase 5.1; las páginas de negocio y los comprobantes requieren sesión.
-- Devoluciones y cambios requieren un caso de uso futuro y no se resuelven con transiciones manuales arbitrarias.
+- La anulación completa CF tiene un caso de uso específico. Cambios, devoluciones parciales y devoluciones de otras ventas siguen pendientes; no se resuelven con transiciones manuales arbitrarias.
 - La automatización de comisiones de catálogo queda pendiente hasta confirmar porcentajes y fórmula real por proveedor/categoría.
 - Las reglas se mantienen en los servicios; las pantallas V1 de Fase 5 las consumen sin duplicarlas.

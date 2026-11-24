@@ -4,7 +4,13 @@ Las fechas siguientes corresponden a creación de tags; no son fechas exactas de
 
 ## Unreleased
 
-Sin cambios pendientes de publicación.
+- Apertura global única de cartera mediante captura/CSV, ajustes y reversiones auditables, autorización administrativa explícita y estado de cuenta con exportación XLSX/PDF.
+- Venta Directa transaccional e idempotente con Consumidor Final, datos opcionales, pagos mixtos, cambio y anulación aprobada con devolución real y clasificación de unidades.
+- Precios móviles y filtros administrativos, variantes vinculadas, fichas agotadas por enlace directo y «Consultar precio» en Virtuosa Store.
+- Etiquetas por Producto con PDF dimensionado, XLSX por copia y código interno Code 128; la compatibilidad física de impresora/NIIMBOT permanece pendiente.
+- Costos desconocidos, migración acotada con respaldo/auditoría y notas de corrección con informes originales/revisados, sin utilidad ficticia.
+
+Implementado en rama, sin release ni despliegue. [Contratos y límites](docs/modules/operaciones-financieras-y-productos.md).
 
 ## v1.4.1 — tag del 22/10/2026
 

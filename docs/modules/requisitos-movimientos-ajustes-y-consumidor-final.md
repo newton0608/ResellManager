@@ -1,6 +1,6 @@
 # ResellManager — Requerimientos: Movimientos y Ajustes, Saldos Iniciales y Consumidor Final (CF)
 
-> **Estado:** Requisitos funcionales aprobados, **pendientes de implementación**; diseño técnico por definir.  
+> **Estado:** Requisitos funcionales aprobados; implementación en rama de trabajo, sin despliegue. Contratos y límites en [la guía de implementación](operaciones-financieras-y-productos.md).
 > **Proyecto:** ResellManager  
 > **Fecha del documento:** 2026-11-07 · decisiones actualizadas 2026-11-07  
 > **Alcance de este archivo:** requisitos de negocio y criterios de aceptación; no establece una implementación técnica definitiva.  

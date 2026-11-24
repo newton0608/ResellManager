@@ -41,9 +41,17 @@ categorías anteriores siguen como raíces. El servicio valida 0–8 fotos, port
 no cambia datos comerciales históricos. Detalle en [V1.4](../modules/catalogo-v1-4.md)
 y [almacenamiento](../24_ImagenPrincipalProducto.md).
 
+## Ampliación financiera y productos en rama
+
+El esquema añade `MovimientoCuenta`, apertura global versionada y comandos idempotentes; cobros, solicitudes y efectos de anulación CF; grupos/vínculos de variantes, auditoría de precios y lotes de etiquetas; notas y migraciones acotadas de costos. Contratos y límites en [operaciones financieras y productos](../modules/operaciones-financieras-y-productos.md). Las tablas de hechos y comandos aplicados se protegen contra modificación/borrado al guardar.
+
+`Pedido.ClienteId` admite null exclusivamente si `TipoPedido` es `VentaDirecta`, validado también con CHECK. `Venta.PedidoId` conserva su índice único. `CanalVenta` mantiene default persistido `Otro = 5` después de las reconstrucciones SQLite. Los indicadores `CostoConocido` tienen default true para preservar Q0 históricos legítimos hasta una migración explícita y auditada.
+
+Estado de unidad, FK de reserva y estados de pedido/venta son tokens EF de concurrencia. Las transacciones y revalidación de backend se complementan con esta protección ante escrituras obsoletas. No se ha ejecutado una migración sobre producción.
+
 ## Notas generales
 
-- El saldo del cliente no se almacena directamente; se calcula con ventas registradas y pagos.
+- El saldo del cliente no se almacena directamente; suma ventas registradas de clientes, resta pagos e incorpora movimientos firmados. CF no genera cartera.
 - `FechaVenta` no se almacena en `UnidadInventario`; se obtiene desde `Venta.Fecha`.
 - `Compra.Origen` define el tipo de abastecimiento. `EnvioHermano` es el identificador persistido; la UI puede mostrar «Envío del hijo».
 - `ComprobanteCompra` respalda opcionalmente una compra.
@@ -59,7 +67,7 @@ y [almacenamiento](../24_ImagenPrincipalProducto.md).
 ## Inventario físico y reservas
 
 - `UnidadInventario` representa una unidad física real.
-- `EstadoUnidadInventario` contiene únicamente estados físicos/logísticos: `Comprada`, `EnTransito`, `Disponible`, `Vendida`, `Entregada` y `Perdida`.
+- `EstadoUnidadInventario` contiene únicamente estados físicos/logísticos: `Comprada`, `EnTransito`, `Disponible`, `Vendida`, `Entregada`, `Perdida`, `NoApta` y `DevueltaEnRevision`.
 - La reserva comercial se almacena en `UnidadInventario.DetallePedidoReservaId`, una FK nullable hacia `DetallePedido`.
 - Una unidad sin reserva mantiene `DetallePedidoReservaId = null`.
 - La FK permite obtener indirectamente el `Pedido` y `Cliente` de la reserva.
@@ -88,7 +96,7 @@ y [almacenamiento](../24_ImagenPrincipalProducto.md).
 - El costo no pertenece a `Producto`.
 - En inventario físico, el costo proviene de `UnidadInventario.Costo`, generado desde el detalle de compra.
 - En catálogo, el costo utilizado por la venta se conserva en `DetalleVenta.CostoUnitario`.
-- La utilidad se calcula con `PrecioFinal - CostoUnitario` para ventas registradas.
+- La utilidad original usa snapshots de costos conocidos de ventas registradas; la revisada incorpora notas hasta el corte UTC. Se informa utilidad parcial y líneas sin costo; no se sustituye un costo desconocido por cero.
 ## Moneda de origen en compras
 
 GTQ es la moneda base. Compra y DetalleCompra conservan costos originales GTQ/USD y el tipo aplicado congelado; Total, CostoUnitario y UnidadInventario.Costo siguen siendo GTQ. La migración preserva todos los importes históricos. Consulta [contratos y compatibilidad](../28_MonedasDeCompra.md).

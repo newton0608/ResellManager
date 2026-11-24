@@ -1,6 +1,6 @@
 # ResellManager y Virtuosa Store — Requisitos de productos, catálogo, precios, etiquetas y costos desconocidos
 
-> **Estado:** Especificación funcional aprobada y pendiente de implementación.
+> **Estado:** Especificación funcional aprobada; implementación en rama de trabajo, sin despliegue. [Contratos y límites de aceptación](operaciones-financieras-y-productos.md), incluida la validación física pendiente de etiquetas/NIIMBOT.
 > **Fecha inicial:** 2026-11-11
 > **Actualización funcional:** 2026-11-22 (costo desconocido, migración por Codex, notas de corrección, versionado lógico de reportes, enlaces a productos agotados y roles futuros solo como idea, sin diseño)
 > **Áreas:** Productos, Compras, Inventario, Ventas/Reportes, Scanner, Catálogo público de Virtuosa Store y Etiquetas.

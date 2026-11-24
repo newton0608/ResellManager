@@ -12,8 +12,9 @@ del backend. Blazor no lista módulos completos para recalcular métricas ni uti
 ### Total adeudado
 
 ```text
-SUM DetalleVenta.PrecioFinal de ventas Registrada
+SUM DetalleVenta.PrecioFinal de ventas Registrada con cliente identificado
 - SUM Pago.Monto
++ SUM movimientos firmados de apertura, ajustes y compensaciones
 ```
 
 Las ventas `Cancelada` no forman parte de la deuda. La definición se comparte con el saldo de Cliente
@@ -24,13 +25,13 @@ resultado negativo si existieran datos históricos inconsistentes.
 
 ```text
 ValorInventarioDisponible =
-SUM UnidadInventario.Costo WHERE Estado == Disponible
+SUM costo conocido vigente de unidades WHERE Estado == Disponible
 
 UnidadesDisponibles =
 COUNT UnidadInventario WHERE Estado == Disponible
 ```
 
-No se usa `Producto.PrecioSugerido`. Los estados `Comprada`, `EnTransito`, `Vendida` y `Entregada`
+El valor es parcial cuando hay unidades sin costo; se informa su cantidad. Las notas de costo real se aplican a la vista revisada sin sobrescribir el snapshot original. Ver [costos](modules/operaciones-financieras-y-productos.md#costos-originales-y-revisiones). No se usa `Producto.PrecioSugerido`. Los estados `Comprada`, `EnTransito`, `Vendida` y `Entregada`
 quedan excluidos.
 
 ### Pedidos activos
@@ -91,7 +92,7 @@ monto.
 
 ## Utilidad por periodo
 
-`IDashboardService.ObtenerUtilidadAsync` valida que `desde <= hasta`. Un rango inválido devuelve
+La interfaz usa utilidad revisada y distingue líneas sin costo y correcciones; las consultas original/revisada permiten corte UTC. El contrato escalar `IDashboardService.ObtenerUtilidadAsync` rechaza presentar como completa una utilidad con costos desconocidos y valida que `desde <= hasta`. Un rango inválido devuelve
 `ServiceResult` fallido y un periodo sin ventas devuelve `0`.
 
 El filtro es inclusivo en ambos extremos:

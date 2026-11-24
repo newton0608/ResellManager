@@ -1,5 +1,8 @@
 # Compras, proveedores y comprobantes
 
+**Ampliación implementada en rama, sin despliegue:** [Movimientos, CF y operaciones de productos](operaciones-financieras-y-productos.md) describe los contratos nuevos y los límites de validación.
+
+
 **Estado: implementado**, incluidos GTQ/USD y referencia opcional de Banguat.
 GTQ continúa siendo la moneda base del resto del negocio.
 

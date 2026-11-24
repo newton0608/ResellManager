@@ -1,5 +1,8 @@
 # Inventario y recepción
 
+**Ampliación implementada en rama, sin despliegue:** [Movimientos, CF y operaciones de productos](operaciones-financieras-y-productos.md) describe los contratos nuevos y los límites de validación.
+
+
 **Estado: implementado.** Una unidad física conserva compra, producto, costo e
 historial. Su estado físico y su reserva comercial son dimensiones distintas.
 

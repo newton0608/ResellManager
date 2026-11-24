@@ -4,9 +4,9 @@ Esta guía documenta la API pública de lectura implementada. La UI también exi
 
 La iteración original de backend no incorporó UI; esta se añadió posteriormente. El sistema actual sigue sin cuentas públicas, autorregistro, carrito, pedidos web, checkout ni pagos online. Aquella iteración no modificó el esquema. V1.4 añade persistencia de galería y jerarquía de categorías, conservando las reglas de compras, inventario, reservas, pedidos y ventas; ver [contrato V1.4](modules/catalogo-v1-4.md).
 
-## Disponibilidad exacta
+## Disponibilidad en listados
 
-Un producto se publica si existe **al menos una misma unidad** que cumpla simultáneamente:
+Un producto aparece en listados si existe **al menos una misma unidad** que cumpla simultáneamente:
 
 ```text
 UnidadInventario.Estado == Disponible
@@ -26,18 +26,20 @@ Esta definición combina la elegibilidad de venta general de `SeleccionOperativa
 
 La disponibilidad es una lectura del momento, sin crear una reserva ni garantizar disponibilidad futura. Se deshabilita el almacenamiento HTTP en caché con `Cache-Control: no-store`.
 
+El detalle y sus imágenes tienen elegibilidad propia: un producto con inventario recibido puede seguir accesible por enlace como agotado, sin aparecer en listados. Los maestros nunca recibidos quedan privados, también al consultar sus grupos de variantes. Esta ampliación está implementada en rama, sin despliegue; ver [lecturas públicas](modules/operaciones-financieras-y-productos.md#lecturas-públicas).
+
 ## Capas y contratos
 
 - **Application:** `ICatalogoPublicoService`, `ProductoCatalogoDto`, `ProductoCatalogoDetalleDto` y [DTOs de navegación](../src/ResellManager.Application/DTOs/CatalogoNavegacionDtos.cs). La abstracción permite listar/buscar/filtrar con compatibilidad o páginas, consultar escaparate/opciones/contexto, obtener detalle y abrir portada o fotografías de galería por ID.
-- **Infrastructure:** `CatalogoPublicoService`, registrado scoped. Las consultas EF son `AsNoTracking`, usan `Any`/`EXISTS` y un único filtro de disponibilidad en todas las lecturas. El listado proyecta campos comerciales; el detalle carga producto, categoría e imágenes para devolver metadatos mínimos. Nunca devuelve entidades administrativas.
+- **Infrastructure:** `CatalogoPublicoService`, registrado scoped. Las consultas EF son `AsNoTracking`, usan `Any`/`EXISTS` y disponibilidad en listados y elegibilidad histórica de publicación en detalle/imágenes. El listado proyecta campos comerciales; el detalle carga producto, categoría e imágenes para devolver metadatos mínimos. Nunca devuelve entidades administrativas.
 - **Web:** `CatalogoPublicoEndpoints`, adaptador HTTP con diez rutas GET `AllowAnonymous`. Los errores de estos endpoints no reejecutan las páginas Blazor administrativas.
 - **Domain:** V1.4 añade `ProductoImagen` y `Categoria.CategoriaPadreId` opcional.
 
-El listado expone `Id`, `Nombre`, `CategoriaId`, nombre de `Categoria`, `PrecioPublico`, `TieneImagenPrincipal`, `Disponible`, `Marca`, `CategoriaPadreId` y `CategoriaPadreNombre`. El detalle agrega `Descripcion`, `Marca`, `Modelo`, `Color`, `Talla`, `ContenidoMl`, `PesoGramos` y `Presentacion`, más `Imagenes` ordenadas (`Id`, `Orden`, `EsPortada`). `PrecioPublico` se proyecta directamente de `PrecioSugerido`; no calcula márgenes ni utiliza precios/costos transaccionales. `Disponible` es siempre true en las respuestas exitosas porque las lecturas excluyen los demás productos.
+El listado expone `Id`, `Nombre`, `CategoriaId`, nombre de `Categoria`, `PrecioPublico`, `TieneImagenPrincipal`, `Disponible`, `Marca`, `CategoriaPadreId` y `CategoriaPadreNombre`. El detalle agrega `Descripcion`, `Marca`, `Modelo`, `Color`, `Talla`, `ContenidoMl`, `PesoGramos` y `Presentacion`, más `Imagenes` ordenadas (`Id`, `Orden`, `EsPortada`), `CodigoInterno` comercial y `Variantes` mínimas (`ProductoId`, `Nombre`, `Disponible`, `Atributos`, `Precio`). `PrecioPublico` se proyecta directamente de `PrecioSugerido`; no calcula márgenes ni utiliza precios/costos transaccionales. `Disponible` es true en listados; el detalle puede devolver false para una ficha agotada con inventario recibido. Los maestros nunca recibidos permanecen privados.
 
 No se exponen costo, proveedor, compras, unidades, reservas, pedidos, clientes, observaciones de categoría ni rutas de archivo. Los contratos contienen únicamente campos comerciales explícitos, sin entidades Domain ni DTOs administrativos anidados.
 
-`CodigoInterno` no se publica: [la documentación actual](15_CodigosYCanalesVenta.md) lo clasifica como identificador técnico generado `PRO-<GUID>`. Tampoco se publica `CodigoBarras`. Ambos siguen siendo criterios de búsqueda compatibles con el servicio existente, sin incluirlos en la respuesta. Si el negocio necesita una referencia comercial pública, debe revisarse esa decisión antes de diseñar la UI.
+La ampliación aprobada del 22/11/2026 publica `CodigoInterno` como identificación comercial en el detalle y WhatsApp. `CodigoBarras` permanece fuera del DTO público. Ambos son criterios de búsqueda compatibles. El cambio sustituye la exclusión original del código interno y exige revisar expresamente API e imágenes/enlaces agotados (REG-AC-02). Ver [contrato vigente](modules/operaciones-financieras-y-productos.md#lecturas-públicas).
 
 ## API
 
@@ -50,8 +52,8 @@ No se exponen costo, proveedor, compras, unidades, reservas, pedidos, clientes, 
 | `GET /api/catalogo/productos/marcas?cursor=...&tamano=16` | Página de marcas públicas normalizadas para presentación, máximo 16, sin valores vacíos ni variantes duplicadas. |
 | `GET /api/catalogo/productos/categorias/{categoriaId}/contexto` | `raiz`, `seleccionada`, primera página de `subcategorias`; 404 si la categoría no tiene publicaciones directas ni indirectas. |
 | `GET /api/catalogo/productos/categorias/{raizId}/hijas?cursor=...&tamano=16` | Página de hijas con productos públicos, máximo 16. No expone nietos ni hijas vacías. |
-| `GET /api/catalogo/productos/{productoId}` | 200 con detalle comercial; 404 si no existe o ya no tiene unidades libres. |
-| `GET /api/catalogo/productos/{productoId}/imagen` | 200 `image/webp`; portada vigente compatible, 404 si no está publicado o no puede abrirse. |
+| `GET /api/catalogo/productos/{productoId}` | 200 con detalle comercial disponible o agotado si tuvo inventario recibido; 404 si no existe o nunca fue recibido. |
+| `GET /api/catalogo/productos/{productoId}/imagen` | 200 `image/webp`; misma elegibilidad histórica del detalle, 404 si no es publicable o no puede abrirse. |
 | `GET /api/catalogo/productos/{productoId}/imagenes/{imagenId}` | Fotografía identificada por GUID opaco dentro del producto; misma elegibilidad, `no-store` y 404 sin rutas privadas. `principal` conserva el fallback legado. |
 
 La búsqueda conserva los campos y mecanismo de `IProductoService.BuscarAsync`: nombre, código interno y código de barras, con `Trim`, minúsculas y coincidencia parcial. El array compatible prioriza códigos exactos y luego ordena por nombre/ID; las páginas y carruseles ordenan por ID ascendente para mantener un cursor único. No agrega búsqueda por proveedores, compras o códigos de unidad, matching difuso ni normalización de acentos; se conservan las capacidades actuales de SQLite. Término vacío equivale al listado; categoría desconocida o búsqueda sin coincidencias devuelve un array o página vacía, según el contrato elegido.
@@ -77,7 +79,7 @@ Un tamaño fuera de rango o cursor inválido devuelve 400 sin página administra
 Una fila adicional obtenida en SQL determina `HasMore`; `NextCursor` es el último
 ID entregado cuando hay continuación y null al final. No se ofrece un total de
 stock ni un snapshot permanente. Cada nueva consulta aplica la disponibilidad
-vigente antes de limitar, igual que detalle e imágenes.
+vigente antes de limitar. Detalle e imágenes usan elegibilidad de inventario recibido para preservar enlaces agotados.
 
 El escaparate consulta un bloque de raíces y luego **todos sus carruseles en una
 sola consulta**, sin N+1. Un `NOT EXISTS` con desplazamiento de nueve filas busca
@@ -107,7 +109,7 @@ proyectan el indicador de portada, sin galería ni rutas privadas.
 
 Se conserva el almacenamiento configurado fuera de `wwwroot` y el endpoint autenticado `GET /productos/{productoId}/imagen`.
 
-El nuevo caso de uso recibe únicamente el ID, verifica disponibilidad y lee internamente `ImagenPrincipalRuta`. Exige que la referencia pertenezca a `productos/{productoId}/`; el almacenamiento existente valida después el formato estricto y rechaza traversal/rutas físicas. Solo abre el WebP procesado ya guardado. La respuesta transporta el stream y el MIME, sin rutas ni nombres físicos.
+El nuevo caso de uso recibe únicamente el ID, verifica publicación por inventario recibido y lee internamente `ImagenPrincipalRuta`. Exige que la referencia pertenezca a `productos/{productoId}/`; el almacenamiento existente valida después el formato estricto y rechaza traversal/rutas físicas. Solo abre el WebP procesado ya guardado. La respuesta transporta el stream y el MIME, sin rutas ni nombres físicos.
 
 `TieneImagenPrincipal` indica que existe una referencia persistida no vacía; no comprueba el disco para cada fila. Un archivo ausente sigue respondiendo 404. Las imágenes tampoco se almacenan en caché HTTP y conservan `X-Content-Type-Options: nosniff` del host.
 
@@ -118,7 +120,7 @@ Las pruebas usan SQLite real y los servicios existentes para comprar, recibir, r
 Puntos de revisión originalmente registrados antes de la UI (ahora implementada); no son requisitos automáticamente aprobados:
 
 1. Que nombres, descripciones y fotos existentes sean apropiados para publicación: no existe una marca editorial de publicación independiente del stock.
-2. Si el negocio desea mostrar alguna referencia comercial y cómo presentar `PrecioSugerido` como precio público; la moneda/formato siguen siendo una decisión de presentación.
+2. La ampliación aprobada publica el código interno comercial y muestra Q0 como «Consultar precio»; no transforma precio sugerido en costo ni expone datos privados.
 3. Paginación y navegación por raíces/hijas: **implementadas en los ajustes UX V1.4**, sin `ICategoriaService` administrativo; ver [contrato vigente](modules/catalogo-v1-4-ajustes-ux.md). La observación original de lectura completa se conserva como contexto histórico, no como pendiente actual.
 4. La disponibilidad puede cambiar entre lecturas. Cualquier futura operación comercial debe revalidar inventario mediante los flujos existentes.
 

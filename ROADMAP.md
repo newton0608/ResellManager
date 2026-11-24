@@ -2,6 +2,10 @@
 
 Resumen de planificación desde una V1 productiva. Versión global actual: **`v1.4.1`** (`5e16db0`), con [producción aceptada el 22/10/2026](docs/deployment/produccion-hotfix-productos-20261022.md). Los bloques V2/V3 son planificación; solo las piezas marcadas explícitamente como implementadas, como el scanner V2.1, están entregadas.
 
+## Ampliación financiera y de productos en rama de trabajo
+
+Implementados apertura única de cartera, Movimientos y Ajustes, CF con pagos mixtos y anulaciones, exportaciones, precios móviles, variantes, fichas agotadas, etiquetas y costos desconocidos con correcciones trazables. [Contrato y límites de aceptación](docs/modules/operaciones-financieras-y-productos.md). No constituyen una release desplegada; siguen pendientes pruebas físicas de impresión/lectura y la aplicación revisada de la migración de costos sobre datos reales.
+
 ## V1 — Sistema interno en producción
 
 Sistema privado actual: clientes, productos/categorías, proveedores, compras/comprobantes, inventario/recepción, pedidos/reservas, ventas/pagos y Dashboard.

@@ -2,6 +2,8 @@
 
 Este documento reúne planificación posterior al alcance original V1. Algunas piezas se adelantaron y ya existen en la base auditada el 05/10/2026; se distingue su estado para no repetir implementaciones.
 
+**Actualización 22/11/2026 — implementación en rama, sin release:** apertura y movimientos auditables, CF con anulación completa, XLSX/PDF financieros, precios, variantes, fichas agotadas, etiquetas y costos con revisión histórica ya tienen implementación. Ver [contrato y límites](modules/operaciones-financieras-y-productos.md). La prueba física de etiquetas y aplicación acotada de costos históricos permanecen operativas; los objetivos generales V2 siguientes no se dan por completados en conjunto.
+
 La intención es evitar que V2 se convierta en una sola entrega demasiado grande. Por ello se divide conceptualmente en cuatro bloques:
 
 - **V2.1 — Productividad y experiencia de uso**.
@@ -164,13 +166,13 @@ Los informes son distintos de la analítica de uso de la aplicación: aquí el o
 
 ### Exportación
 
-Evaluar exportación de informes a formatos como PDF y Excel una vez que los informes principales estén estables.
+Historial, estado de cuenta, apertura, CF y utilidad original/revisada ya tienen XLSX/PDF en la ampliación en rama. Evaluar las exportaciones adicionales de los informes generales V2 cuando estos se implementen.
 
 La exportación avanzada no es requisito para la primera entrega de V2.2 y puede implementarse posteriormente si aporta valor real.
 
 ## Devoluciones y cambios
 
-Diseñar un flujo formal para devoluciones y cambios de mercancía ya vendida o entregada.
+La anulación completa CF está implementada en rama con autorización, reembolsos y recepción apta/no apta. Siguen pendientes los cambios, devoluciones parciales y de otras ventas; el flujo futuro debe complementar el existente.
 
 Debe preservar:
 
@@ -223,6 +225,8 @@ Objetivo: preparar ResellManager para varios usuarios, mayor concurrencia y una 
 
 ## Concurrencia de saldo por cliente
 
+La ampliación financiera ya revalida escrituras en transacciones SQLite e incorpora claves idempotentes persistentes. El aislamiento por cliente y escalado distribuido descritos a continuación siguen como trabajo general V2.
+
 Revisar las operaciones que afectan el saldo global de un cliente como sección crítica lógica:
 
 - registrar venta;
@@ -238,6 +242,8 @@ La solución futura debe:
 - garantizar progreso y evitar espera indefinida.
 
 ## Concurrencia de reservas de inventario
+
+Se incorporaron tokens EF en estados y FK de reserva y una prueba de escritura obsoleta tras CF. La matriz simultánea completa y la solución distribuida descritas a continuación siguen pendientes.
 
 Proteger la reserva por `UnidadInventarioId` para impedir doble reserva simultánea.
 
@@ -261,19 +267,11 @@ Si el negocio evoluciona a varios trabajadores o usuarios:
 - restringir operaciones según permisos;
 - mantener trazabilidad de quién realizó operaciones importantes cuando aporte valor real.
 
-No se requiere para el escenario actual de V1.
+El sistema general de roles sigue como IDEA futura sin diseño en esta entrega. Las operaciones financieras sensibles ya utilizan una lista explícita de IDs Identity administradores en backend; esa autorización mínima no completa este módulo general.
 
 ## Robustez de Venta Directa
 
-Evaluar una orquestación transaccional más fuerte para la creación de:
-
-```text
-Pedido de Venta Directa + Venta
-```
-
-especialmente si existen múltiples usuarios o instancias de la aplicación.
-
-La meta sería evitar estados parciales y mejorar idempotencia/recuperación sin romper la regla de que toda Venta nace de un Pedido.
+**Implementada en la ampliación en rama:** `IVentaDirectaService` confirma pedido técnico, venta, detalles, unidades y cobros CF junto al resultado idempotente, en una transacción. Conserva `Venta.PedidoId` obligatorio y único. El escalado a múltiples instancias y otros motores exige validación específica; no es una garantía distribuida.
 
 ## Telemetría técnica
 

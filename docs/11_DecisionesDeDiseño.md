@@ -95,7 +95,7 @@ Motivo:
 Los pagos pertenecen globalmente al cliente. Excluir una venta ya pagada puede dejar más pagos que deuda registrada.
 
 Resultado:
-Antes de cancelar se calcula el saldo sin esa venta. Si resulta negativo, se rechaza la operación hasta ajustar o devolver pagos. Las unidades entregadas continúan requiriendo devolución/cambio futuro.
+Antes de cancelar se calcula el saldo sin esa venta. Si resulta negativo, se rechaza la operación hasta ajustar o devolver pagos. La cancelación ordinaria de cliente identificado sigue rechazando unidades entregadas. La ampliación CF tiene su proceso específico de devolución completa, descrito en la decisión 028.
 
 ## 012 Precio sugerido y precio real permanecen separados
 
@@ -108,7 +108,7 @@ Resultado:
 ## 013 Devoluciones y cambios quedan fuera de esta fase
 
 Resultado:
-Devoluciones y cambios se diseñarán como casos de uso futuros; no se habilitan mediante cambios arbitrarios de estado ni mediante UI.
+Devoluciones y cambios quedaron fuera de la fase V1 original. La anulación completa CF está implementada posteriormente en rama según la decisión 028; cambios, devoluciones parciales y de otras ventas continúan pendientes. No se habilitan mediante transiciones manuales arbitrarias.
 
 ## 014 Las comisiones de catálogo deben ser configurables y conservar historial
 
@@ -137,13 +137,15 @@ La solución deberá cumplir:
 
 Se aplicará doble protección: una capa de coordinación a nivel de aplicación y una segunda garantía a nivel de persistencia/transacción o mecanismo de concurrencia apropiado para la base de datos utilizada. La implementación concreta se decidirá cuando estén terminados los flujos de UI y antes de considerar el sistema listo para escenarios con concurrencia real.
 
+**Avance posterior en rama (23/11/2026):** las escrituras financieras revalidan dentro de transacciones SQLite, incorporan claves persistentes y tokens EF para estado/reserva/cierre. Esto no completa las garantías generales de escalado y coordinación por cliente/unidad previstas en V2. Contrato y pruebas en [operaciones financieras y productos](modules/operaciones-financieras-y-productos.md).
+
 ## 016 La aplicación es privada y usa ASP.NET Core Identity
 
 Motivo:
 ResellManager administra información familiar y no necesita adquisición pública de usuarios.
 
 Resultado:
-La Fase 5.1 implementa login, logout, cookies seguras y protección de rutas con ASP.NET Core Identity. La autorización actual exige únicamente un usuario autenticado. No se exponen `MapIdentityApi` ni endpoints o páginas de registro anónimo.
+La Fase 5.1 implementa login, logout, cookies seguras y protección de rutas con ASP.NET Core Identity. La autorización inicial exigía únicamente un usuario autenticado. La ampliación en rama exige concesión explícita por ID Identity para operaciones financieras sensibles (decisión 028). No se exponen `MapIdentityApi` ni endpoints o páginas de registro anónimo.
 
 ### Roles y permisos futuros
 
@@ -345,3 +347,15 @@ contrato ni se borra evidencia útil para simplificar el árbol.
 Flujo: discutir requisitos → documentar acuerdos/criterios de aceptación → prompt
 corto → implementar/validar y actualizar estado. Las opciones tentativas quedan
 marcadas como análisis; un agente no las transforma en reglas aprobadas.
+
+## 028 Hechos financieros auditables y costos revisables sin sobrescribir originales
+
+**Estado:** requisitos aprobados el 22/11/2026 e implementación validada en rama; sin release ni despliegue. [Contrato canónico](modules/operaciones-financieras-y-productos.md) y [validación](auditorias/movimientos-ajustes-cf-productos-20261123.md).
+
+El saldo sigue derivado e incorpora apertura global única y ajustes/reversiones inmutables. CF conserva pedido técnico y ausencia de cliente, con datos ocasionales en la venta y cobros propios; pedido, venta, inventario y cobros se confirman de forma atómica e idempotente. Su anulación completa distingue decisión, dinero efectivamente devuelto y recepción de mercancía apta/no apta.
+
+La autorización sensible utiliza IDs Identity configurados explícitamente, sin privilegios por defecto. Un sistema general de roles y administración de usuarios permanece como IDEA futura; esta entrega no lo diseña.
+
+El costo conocido/desconocido es explícito. Las notas de costo real conservan snapshots y habilitan informes originales/revisados con corte UTC. Q0 históricos solo se convierten mediante alcance revisado, respaldo verificado e historial idempotente. La corrección de costo no modifica la deuda del cliente.
+
+Los grupos mantienen productos independientes y la lectura pública separa disponibilidad de listados y acceso directo agotado. Se permite código interno comercial y variantes mínimas, manteniendo privados los maestros nunca recibidos y los datos administrativos. La revisión REG-AC-02 y la prueba física de etiquetas son condiciones de publicación, sin acreditar hardware ni entorno productivo con las pruebas locales.

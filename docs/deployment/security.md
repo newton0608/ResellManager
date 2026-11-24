@@ -54,6 +54,12 @@ Existen `v1.0.0 → 3f2d264` y `v1.0.1 → 97da64e`, pero no prueban qué imagen
 | 24 | Logs y alertas accionables | 🟡 | Se usa `ILogger` y Docker rota `json-file`. Falta decidir formato estructurado/correlación, retención, destino y alertas mínimas. |
 | 25 | Restauración del backup probada | ✅ / 🟡 | Restore real realizado y verificado según confirmación operativa del responsable. Falta incorporar el registro detallado y alcance de comprobaciones; no se certifican todos los controles ni el rollback de aplicación. Véase el runbook. |
 
+## Autorización financiera y exportaciones en rama
+
+La ampliación del 22/11/2026 exige IDs Identity administrativos explícitos para apertura, ajustes/reversiones, efectos de anulación CF y costos; no concede privilegios por defecto ni añade roles generales. Las descargas financieras son privadas y sin caché. Las pruebas usan datos sintéticos; esta implementación no acredita controles del VPS. Configuración y contratos en [operaciones financieras y productos](../modules/operaciones-financieras-y-productos.md#autorización-y-acceso).
+
+El detalle público admite fichas agotadas con evidencia de inventario recibido y agrega código interno comercial y variantes mínimas. Las listas mantienen disponibilidad. La revisión de campos e imágenes debe conservarse al ampliar esta superficie, según REG-AC-02 y el [contrato público](../25_CatalogoPublicoBackend.md).
+
 ## Importación temporal de productos
 
 La [API de importación temporal](../modules/importacion-temporal-productos.md) fue integrada y desplegada el 15/10/2026; sigue deshabilitada por defecto. Solo acepta peticiones locales al contenedor con Host de loopback, sin cabeceras de proxy, clave temporal y vencimiento de hasta 24 horas. Limita el tamaño real del cuerpo y las partes multipart, la frecuencia y los reintentos; la auditoría registra ruta y estado sin credenciales ni cuerpos completos.

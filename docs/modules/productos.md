@@ -1,5 +1,8 @@
 # Productos y categorías
 
+**Ampliación implementada en rama, sin despliegue:** [Movimientos, CF y operaciones de productos](operaciones-financieras-y-productos.md) describe los contratos nuevos y los límites de validación.
+
+
 **Estado: implementado.** Producto describe el artículo; `UnidadInventario`
 representa cada unidad física. Producto no almacena el costo de adquisición.
 Categoría es un maestro configurable, no un enum.
@@ -40,9 +43,9 @@ Categoría es un maestro configurable, no un enum.
   [decisión 025](../11_DecisionesDeDiseño.md#025-preservar-clientes-y-productos-con-historial)
   todavía no está implementada. Quitar la imagen no equivale a borrar Producto.
 
-## Requisitos aprobados, pendientes de implementación
+## Ampliación implementada en rama de trabajo
 
-- [Productos, Catálogo, Etiquetas y Costos](requisitos-productos-catalogo-etiquetas-costos.md): variantes vinculadas, asignación rápida de precios desde móvil, filtros avanzados, etiquetas por producto con código interno escaneable y costos desconocidos. **Especificación funcional; no describe comportamiento implementado.**
+- [Productos, Catálogo, Etiquetas y Costos](requisitos-productos-catalogo-etiquetas-costos.md): variantes vinculadas, asignación rápida de precios desde móvil, filtros avanzados, etiquetas por producto con código interno escaneable y costos desconocidos. La especificación conserva los requisitos; el contrato de implementación se enlaza arriba.
 
 ## Dónde trabajar y validar
 

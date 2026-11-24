@@ -1,5 +1,15 @@
 # Backlog
 
+## Ampliación financiera y de productos
+
+- [x] Implementación en rama de apertura única, ajustes/reversiones, CF, pagos mixtos y anulaciones con efectos auditados.
+- [x] XLSX/PDF financieros, precios móviles, filtros, variantes, fichas agotadas y etiquetas por Producto.
+- [x] Costos desconocidos, migración acotada con respaldo y notas/informes originales y revisados.
+- [ ] Validación física de etiquetas, impresora y lectura; aplicación operativa de costos históricos con alcance revisado.
+
+[Contrato de implementación y validación](modules/operaciones-financieras-y-productos.md). Las casillas de implementación no acreditan despliegue.
+
+
 V1 está en producción. Este backlog conserva entregas de fases y distingue ampliaciones posteriores; sus pendientes V2 no se consideran resueltos por el despliegue. El estado operativo vigente se mantiene en el [runbook V1](deployment/deployment.md) y las versiones en el [changelog](../CHANGELOG.md).
 
 ## V1.4 — Mejoras de catálogo (publicadas en v1.4.0; QA físico específico pendiente)
@@ -64,7 +74,9 @@ Contrato: [V1.4 de Virtuosa Store](modules/catalogo-v1-4.md). Rama
 - [x] Ajustar visualmente login y error sin modificar su arquitectura de autenticación.
 - [x] Implementar las pantallas y operaciones V1 de cada módulo (Fases 5.3 a 5.9).
 
-## Endurecimiento de concurrencia — V2, no implementado
+## Endurecimiento de concurrencia — avance en rama y alcance V2
+
+La ampliación financiera incorpora revalidación bajo transacciones SQLite, comandos persistentes y tokens EF de estado/reserva/cierre de apertura. Las garantías por cliente/unidad para escalado y la matriz simultánea general V2 siguientes no se consideran completadas por esta protección local.
 
 ### Saldo global por cliente
 
@@ -106,7 +118,8 @@ Contrato: [V1.4 de Virtuosa Store](modules/catalogo-v1-4.md). Rama
 - [x] V2.1: integración del scanner en `develop` (`0c7cead`, 17/10/2026), conservando catálogo V1.4 y API temporal.
 - [x] V2.1: resolver el bloqueo de compilación del entorno auditado y cerrar regresión integrada, combinación scanner/galería y CSS generado según el [cierre técnico](auditorias/scanner-v2-1-cierre-tecnico-20261017.md), integrado en `develop` y `main` tras la aceptación física.
 - [x] V2.1: validación física de la rama corregida confirmada por el usuario en iPhone 14 Plus con Brave (17/10/2026); aceptación registrada en el [cierre técnico](auditorias/scanner-v2-1-cierre-tecnico-20261017.md). Versiones exactas y desglose de casos no comunicados; no certifica Safari.
-- [ ] Diseñar devoluciones y cambios para unidades entregadas.
+- [x] Ampliación en rama: anulación completa CF con devolución efectiva y recepción de unidades vendidas/entregadas.
+- [ ] Diseñar cambios, devoluciones parciales y devoluciones de otras ventas para unidades entregadas.
 
 ---
 
@@ -205,7 +218,7 @@ Contrato: [V1.4 de Virtuosa Store](modules/catalogo-v1-4.md). Rama
 - [x] Asignar `CanalVenta.Presencial` automáticamente al pedido de Venta Directa, sin selector adicional.
 - [x] Migrar pedidos históricos a `CanalVenta.Otro` sin inferir su origen.
 - [x] Excluir ventas libres: toda venta nace obligatoriamente de un pedido.
-- [ ] V2: evaluar una orquestación transaccional atómica para crear `Pedido` y registrar `Venta` si el escenario multiusuario lo requiere.
+- [x] Ampliación en rama: `IVentaDirectaService` crea pedido, venta, unidades y cobros CF en una transacción con clave idempotente persistente.
 
 - [x] Registrar apartado mediante `Pedido` de tipo `Apartado`, detalles y reserva de unidades físicas. Satisfecho por Pedido + Reserva, sin entidad ni módulo adicional.
 
@@ -231,7 +244,7 @@ Contrato: [V1.4 de Virtuosa Store](modules/catalogo-v1-4.md). Rama
 ## Fase 5.9: Dashboard
 
 - [x] Reemplazar el placeholder de `/` por un Dashboard privado con información real.
-- [x] Mostrar total adeudado como ventas `Registrada` menos pagos, sin ocultar saldos negativos inconsistentes.
+- [x] Mostrar total adeudado como ventas de clientes identificados menos pagos, más movimientos firmados, sin ocultar saldos negativos inconsistentes.
 - [x] Mostrar valor y cantidad de inventario usando exclusivamente unidades `Disponible` y su costo real.
 - [x] Definir pedidos activos como `Pendiente + Confirmado`, excluyendo `Cancelado` y `Completado`.
 - [x] Mostrar Pendiente de entregar como conteo real de unidades `Vendida`, sin contar `Entregada`, en lugar de la tarjeta de pedidos activos.
