@@ -11,7 +11,7 @@ public class Pedido
     public CanalVenta CanalVenta { get; set; }
     public EstadoPedido Estado { get; set; }
     public string? Observaciones { get; set; }
-    public int ClienteId { get; set; }
+    public int? ClienteId { get; set; }
 
     public Cliente Cliente { get; set; } = null!;
     public ICollection<DetallePedido> Detalles { get; set; } = [];

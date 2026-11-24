@@ -159,7 +159,7 @@ public sealed class ClienteService(ResellManagerDbContext db) : IClienteService
             x.Observaciones,
             x.PedidoId,
             x.Pedido.ClienteId,
-            x.Pedido.Cliente.Nombres
+            x.Pedido.ClienteId == null ? ((x.NombreOcasional + " " + x.ApellidoOcasional).Trim().Length == 0 ? "Consumidor Final (CF)" : (x.NombreOcasional + " " + x.ApellidoOcasional).Trim()) : x.Pedido.Cliente.Nombres
                 + (x.Pedido.Cliente.Apellidos == null ? "" : " " + x.Pedido.Cliente.Apellidos),
             x.Detalles.Sum(d => d.PrecioFinal),
             x.Detalles.Select(d => new DetalleVentaDto(
@@ -168,11 +168,13 @@ public sealed class ClienteService(ResellManagerDbContext db) : IClienteService
                     d.UnidadInventario?.CodigoInterno,
                     d.ProductoId ?? d.UnidadInventario!.ProductoId,
                     d.Producto?.Nombre ?? d.UnidadInventario!.Producto.Nombre,
-                    d.CostoUnitario ?? d.UnidadInventario!.Costo,
+                    d.CostoUnitario ?? 0m,
                     d.PrecioFinal,
-                    d.Observaciones
+                    d.Observaciones,
+                    d.CostoConocido && d.CostoUnitario.HasValue
                 ))
-                .ToList()
+                .ToList(),
+            x.Pedido.ClienteId == null
         );
 
     private async Task<IReadOnlyList<ClienteDto>> MapConSaldosAsync(
@@ -183,36 +185,8 @@ public sealed class ClienteService(ResellManagerDbContext db) : IClienteService
         if (clientes.Count == 0)
             return [];
 
-        var ids = clientes.Select(x => x.Id).ToArray();
-        var ventas = await db
-            .DetallesVenta.AsNoTracking()
-            .Where(x =>
-                x.Venta.Estado == EstadoVenta.Registrada
-                && ids.Contains(x.Venta.Pedido.ClienteId)
-            )
-            .Select(x => new { x.Venta.Pedido.ClienteId, Monto = x.PrecioFinal })
-            .ToListAsync(ct);
-        var pagos = await db
-            .Pagos.AsNoTracking()
-            .Where(x => ids.Contains(x.ClienteId))
-            .Select(x => new { x.ClienteId, x.Monto })
-            .ToListAsync(ct);
-        var ventasPorCliente = ventas
-            .GroupBy(x => x.ClienteId)
-            .ToDictionary(x => x.Key, x => x.Sum(y => y.Monto));
-        var pagosPorCliente = pagos
-            .GroupBy(x => x.ClienteId)
-            .ToDictionary(x => x.Key, x => x.Sum(y => y.Monto));
-
-        return clientes
-            .Select(x =>
-                Map(
-                    x,
-                    ventasPorCliente.GetValueOrDefault(x.Id)
-                        - pagosPorCliente.GetValueOrDefault(x.Id)
-                )
-            )
-            .ToList();
+        var saldos = await SaldoConsultas.PorClientesAsync(db, clientes.Select(x => x.Id).ToArray(), ct);
+        return clientes.Select(x => Map(x, saldos.GetValueOrDefault(x.Id))).ToList();
     }
 
     private async Task<decimal> SaldoAsync(int id, CancellationToken ct)
@@ -293,13 +267,36 @@ public sealed class CategoriaService(ResellManagerDbContext db) : ICategoriaServ
 
 public sealed class ProductoService(ResellManagerDbContext db) : IProductoService, IConsultaProductoCodigoBarras
 {
-    public async Task<ProductoPaginaDto> ListarPaginaAsync(string? termino = null, int? categoriaId = null,
-        ProductoCursorDto? cursor = null, int tamano = 20, CancellationToken ct = default)
+    public Task<ProductoPaginaDto> ListarPaginaAsync(string? termino = null, int? categoriaId = null,
+        ProductoCursorDto? cursor = null, int tamano = 20, CancellationToken ct = default) => ListarCoreAsync(null, termino, categoriaId, cursor, tamano, ct);
+
+    public Task<ProductoPaginaDto> ListarFiltradosAsync(ProductoFiltros filtros, string? termino = null, int? categoriaId = null,
+        ProductoCursorDto? cursor = null, CancellationToken ct = default) => ListarCoreAsync(filtros, termino, categoriaId, cursor, 20, ct);
+
+    private async Task<ProductoPaginaDto> ListarCoreAsync(ProductoFiltros? filtros, string? termino, int? categoriaId,
+        ProductoCursorDto? cursor, int tamano, CancellationToken ct)
     {
         if (tamano is < 1 or > 20) throw new ArgumentOutOfRangeException(nameof(tamano));
         if (cursor is { Id: <= 0 } || cursor is { Nombre: null }) throw new ArgumentException("Cursor inválido.", nameof(cursor));
         var texto = (termino ?? string.Empty).Trim().ToLowerInvariant();
+        var contexto = filtros is null || filtros == new ProductoFiltros() ? null : FinanzasService.Huella(filtros);
+        if (cursor is not null && cursor.Contexto != contexto) throw new ArgumentException("El cursor no pertenece a estos filtros.");
         IQueryable<Producto> consulta = db.Productos.AsNoTracking();
+        if (filtros is { } f)
+        {
+            if (f.MlDesde < 0 || f.MlHasta < 0 || f.GramosDesde < 0 || f.GramosHasta < 0 || f.MlDesde > f.MlHasta || f.GramosDesde > f.GramosHasta)
+                throw new ArgumentException("Rangos inválidos.");
+            if(f.SinPrecio) consulta=consulta.Where(x=>x.PrecioSugerido==0);
+            if(!string.IsNullOrWhiteSpace(f.Marca)) consulta=consulta.Where(x=>x.Marca!=null&&x.Marca.ToLower().Contains(f.Marca.Trim().ToLower()));
+            if(!string.IsNullOrWhiteSpace(f.Modelo)) consulta=consulta.Where(x=>x.Modelo!=null&&x.Modelo.ToLower().Contains(f.Modelo.Trim().ToLower()));
+            if(!string.IsNullOrWhiteSpace(f.Color)) consulta=consulta.Where(x=>x.Color!=null&&x.Color.ToLower().Contains(f.Color.Trim().ToLower()));
+            if(!string.IsNullOrWhiteSpace(f.Talla)) consulta=consulta.Where(x=>x.Talla!=null&&x.Talla.ToLower()==f.Talla.Trim().ToLower());
+            if(!string.IsNullOrWhiteSpace(f.Presentacion)) consulta=consulta.Where(x=>x.Presentacion!=null&&x.Presentacion.ToLower().Contains(f.Presentacion.Trim().ToLower()));
+            if(f.MlDesde.HasValue)consulta=consulta.Where(x=>x.ContenidoMl>=f.MlDesde);
+            if(f.MlHasta.HasValue)consulta=consulta.Where(x=>x.ContenidoMl<=f.MlHasta);
+            if(f.GramosDesde.HasValue)consulta=consulta.Where(x=>x.PesoGramos>=f.GramosDesde);
+            if(f.GramosHasta.HasValue)consulta=consulta.Where(x=>x.PesoGramos<=f.GramosHasta);
+        }
         if (texto.Length > 0)
             consulta = consulta.Where(x => x.Nombre.ToLower().Contains(texto)
                 || x.CodigoInterno.ToLower().Contains(texto)
@@ -324,7 +321,7 @@ public sealed class ProductoService(ResellManagerDbContext db) : IProductoServic
             }).ToListAsync(ct);
         var hayMas = pagina.Count > tamano;
         if (hayMas) pagina.RemoveAt(tamano);
-        var siguiente = hayMas ? new ProductoCursorDto(pagina[^1].Producto.Nombre, pagina[^1].Producto.Id, pagina[^1].Exacta) : null;
+        var siguiente = hayMas ? new ProductoCursorDto(pagina[^1].Producto.Nombre, pagina[^1].Producto.Id, pagina[^1].Exacta, contexto) : null;
         return new(pagina.Select(x => x.Producto).ToList(), hayMas, siguiente);
     }
 
@@ -355,6 +352,8 @@ public sealed class ProductoService(ResellManagerDbContext db) : IProductoServic
         var error = await Validar(input, x.CodigoInterno, id, ct);
         if (error is not null)
             return ServiceResult<ProductoDto>.Failure(error);
+        var errorVariante = await ProductoOperacionesService.ActualizarFirmaAsync(db, id, input, ct);
+        if (errorVariante is not null) return ServiceResult<ProductoDto>.Failure(errorVariante);
         Apply(x, input);
         await db.SaveChangesAsync(ct);
         return await ObtenerPorIdAsync(id, ct);
@@ -398,8 +397,12 @@ public sealed class ProductoService(ResellManagerDbContext db) : IProductoServic
         return await Query(ordenados).ToListAsync(ct);
     }
 
-    public async Task<ProductoDto?> ObtenerPorCodigoBarrasAsync(string codigo, CancellationToken ct = default) =>
-        await Query(db.Productos.Where(x => x.CodigoBarras == codigo).OrderBy(x => x.Id)).FirstOrDefaultAsync(ct);
+    public async Task<ProductoDto?> ObtenerPorCodigoBarrasAsync(string codigo, CancellationToken ct = default)
+    {
+        var coincidencias = await Query(db.Productos.Where(x => x.CodigoBarras == codigo || x.CodigoInterno == codigo).OrderBy(x=>x.Id)).Take(2).ToListAsync(ct);
+        if(coincidencias.Count>1) throw new InvalidOperationException("Código ambiguo: coincide con más de un producto. Resuelve la colisión antes de continuar.");
+        return coincidencias.SingleOrDefault();
+    }
 
     private async Task<string?> Validar(ProductoInput x, string codigoInterno, int? id, CancellationToken ct)
     {

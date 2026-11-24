@@ -9,6 +9,12 @@ public class Venta
     public DateOnly Fecha { get; set; }
     public EstadoVenta Estado { get; set; }
     public string? Observaciones { get; set; }
+    public string? NombreOcasional { get; set; }
+    public string? ApellidoOcasional { get; set; }
+    public string? UsuarioId { get; set; }
+    public DateTime? RegistradaUtc { get; set; }
+    public DateTime? CanceladaUtc { get; set; }
+    public string? CanceladaPor { get; set; }
     public int PedidoId { get; set; }
 
     public Pedido Pedido { get; set; } = null!;

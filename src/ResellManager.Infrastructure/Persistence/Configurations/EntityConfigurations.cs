@@ -95,6 +95,7 @@ internal sealed class DetalleCompraConfiguration : IEntityTypeConfiguration<Deta
     public void Configure(EntityTypeBuilder<DetalleCompra> b)
     {
         b.ToTable("DetallesCompra"); b.HasKey(x => x.Id);
+        b.Property(x => x.CostoConocido).HasDefaultValue(true);
         b.Property(x => x.CostoUnitarioMonedaOrigen).HasColumnType("decimal(10,2)");
         b.Property(x => x.CostoUnitario).HasColumnType("decimal(10,2)");
         b.HasOne(x => x.Compra).WithMany(x => x.Detalles).HasForeignKey(x => x.CompraId).OnDelete(DeleteBehavior.Cascade);
@@ -120,12 +121,14 @@ internal sealed class UnidadInventarioConfiguration : IEntityTypeConfiguration<U
     public void Configure(EntityTypeBuilder<UnidadInventario> b)
     {
         b.ToTable("UnidadesInventario"); b.HasKey(x => x.Id);
+        b.Property(x => x.CostoConocido).HasDefaultValue(true);
         b.Property(x => x.CodigoInterno).IsRequired().HasMaxLength(50);
         b.HasIndex(x => x.CodigoInterno).IsUnique();
-        b.Property(x => x.Estado).IsRequired().HasConversion<string>().HasMaxLength(30);
+        b.Property(x => x.Estado).IsConcurrencyToken().IsRequired().HasConversion<string>().HasMaxLength(30);
         b.Property(x => x.Costo).HasColumnType("decimal(10,2)");
         b.HasOne(x => x.Producto).WithMany(x => x.UnidadesInventario).HasForeignKey(x => x.ProductoId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne(x => x.DetalleCompra).WithMany(x => x.UnidadesInventario).HasForeignKey(x => x.DetalleCompraId).OnDelete(DeleteBehavior.Restrict);
+        b.Property(x => x.DetallePedidoReservaId).IsConcurrencyToken();
         b.HasIndex(x => x.DetallePedidoReservaId);
         b.HasOne(x => x.DetallePedidoReserva)
             .WithMany(x => x.UnidadesReservadas)
@@ -138,12 +141,12 @@ internal sealed class PedidoConfiguration : IEntityTypeConfiguration<Pedido>
 {
     public void Configure(EntityTypeBuilder<Pedido> b)
     {
-        b.ToTable("Pedidos"); b.HasKey(x => x.Id);
+        b.ToTable("Pedidos", t => t.HasCheckConstraint("CK_Pedido_ClienteOCF", "ClienteId IS NOT NULL OR TipoPedido = 'VentaDirecta'")); b.HasKey(x => x.Id);
         b.Property(x => x.CodigoInterno).IsRequired().HasMaxLength(50);
         b.HasIndex(x => x.CodigoInterno).IsUnique();
         b.Property(x => x.TipoPedido).IsRequired().HasConversion<string>().HasMaxLength(30);
-        b.Property(x => x.CanalVenta).IsRequired();
-        b.Property(x => x.Estado).IsRequired().HasConversion<string>().HasMaxLength(30);
+        b.Property(x => x.CanalVenta).IsRequired().HasDefaultValue(ResellManager.Domain.Enums.CanalVenta.Otro);
+        b.Property(x => x.Estado).IsConcurrencyToken().IsRequired().HasConversion<string>().HasMaxLength(30);
         b.Property(x => x.Observaciones).HasMaxLength(500);
         b.HasOne(x => x.Cliente).WithMany(x => x.Pedidos).HasForeignKey(x => x.ClienteId).OnDelete(DeleteBehavior.Restrict);
     }
@@ -169,7 +172,7 @@ internal sealed class VentaConfiguration : IEntityTypeConfiguration<Venta>
         b.Property(x => x.CodigoInterno).IsRequired().HasMaxLength(50);
         b.HasIndex(x => x.CodigoInterno).IsUnique();
         b.HasIndex(x => x.PedidoId).IsUnique();
-        b.Property(x => x.Estado).IsRequired().HasConversion<string>().HasMaxLength(30);
+        b.Property(x => x.Estado).IsConcurrencyToken().IsRequired().HasConversion<string>().HasMaxLength(30);
         b.Property(x => x.Observaciones).HasMaxLength(500);
         b.HasOne(x => x.Pedido).WithOne(x => x.Venta).HasForeignKey<Venta>(x => x.PedidoId).OnDelete(DeleteBehavior.Restrict);
     }
@@ -181,6 +184,7 @@ internal sealed class DetalleVentaConfiguration : IEntityTypeConfiguration<Detal
     {
         b.ToTable("DetallesVenta");
         b.HasKey(x => x.Id);
+        b.Property(x => x.CostoConocido).HasDefaultValue(true);
         b.Property(x => x.PrecioFinal).HasColumnType("decimal(10,2)");
         b.Property(x => x.CostoUnitario).HasColumnType("decimal(10,2)");
         b.Property(x => x.Observaciones).HasMaxLength(500);

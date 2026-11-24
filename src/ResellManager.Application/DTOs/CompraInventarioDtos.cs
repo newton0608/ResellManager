@@ -5,7 +5,8 @@ namespace ResellManager.Application.DTOs;
 public sealed record DetalleCompraInput(
     int ProductoId,
     int Cantidad,
-    decimal CostoUnitarioMonedaOrigen
+    decimal CostoUnitarioMonedaOrigen,
+    bool CostoConocido = true
 );
 
 public sealed record ComprobanteCompraInput(
@@ -42,6 +43,7 @@ public sealed record DetalleCompraDto(
     decimal Subtotal
 )
 {
+    public bool CostoConocido { get; init; } = true;
     public decimal CostoUnitarioMonedaOrigen { get; init; }
     public decimal SubtotalMonedaOrigen { get; init; }
 }
@@ -102,5 +104,6 @@ public sealed record UnidadInventarioDto(
     OrigenCompra OrigenCompra,
     int? DetallePedidoReservaId,
     int? PedidoReservaId,
-    int? ClienteReservaId
+    int? ClienteReservaId,
+    bool CostoConocido = true
 );

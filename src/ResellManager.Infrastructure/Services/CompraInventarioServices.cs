@@ -39,6 +39,8 @@ public sealed class CompraService(ResellManagerDbContext db) : ICompraService
             return ServiceResult<CompraDto>.Failure("Proveedor no encontrado.");
         if (await db.Compras.AnyAsync(x => x.CodigoInterno == input.CodigoInterno.Trim(), ct))
             return ServiceResult<CompraDto>.Failure("El código de compra ya está registrado.");
+        if (input.Detalles.Any(x => !x.CostoConocido && x.CostoUnitarioMonedaOrigen != 0))
+            return ServiceResult<CompraDto>.Failure("El costo desconocido no puede contener un importe estimado.");
         if (input.Detalles.Any(x => x.Cantidad <= 0 || x.CostoUnitarioMonedaOrigen < 0))
             return ServiceResult<CompraDto>.Failure(
                 "La cantidad y el costo de los detalles no son válidos."
@@ -121,6 +123,7 @@ public sealed class CompraService(ResellManagerDbContext db) : ICompraService
             {
                 ProductoId = item.ProductoId,
                 Cantidad = item.Cantidad,
+                CostoConocido = item.CostoConocido,
                 CostoUnitarioMonedaOrigen = item.CostoUnitarioMonedaOrigen,
                 CostoUnitario = costosGtq[detailNumber - 1],
             };
@@ -138,6 +141,7 @@ public sealed class CompraService(ResellManagerDbContext db) : ICompraService
                                     ? input.FechaIngreso
                                     : null,
                             Costo = detalle.CostoUnitario,
+                            CostoConocido = detalle.CostoConocido,
                             ProductoId = item.ProductoId,
                         }
                     );
@@ -258,6 +262,7 @@ public sealed class CompraService(ResellManagerDbContext db) : ICompraService
                     d.Cantidad * d.CostoUnitario
                 )
                 {
+                    CostoConocido = d.CostoConocido,
                     CostoUnitarioMonedaOrigen = d.CostoUnitarioMonedaOrigen,
                     SubtotalMonedaOrigen = d.Cantidad * d.CostoUnitarioMonedaOrigen,
                 })
@@ -525,7 +530,7 @@ public sealed class InventarioService(ResellManagerDbContext db) : IInventarioSe
                 x.CodigoInterno,
                 x.Estado,
                 x.FechaIngreso,
-                x.Costo,
+                x.NotasCosto.OrderByDescending(n=>n.RegistradoUtc).Select(n=>(decimal?)n.Nuevo).FirstOrDefault() ?? x.Costo,
                 x.ProductoId,
                 x.Producto.Nombre,
                 x.Producto.CodigoInterno,
@@ -533,6 +538,7 @@ public sealed class InventarioService(ResellManagerDbContext db) : IInventarioSe
                 x.DetalleCompra.Compra.Origen,
                 x.DetallePedidoReservaId,
                 x.DetallePedidoReserva == null ? null : x.DetallePedidoReserva.PedidoId,
-                x.DetallePedidoReserva == null ? null : x.DetallePedidoReserva.Pedido.ClienteId
+                x.DetallePedidoReserva == null ? null : x.DetallePedidoReserva.Pedido.ClienteId,
+                x.CostoConocido || x.NotasCosto.Any()
             ));
 }

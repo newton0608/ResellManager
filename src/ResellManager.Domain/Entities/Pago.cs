@@ -10,6 +10,8 @@ public class Pago
     public MetodoPago MetodoPago { get; set; }
     public string? Referencia { get; set; }
     public string? Observaciones { get; set; }
+    public string? UsuarioId { get; set; }
+    public DateTime? RegistradoUtc { get; set; }
     public int ClienteId { get; set; }
 
     public Cliente Cliente { get; set; } = null!;

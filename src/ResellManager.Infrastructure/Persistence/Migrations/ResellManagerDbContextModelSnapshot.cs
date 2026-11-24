@@ -209,6 +209,114 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("ResellManager.Domain.Entities.AnulacionCF", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AdministradorId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("CompletadaUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("DecididaUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Estado")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Motivo")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("MotivoDecision")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("SolicitadaUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SolicitanteId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("VentaId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("VentaId")
+                        .IsUnique()
+                        .HasFilter("Estado IN (1,2)");
+
+                    b.ToTable("AnulacionesCF");
+                });
+
+            modelBuilder.Entity("ResellManager.Domain.Entities.AperturaCartera", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("ConfirmadaUtc")
+                        .IsConcurrencyToken()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly?>("Corte")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FilasJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Total")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UsuarioId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AperturasCartera", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Apertura_Unica", "Id = 1");
+                        });
+                });
+
+            modelBuilder.Entity("ResellManager.Domain.Entities.CambioPrecioProducto", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Anterior")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<decimal>("Nuevo")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<int>("ProductoId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("RegistradoUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UsuarioId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductoId");
+
+                    b.ToTable("CambiosPrecioProducto");
+                });
+
             modelBuilder.Entity("ResellManager.Domain.Entities.Categoria", b =>
                 {
                     b.Property<int>("Id")
@@ -265,6 +373,69 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Clientes", (string)null);
+                });
+
+            modelBuilder.Entity("ResellManager.Domain.Entities.CobroVenta", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Aplicado")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<decimal>("Entregado")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<int>("Metodo")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Referencia")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("RegistradoUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UsuarioId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("VentaId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("VentaId");
+
+                    b.ToTable("CobrosVenta");
+                });
+
+            modelBuilder.Entity("ResellManager.Domain.Entities.ComandoFinanciero", b =>
+                {
+                    b.Property<string>("Clave")
+                        .HasMaxLength(150)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Huella")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("RegistradoUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Resultado")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UsuarioId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Clave");
+
+                    b.ToTable("ComandosFinancieros");
                 });
 
             modelBuilder.Entity("ResellManager.Domain.Entities.Compra", b =>
@@ -366,6 +537,21 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
                     b.ToTable("ComprobantesCompra", (string)null);
                 });
 
+            modelBuilder.Entity("ResellManager.Domain.Entities.CorreccionDetalleCosto", b =>
+                {
+                    b.Property<Guid>("NotaId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("DetalleVentaId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("NotaId", "DetalleVentaId");
+
+                    b.HasIndex("DetalleVentaId");
+
+                    b.ToTable("CorreccionesDetalleCosto");
+                });
+
             modelBuilder.Entity("ResellManager.Domain.Entities.DetalleCompra", b =>
                 {
                     b.Property<int>("Id")
@@ -377,6 +563,11 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
 
                     b.Property<int>("CompraId")
                         .HasColumnType("INTEGER");
+
+                    b.Property<bool>("CostoConocido")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(true);
 
                     b.Property<decimal>("CostoUnitario")
                         .HasColumnType("decimal(10,2)");
@@ -433,6 +624,11 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("CostoConocido")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(true);
+
                     b.Property<decimal?>("CostoUnitario")
                         .HasColumnType("decimal(10,2)");
 
@@ -463,6 +659,207 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
                     b.ToTable("DetallesVenta", (string)null);
                 });
 
+            modelBuilder.Entity("ResellManager.Domain.Entities.DevolucionDineroCF", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("AnulacionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly>("FechaEfectiva")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Importe")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<int>("Metodo")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Referencia")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("RegistradoUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UsuarioId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AnulacionId");
+
+                    b.ToTable("DevolucionesDineroCF");
+                });
+
+            modelBuilder.Entity("ResellManager.Domain.Entities.GrupoVariantes", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("GruposVariantes");
+                });
+
+            modelBuilder.Entity("ResellManager.Domain.Entities.LoteEtiquetas", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ContenidoJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreadoUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ImpresoPor")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ImpresoUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UsuarioId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("LotesEtiquetas");
+                });
+
+            modelBuilder.Entity("ResellManager.Domain.Entities.MigracionCostosHistoricos", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AlcanceJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Motivo")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("RegistradoUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Respaldo")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UsuarioId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("MigracionesCostosHistoricos");
+                });
+
+            modelBuilder.Entity("ResellManager.Domain.Entities.MovimientoCuenta", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ClienteId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateOnly>("FechaEfectiva")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Importe")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<string>("Motivo")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Referencia")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("RegistradoUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("RevierteId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Tipo")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("UsuarioId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RevierteId")
+                        .IsUnique();
+
+                    b.HasIndex("ClienteId", "FechaEfectiva");
+
+                    b.HasIndex("ClienteId", "Tipo")
+                        .IsUnique()
+                        .HasFilter("Tipo = 1");
+
+                    b.ToTable("MovimientosCuenta");
+                });
+
+            modelBuilder.Entity("ResellManager.Domain.Entities.NotaCosto", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("Anterior")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<DateOnly>("FechaConocimiento")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Motivo")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Nuevo")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<string>("Referencia")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("RegistradoUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("UnidadId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("UsuarioId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UnidadId", "RegistradoUtc");
+
+                    b.ToTable("NotasCosto");
+                });
+
             modelBuilder.Entity("ResellManager.Domain.Entities.Pago", b =>
                 {
                     b.Property<int>("Id")
@@ -491,6 +888,12 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("RegistradoUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UsuarioId")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ClienteId");
@@ -505,9 +908,11 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("CanalVenta")
-                        .HasColumnType("INTEGER");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(5);
 
-                    b.Property<int>("ClienteId")
+                    b.Property<int?>("ClienteId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("CodigoInterno")
@@ -516,6 +921,7 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Estado")
+                        .IsConcurrencyToken()
                         .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("TEXT");
@@ -539,7 +945,10 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
                     b.HasIndex("CodigoInterno")
                         .IsUnique();
 
-                    b.ToTable("Pedidos", (string)null);
+                    b.ToTable("Pedidos", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Pedido_ClienteOCF", "ClienteId IS NOT NULL OR TipoPedido = 'VentaDirecta'");
+                        });
                 });
 
             modelBuilder.Entity("ResellManager.Domain.Entities.Producto", b =>
@@ -679,6 +1088,42 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
                     b.ToTable("Proveedores", (string)null);
                 });
 
+            modelBuilder.Entity("ResellManager.Domain.Entities.RecepcionDevolucionCF", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("AnulacionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("Apta")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Observacion")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("RegistradoUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("UnidadId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("UsuarioId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UnidadId");
+
+                    b.HasIndex("AnulacionId", "UnidadId")
+                        .IsUnique();
+
+                    b.ToTable("RecepcionesDevolucionCF");
+                });
+
             modelBuilder.Entity("ResellManager.Domain.Entities.UnidadInventario", b =>
                 {
                     b.Property<int>("Id")
@@ -693,13 +1138,20 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
                     b.Property<decimal>("Costo")
                         .HasColumnType("decimal(10,2)");
 
+                    b.Property<bool>("CostoConocido")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(true);
+
                     b.Property<int>("DetalleCompraId")
                         .HasColumnType("INTEGER");
 
                     b.Property<int?>("DetallePedidoReservaId")
+                        .IsConcurrencyToken()
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Estado")
+                        .IsConcurrencyToken()
                         .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("TEXT");
@@ -730,17 +1182,30 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("ApellidoOcasional")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CanceladaPor")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("CanceladaUtc")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("CodigoInterno")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Estado")
+                        .IsConcurrencyToken()
                         .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("TEXT");
 
                     b.Property<DateOnly>("Fecha")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NombreOcasional")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Observaciones")
@@ -749,6 +1214,12 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
 
                     b.Property<int>("PedidoId")
                         .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("RegistradaUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UsuarioId")
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -759,6 +1230,31 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("Ventas", (string)null);
+                });
+
+            modelBuilder.Entity("ResellManager.Domain.Entities.VinculoVariante", b =>
+                {
+                    b.Property<int>("ProductoId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("AtributosJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Firma")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("GrupoId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("ProductoId");
+
+                    b.HasIndex("GrupoId", "Firma")
+                        .IsUnique();
+
+                    b.ToTable("VinculosVariantes");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -812,6 +1308,28 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("ResellManager.Domain.Entities.AnulacionCF", b =>
+                {
+                    b.HasOne("ResellManager.Domain.Entities.Venta", "Venta")
+                        .WithMany()
+                        .HasForeignKey("VentaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Venta");
+                });
+
+            modelBuilder.Entity("ResellManager.Domain.Entities.CambioPrecioProducto", b =>
+                {
+                    b.HasOne("ResellManager.Domain.Entities.Producto", "Producto")
+                        .WithMany()
+                        .HasForeignKey("ProductoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Producto");
+                });
+
             modelBuilder.Entity("ResellManager.Domain.Entities.Categoria", b =>
                 {
                     b.HasOne("ResellManager.Domain.Entities.Categoria", "CategoriaPadre")
@@ -820,6 +1338,17 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("CategoriaPadre");
+                });
+
+            modelBuilder.Entity("ResellManager.Domain.Entities.CobroVenta", b =>
+                {
+                    b.HasOne("ResellManager.Domain.Entities.Venta", "Venta")
+                        .WithMany()
+                        .HasForeignKey("VentaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Venta");
                 });
 
             modelBuilder.Entity("ResellManager.Domain.Entities.Compra", b =>
@@ -842,6 +1371,25 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Compra");
+                });
+
+            modelBuilder.Entity("ResellManager.Domain.Entities.CorreccionDetalleCosto", b =>
+                {
+                    b.HasOne("ResellManager.Domain.Entities.DetalleVenta", "DetalleVenta")
+                        .WithMany()
+                        .HasForeignKey("DetalleVentaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ResellManager.Domain.Entities.NotaCosto", "Nota")
+                        .WithMany("Detalles")
+                        .HasForeignKey("NotaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("DetalleVenta");
+
+                    b.Navigation("Nota");
                 });
 
             modelBuilder.Entity("ResellManager.Domain.Entities.DetalleCompra", b =>
@@ -907,6 +1455,46 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
                     b.Navigation("Venta");
                 });
 
+            modelBuilder.Entity("ResellManager.Domain.Entities.DevolucionDineroCF", b =>
+                {
+                    b.HasOne("ResellManager.Domain.Entities.AnulacionCF", "Anulacion")
+                        .WithMany("Reembolsos")
+                        .HasForeignKey("AnulacionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Anulacion");
+                });
+
+            modelBuilder.Entity("ResellManager.Domain.Entities.MovimientoCuenta", b =>
+                {
+                    b.HasOne("ResellManager.Domain.Entities.Cliente", "Cliente")
+                        .WithMany()
+                        .HasForeignKey("ClienteId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ResellManager.Domain.Entities.MovimientoCuenta", "Revierte")
+                        .WithMany()
+                        .HasForeignKey("RevierteId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Cliente");
+
+                    b.Navigation("Revierte");
+                });
+
+            modelBuilder.Entity("ResellManager.Domain.Entities.NotaCosto", b =>
+                {
+                    b.HasOne("ResellManager.Domain.Entities.UnidadInventario", "Unidad")
+                        .WithMany("NotasCosto")
+                        .HasForeignKey("UnidadId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Unidad");
+                });
+
             modelBuilder.Entity("ResellManager.Domain.Entities.Pago", b =>
                 {
                     b.HasOne("ResellManager.Domain.Entities.Cliente", "Cliente")
@@ -923,8 +1511,7 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
                     b.HasOne("ResellManager.Domain.Entities.Cliente", "Cliente")
                         .WithMany("Pedidos")
                         .HasForeignKey("ClienteId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Cliente");
                 });
@@ -949,6 +1536,25 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Producto");
+                });
+
+            modelBuilder.Entity("ResellManager.Domain.Entities.RecepcionDevolucionCF", b =>
+                {
+                    b.HasOne("ResellManager.Domain.Entities.AnulacionCF", "Anulacion")
+                        .WithMany("Recepciones")
+                        .HasForeignKey("AnulacionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ResellManager.Domain.Entities.UnidadInventario", "Unidad")
+                        .WithMany()
+                        .HasForeignKey("UnidadId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Anulacion");
+
+                    b.Navigation("Unidad");
                 });
 
             modelBuilder.Entity("ResellManager.Domain.Entities.UnidadInventario", b =>
@@ -988,6 +1594,32 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
                     b.Navigation("Pedido");
                 });
 
+            modelBuilder.Entity("ResellManager.Domain.Entities.VinculoVariante", b =>
+                {
+                    b.HasOne("ResellManager.Domain.Entities.GrupoVariantes", "Grupo")
+                        .WithMany("Variantes")
+                        .HasForeignKey("GrupoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ResellManager.Domain.Entities.Producto", "Producto")
+                        .WithOne()
+                        .HasForeignKey("ResellManager.Domain.Entities.VinculoVariante", "ProductoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Grupo");
+
+                    b.Navigation("Producto");
+                });
+
+            modelBuilder.Entity("ResellManager.Domain.Entities.AnulacionCF", b =>
+                {
+                    b.Navigation("Recepciones");
+
+                    b.Navigation("Reembolsos");
+                });
+
             modelBuilder.Entity("ResellManager.Domain.Entities.Categoria", b =>
                 {
                     b.Navigation("Productos");
@@ -1019,6 +1651,16 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
                     b.Navigation("UnidadesReservadas");
                 });
 
+            modelBuilder.Entity("ResellManager.Domain.Entities.GrupoVariantes", b =>
+                {
+                    b.Navigation("Variantes");
+                });
+
+            modelBuilder.Entity("ResellManager.Domain.Entities.NotaCosto", b =>
+                {
+                    b.Navigation("Detalles");
+                });
+
             modelBuilder.Entity("ResellManager.Domain.Entities.Pedido", b =>
                 {
                     b.Navigation("Detalles");
@@ -1045,6 +1687,8 @@ namespace ResellManager.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("ResellManager.Domain.Entities.UnidadInventario", b =>
                 {
                     b.Navigation("DetallesVenta");
+
+                    b.Navigation("NotasCosto");
                 });
 
             modelBuilder.Entity("ResellManager.Domain.Entities.Venta", b =>

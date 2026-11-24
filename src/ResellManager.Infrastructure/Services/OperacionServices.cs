@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -157,7 +158,7 @@ public sealed class PedidoService(ResellManagerDbContext db) : IPedidoService
                 x.Estado,
                 x.Observaciones,
                 x.ClienteId,
-                x.Cliente.Nombres + (x.Cliente.Apellidos == null ? "" : " " + x.Cliente.Apellidos),
+                x.ClienteId == null ? "Consumidor Final (CF)" : x.Cliente.Nombres + (x.Cliente.Apellidos == null ? "" : " " + x.Cliente.Apellidos),
                 x.Detalles.Select(d => new DetallePedidoDto(
                         d.Id,
                         d.ProductoId,
@@ -172,7 +173,7 @@ public sealed class PedidoService(ResellManagerDbContext db) : IPedidoService
             ));
 }
 
-public sealed class VentaService(ResellManagerDbContext db) : IVentaService
+public sealed class VentaService(ResellManagerDbContext db, ICuentaOperativa? acceso = null, TimeProvider? reloj = null) : IVentaService
 {
     public async Task<ServiceResult<VentaDto>> RegistrarDesdePedidoAsync(
         VentaInput input,
@@ -182,6 +183,7 @@ public sealed class VentaService(ResellManagerDbContext db) : IVentaService
         if (string.IsNullOrWhiteSpace(input.CodigoInterno) || input.Detalles.Count == 0)
             return ServiceResult<VentaDto>.Failure("Código y detalles son obligatorios.");
 
+        await using var transaction = await db.Database.BeginTransactionAsync(ct);
         var pedido = await db
             .Pedidos.Include(x => x.Venta)
             .Include(x => x.Detalles)
@@ -189,6 +191,7 @@ public sealed class VentaService(ResellManagerDbContext db) : IVentaService
 
         if (pedido is null)
             return ServiceResult<VentaDto>.Failure("Pedido no encontrado.");
+        if (pedido.ClienteId is null) return ServiceResult<VentaDto>.Failure("CF requiere el registro de venta con cobro completo.");
         if (pedido.Estado == EstadoPedido.Cancelado)
             return ServiceResult<VentaDto>.Failure(
                 "Un pedido cancelado no puede convertirse en venta."
@@ -202,10 +205,11 @@ public sealed class VentaService(ResellManagerDbContext db) : IVentaService
         if (error is not null)
             return ServiceResult<VentaDto>.Failure(error);
 
-        await using var transaction = await db.Database.BeginTransactionAsync(ct);
         var venta = new Venta
         {
             PedidoId = input.PedidoId,
+            UsuarioId = acceso is null ? null : (await acceso.ObtenerAsync(ct))?.UsuarioId,
+            RegistradaUtc = (reloj ?? TimeProvider.System).GetUtcNow().UtcDateTime,
             CodigoInterno = input.CodigoInterno.Trim(),
             Fecha = input.Fecha,
             Estado = EstadoVenta.Registrada,
@@ -229,7 +233,10 @@ public sealed class VentaService(ResellManagerDbContext db) : IVentaService
                 var unidad = unidades[item.UnidadInventarioId!.Value];
                 unidad.Estado = EstadoUnidadInventario.Vendida;
                 unidad.DetallePedidoReservaId = null;
-                venta.Detalles.Add(CrearDetalleInventario(item, unidad));
+                var costo = await CostosService.CostoActualAsync(db, unidad, ct);
+                var detalle = CrearDetalleInventario(item, unidad);
+                detalle.CostoConocido = costo.Conocido; detalle.CostoUnitario = costo.Valor;
+                venta.Detalles.Add(detalle);
             }
         }
 
@@ -296,6 +303,7 @@ public sealed class VentaService(ResellManagerDbContext db) : IVentaService
 
     public async Task<ServiceResult> CancelarAsync(int id, CancellationToken ct = default)
     {
+        await using var transaction = await db.Database.BeginTransactionAsync(ct);
         var venta = await db
             .Ventas.Include(x => x.Pedido)
             .Include(x => x.Detalles)
@@ -304,6 +312,7 @@ public sealed class VentaService(ResellManagerDbContext db) : IVentaService
 
         if (venta is null)
             return ServiceResult.Failure("Venta no encontrada.");
+        if (venta.Pedido.ClienteId is null) return ServiceResult.Failure("CF requiere solicitud y aprobación de anulación.");
         if (venta.Estado == EstadoVenta.Cancelada)
             return ServiceResult.Ok();
         if (venta.Detalles.Any(x => x.UnidadInventario?.Estado == EstadoUnidadInventario.Entregada))
@@ -311,31 +320,14 @@ public sealed class VentaService(ResellManagerDbContext db) : IVentaService
                 "La venta incluye unidades entregadas y requiere un proceso de devolución o cambio futuro."
             );
 
-        await using var transaction = await db.Database.BeginTransactionAsync(ct);
-        var otrasVentas = await db
-            .DetallesVenta.AsNoTracking()
-            .Where(x =>
-                x.VentaId != id
-                && x.Venta.Estado == EstadoVenta.Registrada
-                && x.Venta.Pedido.ClienteId == venta.Pedido.ClienteId
-            )
-            .Select(x => x.PrecioFinal)
-            .ToListAsync(ct);
-        var pagos = await db
-            .Pagos.AsNoTracking()
-            .Where(x => x.ClienteId == venta.Pedido.ClienteId)
-            .Select(x => x.Monto)
-            .ToListAsync(ct);
-
-        if (otrasVentas.Sum() - pagos.Sum() < 0)
-        {
-            await transaction.RollbackAsync(ct);
-            return ServiceResult.Failure(
-                "No se puede cancelar la venta porque existen pagos que deben ajustarse o devolverse primero."
-            );
-        }
+        var saldoRestante = await SaldoConsultas.CalcularAsync(db, venta.Pedido.ClienteId, ct)
+            - venta.Detalles.Sum(x => x.PrecioFinal);
+        if (saldoRestante < 0)
+            return ServiceResult.Failure("No se puede cancelar la venta porque existen pagos que deben ajustarse o devolverse primero.");
 
         venta.Estado = EstadoVenta.Cancelada;
+        venta.CanceladaUtc = (reloj ?? TimeProvider.System).GetUtcNow().UtcDateTime;
+        venta.CanceladaPor = acceso is null ? null : (await acceso.ObtenerAsync(ct))?.UsuarioId;
         foreach (
             var unidad in venta
                 .Detalles.Where(x => x.UnidadInventario?.Estado == EstadoUnidadInventario.Vendida)
@@ -465,6 +457,7 @@ public sealed class VentaService(ResellManagerDbContext db) : IVentaService
             UnidadInventarioId = unidad.Id,
             ProductoId = unidad.ProductoId,
             CostoUnitario = unidad.Costo,
+            CostoConocido = unidad.CostoConocido,
             PrecioFinal = input.PrecioFinal,
             Observaciones = input.Observaciones?.Trim(),
         };
@@ -489,7 +482,7 @@ public sealed class VentaService(ResellManagerDbContext db) : IVentaService
             x.Observaciones,
             x.PedidoId,
             x.Pedido.ClienteId,
-            x.Pedido.Cliente.Nombres
+            x.Pedido.ClienteId == null ? ((x.NombreOcasional + " " + x.ApellidoOcasional).Trim().Length == 0 ? "Consumidor Final (CF)" : (x.NombreOcasional + " " + x.ApellidoOcasional).Trim()) : x.Pedido.Cliente.Nombres
                 + (x.Pedido.Cliente.Apellidos == null ? "" : " " + x.Pedido.Cliente.Apellidos),
             x.Detalles.Sum(d => d.PrecioFinal),
             x.Detalles.Select(d => new DetalleVentaDto(
@@ -498,27 +491,40 @@ public sealed class VentaService(ResellManagerDbContext db) : IVentaService
                     d.UnidadInventario?.CodigoInterno,
                     d.ProductoId ?? d.UnidadInventario!.ProductoId,
                     d.Producto?.Nombre ?? d.UnidadInventario!.Producto.Nombre,
-                    d.CostoUnitario ?? d.UnidadInventario!.Costo,
+                    d.CostoUnitario ?? 0m,
                     d.PrecioFinal,
-                    d.Observaciones
+                    d.Observaciones,
+                    d.CostoConocido && d.CostoUnitario.HasValue
                 ))
-                .ToList()
+                .ToList(),
+            x.Pedido.ClienteId == null
         );
 }
 
-public sealed class PagoService(ResellManagerDbContext db) : IPagoService
+public sealed class PagoService(ResellManagerDbContext db, ICuentaOperativa? acceso = null, TimeProvider? reloj = null) : IPagoService
 {
     public async Task<ServiceResult<PagoDto>> RegistrarAsync(
         PagoInput input,
         CancellationToken ct = default
     )
     {
-        if (input.Monto <= 0)
-            return ServiceResult<PagoDto>.Failure("El monto debe ser mayor que cero.");
+        if (input.Monto <= 0) return ServiceResult<PagoDto>.Failure("El monto debe ser mayor que cero.");
+        if (!FinanzasService.Moneda(input.Monto) || !Enum.IsDefined(input.MetodoPago)
+            || input.Referencia?.Length > 150 || input.Observaciones?.Length > 500)
+            return ServiceResult<PagoDto>.Failure("Importe o datos del pago inválidos.");
         if (!await db.Clientes.AnyAsync(x => x.Id == input.ClienteId, ct))
             return ServiceResult<PagoDto>.Failure("Cliente no encontrado.");
 
         await using var transaction = await db.Database.BeginTransactionAsync(ct);
+        var actor = acceso is null ? null : await acceso.ObtenerAsync(ct);
+        var huella = FinanzasService.Huella(new { Operacion = "abono", input, actor?.UsuarioId });
+        if (input.ClaveOperacion is not null)
+        {
+            if (!FinanzasService.ClaveValida(input.ClaveOperacion)) return ServiceResult<PagoDto>.Failure("Clave inválida.");
+            var previo = await db.ComandosFinancieros.AsNoTracking().SingleOrDefaultAsync(x => x.Clave == input.ClaveOperacion, ct);
+            if (previo is not null) return previo.Huella == huella ? ServiceResult<PagoDto>.Ok(JsonSerializer.Deserialize<PagoDto>(previo.Resultado)!)
+                : ServiceResult<PagoDto>.Failure("La clave ya se utilizó con otro contenido.");
+        }
         var saldoActual = await ObtenerSaldoActualAsync(input.ClienteId, ct);
 
         if (saldoActual <= 0)
@@ -531,6 +537,8 @@ public sealed class PagoService(ResellManagerDbContext db) : IPagoService
         var pago = new Pago
         {
             ClienteId = input.ClienteId,
+            UsuarioId = actor?.UsuarioId,
+            RegistradoUtc = (reloj ?? TimeProvider.System).GetUtcNow().UtcDateTime,
             Fecha = input.Fecha,
             Monto = input.Monto,
             MetodoPago = input.MetodoPago,
@@ -540,8 +548,15 @@ public sealed class PagoService(ResellManagerDbContext db) : IPagoService
 
         db.Pagos.Add(pago);
         await db.SaveChangesAsync(ct);
+        var resultado = await ObtenerPorIdAsync(pago.Id, ct);
+        if (input.ClaveOperacion is not null)
+        {
+            db.ComandosFinancieros.Add(new() { Clave = input.ClaveOperacion, Huella = huella,
+                Resultado = JsonSerializer.Serialize(resultado.Value), UsuarioId = actor?.UsuarioId ?? "", RegistradoUtc = pago.RegistradoUtc!.Value });
+            await db.SaveChangesAsync(ct);
+        }
         await transaction.CommitAsync(ct);
-        return await ObtenerPorIdAsync(pago.Id, ct);
+        return resultado;
     }
 
     public async Task<ServiceResult<PagoDto>> ObtenerPorIdAsync(
@@ -612,8 +627,8 @@ public sealed class DashboardService : IDashboardService
             var totalAdeudado = await SaldoConsultas.CalcularAsync(db, null, ct);
             var valorInventarioDisponible = await SaldoConsultas.SumarAsync(
                 db.UnidadesInventario.AsNoTracking()
-                    .Where(x => x.Estado == EstadoUnidadInventario.Disponible)
-                    .Select(x => x.Costo),
+                    .Where(x => x.Estado == EstadoUnidadInventario.Disponible && (x.CostoConocido || x.NotasCosto.Any()))
+                    .Select(x => x.NotasCosto.OrderByDescending(n=>n.RegistradoUtc).Select(n=>(decimal?)n.Nuevo).FirstOrDefault() ?? x.Costo),
                 ct
             );
             var unidadesDisponibles = await db.UnidadesInventario.CountAsync(
@@ -646,7 +661,8 @@ public sealed class DashboardService : IDashboardService
                 ultimosPagos,
                 ultimasVentas,
                 canales,
-                pendientesEntrega
+                pendientesEntrega,
+                await db.UnidadesInventario.CountAsync(x=>x.Estado==EstadoUnidadInventario.Disponible&&!x.CostoConocido&&!x.NotasCosto.Any(),ct)
             );
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -673,33 +689,13 @@ public sealed class DashboardService : IDashboardService
 
         try
         {
-            var utilidad = 0m;
-            var detalles = db
-                .DetallesVenta.AsNoTracking()
-                .Where(x =>
-                    x.Venta.Estado == EstadoVenta.Registrada
-                    && x.Venta.Fecha >= desde
-                    && x.Venta.Fecha <= hasta
-                )
-                .Select(x => new { x.Id, x.PrecioFinal, x.CostoUnitario });
-
-            await foreach (var detalle in detalles.AsAsyncEnumerable().WithCancellation(ct))
+            var resumen = await CostosService.LeerUtilidadAsync(db, desde, hasta, DateTime.UtcNow, false, ct);
+            if(resumen.LineasSinCosto > 0)
             {
-                if (!detalle.CostoUnitario.HasValue)
-                {
-                    logger.LogError(
-                        "El detalle de venta {DetalleVentaId} no tiene costo unitario para calcular utilidad.",
-                        detalle.Id
-                    );
-                    return ServiceResult<decimal>.Failure(
-                        "No fue posible calcular la utilidad porque existen ventas sin costo registrado."
-                    );
-                }
-
-                utilidad += detalle.PrecioFinal - detalle.CostoUnitario.Value;
+                logger.LogError("Existen {Lineas} líneas sin costo registrado para calcular utilidad completa.", resumen.LineasSinCosto);
+                return ServiceResult<decimal>.Failure("No fue posible calcular la utilidad completa porque existen ventas sin costo registrado. Consulta el informe de utilidad calculable.");
             }
-
-            return ServiceResult<decimal>.Ok(utilidad);
+            return ServiceResult<decimal>.Ok(resumen.UtilidadCalculable);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -737,7 +733,7 @@ public sealed class DashboardService : IDashboardService
                 x.Fecha,
                 x.Pedido.ClienteId,
                 Cliente =
-                    x.Pedido.Cliente.Nombres
+                    x.Pedido.ClienteId == null ? "Consumidor Final (CF)" : x.Pedido.Cliente.Nombres
                     + (x.Pedido.Cliente.Apellidos == null ? "" : " " + x.Pedido.Cliente.Apellidos),
                 Canal = x.Pedido.CanalVenta,
             })

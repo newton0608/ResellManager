@@ -30,6 +30,11 @@ public sealed class CatalogoPublicoService : ICatalogoPublicoService
     }
 
     // Misma unidad Disponible, sin reserva ni venta Registrada; cancelaciones no bloquean.
+    // La ficha y sus imágenes siguen accesibles si hubo inventario recibido.
+    // Maestros sin mercancía recibida no se publican por conocer su ID.
+    private IQueryable<Producto> ProductosPublicables() => db.Productos.AsNoTracking()
+        .Where(p => p.UnidadesInventario.Any(u => u.FechaIngreso != null));
+
     private IQueryable<Producto> ProductosDisponibles() => db.Productos.AsNoTracking()
         .Where(p => p.UnidadesInventario.Any(u =>
             u.Estado == EstadoUnidadInventario.Disponible
@@ -196,7 +201,7 @@ public sealed class CatalogoPublicoService : ICatalogoPublicoService
     public async Task<ServiceResult<ProductoCatalogoDetalleDto>> ObtenerPorIdAsync(
         int productoId, CancellationToken ct = default)
     {
-        var producto = await ProductosDisponibles().Where(p => p.Id == productoId)
+        var producto = await ProductosPublicables().Where(p => p.Id == productoId)
             .Include(p => p.Categoria).Include(p => p.Imagenes).FirstOrDefaultAsync(ct);
         if (producto is null)
             return ServiceResult<ProductoCatalogoDetalleDto>.Failure("Producto no encontrado.");
@@ -206,17 +211,27 @@ public sealed class CatalogoPublicoService : ICatalogoPublicoService
         // Compatibilidad de referencias anteriores al backfill, sin duplicar archivos ni exponer rutas.
         if (imagenes.Count == 0 && !string.IsNullOrWhiteSpace(producto.ImagenPrincipalRuta))
             imagenes = [new ImagenCatalogoDto("principal", 0, true)];
+        var disponible = await ProductosDisponibles().AnyAsync(x=>x.Id==productoId,ct);
+        var vinculo = await db.VinculosVariantes.AsNoTracking().SingleOrDefaultAsync(x=>x.ProductoId==productoId,ct);
+        var variantes = new List<VarianteDto>();
+        if(vinculo is not null)
+        {
+            var vinculadas = await db.VinculosVariantes.AsNoTracking().Where(x=>x.GrupoId==vinculo.GrupoId && x.Producto.UnidadesInventario.Any(u=>u.FechaIngreso!=null)).Include(x=>x.Producto).OrderBy(x=>x.Producto.Nombre).ThenBy(x=>x.ProductoId).ToListAsync(ct);
+            var ids = vinculadas.Select(x=>x.ProductoId).ToArray();
+            var disponibles = await ProductosDisponibles().Where(x=>ids.Contains(x.Id)).Select(x=>x.Id).ToListAsync(ct);
+            variantes.AddRange(vinculadas.Select(x=>new VarianteDto(x.ProductoId,x.Producto.Nombre,ProductoOperacionesService.Describir(x.AtributosJson,x.Producto),disponibles.Contains(x.ProductoId),x.Producto.PrecioSugerido)));
+        }
         return ServiceResult<ProductoCatalogoDetalleDto>.Ok(new ProductoCatalogoDetalleDto(
             producto.Id, producto.Nombre, producto.Descripcion, producto.Marca, producto.Modelo,
             producto.Color, producto.Talla, producto.ContenidoMl, producto.PesoGramos, producto.Presentacion,
             producto.CategoriaId, producto.Categoria.Nombre, producto.PrecioSugerido,
-            !string.IsNullOrWhiteSpace(producto.ImagenPrincipalRuta), true, imagenes));
+            !string.IsNullOrWhiteSpace(producto.ImagenPrincipalRuta), disponible, imagenes, producto.CodigoInterno, variantes));
     }
 
     public async Task<ServiceResult<ImagenProductoLectura>> AbrirImagenPrincipalAsync(
         int productoId, CancellationToken ct = default)
     {
-        var ruta = await ProductosDisponibles().Where(p => p.Id == productoId)
+        var ruta = await ProductosPublicables().Where(p => p.Id == productoId)
             .Select(p => p.ImagenPrincipalRuta).FirstOrDefaultAsync(ct);
         return await AbrirRutaAsync(productoId, ruta, ct);
     }
@@ -227,7 +242,7 @@ public sealed class CatalogoPublicoService : ICatalogoPublicoService
         if (imagenId == "principal") return await AbrirImagenPrincipalAsync(productoId, ct);
         if (!Guid.TryParse(imagenId, out var id))
             return ServiceResult<ImagenProductoLectura>.Failure("Imagen no disponible.");
-        var ruta = await ProductosDisponibles().Where(p => p.Id == productoId)
+        var ruta = await ProductosPublicables().Where(p => p.Id == productoId)
             .SelectMany(p => p.Imagenes).Where(i => i.Id == id)
             .Select(i => i.RutaRelativa).FirstOrDefaultAsync(ct);
         return await AbrirRutaAsync(productoId, ruta, ct);

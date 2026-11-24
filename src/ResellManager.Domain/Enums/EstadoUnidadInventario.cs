@@ -7,5 +7,7 @@ public enum EstadoUnidadInventario
     Disponible,
     Vendida,
     Entregada,
-    Perdida
+    Perdida,
+    NoApta,
+    DevueltaEnRevision
 }

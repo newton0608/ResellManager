@@ -40,6 +40,12 @@ public static class DependencyInjection
             .AddSignInManager()
             .AddDefaultTokenProviders();
 
+        services.TryAddScoped<ICuentaOperativa, CuentaOperativaDenegada>();
+        services.AddScoped<IFinanzasService, FinanzasService>();
+        services.AddScoped<IVentaDirectaService, VentaDirectaService>();
+        services.AddScoped<IProductoOperacionesService, ProductoOperacionesService>();
+        services.AddScoped<IEtiquetasService, EtiquetasService>();
+        services.AddScoped<ICostosService, CostosService>();
         services.AddScoped<IClienteService, ClienteService>();
         services.AddScoped<IActividadClienteService, ActividadClienteService>();
         services.AddScoped<IRecepcionCompraService, RecepcionCompraService>();

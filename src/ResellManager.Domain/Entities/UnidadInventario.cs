@@ -5,6 +5,7 @@ namespace ResellManager.Domain.Entities;
 public class UnidadInventario
 {
     public int Id { get; set; }
+    public bool CostoConocido { get; set; } = true;
     public string CodigoInterno { get; set; } = string.Empty;
     public EstadoUnidadInventario Estado { get; set; }
     public DateOnly? FechaIngreso { get; set; }
@@ -16,5 +17,6 @@ public class UnidadInventario
     public Producto Producto { get; set; } = null!;
     public DetalleCompra DetalleCompra { get; set; } = null!;
     public DetallePedido? DetallePedidoReserva { get; set; }
+    public ICollection<NotaCosto> NotasCosto { get; set; } = [];
     public ICollection<DetalleVenta> DetallesVenta { get; set; } = [];
 }

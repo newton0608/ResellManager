@@ -37,7 +37,7 @@ public sealed record PedidoDto(
     CanalVenta CanalVenta,
     EstadoPedido Estado,
     string? Observaciones,
-    int ClienteId,
+    int? ClienteId,
     string Cliente,
     IReadOnlyCollection<DetallePedidoDto> Detalles,
     int? VentaId
@@ -68,6 +68,8 @@ public sealed record DetalleVentaDto(
     decimal CostoUnitario,
     decimal PrecioFinal,
     string? Observaciones
+,
+    bool CostoConocido = true
 );
 
 public sealed record VentaDto(
@@ -77,10 +79,11 @@ public sealed record VentaDto(
     EstadoVenta Estado,
     string? Observaciones,
     int PedidoId,
-    int ClienteId,
+    int? ClienteId,
     string Cliente,
     decimal Total,
-    IReadOnlyCollection<DetalleVentaDto> Detalles
+    IReadOnlyCollection<DetalleVentaDto> Detalles,
+    bool ConsumidorFinal = false
 );
 
 public sealed record PagoInput(
@@ -90,6 +93,8 @@ public sealed record PagoInput(
     MetodoPago MetodoPago,
     string? Referencia,
     string? Observaciones
+,
+    string? ClaveOperacion = null
 );
 
 public sealed record PagoDto(
@@ -120,7 +125,7 @@ public sealed record VentaRecienteDashboardDto(
     int Id,
     string CodigoInterno,
     DateOnly Fecha,
-    int ClienteId,
+    int? ClienteId,
     string Cliente,
     decimal Total,
     CanalVenta Canal
@@ -134,5 +139,6 @@ public sealed record DashboardDto(
     IReadOnlyCollection<PagoDto> UltimosPagos,
     IReadOnlyCollection<VentaRecienteDashboardDto> UltimasVentas,
     IReadOnlyCollection<ResumenCanalVentaDto> Canales,
-    int PendientesEntrega = 0
+    int PendientesEntrega = 0,
+    int InventarioSinCosto = 0
 );

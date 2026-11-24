@@ -1,3 +1,4 @@
+using ResellManager.Application.Interfaces;
 namespace ResellManager.Application.DTOs;
 
 public sealed record ProductoCatalogoDto(
@@ -30,4 +31,5 @@ public sealed record ProductoCatalogoDetalleDto(
     decimal PrecioPublico,
     bool TieneImagenPrincipal,
     bool Disponible,
-    IReadOnlyList<ImagenCatalogoDto>? Imagenes = null);
+    IReadOnlyList<ImagenCatalogoDto>? Imagenes = null,
+    string? CodigoInterno = null, IReadOnlyList<VarianteDto>? Variantes = null);

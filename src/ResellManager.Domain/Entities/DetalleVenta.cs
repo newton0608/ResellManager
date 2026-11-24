@@ -3,6 +3,7 @@ namespace ResellManager.Domain.Entities;
 public class DetalleVenta
 {
     public int Id { get; set; }
+    public bool CostoConocido { get; set; } = true;
     public decimal PrecioFinal { get; set; }
     public string? Observaciones { get; set; }
     public int VentaId { get; set; }
