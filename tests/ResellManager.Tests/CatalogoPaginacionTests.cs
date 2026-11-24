@@ -71,7 +71,7 @@ public sealed class CatalogoPaginacionTests
         Assert.DoesNotContain(segunda.Items, p => p.Id == productos[16].Id);
         Assert.DoesNotContain(segunda.Items, p => primera.Items.Any(a => a.Id == p.Id));
         Assert.True(segunda.HasMore);
-        Assert.False((await servicio.ObtenerPorIdAsync(productos[16].Id)).IsSuccess);
+        Assert.False((await servicio.ObtenerPorIdAsync(productos[16].Id)).Value!.Disponible);
     }
 
     [Theory]

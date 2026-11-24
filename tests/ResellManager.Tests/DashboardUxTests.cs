@@ -25,15 +25,15 @@ public sealed class DashboardUxTests
         Establecer(pagina, "Hasta", new DateOnly(2026, 8, 31));
 
         var anterior = RenderizarTexto(pagina);
-        Assert.Contains("Ganancia del 01/09/2026 al 05/09/2026", anterior);
+        Assert.Contains("Utilidad calculable del 01/09/2026 al 05/09/2026", anterior);
         Assert.Contains("Q 125.50", anterior);
-        Assert.DoesNotContain("Ganancia del 01/08/2026", anterior);
+        Assert.DoesNotContain("Utilidad calculable del 01/08/2026", anterior);
         Assert.Single(servicio.Consultas);
 
         await ConsultarAsync(pagina);
 
         var actualizado = RenderizarTexto(pagina);
-        Assert.Contains("Ganancia del 01/08/2026 al 31/08/2026", actualizado);
+        Assert.Contains("Utilidad calculable del 01/08/2026 al 31/08/2026", actualizado);
         Assert.Contains("Q 80.00", actualizado);
         Assert.DoesNotContain("Q 125.50", actualizado);
         Assert.Equal(2, servicio.Consultas.Count);
@@ -61,9 +61,9 @@ public sealed class DashboardUxTests
 
         Assert.False(Obtener<bool>(pagina, "ConsultandoUtilidad"));
         var contenido = RenderizarTexto(pagina);
-        Assert.Contains("Ganancia del 01/09/2026 al 05/09/2026", contenido);
+        Assert.Contains("Utilidad calculable del 01/09/2026 al 05/09/2026", contenido);
         Assert.Contains("Q 50.00", contenido);
-        Assert.DoesNotContain("Ganancia del 01/09/2026 al 30/09/2026", contenido);
+        Assert.DoesNotContain("Utilidad calculable del 01/09/2026 al 30/09/2026", contenido);
     }
 
     private static Home CrearPagina(IDashboardService servicio)

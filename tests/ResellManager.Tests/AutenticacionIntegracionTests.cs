@@ -34,6 +34,34 @@ public sealed class AutenticacionIntegracionTests : PruebaWebAislada
         AssertRedirigeAlLogin(respuesta);
     }
 
+    [Theory]
+    [InlineData("/informes/movimientos/xlsx")]
+    [InlineData("/informes/cliente/pdf?cliente=1")]
+    [InlineData("/informes/apertura/xlsx")]
+    [InlineData("/informes/ventas-cf/pdf")]
+    [InlineData("/costos/informe/xlsx?desde=2026-01-01&hasta=2026-12-31")]
+    [InlineData("/etiquetas/11111111-1111-1111-1111-111111111111/pdf")]
+    public async Task ExportacionesFinancierasYProductos_ExigenSesion(string ruta)
+    {
+        using var cliente=CrearCliente();
+        AssertRedirigeAlLogin(await cliente.GetAsync(ruta));
+    }
+
+    [Fact]
+    public async Task CuentaIdentitySinDesignacionAdministrativa_ConsultaHistorialPeroNoExportaApertura()
+    {
+        using var cliente=CrearCliente();
+        await IniciarSesionAsync(cliente,AplicacionAutenticacionFactory.ContrasenaValida);
+        using var historial=await cliente.GetAsync("/informes/movimientos/xlsx");
+        Assert.Equal(HttpStatusCode.OK,historial.StatusCode);
+        Assert.True(historial.Headers.CacheControl!.NoStore);
+        Assert.Equal("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",historial.Content.Headers.ContentType!.MediaType);
+        using var apertura=await cliente.GetAsync("/informes/apertura/xlsx");
+        Assert.Equal(HttpStatusCode.BadRequest,apertura.StatusCode);
+        Assert.True(apertura.Headers.CacheControl!.NoStore);
+        Assert.Contains("administrativo",await apertura.Content.ReadAsStringAsync());
+    }
+
     [Fact]
     public async Task LoginValido_AutenticaYPermiteAccederAlInicio()
     {
@@ -303,7 +331,7 @@ public sealed class AutenticacionIntegracionTests : PruebaWebAislada
 
         Assert.Equal(HttpStatusCode.OK, respuesta.StatusCode);
         HtmlPrueba.TituloPrincipal(contenido, "titulo-dashboard", "Inicio");
-        Assert.Contains("Ganancia total", contenido);
+        Assert.Contains("Utilidad calculable", contenido);
         Assert.Contains(codigoVenta, contenido);
         Assert.Contains(nombreCliente, contenido);
         Assert.Contains("Q 321.45", contenido);

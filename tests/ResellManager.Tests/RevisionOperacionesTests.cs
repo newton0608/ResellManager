@@ -50,8 +50,7 @@ public sealed class RevisionOperacionesTests
         await using var test = await TestDatabase.CreateAsync();
         await test.CrearUnidadDisponibleAsync("COM-REVISION");
         var formulario = new VentaDirectaForm();
-        Set(formulario, "PedidoService", new PedidoService(test.Db));
-        Set(formulario, "VentaService", new VentaService(test.Db));
+        Set(formulario, "RegistroDirecto", new VentaDirectaService(test.Db, new FinanzasTests.Acceso(false), TimeProvider.System));
         Set(formulario, "InventarioService", new InventarioService(test.Db));
         Set(formulario, "SeleccionService", new SeleccionOperativaService(test.Db));
         Set(formulario, "ClienteService", new ClienteService(test.Db));

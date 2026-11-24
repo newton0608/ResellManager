@@ -73,7 +73,7 @@ public sealed class CatalogoPublicoTests
         Assert.Equal(EstadoUnidadInventario.Disponible, unidad.Estado);
         var servicio = Servicio(test);
         Assert.Empty(await servicio.ListarAsync());
-        Assert.False((await servicio.ObtenerPorIdAsync(test.Producto.Id)).IsSuccess);
+        Assert.False((await servicio.ObtenerPorIdAsync(test.Producto.Id)).Value!.Disponible);
 
         if (cancelarPedido)
             Assert.True((await new PedidoService(test.Db).CancelarAsync(pedido.Id)).IsSuccess);
@@ -108,7 +108,7 @@ public sealed class CatalogoPublicoTests
         var venta = await VenderAsync(test, unidad, "VENTA");
         var servicio = Servicio(test);
         Assert.Empty(await servicio.ListarAsync());
-        Assert.False((await servicio.ObtenerPorIdAsync(test.Producto.Id)).IsSuccess);
+        Assert.False((await servicio.ObtenerPorIdAsync(test.Producto.Id)).Value!.Disponible);
 
         Assert.True((await new VentaService(test.Db).CancelarAsync(venta.Id)).IsSuccess);
 
@@ -128,7 +128,7 @@ public sealed class CatalogoPublicoTests
         await test.Db.SaveChangesAsync();
 
         Assert.Empty(await Servicio(test).ListarAsync());
-        Assert.False((await Servicio(test).ObtenerPorIdAsync(test.Producto.Id)).IsSuccess);
+        Assert.False((await Servicio(test).ObtenerPorIdAsync(test.Producto.Id)).Value!.Disponible);
     }
 
     [Fact]
@@ -265,7 +265,7 @@ public sealed class CatalogoPublicoTests
         AssertCampos(listado, "Id", "Nombre", "CategoriaId", "Categoria", "PrecioPublico", "TieneImagenPrincipal", "Disponible", "Marca", "CategoriaPadreId", "CategoriaPadreNombre");
         AssertCampos(detalle, "Id", "Nombre", "Descripcion", "Marca", "Modelo", "Color", "Talla",
             "ContenidoMl", "PesoGramos", "Presentacion", "CategoriaId", "Categoria", "PrecioPublico",
-            "TieneImagenPrincipal", "Disponible", "Imagenes");
+            "TieneImagenPrincipal", "Disponible", "Imagenes", "CodigoInterno", "Variantes");
     }
 
     private static void AssertCampos(JsonElement producto, params string[] permitidos) =>

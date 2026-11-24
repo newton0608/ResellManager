@@ -414,7 +414,7 @@ public sealed class DashboardUiTests
         Assert.Contains("href=\"/clientes?saldo=pendiente\"", home, StringComparison.Ordinal);
         Assert.Contains("href=\"/inventario?estado=vendida\"", home, StringComparison.Ordinal);
         Assert.Contains("href=\"/inventario?estado=disponible\"", home, StringComparison.Ordinal);
-        Assert.Contains("Ganancia total", home, StringComparison.Ordinal);
+        Assert.Contains("Utilidad calculable", home, StringComparison.Ordinal);
         Assert.Contains("href=\"/ventas/nueva?modo=directa\"", home, StringComparison.Ordinal);
         Assert.Contains("Ventas por canal", home, StringComparison.Ordinal);
         Assert.Contains("Últimos pagos", home, StringComparison.Ordinal);

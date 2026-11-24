@@ -34,7 +34,7 @@ public sealed class Fase57UiIntegracionTests : PruebaWebAislada
         Assert.Contains("Reservas y entregas pendientes", detalle);
         Assert.DoesNotContain(escenario.UnidadReservadaPropia, detalle);
         Assert.Contains(escenario.UnidadReservadaPropia,
-            (await new SeleccionOperativaService(db).PendientesClienteAsync(pedido.ClienteId)).Select(x => x.CodigoUnidad));
+            (await new SeleccionOperativaService(db).PendientesClienteAsync(pedido.ClienteId!.Value)).Select(x => x.CodigoUnidad));
         foreach (var ruta in new[] { $"/pedidos/nuevo?cliente={pedido.ClienteId}", $"/ventas/nueva?modo=directa&cliente={pedido.ClienteId}" })
         {
             var html = WebUtility.HtmlDecode(await cliente.GetStringAsync(ruta));
@@ -112,8 +112,9 @@ public sealed class Fase57UiIntegracionTests : PruebaWebAislada
 
         Assert.Equal(HttpStatusCode.OK, respuesta.StatusCode);
         Assert.Contains("Venta directa con pedido automático", contenido);
-        Assert.Contains("No existen ventas sin pedido", contenido);
-        Assert.Contains("Buscar por nombre completo o teléfono", contenido);
+        Assert.Contains("El pedido técnico y la venta se guardan juntos", contenido);
+        Assert.Contains("Consumidor Final (CF)", contenido);
+        Assert.Contains("Seleccionar cliente existente", contenido);
         using var scope = factory.Services.CreateScope();
         var seleccion = new SeleccionOperativaService(scope.ServiceProvider.GetRequiredService<ResellManagerDbContext>());
         var opciones = await seleccion.BuscarUnidadesAsync("");

@@ -159,6 +159,7 @@ try {
 
     await open('/ventas/nueva');
     await page.getByRole('button', { name: 'Venta directa', exact: true }).click();
+    await page.getByRole('radio', { name: 'Seleccionar cliente existente', exact: true }).check();
     await fill('venta-directa-cliente', 'Cliente sintético');
     await page.getByRole('button', { name: /Cliente sintético.*55550123/ }).click();
     await scan();

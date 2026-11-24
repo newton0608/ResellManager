@@ -50,7 +50,13 @@ try {
             respuestasMiniatura.push({ url: response.url, cache: response.fromDiskCache || response.fromPrefetchCache });
     });
     page.on('pageerror', e => errors.push(e.message));
-    async function open(path) { await page.goto(address + path); await page.waitForLoadState('networkidle'); }
+    async function open(path) {
+        await page.goto(address + path); await page.waitForLoadState('networkidle');
+        // Esperar los eventos del formulario; el prerender puede preceder a la conexión Blazor.
+        if (/\/(?:nueva|nuevo|editar)(?:\?|$)/.test(path))
+            await page.waitForFunction(() => [...document.querySelectorAll('form')]
+                .some(form => Object.keys(form).some(key => key.startsWith('_blazorEvents_'))));
+    }
     async function fill(id, value) { await page.locator('#' + id).fill(value); await page.locator('#' + id).blur(); }
     await open('/login');
     await fill('correo', 'productos-qa@example.test');

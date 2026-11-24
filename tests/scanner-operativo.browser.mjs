@@ -63,7 +63,7 @@ try {
                 width: window.innerWidth, scroll: document.documentElement.scrollWidth,
                 controles: [...document.querySelectorAll("button, input:not([type=file]), select, textarea")]
                     .filter(element => element.getClientRects().length > 0)
-                    .map(element => element.matches("input[type=checkbox]") ? element.closest("label") : element)
+                    .map(element => element.matches("input[type=checkbox], input[type=radio]") ? element.closest("label") : element)
                     .map(element => ({ nombre: element.textContent.trim() || element.id,
                         ancho: element.getBoundingClientRect().width, alto: element.getBoundingClientRect().height }))
             }));

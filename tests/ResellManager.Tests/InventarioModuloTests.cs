@@ -109,7 +109,9 @@ public sealed class InventarioPresentacionTests
         Assert.DoesNotContain(
             estados,
             estado => estado.Contains("Apartada", StringComparison.OrdinalIgnoreCase));
-        Assert.Equal(6, estados.Length);
+        Assert.Equal(8, estados.Length);
+        Assert.Contains("NoApta", estados);
+        Assert.Contains("DevueltaEnRevision", estados);
         Assert.Contains("Perdida", estados);
     }
 

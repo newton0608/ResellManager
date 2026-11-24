@@ -122,7 +122,7 @@ public sealed class CanalVentaTests
                 "VentaDirectaForm.razor"
             )
         );
-        Assert.Contains("CanalVenta.Presencial", formulario);
+        Assert.Contains("CanalVenta.Presencial", File.ReadAllText(Path.Combine(BuscarRaizRepositorio(),"src","ResellManager.Infrastructure","Services","VentaDirectaService.cs")));
         Assert.DoesNotContain("Canal de venta", formulario, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("@bind-Value=\"Modelo.CanalVenta\"", formulario);
     }

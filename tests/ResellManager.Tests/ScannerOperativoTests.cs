@@ -420,6 +420,7 @@ public sealed partial class ScannerOperativoTests
                 .AddScoped<IProductoService, ProductoService>().AddScoped<IClienteService, ClienteService>()
                 .AddScoped<IInventarioService, InventarioService>().AddScoped<IRecepcionCompraService, RecepcionCompraService>()
                 .AddScoped<IPedidoService, PedidoService>().AddScoped<IVentaService, VentaService>()
+                .AddScoped<IVentaDirectaService, VentaDirectaService>().AddSingleton<ICuentaOperativa>(new FinanzasTests.Acceso(false)).AddSingleton(TimeProvider.System)
                 .AddScoped<IProveedorService, ProveedorService>().AddScoped<ICategoriaService, CategoriaService>()
                 .AddSingleton<ITipoCambioReferenciaService, ReferenciaInerte>()
                 .AddSingleton<IProductoConImagenService>(conImagen).AddSingleton<IAltaProductoAsistidaService>(conImagen)

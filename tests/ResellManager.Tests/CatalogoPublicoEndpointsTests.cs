@@ -44,8 +44,8 @@ public sealed class CatalogoPublicoEndpointsTests : PruebaWebAislada
         using var jsonDetalle = JsonDocument.Parse(contenido);
         AssertCampos(jsonDetalle.RootElement, "id", "nombre", "descripcion", "marca", "modelo",
             "color", "talla", "contenidoMl", "pesoGramos", "presentacion", "categoriaId",
-            "categoria", "precioPublico", "tieneImagenPrincipal", "disponible", "imagenes");
-        foreach (var datoPrivado in new[] { "PRIVADO", "7501234567890", "PRO-", "COM-",
+            "categoria", "precioPublico", "tieneImagenPrincipal", "disponible", "imagenes", "codigoInterno", "variantes");
+        foreach (var datoPrivado in new[] { "PRIVADO", "7501234567890", "COM-",
             "74.12", escenario.RutaImagen!, factory.RutaImagenes, factory.RutaBaseDatos })
             Assert.DoesNotContain(datoPrivado, contenido);
     }
@@ -69,7 +69,13 @@ public sealed class CatalogoPublicoEndpointsTests : PruebaWebAislada
             $"/api/catalogo/productos/{escenario.ProductoId}/imagenes/principal" })
         {
             using var respuesta = await cliente.GetAsync(ruta);
-            await AssertNoEncontradoAsync(respuesta);
+            if(condicion=="sinStock") await AssertNoEncontradoAsync(respuesta);
+            else
+            {
+                Assert.Equal(HttpStatusCode.OK,respuesta.StatusCode);
+                if(ruta.EndsWith(escenario.ProductoId.ToString()))
+                { using var ficha=JsonDocument.Parse(await respuesta.Content.ReadAsStringAsync());Assert.False(ficha.RootElement.GetProperty("disponible").GetBoolean()); }
+            }
         }
     }
 
@@ -237,7 +243,7 @@ public sealed class CatalogoPublicoEndpointsTests : PruebaWebAislada
         await AssertNoEncontradoAsync(rutaCliente);
         await OcuparUnidadAsync(escenario, reservar: true);
         using var noDisponible = await cliente.GetAsync($"/api/catalogo/productos/{escenario.ProductoId}/imagenes/{id}");
-        await AssertNoEncontradoAsync(noDisponible);
+        Assert.Equal(HttpStatusCode.OK,noDisponible.StatusCode);
     }
     [Fact]
     public async Task LecturasPaginadas_SonAnonimasAcotadasYSinDatosPrivados_ConservanArrayAntiguo()

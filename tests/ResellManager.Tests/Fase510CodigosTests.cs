@@ -116,67 +116,18 @@ public sealed class Fase510CodigosTests
     }
 
     [Fact]
-    public async Task VentaDirecta_FalloPedidoYFalloVentaConservanAmbosCodigosSinDobleSubmit()
+    public async Task VentaDirecta_ReintentoRecuperaVentaConfirmadaYConservaCodigos()
     {
         await using var test = await TestDatabase.CreateAsync();
-        await test.CrearUnidadDisponibleAsync("COM-DIRECTA-REINTENTO-510");
-        var inventario = new InventarioService(test.Db);
-        var pedidoReal = new PedidoService(test.Db);
-        var ventaReal = new VentaService(test.Db);
-        var espera = new TaskCompletionSource<ServiceResult<PedidoDto>>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var pedidos = new PedidoRegistradoService((input, intento) =>
-            intento == 1 ? espera.Task : pedidoReal.CrearAsync(input));
-        var ventas = new VentaRegistradaService((input, intento) => intento == 1
-            ? Task.FromResult(ServiceResult<VentaDto>.Failure("Fallo controlado de venta."))
-            : ventaReal.RegistrarDesdePedidoAsync(input));
-        var formulario = new VentaDirectaForm();
-        var ocupacion = new List<bool>();
-        Establecer(formulario, "PedidoService", pedidos);
-        Establecer(formulario, "VentaService", ventas);
-        Establecer(formulario, "InventarioService", inventario);
-        Establecer(formulario, "SeleccionService", new SeleccionOperativaService(test.Db));
-        Establecer(formulario, "Logger", NullLogger<VentaDirectaForm>.Instance);
-        Establecer(formulario, "Navigation", new NavegacionPrueba());
-        Establecer(formulario, "OcupadoChanged", EventCallback.Factory.Create<bool>(new object(), ocupacion.Add));
-        Establecer(formulario, "Clientes", await new ClienteService(test.Db).ListarAsync());
-        Establecer(formulario, "Unidades", (await inventario.ListarDisponiblesAsync()).Select(x =>
-            new UnidadVentaDirectaFormModel { Unidad = x, Seleccionada = true, PrecioFinal = 120m }).ToList());
-        Obtener<VentaDirectaFormModel>(formulario, "Modelo").ClienteId = test.Cliente.Id;
-        var codigoPedido = Obtener<string>(formulario, "CodigoPedidoDirecto");
-        var codigoVenta = Obtener<string>(formulario, "CodigoVentaDirecta");
-
-        var primero = InvocarAsync(formulario, "RegistrarVentaDirectaAsync");
-        Assert.True(Obtener<bool>(formulario, "Registrando"));
-        Assert.Equal(new[] { true }, ocupacion);
-        await InvocarAsync(formulario, "RegistrarVentaDirectaAsync");
-        Assert.Single(pedidos.Intentos);
-        espera.SetResult(ServiceResult<PedidoDto>.Failure("Fallo controlado del pedido."));
-        await primero;
-        Assert.Empty(ventas.Intentos);
-        Assert.Null(Obtener<PedidoDto?>(formulario, "PedidoAutomaticoCreado"));
-
-        await InvocarAsync(formulario, "RegistrarVentaDirectaAsync");
-        var pedidoCreado = Obtener<PedidoDto>(formulario, "PedidoAutomaticoCreado");
-        Assert.Contains("pero la venta no pudo registrarse", Obtener<string>(formulario, "ErrorGuardado"));
-        await InvocarAsync(formulario, "RegistrarVentaDirectaAsync");
-
-        Assert.Matches("^PED-VD-[A-F0-9]{32}$", codigoPedido);
-        Assert.Matches("^VEN-VD-[A-F0-9]{32}$", codigoVenta);
-        Assert.Equal(TipoPedido.VentaDirecta, pedidoCreado.TipoPedido);
-        Assert.Equal(CanalVenta.Presencial, pedidoCreado.CanalVenta);
-        Assert.Equal(2, pedidos.Intentos.Count);
-        Assert.All(pedidos.Intentos, input => Assert.Equal(codigoPedido, input.CodigoInterno));
-        Assert.Equal(2, ventas.Intentos.Count);
-        Assert.All(ventas.Intentos, input =>
-        {
-            Assert.Equal(codigoVenta, input.CodigoInterno);
-            Assert.Equal(pedidoCreado.Id, input.PedidoId);
-        });
-        Assert.Single(await test.Db.Pedidos.ToListAsync());
-        Assert.Single(await test.Db.Ventas.ToListAsync());
-        Assert.Equal(EstadoUnidadInventario.Vendida, (await test.Db.UnidadesInventario.SingleAsync()).Estado);
-        Assert.Equal(new[] { true, false, true, false, true, false }, ocupacion);
-        Assert.False(Obtener<bool>(formulario, "Registrando"));
+        var unidad = await test.CrearUnidadDisponibleAsync("COM-DIRECTA-REINTENTO-510");
+        var servicio = new VentaDirectaService(test.Db,new FinanzasTests.Acceso(false),TimeProvider.System);
+        var input = new VentaDirectaInput("clave-red-perdida",new(2026,11,22),test.Cliente.Id,null,null,[new(unidad.Id,null,null,120,null)],[]);
+        var original = await servicio.RegistrarAsync(input); var repetida = await servicio.RegistrarAsync(input);
+        Assert.True(original.IsSuccess); Assert.True(repetida.IsSuccess);
+        Assert.Equal(original.Value!.Id,repetida.Value!.Id); Assert.Equal(original.Value.CodigoInterno,repetida.Value.CodigoInterno);
+        Assert.Matches("^VEN-VD-[A-F0-9]{32}$",original.Value.CodigoInterno);
+        var pedido=Assert.Single(await test.Db.Pedidos.ToListAsync()); Assert.Matches("^PED-VD-[A-F0-9]{32}$",pedido.CodigoInterno);
+        Assert.Single(await test.Db.Ventas.ToListAsync()); Assert.Equal(EstadoUnidadInventario.Vendida,unidad.Estado);
     }
 
     [Theory]

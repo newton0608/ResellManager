@@ -192,59 +192,21 @@ public sealed class VentaDirectaPedidoAutomaticoTests
     }
 
     [Fact]
-    public async Task ReintentoVentaDirecta_ConservaCodigoVentaYPedidoAutomaticos()
+    public async Task ReintentoVentaDirecta_ConservaClaveYNoCreaPedidoParcial()
     {
         await using var test = await TestDatabase.CreateAsync();
         var unidad = await test.CrearUnidadDisponibleAsync("COMPRA-VD-REINTENTO");
-        var inventario = new InventarioService(test.Db);
-        var unidadDto = (await inventario.ListarDisponiblesAsync()).Single(x => x.Id == unidad.Id);
-        var cliente = (await new ClienteService(test.Db).ListarAsync()).Single(x => x.Id == test.Cliente.Id);
-        var pedidosAntes = await test.Db.Pedidos.CountAsync();
-        var ventas = new VentaSiempreFallidaService();
-        var componente = new VentaDirectaForm();
-        Establecer(componente, "PedidoService", (IPedidoService)new PedidoService(test.Db));
-        Establecer(componente, "VentaService", (IVentaService)ventas);
-        Establecer(componente, "InventarioService", (IInventarioService)inventario);
-        Establecer(componente, "SeleccionService", new SeleccionOperativaService(test.Db));
-        Establecer(componente, "Logger", NullLogger<VentaDirectaForm>.Instance);
-        Establecer(
-            componente,
-            "Clientes",
-            (IReadOnlyList<ClienteDto>)new List<ClienteDto> { cliente });
-        Establecer(
-            componente,
-            "Unidades",
-            new List<UnidadVentaDirectaFormModel>
-            {
-                new()
-                {
-                    Unidad = unidadDto,
-                    Seleccionada = true,
-                    PrecioFinal = 125m,
-                },
-            });
-        var modelo = Obtener<VentaDirectaFormModel>(componente, "Modelo");
-        modelo.ClienteId = cliente.Id;
-        modelo.Fecha = new DateOnly(2026, 8, 30);
-        var codigoInicial = Obtener<string>(componente, "CodigoVentaDirecta");
-
-        await InvocarAsync(componente, "RegistrarVentaDirectaAsync");
-        var pedidoPrimerIntento = Obtener<PedidoDto>(componente, "PedidoAutomaticoCreado");
-        await InvocarAsync(componente, "RegistrarVentaDirectaAsync");
-        var pedidoReintento = Obtener<PedidoDto>(componente, "PedidoAutomaticoCreado");
-
-        Assert.StartsWith(VentaPresentacion.PrefijoVentaDirecta, codigoInicial);
-        Assert.NotEqual(pedidoPrimerIntento.CodigoInterno, codigoInicial);
-        Assert.Equal(TipoPedido.VentaDirecta, pedidoPrimerIntento.TipoPedido);
-        Assert.Equal(CanalVenta.Presencial, pedidoPrimerIntento.CanalVenta);
-        Assert.Equal(pedidosAntes + 1, await test.Db.Pedidos.CountAsync());
-        Assert.Equal(2, ventas.Intentos.Count);
-        Assert.All(ventas.Intentos, x => Assert.Equal(codigoInicial, x.CodigoInterno));
-        Assert.All(ventas.Intentos, x => Assert.Equal(pedidoPrimerIntento.Id, x.PedidoId));
-        Assert.Same(pedidoPrimerIntento, pedidoReintento);
-        var recuperado = await new PedidoService(test.Db).ObtenerPorIdAsync(pedidoPrimerIntento.Id);
-        Assert.True(recuperado.IsSuccess, recuperado.ErrorMessage);
-        Assert.Equal(EstadoPedido.Pendiente, recuperado.Value!.Estado);
+        var servicio = new VentaDirectaService(test.Db, new FinanzasTests.Acceso(false), TimeProvider.System);
+        var input = new VentaDirectaInput("clave-estable",new(2026,8,30),test.Cliente.Id,null,null,
+            [new(unidad.Id,null,null,125,null)],[]);
+        unidad.Estado = EstadoUnidadInventario.Vendida; await test.Db.SaveChangesAsync();
+        Assert.False((await servicio.RegistrarAsync(input)).IsSuccess);
+        Assert.Empty(await test.Db.Pedidos.ToListAsync()); Assert.Empty(await test.Db.Ventas.ToListAsync());
+        unidad.Estado = EstadoUnidadInventario.Disponible; await test.Db.SaveChangesAsync();
+        var venta = await servicio.RegistrarAsync(input); Assert.True(venta.IsSuccess,venta.ErrorMessage);
+        var reintento = await servicio.RegistrarAsync(input); Assert.True(reintento.IsSuccess);
+        Assert.Equal(venta.Value!.Id,reintento.Value!.Id);
+        Assert.Single(await test.Db.Pedidos.ToListAsync()); Assert.Single(await test.Db.Ventas.ToListAsync());
     }
 
     [Fact]

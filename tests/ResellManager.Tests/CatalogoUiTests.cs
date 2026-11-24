@@ -260,7 +260,7 @@ public sealed class CatalogoUiTests
     }
 
     [Theory]
-    [InlineData(0, "Q 0.00")]
+    [InlineData(0, "Consultar precio")]
     [InlineData(249, "Q 249.00")]
     [InlineData(2499.5, "Q 2,499.50")]
     public void PrecioPublico_UsaQuetzalesDosDecimalesYSinPromociones(decimal precio, string esperado) =>
