@@ -33,7 +33,7 @@ public sealed class DetalleVentaFormModel
 }
 public sealed class VentaDirectaFormModel
 {
-    [Range(1, int.MaxValue, ErrorMessage = "Selecciona un cliente.")]
+    [Range(0, int.MaxValue, ErrorMessage = "Selecciona un cliente válido.")]
     public int ClienteId { get; set; }
 
     public DateOnly Fecha { get; set; } = DateOnly.FromDateTime(DateTime.Today);

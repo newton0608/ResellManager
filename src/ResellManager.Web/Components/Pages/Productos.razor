@@ -1,6 +1,7 @@
 @page "/productos"
 @rendermode InteractiveServer
 @implements IAsyncDisposable
+@inject IServiceProvider Proveedor
 @inject IJSRuntime JS
 @inject IProductoService ProductoService
 @inject ICategoriaService CategoriaService
@@ -8,7 +9,7 @@
 
 <PageTitle>Productos | ResellManager</PageTitle>
 
-<div class="min-w-0 space-y-6 pb-4" @ref="ElementoListado">
+<div class="min-w-0 space-y-6 pb-4" tabindex="-1" @ref="ElementoListado">
     <section class="flex items-start justify-between gap-4" aria-labelledby="titulo-productos">
         <div class="min-w-0 space-y-2">
             <p class="m-0 text-xs font-semibold tracking-wide text-ui-muted uppercase">Catálogo</p>
@@ -52,6 +53,22 @@
                 <button class="ui-button flex-1 border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" type="button" disabled="@Ocupado" @onclick="LimpiarBusquedaAsync">Limpiar</button>
             }
         </div>
+        <label class="flex items-center gap-3"><input type="checkbox" @bind="SinPrecio" disabled="@Ocupado" /> Sin precio asignado</label>
+        <details class="min-w-0 md:col-span-3">
+            <summary class="ui-button border-ui-control bg-white">Filtros avanzados</summary>
+            <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                <label>Marca <input class="ui-input" maxlength="100" @bind="MarcaFiltro" /></label>
+                <label>Modelo <input class="ui-input" maxlength="100" @bind="ModeloFiltro" /></label>
+                <label>Color <input class="ui-input" maxlength="50" @bind="ColorFiltro" /></label>
+                <label>Talla <input class="ui-input" maxlength="30" @bind="TallaFiltro" /></label>
+                <label>Presentación comercial <input class="ui-input" maxlength="100" @bind="PresentacionFiltro" /></label>
+                <label>Contenido ml desde <input class="ui-input" type="number" min="0" step="0.01" @bind="MlDesde" /></label>
+                <label>Contenido ml hasta <input class="ui-input" type="number" min="0" step="0.01" @bind="MlHasta" /></label>
+                <label>Peso g desde <input class="ui-input" type="number" min="0" step="0.01" @bind="GramosDesde" /></label>
+                <label>Peso g hasta <input class="ui-input" type="number" min="0" step="0.01" @bind="GramosHasta" /></label>
+            </div>
+            <p class="text-sm text-ui-muted">Los filtros de medida solo coinciden con productos que tengan esa medida registrada. Pulsa Buscar para aplicarlos.</p>
+        </details>
     </form>
 
     @if (!string.IsNullOrWhiteSpace(ErrorMessage))
@@ -129,7 +146,7 @@
                                     <span class="inline-flex max-w-full rounded-full bg-ui-canvas px-2.5 py-1 text-xs font-medium leading-5 text-ui-muted [overflow-wrap:anywhere]">@CategoriaPresentacion.Etiqueta(producto, Categorias)</span>
                                 </div>
                                 <div class="col-start-2 min-w-0 sm:col-start-3 sm:text-right">
-                                    <p class="m-0 text-base font-semibold leading-6 tracking-tight text-ui-ink tabular-nums [overflow-wrap:anywhere] sm:text-lg">@ProductoPresentacion.PrecioSugerido(producto.PrecioSugerido)</p>
+                                    <p class="m-0 text-base font-semibold leading-6 tracking-tight text-ui-ink tabular-nums [overflow-wrap:anywhere] sm:text-lg">@(producto.PrecioSugerido > 0 ? ProductoPresentacion.PrecioSugerido(producto.PrecioSugerido) : "Pendiente de precio")</p>
                                     <span class="block text-xs leading-5 text-ui-muted">Precio sugerido</span>
                                 </div>
                                 <svg class="col-start-3 row-start-1 row-span-2 mt-1 size-5 text-ui-muted sm:col-start-4 sm:row-span-1 sm:mt-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7" /></svg>
@@ -144,7 +161,9 @@
                                 </div>
                                 <div class="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
                                     <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/productos/@producto.Id">Ver detalle</a>
+                                    <button type="button" class="ui-button border-ui-control bg-white" @onclick="() => AbrirPrecio(producto)">@(producto.PrecioSugerido > 0 ? "Editar precio" : "Asignar precio")</button>
                                     <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/productos/@producto.Id/editar">Editar</a>
+                                    <a class="ui-button border-ui-control bg-white" href="/productos/@producto.Id/variantes">Variantes</a>
                                 </div>
                             </div>
                         </article>
@@ -178,6 +197,11 @@
     }
 </div>
 
+@if (PrecioEditado is not null)
+{
+    <PrecioProductoDialogo Producto="PrecioEditado" Guardado="PrecioGuardado" Cancelar="CerrarPrecio" @key="PrecioEditado.Id" />
+}
+
 @code {
     private List<ProductoDto> ProductosEncontrados { get; } = [];
     private readonly HashSet<int> IdsCargados = [];
@@ -196,6 +220,27 @@
     private string? ErrorMessage { get; set; }
     private string? ErrorMas;
     private bool Ocupado => Cargando || CargandoMas;
+    private bool SinPrecio, FocoPendiente;
+    private string? MarcaFiltro, ModeloFiltro, ColorFiltro, TallaFiltro, PresentacionFiltro;
+    private decimal? MlDesde, MlHasta, GramosDesde, GramosHasta;
+    private ProductoFiltros FiltrosAplicados = new();
+    private ProductoDto? PrecioEditado;
+    private void AbrirPrecio(ProductoDto producto) { if (!Ocupado) PrecioEditado = producto; }
+    private void CerrarPrecio() { PrecioEditado = null; FocoPendiente = true; }
+    private async Task PrecioGuardado(ProductoDto producto)
+    {
+        var indice = ProductosEncontrados.FindIndex(x => x.Id == producto.Id);
+        if (indice >= 0)
+        {
+            if (FiltrosAplicados.SinPrecio) { ProductosEncontrados.RemoveAt(indice); IdsCargados.Remove(producto.Id); }
+            else ProductosEncontrados[indice] = producto;
+        }
+        CerrarPrecio();
+        if (FiltrosAplicados.SinPrecio && HayMas) await CargarMasAsync();
+    }
+    private Task<ProductoPaginaDto> LeerPagina(ProductoCursorDto? cursor, CancellationToken ct)
+        => FiltrosAplicados == new ProductoFiltros() ? ProductoService.ListarPaginaAsync(TerminoAplicado, CategoriaAplicada, cursor, ct:ct)
+        : Proveedor.GetRequiredService<IProductoOperacionesService>().ListarAsync(FiltrosAplicados, TerminoAplicado, CategoriaAplicada, cursor, ct);
     private ElementReference ElementoListado;
     private IJSObjectReference? Modulo;
     private DotNetObjectReference<Productos>? Referencia;
@@ -230,7 +275,8 @@
         ErrorMas = null;
         TerminoAplicado = Termino.Trim();
         CategoriaAplicada = CategoriaId;
-        BusquedaActiva = TerminoAplicado.Length > 0 || CategoriaAplicada.HasValue;
+        FiltrosAplicados = new(SinPrecio, MarcaFiltro, ModeloFiltro, MlDesde, MlHasta, GramosDesde, GramosHasta, ColorFiltro, TallaFiltro, PresentacionFiltro);
+        BusquedaActiva = TerminoAplicado.Length > 0 || CategoriaAplicada.HasValue || FiltrosAplicados != new ProductoFiltros();
         VersionBusqueda++;
         ProductosEncontrados.Clear();
         IdsCargados.Clear();
@@ -240,7 +286,7 @@
         try
         {
             Categorias = await CategoriaService.ListarAsync(ct);
-            var pagina = await ProductoService.ListarPaginaAsync(TerminoAplicado, CategoriaAplicada, ct: ct);
+            var pagina = await LeerPagina(null, ct);
             if (!Descartado) Anexar(pagina);
         }
         catch (OperationCanceledException) when (Descartado) { }
@@ -260,7 +306,7 @@
         var ct = Vida.Token;
         try
         {
-            var pagina = await ProductoService.ListarPaginaAsync(TerminoAplicado, CategoriaAplicada, SiguienteCursor, ct: ct);
+            var pagina = await LeerPagina(SiguienteCursor, ct);
             if (!Descartado) Anexar(pagina);
         }
         catch (OperationCanceledException) when (Descartado) { }
@@ -279,12 +325,15 @@
         if (Ocupado) return;
         Termino = string.Empty;
         CategoriaId = null;
+        SinPrecio = false; MarcaFiltro = ModeloFiltro = ColorFiltro = TallaFiltro = PresentacionFiltro = null;
+        MlDesde = MlHasta = GramosDesde = GramosHasta = null;
         await CargarProductosAsync();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (Descartado || Inicializando) return;
+        if (FocoPendiente) { FocoPendiente = false; await ElementoListado.FocusAsync(preventScroll: true); }
         Inicializando = true;
         try
         {

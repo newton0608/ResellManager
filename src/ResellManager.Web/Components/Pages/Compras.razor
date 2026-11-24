@@ -88,8 +88,8 @@
                                         <span class="max-w-full font-mono text-xs leading-5 break-all text-ui-muted">@compra.CodigoInterno</span>
                                     </div>
                                     <div class="col-start-1 min-w-0 sm:col-start-2 sm:row-start-1 sm:text-right">
-                                        <p class="m-0 text-lg font-semibold leading-6 tracking-tight text-ui-ink tabular-nums [overflow-wrap:anywhere]">@CompraPresentacion.MonedaOrigen(compra.Moneda == MonedaCompra.USD ? compra.TotalMonedaOrigen : compra.Total, compra.Moneda)</p>
-                                        @if (compra.Moneda == MonedaCompra.USD)
+                                        <p class="m-0 text-lg font-semibold leading-6 tracking-tight text-ui-ink tabular-nums [overflow-wrap:anywhere]">@(compra.Detalles.All(d => !d.CostoConocido) ? "Costo no registrado" : (compra.Detalles.Any(d => !d.CostoConocido) ? "Parcial: " : "") + CompraPresentacion.MonedaOrigen(compra.Moneda == MonedaCompra.USD ? compra.TotalMonedaOrigen : compra.Total, compra.Moneda))</p>
+                                        @if (compra.Moneda == MonedaCompra.USD && compra.Detalles.Any(d => d.CostoConocido))
                                         {
                                             <p class="m-0 text-sm leading-6 text-ui-muted tabular-nums [overflow-wrap:anywhere]">@CompraPresentacion.Moneda(compra.Total) · USD</p>
                                         }

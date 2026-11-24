@@ -16,6 +16,8 @@ public static class InventarioPresentacion
             EstadoUnidadInventario.Vendida => "Vendida",
             EstadoUnidadInventario.Entregada => "Entregada",
             EstadoUnidadInventario.Perdida => "Perdida",
+            EstadoUnidadInventario.NoApta => "No apta para reventa",
+            EstadoUnidadInventario.DevueltaEnRevision => "Devuelta en revisión",
             _ => "Estado no disponible",
         };
 

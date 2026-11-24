@@ -6,7 +6,7 @@ namespace ResellManager.Web.Catalogo;
 public static class CatalogoPresentacion
 {
     private static readonly CultureInfo Cultura = CultureInfo.GetCultureInfo("es-GT");
-    public static string Precio(decimal precioPublico) => $"Q {precioPublico.ToString("N2", Cultura)}";
+    public static string Precio(decimal? precioPublico) => precioPublico is > 0 ? $"Q {precioPublico.Value.ToString("N2", Cultura)}" : "Consultar precio";
 
     public static IEnumerable<(string Etiqueta, string Valor)> Caracteristicas(ProductoCatalogoDetalleDto producto)
     {

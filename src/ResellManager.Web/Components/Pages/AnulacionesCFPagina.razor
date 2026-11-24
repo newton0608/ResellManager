@@ -1,0 +1,15 @@
+@page "/ventas/anulaciones-cf"
+@rendermode InteractiveServer
+@using ResellManager.Domain.Entities
+@inject IVentaDirectaService Operaciones
+<PageTitle>Anulaciones CF | ResellManager</PageTitle>
+<h1 class="text-3xl font-bold">Anulaciones de Consumidor Final</h1>
+<p>Últimas 100 solicitudes. Abre la venta para consultar cobros y gestionar la solicitud.</p>
+@if(Error is not null){<p role="alert">@Error</p>}
+<ul class="m-0 grid list-none gap-3 p-0">@foreach(var a in Filas){<li class="ui-card p-5"><a class="ui-button border-ui-control bg-white" href="/ventas/@a.VentaId">Venta @a.VentaId · @a.Estado</a><p>@a.Motivo · @a.SolicitadaUtc.ToString("u")</p></li>}</ul>
+<a class="ui-button border-ui-control bg-white" href="/informes/ventas-cf/xlsx" download>Ventas CF Excel</a>
+<a class="ui-button border-ui-control bg-white" href="/informes/ventas-cf/pdf" download>Ventas CF PDF</a>
+@code{
+    private IReadOnlyList<AnulacionCFDto> Filas=[]; private string? Error;
+    protected override async Task OnInitializedAsync(){var r=await Operaciones.AnulacionesAsync();Filas=r.Value??[];Error=r.ErrorMessage;}
+}

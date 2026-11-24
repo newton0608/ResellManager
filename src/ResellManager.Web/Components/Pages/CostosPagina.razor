@@ -1,0 +1,54 @@
+@page "/costos"
+@rendermode InteractiveServer
+@inject ICostosService Costos
+@inject ICuentaOperativa Acceso
+<PageTitle>Costos e informes | ResellManager</PageTitle>
+<div class="min-w-0 space-y-5">
+<h1 class="text-3xl font-bold">Costos e informes de utilidad</h1>
+<p>Consulta el resultado original o las revisiones documentadas. Un costo pendiente no se interpreta como Q0.</p>
+@if(Error is not null){<p role="alert" class="text-ui-danger">@Error</p>}
+<section class="ui-card grid gap-4 p-5">
+    <label>Unidad <input class="ui-input" type="number" min="1" @bind="Unidad" /></label>
+    <button class="ui-button border-ui-control bg-white" disabled="@Ocupado" @onclick="Historial">Consultar notas</button>
+    <ul>@foreach(var n in Notas){<li class="break-words">@n.RegistradoUtc.ToString("u") · @(n.Anterior.HasValue?$"Q {n.Anterior:0.00}":"Costo no registrado") → Q @n.Nuevo.ToString("N2") · @n.Motivo · @n.UsuarioId · @n.Referencia</li>}</ul>
+    @if(Administrador)
+    {
+        <h2 class="text-xl font-semibold">Registrar costo real comprobado</h2>
+        <label>Costo real Q <input class="ui-input" type="number" min="0" step="0.01" @bind="CostoReal" disabled="@Ocupado" /></label>
+        <label>Fecha de conocimiento <input class="ui-input" type="date" @bind="Conocimiento" disabled="@Ocupado" /></label>
+        <label>Motivo <textarea class="ui-input" maxlength="1000" @bind="Motivo" disabled="@Ocupado"></textarea></label>
+        <label>Referencia <input class="ui-input" maxlength="200" @bind="Referencia" disabled="@Ocupado" /></label>
+        <label><input type="checkbox" @bind="Confirmada" disabled="@Ocupado" /> Confirmo el costo real. La nota puede revisar la utilidad de ventas anteriores y conservará sus datos originales.</label>
+        <button class="ui-button bg-ui-accent text-white" disabled="@(Ocupado||!Confirmada)" @onclick="Corregir">Registrar nota de corrección</button>
+    }
+</section>
+<section class="ui-card grid gap-4 p-5">
+    <h2 class="text-xl font-semibold">Informe por periodo</h2>
+    <label>Desde <input class="ui-input" type="date" @bind="Desde" /></label>
+    <label>Hasta <input class="ui-input" type="date" @bind="Hasta" /></label>
+    <label>Fecha y hora de corte UTC (opcional) <input class="ui-input" type="datetime-local" @bind="Corte" /></label>
+    <label><input type="checkbox" @bind="Original" /> Usar costos originales de la venta</label>
+    <button class="ui-button bg-ui-accent text-white" disabled="@Ocupado" @onclick="Consultar">Consultar informe</button>
+    @if(Resumen is not null)
+    {
+        <p>Utilidad calculable: Q @Resumen.UtilidadCalculable.ToString("N2") · Líneas sin costo: @Resumen.LineasSinCosto · Ventas afectadas Q @Resumen.VentasSinCosto.ToString("N2")</p>
+        <p>@(Resumen.Original?"Versión original":"Versión revisada") · Corte @Resumen.CorteUtc.ToString("O") · Correcciones @Resumen.Correcciones</p>
+        <a class="ui-button border-ui-control bg-white" href="@Descarga("xlsx")" download>Excel</a>
+        <a class="ui-button border-ui-control bg-white" href="@Descarga("pdf")" download>PDF</a>
+        <ul>@foreach(var f in Resumen.Lineas){<li class="break-words">@f.Venta · Q @f.Precio.ToString("N2") · Original: @(f.CostoOriginal?.ToString("N2")??"No registrado") · Revisado: @(f.CostoRevisado?.ToString("N2")??"No registrado") · Nota @f.NotaId @f.Motivo @f.FechaCorreccion?.ToString("u")</li>}</ul>
+    }
+</section>
+</div>
+@code{
+    [SupplyParameterFromQuery(Name="unidad")]public int Unidad{get;set;}
+    private IReadOnlyList<NotaCostoDto> Notas=[];private ResumenUtilidadDto? Resumen;private bool Administrador,Ocupado,Confirmada,Original;private string? Error;
+    private decimal CostoReal;private string Motivo="",Referencia="",Clave=Guid.NewGuid().ToString("N");
+    private DateOnly Conocimiento=DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow,TimeZoneInfo.FindSystemTimeZoneById("America/Guatemala")));
+    private DateOnly Desde=new(2026,1,1),Hasta=DateOnly.FromDateTime(DateTime.UtcNow),DesdeAplicado,HastaAplicado;private DateTime? Corte;
+    protected override async Task OnInitializedAsync(){Administrador=(await Acceso.ObtenerAsync())?.Administrador==true;if(Unidad>0)await Historial();}
+    private async Task CargarHistorial(){var r=await Costos.HistorialAsync(Unidad);Notas=r.Value??[];Error=r.ErrorMessage;}
+    private async Task Historial(){if(Ocupado)return;Ocupado=true;try{await CargarHistorial();}finally{Ocupado=false;}}
+    private async Task Corregir(){if(Ocupado||!Confirmada)return;Ocupado=true;Error=null;try{var r=await Costos.CorregirAsync(new(Unidad,CostoReal,Conocimiento,Motivo,Clave,Referencia));if(r.IsSuccess){Clave=Guid.NewGuid().ToString("N");Confirmada=false;await CargarHistorial();}else Error=r.ErrorMessage;}catch{Error="No se confirmó el resultado. Reintenta con los mismos datos.";}finally{Ocupado=false;}}
+    private async Task Consultar(){if(Ocupado)return;Ocupado=true;try{var r=await Costos.UtilidadAsync(Desde,Hasta,Corte.HasValue?DateTime.SpecifyKind(Corte.Value,DateTimeKind.Utc):null,Original);Resumen=r.Value;Error=r.ErrorMessage;DesdeAplicado=Desde;HastaAplicado=Hasta;}finally{Ocupado=false;}}
+    private string Descarga(string formato)=>$"/costos/informe/{formato}?desde={DesdeAplicado:yyyy-MM-dd}&hasta={HastaAplicado:yyyy-MM-dd}&corteUtc={Uri.EscapeDataString(Resumen!.CorteUtc.ToString("O"))}&original={Resumen.Original.ToString().ToLowerInvariant()}";
+}

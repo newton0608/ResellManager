@@ -13,7 +13,7 @@ public sealed class CatalogoContactoOptions
 // Configuración de servidor: nunca se deriva el origen compartido del request o Preview.
 public sealed class CatalogoWhatsApp(IOptions<CatalogoContactoOptions> options)
 {
-    public string? CrearEnlace(int productoId, string nombre)
+    public string? CrearEnlace(int productoId, string nombre, string? codigoInterno = null, string? variante = null)
     {
         var configuracion = options.Value;
         var numero = configuracion.WhatsAppNumero;
@@ -27,6 +27,8 @@ public sealed class CatalogoWhatsApp(IOptions<CatalogoContactoOptions> options)
             || origen.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
             || !origen.Host.Contains('.') || IPAddress.TryParse(origen.Host, out _))
             return null;
+        if (!string.IsNullOrWhiteSpace(codigoInterno)) nombre += $" · {codigoInterno}";
+        if (!string.IsNullOrWhiteSpace(variante)) nombre += $" · {variante}";
         var url = new Uri(origen, $"producto/{productoId}").AbsoluteUri;
         return $"https://wa.me/{numero}?text={Uri.EscapeDataString($"Hola, quisiera consultar por {nombre}. {url}")}";
     }

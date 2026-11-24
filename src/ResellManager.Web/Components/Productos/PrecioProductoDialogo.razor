@@ -1,0 +1,28 @@
+@inject IProductoOperacionesService Operaciones
+<ConfirmacionOperacion Titulo="Asignar precio" TextoEditar="Cancelar" TextoConfirmar="Guardar precio" Ocupado="Ocupado" Error="@Error" OnEditar="Cancelar" OnConfirmar="Guardar">
+    <div class="flex h-64 items-center justify-center rounded-xl bg-ui-canvas">
+        <ImagenProducto ProductoId="Producto.Id" Nombre="@Producto.Nombre" Referencia="@Producto.ImagenPrincipalRuta" Ancho="640" Alto="640" Clase="block h-64 w-full object-contain" />
+    </div>
+    <h3 class="font-semibold">@Producto.Nombre</h3>
+    <dl><dt>Código interno</dt><dd class="break-all">@Producto.CodigoInterno</dd><dt>Código de barras</dt><dd>@Producto.CodigoBarras</dd><dt>Características</dt><dd>@Caracteristicas</dd></dl>
+    <label>Precio de venta Q <input class="ui-input text-xl" type="number" inputmode="decimal" min="0.01" step="0.01" @bind="Precio" disabled="@Ocupado" /></label>
+</ConfirmacionOperacion>
+@code {
+    [Parameter,EditorRequired] public ProductoDto Producto { get; set; }=null!;
+    [Parameter] public EventCallback<ProductoDto> Guardado { get; set; }
+    [Parameter] public EventCallback Cancelar { get; set; }
+    private string Caracteristicas => string.Join(" · ",new[]{Producto.Marca,Producto.Modelo,Producto.Color,Producto.Talla,Producto.Presentacion,
+        Producto.ContenidoMl.HasValue ? $"{Producto.ContenidoMl} ml" : null,Producto.PesoGramos.HasValue ? $"{Producto.PesoGramos} g" : null}.Where(x=>!string.IsNullOrWhiteSpace(x))) is {Length:>0} datos ? datos : "Sin características adicionales";
+    private decimal Precio;
+    private bool Ocupado;
+    private string? Error;
+    private readonly string Clave=Guid.NewGuid().ToString("N");
+    protected override void OnInitialized()=>Precio=Producto.PrecioSugerido;
+    private async Task Guardar()
+    {
+        if(Ocupado)return;Ocupado=true;Error=null;
+        try { var r=await Operaciones.PrecioAsync(Producto.Id,Precio,Producto.PrecioSugerido,Clave); if(r.IsSuccess)await Guardado.InvokeAsync(r.Value!);else Error=r.ErrorMessage; }
+        catch { Error="No se confirmó el resultado. Reintenta el mismo precio para recuperar la operación."; }
+        finally { Ocupado=false; }
+    }
+}

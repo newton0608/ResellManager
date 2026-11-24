@@ -35,8 +35,8 @@
                 <p class="m-0 text-sm leading-6 text-ui-muted">Consulta los productos vendidos y el pedido de origen.</p>
             </div>
             <div class="grid min-w-0 gap-3 sm:flex sm:flex-wrap">
-                <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/pagos?cliente=@Venta.ClienteId">Pagos del cliente</a>
-                @if (Venta.Estado == EstadoVenta.Registrada)
+                @if (Venta.ClienteId.HasValue) { <a class="ui-button border-ui-control bg-white text-ui-ink hover:bg-ui-canvas" href="/pagos?cliente=@Venta.ClienteId">Pagos del cliente</a> }
+                @if (Venta.Estado == EstadoVenta.Registrada && !Venta.ConsumidorFinal)
                 {
                     <button class="ui-button min-w-0 border-ui-danger/30 bg-white text-ui-danger hover:border-ui-danger hover:bg-ui-danger/5" type="button" disabled="@Cancelando" @onclick="CancelarAsync">
                         @(Cancelando ? "Cancelando..." : "Cancelar venta")
@@ -58,7 +58,7 @@
             <article class="ui-card grid min-w-0 content-start gap-2 p-4 sm:p-5">
                 <span class="text-xs font-medium leading-5 text-ui-muted">Cliente</span>
                 <strong class="text-base leading-6 [overflow-wrap:anywhere]">@Venta.Cliente</strong>
-                <a class="inline-flex min-h-12 items-center rounded-xl text-sm font-medium text-ui-accent no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-accent" href="/clientes/@Venta.ClienteId">Ver cliente</a>
+                @if (Venta.ClienteId.HasValue) { <a class="ui-button border-ui-control bg-white" href="/clientes/@Venta.ClienteId">Ver cliente</a> }
             </article>
             <article class="ui-card grid min-w-0 content-start gap-2 p-4 sm:p-5">
                 <span class="text-xs font-medium leading-5 text-ui-muted">Pedido</span>
@@ -76,6 +76,7 @@
             </article>
         </section>
 
+        @if (Venta.ConsumidorFinal) { <ResellManager.Web.Components.Finanzas.GestionVentaCF Venta="Venta" Completada="CargarAsync" /> }
         @if (!string.IsNullOrWhiteSpace(Venta.Observaciones))
         {
             <section class="ui-card grid min-w-0 gap-2 p-4 sm:p-5" aria-labelledby="titulo-observaciones-venta">
@@ -101,7 +102,7 @@
                             </p>
                         </div>
                         <dl class="m-0 grid min-w-0 grid-cols-2 gap-3 rounded-2xl bg-ui-canvas p-3 text-sm leading-6 sm:grid-cols-3 [&_dt]:text-xs [&_dt]:leading-5 [&_dt]:text-ui-muted [&_dd]:m-0 [&_dd]:font-medium [&_dd]:text-ui-ink [&_dd]:tabular-nums [&_dd]:[overflow-wrap:anywhere]">
-                            <div class="grid min-w-0 gap-1"><dt>Costo unitario</dt><dd>@VentaPresentacion.Moneda(detalle.CostoUnitario)</dd></div>
+                            <div class="grid min-w-0 gap-1"><dt>Costo unitario</dt><dd>@(detalle.CostoConocido ? VentaPresentacion.Moneda(detalle.CostoUnitario) : "Costo no registrado")</dd></div>
                             <div class="grid min-w-0 gap-1"><dt>Precio final</dt><dd>@VentaPresentacion.Moneda(detalle.PrecioFinal)</dd></div>
                             <div class="grid min-w-0 gap-1"><dt>Utilidad</dt><dd>@VentaPresentacion.Moneda(VentaPresentacion.Utilidad(detalle))</dd></div>
                         </dl>

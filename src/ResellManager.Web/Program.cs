@@ -1,4 +1,5 @@
 using System.Threading.RateLimiting;
+using ResellManager.Web.Finanzas;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.Extensions.Options;
@@ -102,6 +103,8 @@ builder.Services.AddOptions<AlmacenamientoImagenesProductoOptions>()
     });
 
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICuentaOperativa, CuentaOperativaActual>();
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -192,6 +195,7 @@ app.UseAntiforgery();
 
 app.MapGet("/health", () => Results.Text("OK")).AllowAnonymous();
 app.MapCatalogoPublico();
+app.MapFinanzas();
 app.MapProductoGaleriaEndpoints();
 app.MapImportacionTemporalProductos();
 

@@ -1,0 +1,17 @@
+@inject IFinanzasService Finanzas
+<section class="ui-card space-y-4 p-5">
+    <h2 class="text-xl font-semibold">Movimientos de cuenta</h2>
+    @if(Error is not null){<p role="alert" class="text-ui-danger">@Error</p>}
+    else if(Filas is null){<p role="status">Cargando movimientos…</p>}
+    else
+    {
+        <ul class="m-0 grid list-none gap-3 p-0">@foreach(var m in Filas){<li class="rounded-xl border border-solid border-ui-border p-3"><strong>@m.Tipo · Q @m.Importe.ToString("N2")</strong><p>@m.Fecha.ToString("dd/MM/yyyy") · @m.Descripcion</p><p class="break-words text-sm text-ui-muted">@m.Referencia · @(m.UsuarioId??"Histórico sin autor registrado")</p></li>}</ul>
+        @if(Filas.Count==0){<p>Sin movimientos registrados.</p>}
+    }
+    <a class="ui-button border-ui-control bg-white" href="/movimientos?cliente=@ClienteId">Consultar historial completo y exportar</a>
+</section>
+@code{
+    [Parameter]public int ClienteId{get;set;}
+    private IReadOnlyList<MovimientoDto>? Filas;private string? Error;private int? Cargado;
+    protected override async Task OnParametersSetAsync(){if(Cargado==ClienteId)return;try{var r=await Finanzas.ConsultarAsync(new(ClienteId,Tamano:10));Filas=r.Value?.Filas;Error=r.ErrorMessage;Cargado=ClienteId;}catch{Error="No se pudieron cargar los movimientos. Abre el historial completo para reintentar.";}}
+}

@@ -8,7 +8,7 @@
 @inject CatalogoWhatsApp WhatsApp
 
 <PageTitle>@(Producto?.Nombre ?? "Producto") | Virtuosa Store</PageTitle>
-<CatalogoDetalleVista Producto="Producto" Cargando="Cargando" NoDisponible="NoDisponible" Error="@Error" OnReintentar="CargarAsync" EnlaceWhatsApp="@(Producto is { Disponible: true } ? WhatsApp.CrearEnlace(Producto.Id, Producto.Nombre) : null)" />
+<CatalogoDetalleVista Producto="Producto" Cargando="Cargando" NoDisponible="NoDisponible" Error="@Error" OnReintentar="CargarAsync" EnlaceWhatsApp="@(Producto is { Disponible: true } ? WhatsApp.CrearEnlace(Producto.Id, Producto.Nombre, Producto.CodigoInterno, string.Join(" · ", new[]{Producto.Color,Producto.Talla,Producto.Presentacion}.Where(x=>!string.IsNullOrWhiteSpace(x)))) : null)" />
 
 @code {
     [Parameter] public int ProductoId { get; set; }

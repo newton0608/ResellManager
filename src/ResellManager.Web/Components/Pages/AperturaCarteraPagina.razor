@@ -1,0 +1,113 @@
+@page "/clientes/apertura"
+@rendermode InteractiveServer
+@inject IFinanzasService Finanzas
+@inject ICuentaOperativa Acceso
+
+<PageTitle>Apertura de cartera | ResellManager</PageTitle>
+<div class="min-w-0 space-y-6">
+    <h1 class="text-3xl font-bold">Apertura de cartera</h1>
+    @if (!Administrador) { <p role="alert">Esta operación requiere autorización administrativa explícita.</p> }
+    else
+    {
+        <p>Una única apertura para todo el negocio. Revisa todas las deudas antes de confirmar; la fecha de corte será el día de confirmación.</p>
+        @if (Error is not null) { <p role="alert" class="text-ui-danger">@Error</p> }
+        @if (Vista?.Confirmada != true)
+        {
+            <section class="ui-card grid gap-4 p-5">
+                <h2 class="text-xl font-semibold">Preparar deudas</h2>
+                <p>El CSV reemplaza el borrador completo. Usa UTF-8, comas y punto decimal, sin separadores de miles.</p>
+                <details><summary>Plantilla CSV</summary><pre class="overflow-auto">clienteId,telefono,nombre,apellido,deuda,observacion
+,55551234,Ana,Pérez,1250.00,Deuda anterior</pre></details>
+                <label>Cargar CSV <InputFile OnChange="CargarCsv" accept=".csv,text/csv" disabled="@Ocupado" /></label>
+                <label>Cliente ID existente (opcional) <input class="ui-input" type="number" min="1" @bind="ClienteId" /></label>
+                <label>Nombre <input class="ui-input" maxlength="100" @bind="Nombre" /></label>
+                <label>Apellido <input class="ui-input" maxlength="100" @bind="Apellido" /></label>
+                <label>Teléfono obligatorio <input class="ui-input" type="tel" maxlength="30" @bind="Telefono" /></label>
+                <label>Deuda Q <input class="ui-input" type="number" step="0.01" @bind="Deuda" /></label>
+                <label>Observación <input class="ui-input" maxlength="500" @bind="Observacion" /></label>
+                <button class="ui-button border-ui-control bg-white" disabled="@Ocupado" @onclick="Agregar">Agregar a vista previa</button>
+                <a class="ui-button border-ui-control bg-white" href="/clientes">Buscar o gestionar clientes</a>
+            </section>
+        }
+        @if (Vista is not null)
+        {
+            <section class="ui-card space-y-4 p-5">
+                <h2 class="text-xl font-semibold">@(Vista.Confirmada ? "Apertura confirmada y cerrada" : "Vista previa")</h2>
+                <p>Total de cartera: Q @Vista.Total.ToString("N2")</p>
+                @if (Vista.Confirmada) { <p>Corte: @Vista.Corte · Registro: @Vista.ConfirmadaUtc?.ToString("u") · Responsable: @Vista.UsuarioId</p> }
+                <ul class="m-0 grid list-none gap-3 p-0">
+                    @foreach (var f in Vista.Filas.Skip((PaginaFilas-1)*50).Take(50))
+                    {
+                        <li class="rounded-xl border border-solid border-ui-border p-3">
+                            <p>Fila @f.Fila · @f.Cliente · @f.Telefono · Q @f.Deuda.ToString("N2")</p>
+                            <p>@(f.Error ?? (f.Omitida ? "Omitida: Q0" : f.ClienteId.HasValue ? $"Cliente {f.ClienteId}" : "Se creará este cliente al confirmar"))</p>
+                            @if (!Vista.Confirmada) { <button class="ui-button border-ui-control bg-white" disabled="@Ocupado" @onclick="() => Quitar(f.Fila)">Quitar fila</button> }
+                        </li>
+                    }
+                </ul>
+                <div class="flex gap-3">
+                    <button class="ui-button border-ui-control bg-white" disabled="@(Ocupado || PaginaFilas<=1)" @onclick="()=>PaginaFilas--">Filas anteriores</button>
+                    <span>Página @PaginaFilas</span>
+                    <button class="ui-button border-ui-control bg-white" disabled="@(Ocupado || PaginaFilas*50>=Vista.Filas.Count)" @onclick="()=>PaginaFilas++">Filas siguientes</button>
+                </div>
+                <div class="flex flex-wrap gap-3"><a class="ui-button border-ui-control bg-white" href="/informes/apertura/xlsx" download>Excel</a><a class="ui-button border-ui-control bg-white" href="/informes/apertura/pdf" download>PDF</a></div>
+                @if (!Vista.Confirmada && Vista.PuedeConfirmar)
+                {
+                    <label><input type="checkbox" @bind="Aceptada" disabled="@Ocupado" /> He revisado la cartera completa. Confirmar cierra definitivamente la apertura.</label>
+                    <button class="ui-button bg-ui-accent text-white" disabled="@(Ocupado || !Aceptada)" @onclick="Confirmar">Confirmar apertura global</button>
+                }
+            </section>
+        }
+    }
+</div>
+@code {
+    private AperturaDto? Vista;
+    private bool Administrador, Ocupado, Aceptada;
+    private string? Error;
+    private int? ClienteId;
+    private int PaginaFilas=1;
+    private string Nombre = "", Apellido = "", Telefono = "", Observacion = "";
+    private decimal Deuda;
+    private string Clave = Guid.NewGuid().ToString("N");
+    private readonly List<FilaAperturaInput> Filas = [];
+    protected override async Task OnInitializedAsync()
+    {
+        Administrador = (await Acceso.ObtenerAsync())?.Administrador == true;
+        if (!Administrador) return;
+        var r = await Finanzas.AperturaAsync(); Vista = r.Value; Error = r.ErrorMessage;
+        if (Vista is not null) Filas.AddRange(Vista.Entradas ?? []);
+    }
+    private async Task Ejecutar(Func<Task<ResellManager.Application.Common.ServiceResult<AperturaDto>>> operacion)
+    {
+        if (Ocupado) return; Ocupado = true; Error = null;
+        try
+        {
+            var r = await operacion(); if (r.IsSuccess) { Vista = r.Value; Aceptada = false; PaginaFilas=1; } else Error = r.ErrorMessage;
+        }
+        catch { Error = "No se confirmó el resultado. Revisa el estado de apertura y reintenta la misma operación."; }
+        finally { Ocupado = false; }
+    }
+    private async Task Agregar()
+    {
+        Filas.Add(new(ClienteId, Telefono, Nombre, Apellido, Deuda, Observacion));
+        await Ejecutar(() => Finanzas.PrepararAsync(Filas));
+        if (Error is null) { Clave = Guid.NewGuid().ToString("N"); Nombre = Apellido = Telefono = Observacion = ""; Deuda = 0; ClienteId = null; }
+    }
+    private async Task Quitar(int fila)
+    {
+        Filas.RemoveAt(fila - 1);
+        await Ejecutar(() => Finanzas.PrepararAsync(Filas)); Clave = Guid.NewGuid().ToString("N");
+    }
+    private async Task CargarCsv(InputFileChangeEventArgs e)
+    {
+        await Ejecutar(async () =>
+        {
+            using var lector = new StreamReader(e.File.OpenReadStream(1_000_000), new System.Text.UTF8Encoding(false, true));
+            var r = await Finanzas.PrepararCsvAsync(await lector.ReadToEndAsync());
+            if (r.Value is not null) { Filas.Clear(); Filas.AddRange(r.Value.Entradas ?? []); }
+            return r;
+        });
+        Clave = Guid.NewGuid().ToString("N");
+    }
+    private Task Confirmar() => Ejecutar(() => Finanzas.ConfirmarAsync(Vista!.Version, Clave));
+}

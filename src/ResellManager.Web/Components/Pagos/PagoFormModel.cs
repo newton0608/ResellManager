@@ -22,6 +22,7 @@ public sealed class PagoFormModel
     [StringLength(500, ErrorMessage = "Las observaciones no pueden exceder 500 caracteres.")]
     public string? Observaciones { get; set; }
 
+    private readonly string ClaveOperacion = Guid.NewGuid().ToString("N");
     public PagoInput ToInput() =>
-        new(ClienteId, Fecha, Monto, MetodoPago, Referencia, Observaciones);
+        new(ClienteId, Fecha, Monto, MetodoPago, Referencia, Observaciones, ClaveOperacion);
 }

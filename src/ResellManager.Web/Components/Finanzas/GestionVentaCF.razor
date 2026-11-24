@@ -1,0 +1,90 @@
+@using ResellManager.Domain.Enums
+@using ResellManager.Domain.Entities
+@inject IVentaDirectaService Operaciones
+@inject ICuentaOperativa Acceso
+
+<section class="ui-card grid gap-4 p-5">
+    <h2 class="text-xl font-semibold">Consumidor Final</h2>
+    @foreach (var c in Cobros) { <p>@c.Metodo: aplicado Q @c.Aplicado.ToString("N2") · Entregado Q @c.Entregado.ToString("N2") · Cambio Q @c.Cambio.ToString("N2") · @c.Referencia</p> }
+    @if (Error is not null) { <p role="alert" class="text-ui-danger">@Error</p> }
+    <p>Una solicitud pendiente conserva la venta, los cobros y el inventario. La devolución se completa después de registrar todos los efectos reales.</p>
+    @if (Venta.Estado == EstadoVenta.Registrada && Actual?.Estado is not (EstadoAnulacionCF.Pendiente or EstadoAnulacionCF.Aprobada))
+    {
+        <label>Motivo de solicitud <textarea class="ui-input" maxlength="1000" @bind="MotivoSolicitud" disabled="@Ocupado"></textarea></label>
+        <button class="ui-button border-ui-control bg-white" disabled="@Ocupado" @onclick="Solicitar">Solicitar anulación completa</button>
+    }
+    @foreach (var a in Solicitudes)
+    {
+        <article class="grid gap-3 rounded-xl border border-solid border-ui-border p-4" @key="a.Id">
+            <h3 class="font-semibold">@a.Estado · @a.SolicitadaUtc.ToString("u")</h3>
+            <p>@a.Motivo · Solicitó: @a.SolicitanteId</p>
+            <p>Decisión: @a.MotivoDecision · Administrador: @a.AdministradorId</p>
+            <p>Devuelto Q @a.Devuelto.ToString("N2") de Q @a.Total.ToString("N2") · Artículos recibidos @a.Recibidas de @a.Unidades</p>
+            @foreach(var r in a.Reembolsos ?? []) { <p class="break-words">Devolución efectiva: Q @r.Importe.ToString("N2") · @r.Metodo · @r.Fecha · @r.Referencia · @r.UsuarioId</p> }
+            @foreach(var r in a.Articulos ?? []) { <p class="break-words">Unidad @r.UnidadId · @(r.Apta?"Apta para reventa":"No apta") · @r.Observacion · @r.RegistradoUtc.ToString("u") · @r.UsuarioId</p> }
+            @if (Administrador && a.Estado == EstadoAnulacionCF.Pendiente)
+            {
+                <label>Motivo de decisión <textarea class="ui-input" maxlength="1000" @bind="MotivoDecision" disabled="@Ocupado"></textarea></label>
+                <button class="ui-button bg-ui-accent text-white" disabled="@Ocupado" @onclick="() => Decidir(a.Id, true)">Aprobar solicitud</button>
+                <button class="ui-button border-ui-control bg-white" disabled="@Ocupado" @onclick="() => Decidir(a.Id, false)">Rechazar solicitud</button>
+            }
+            @if (Administrador && a.Estado == EstadoAnulacionCF.Aprobada)
+            {
+                <fieldset class="grid gap-3"><legend>Registrar dinero realmente devuelto</legend>
+                    <label>Importe Q <input class="ui-input" type="number" step="0.01" min="0" @bind="Importe" disabled="@Ocupado" /></label>
+                    <label for="metodo-devolucion-cf">Método de devolución</label><select id="metodo-devolucion-cf" class="ui-input" @bind="Metodo" disabled="@Ocupado">@foreach(var m in Enum.GetValues<MetodoPago>()) { <option value="@m">@m</option> }</select>
+                    <label>Fecha efectiva <input class="ui-input" type="date" @bind="Fecha" disabled="@Ocupado" /></label>
+                    <label>Referencia o constancia <input class="ui-input" maxlength="200" @bind="Referencia" disabled="@Ocupado" /></label>
+                    <button class="ui-button border-ui-control bg-white" disabled="@Ocupado" @onclick="() => Devolver(a.Id)">Confirmar devolución efectuada</button>
+                </fieldset>
+                <fieldset class="grid gap-3"><legend>Recepción física por artículo</legend>
+                    <label for="unidad-devolucion-cf">Unidad</label><select id="unidad-devolucion-cf" class="ui-input" @bind="Unidad" disabled="@Ocupado"><option value="0">Seleccionar unidad</option>@foreach(var d in Venta.Detalles.Where(d=>!(a.Articulos?.Any(r=>r.UnidadId==d.UnidadInventarioId)??false))) { <option value="@d.UnidadInventarioId">@d.CodigoUnidad · @d.Producto</option> }</select>
+                    <label><input type="checkbox" @bind="Apta" disabled="@Ocupado" /> Apta para reventa</label>
+                    <label>Condición y observación <textarea class="ui-input" maxlength="1000" @bind="Observacion" disabled="@Ocupado"></textarea></label>
+                    <button class="ui-button border-ui-control bg-white" disabled="@Ocupado" @onclick="() => Recibir(a.Id)">Confirmar artículo recibido</button>
+                </fieldset>
+                <button class="ui-button bg-ui-accent text-white" disabled="@(Ocupado || a.Recibidas != a.Unidades || a.Devuelto != a.Total)" @onclick="() => Completar(a.Id)">Finalizar anulación completa</button>
+            }
+        </article>
+    }
+</section>
+@code {
+    [Parameter, EditorRequired] public VentaDto Venta { get; set; } = null!;
+    [Parameter] public EventCallback Completada { get; set; }
+    private IReadOnlyList<CobroCFDto> Cobros = [];
+    private IReadOnlyList<AnulacionCFDto> Solicitudes = [];
+    private AnulacionCFDto? Actual => Solicitudes.FirstOrDefault();
+    private bool Administrador, Ocupado, Apta;
+    private string? Error;
+    private string MotivoSolicitud = "", MotivoDecision = "", Referencia = "", Observacion = "";
+    private decimal Importe;
+    private int Unidad;
+    private MetodoPago Metodo;
+    private DateOnly Fecha = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow,TimeZoneInfo.FindSystemTimeZoneById("America/Guatemala")));
+    private readonly Dictionary<string,string> Claves = [];
+    protected override async Task OnInitializedAsync() { Administrador = (await Acceso.ObtenerAsync())?.Administrador == true; await Cargar(); }
+    private async Task Cargar()
+    {
+        var cobros = await Operaciones.CobrosAsync(Venta.Id); if(cobros.IsSuccess) Cobros = cobros.Value!;
+        var solicitudes = await Operaciones.AnulacionesAsync(Venta.Id); if(solicitudes.IsSuccess) Solicitudes = solicitudes.Value!;
+    }
+    private async Task Ejecutar(string accion, Func<string,Task<ResellManager.Application.Common.ServiceResult<AnulacionCFDto>>> llamada)
+    {
+        if(Ocupado)return; Ocupado=true;Error=null;
+        if(!Claves.TryGetValue(accion,out var clave)) Claves[accion] = clave = Guid.NewGuid().ToString("N");
+        try
+        {
+            var r=await llamada(clave);
+            if(!r.IsSuccess){Error=r.ErrorMessage;return;}
+            Claves.Remove(accion); await Cargar();
+            if(r.Value!.Estado == EstadoAnulacionCF.Completada) await Completada.InvokeAsync();
+        }
+        catch { Error="No se confirmó el resultado. Reintenta la misma operación sin cambiar los datos."; }
+        finally { Ocupado=false; }
+    }
+    private Task Solicitar()=>Ejecutar("solicitar",k=>Operaciones.SolicitarAnulacionAsync(Venta.Id,MotivoSolicitud,k));
+    private Task Decidir(Guid id,bool aprobar)=>Ejecutar("decidir",k=>Operaciones.DecidirAsync(id,aprobar,MotivoDecision,k));
+    private Task Devolver(Guid id)=>Ejecutar("devolver",k=>Operaciones.RegistrarDevolucionAsync(new(id,k,Importe,Metodo,Fecha,Referencia)));
+    private Task Recibir(Guid id)=>Ejecutar("recibir",k=>Operaciones.RecibirAsync(id,Unidad,Apta,Observacion,k));
+    private Task Completar(Guid id)=>Ejecutar("completar",k=>Operaciones.CompletarAsync(id,k));
+}

@@ -1,5 +1,6 @@
 @page "/"
 @rendermode InteractiveServer
+@inject IServiceProvider Servicios
 @inject IDashboardService DashboardService
 @inject TimeProvider TimeProvider
 @inject ILogger<Home> Logger
@@ -53,6 +54,7 @@
                     <span class="mb-4 inline-flex size-10 items-center justify-center rounded-2xl bg-ui-success/10 text-ui-success"><NavIcon Name="bag" /></span>
                     <span class="block text-sm font-medium text-ui-muted">Inventario al costo</span>
                     <strong class="mt-2 block text-[clamp(1.35rem,2.5vw,2rem)] font-semibold leading-tight tracking-tight tabular-nums">@ClientePresentacion.Moneda(Dashboard.ValorInventarioDisponible)</strong>
+                    @if(Dashboard.InventarioSinCosto>0){<p>Valor parcial: @Dashboard.InventarioSinCosto unidades con costo pendiente.</p>}
                     <a class="mt-3 inline-flex min-h-11 items-center text-xs font-medium text-ui-accent no-underline hover:underline sm:text-sm" href="/inventario?estado=disponible">Unidades disponibles</a>
                 </article>
             </div>
@@ -78,7 +80,7 @@
     </section>
 
     <section class="ui-card min-w-0 p-5 sm:p-6" aria-labelledby="titulo-utilidad">
-        <h2 class="mt-0 mb-5 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-utilidad">Ganancia total</h2>
+        <h2 class="mt-0 mb-5 text-xl font-semibold tracking-tight text-ui-ink" id="titulo-utilidad">Utilidad calculable</h2>
         <form class="grid min-w-0 gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end" @onsubmit="ConsultarUtilidadAsync" @onsubmit:preventDefault>
             <div class="grid min-w-0 gap-2">
                 <label class="text-sm font-medium" for="dashboard-desde">Desde</label>
@@ -103,9 +105,14 @@
         else if (Utilidad.HasValue)
         {
             <div class="mt-5 flex min-w-0 flex-col gap-3 rounded-2xl bg-ui-canvas p-4 sm:flex-row sm:items-center sm:justify-between" aria-live="polite">
-                <span class="text-sm text-ui-muted">Ganancia del @DesdeConsultado.ToString("dd/MM/yyyy") al @HastaConsultado.ToString("dd/MM/yyyy")</span>
+                <span class="text-sm text-ui-muted">Utilidad calculable del @DesdeConsultado.ToString("dd/MM/yyyy") al @HastaConsultado.ToString("dd/MM/yyyy")</span>
                 <strong class="text-2xl font-semibold tracking-tight tabular-nums">@ClientePresentacion.Moneda(Utilidad.Value)</strong>
             </div>
+        }
+        @if(ResumenCostos is not null)
+        {
+            <p>Líneas sin costo: @ResumenCostos.LineasSinCosto · Ventas afectadas: @ClientePresentacion.Moneda(ResumenCostos.VentasSinCosto) · Correcciones aplicadas: @ResumenCostos.Correcciones</p>
+            <a class="ui-button border-ui-control bg-white" href="/costos">Costos e informes originales y revisados</a>
         }
     </section>
 
@@ -209,7 +216,7 @@
                                     <strong class="text-lg font-semibold tabular-nums">@ClientePresentacion.Moneda(venta.Total)</strong>
                                 </div>
                                 <p class="mt-2 mb-0 text-sm text-ui-muted">@venta.Fecha.ToString("dd/MM/yyyy") · @PedidoPresentacion.Canal(venta.Canal)</p>
-                                <a class="inline-flex min-h-11 items-center text-sm font-medium text-ui-accent no-underline hover:underline" href="/clientes/@venta.ClienteId">@venta.Cliente</a>
+                                @if (venta.ClienteId.HasValue) { <a class="inline-flex min-h-11 items-center text-sm font-medium text-ui-accent no-underline hover:underline" href="/clientes/@venta.ClienteId">@venta.Cliente</a> } else { <span>@venta.Cliente</span> }
                                 <div class="mt-3 border-0 border-t border-solid border-ui-border pt-3">
                                     <a class="ui-button w-full border-ui-control bg-white text-ui-ink hover:bg-white/60 sm:w-auto" href="/ventas/@venta.Id">Ver detalle</a>
                                 </div>
@@ -231,6 +238,7 @@
     private DateOnly DesdeConsultado { get; set; }
     private DateOnly HastaConsultado { get; set; }
     private decimal? Utilidad { get; set; }
+    private ResumenUtilidadDto? ResumenCostos;
     private bool CargandoDashboard { get; set; }
     private bool ConsultandoUtilidad { get; set; }
     private string? ErrorDashboard { get; set; }
@@ -281,6 +289,13 @@
         var hastaConsultado = Hasta;
         try
         {
+            if(Servicios?.GetService<ICostosService>() is {} costos)
+            {
+                var revision = await costos.UtilidadAsync(desdeConsultado,hastaConsultado);
+                if(!revision.IsSuccess) { ErrorUtilidad=revision.ErrorMessage; return; }
+                ResumenCostos=revision.Value; Utilidad=ResumenCostos!.UtilidadCalculable;
+                DesdeConsultado=desdeConsultado; HastaConsultado=hastaConsultado; return;
+            }
             var resultado = await DashboardService.ObtenerUtilidadAsync(desdeConsultado, hastaConsultado);
             if (!resultado.IsSuccess)
             {

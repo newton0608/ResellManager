@@ -80,7 +80,7 @@ public sealed class CompraFormModel
             Origen,
             ProveedorId,
             Observaciones,
-            Detalles.Select(x => new DetalleCompraInput(x.ProductoId, x.Cantidad, x.CostoUnitarioMonedaOrigen)).ToList(),
+            Detalles.Select(x => new DetalleCompraInput(x.ProductoId, x.Cantidad, x.CostoConocido ? x.CostoUnitarioMonedaOrigen : 0, x.CostoConocido)).ToList(),
             null
         )
         {
@@ -101,6 +101,7 @@ public sealed class CompraFormModel
             decimal total = 0;
             foreach (var detalle in Detalles)
             {
+                if(!detalle.CostoConocido) return null;
                 var subtotal = calcular(detalle);
                 if (subtotal is null) return null;
                 total = checked(total + subtotal.Value);
@@ -119,6 +120,7 @@ public sealed class DetalleCompraFormModel
     public ProductoDto? ProductoSeleccionado { get; set; }
     public int ProductoId { get; set; }
     public int Cantidad { get; set; } = 1;
+    public bool CostoConocido { get; set; } = true;
     public decimal CostoUnitarioMonedaOrigen { get; set; }
     // Conserva el contrato del formulario previo; siempre representa el importe que el usuario introduce.
     public decimal CostoUnitario { get => CostoUnitarioMonedaOrigen; set => CostoUnitarioMonedaOrigen = value; }
@@ -126,6 +128,7 @@ public sealed class DetalleCompraFormModel
 
     public decimal? CostoUnitarioGtq(decimal tipoCambio)
     {
+        if(!CostoConocido) return null;
         try { return ConversionMonedaCompra.CostoUnitarioGtq(CostoUnitarioMonedaOrigen, tipoCambio); }
         catch (OverflowException) { return null; }
     }

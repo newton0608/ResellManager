@@ -37,7 +37,7 @@
                 <h1 id="titulo-pedido" class="m-0 text-2xl font-bold tracking-tight break-all text-ui-ink sm:text-3xl">@Pedido.CodigoInterno</h1>
                 <p class="m-0 flex min-w-0 flex-wrap items-center gap-x-2 text-sm leading-6 text-ui-muted">
                     @Pedido.Fecha.ToString("dd/MM/yyyy") ·
-                    <a class="inline-flex min-h-12 max-w-full items-center rounded-xl font-medium text-ui-accent no-underline [overflow-wrap:anywhere] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-accent" href="/clientes/@Pedido.ClienteId">@Pedido.Cliente</a>
+                    @if (Pedido.ClienteId.HasValue) { <a class="inline-flex min-h-12 max-w-full items-center rounded-xl font-medium text-ui-accent no-underline [overflow-wrap:anywhere] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui-accent" href="/clientes/@Pedido.ClienteId">@Pedido.Cliente</a> } else { <span>Consumidor Final (CF)</span> }
                 </p>
             </div>
             <div class="grid min-w-0 gap-3 xl:justify-items-end">

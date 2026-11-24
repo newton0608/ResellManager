@@ -29,6 +29,23 @@ else if (Producto is not null)
             {
                 <span class="store-availability">Disponible</span>
             }
+            else
+            {
+                <strong class="store-availability" role="status">Agotado</strong>
+            }
+            @if (Producto.Variantes is { Count: > 1 })
+            {
+                <nav aria-label="Variantes del producto" class="grid gap-3">
+                    @foreach(var v in Producto.Variantes)
+                    {
+                        @if(v.Disponible)
+                        {
+                            <a class="store-button" href="/catalogo/@v.ProductoId" aria-current="@(v.ProductoId==Producto.Id ? "page" : null)">@v.Nombre · @v.Atributos · @CatalogoPresentacion.Precio(v.PrecioPublico)</a>
+                        }
+                        else { <span>@v.Nombre · @v.Atributos · Agotado</span> }
+                    }
+                </nav>
+            }
             @if (Producto.Disponible && EnlaceWhatsApp is not null)
             {
                 <p class="store-contact"><a class="store-button" href="@EnlaceWhatsApp" target="_blank" rel="noopener noreferrer">Consultar por WhatsApp</a></p>

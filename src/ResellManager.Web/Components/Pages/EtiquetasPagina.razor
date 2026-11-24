@@ -1,0 +1,42 @@
+@page "/productos/etiquetas"
+@rendermode InteractiveServer
+@inject IEtiquetasService Etiquetas
+@inject IProductoService Productos
+<PageTitle>Etiquetas de productos | ResellManager</PageTitle>
+<div class="min-w-0 space-y-5">
+<h1 class="text-3xl font-bold">Etiquetas de productos</h1>
+<p>Selecciona productos y copias. Todas las copias de un producto usan su mismo código interno.</p>
+@if(Error is not null){<p role="alert" class="text-ui-danger">@Error</p>}
+<section class="ui-card grid gap-4 p-5">
+    <ProductoBuscador Id="producto-etiqueta" Seleccionado="Seleccionado" Deshabilitado="@Ocupado" OnSeleccionado="Seleccionar" />
+    <label>Copias <input class="ui-input" type="number" min="1" max="1000" @bind="Copias" disabled="@Ocupado" /></label>
+    <button class="ui-button border-ui-control bg-white" disabled="@(Ocupado||Seleccionado is null)" @onclick="Agregar">Agregar al lote</button>
+    <ul>@foreach(var f in Filas){<li>@f.Producto.Nombre · @f.Copias copias <button type="button" class="ui-button border-ui-control bg-white" disabled="@Ocupado" @onclick="()=>Filas.Remove(f)">Quitar</button></li>}</ul>
+    <label>Ancho mm <input class="ui-input" type="number" min="20" max="200" @bind="Ancho" /></label>
+    <label>Alto mm <input class="ui-input" type="number" min="25" max="150" @bind="Alto" /></label>
+    <label>Margen mm <input class="ui-input" type="number" min="1" max="5" @bind="Margen" /></label>
+    <label>Resolución dpi <select class="ui-input" @bind="Dpi"><option>203</option><option>300</option><option>600</option></select></label>
+    <button class="ui-button bg-ui-accent text-white" disabled="@Ocupado" @onclick="Preparar">Preparar vista previa</button>
+</section>
+@if(Lote is not null)
+{
+    <section class="ui-card grid gap-4 p-5"><h2 class="text-xl font-semibold">@Lote.Total etiquetas · @Lote.Perfil.AnchoMm × @Lote.Perfil.AltoMm mm</h2>
+    <p>Generado @Lote.CreadoUtc.ToString("u"). @(Lote.ImpresoUtc is null?"Impresión física sin confirmar.":$"Impresión confirmada {Lote.ImpresoUtc:u}.")</p>
+    <p>Imprime el PDF al 100 %, sin ajustar a página. El código largo puede requerir más ancho. La compatibilidad de la app NIIMBOT y el rollo requiere prueba física.</p>
+    @foreach(var f in Lote.Filas){<article class="rounded-xl border border-solid border-ui-border p-3"><p>@f.Nombre · @f.Copias copias · @(f.Precio>0?$"Q {f.Precio:0.00}":"Consultar precio")</p><p class="break-all">@f.Codigo</p></article>}
+    <button class="ui-button border-ui-control bg-white" disabled="@Ocupado" @onclick="ValidarPdf">Verificar perfil y PDF a tamaño real</button>
+    @if(PdfValido){<a class="ui-button border-ui-control bg-white" href="/etiquetas/@Lote.Id/pdf" target="_blank" rel="noopener">Abrir PDF y hoja de prueba</a>}
+    <a class="ui-button border-ui-control bg-white" href="/etiquetas/@Lote.Id/xlsx" download>Excel por etiqueta</a>
+    <label><input type="checkbox" @bind="Impreso" /> Confirmo que las etiquetas se imprimieron físicamente</label>
+    <button class="ui-button border-ui-control bg-white" disabled="@(Ocupado||!Impreso)" @onclick="ConfirmarImpresion">Registrar impresión realizada</button></section>
+}
+</div>
+@code{
+    private ProductoDto? Seleccionado;private int Copias=1,Dpi=203;private decimal Ancho=50,Alto=30,Margen=2;private bool Ocupado,Impreso,PdfValido;private string? Error;
+    private string Clave=Guid.NewGuid().ToString("N");private readonly List<(ProductoDto Producto,int Copias)> Filas=[];private LoteEtiquetasDto? Lote;
+    private void Seleccionar(ProductoDto? p){Seleccionado=p;Copias=1;}
+    private void Agregar(){if(Seleccionado is null||Copias<1)return;if(Filas.Any(x=>x.Producto.Id==Seleccionado.Id)){Error="El producto ya está en el lote. Quítalo para cambiar las copias.";return;}Filas.Add((Seleccionado,Copias));Seleccionado=null;Clave=Guid.NewGuid().ToString("N");}
+    private async Task Preparar(){if(Ocupado)return;Ocupado=true;Error=null;try{var r=await Etiquetas.PrepararAsync(Filas.Select(x=>new CopiasEtiquetaInput(x.Producto.Id,x.Copias)).ToArray(),new(Ancho,Alto,Margen,Dpi),Clave);Lote=r.Value;Error=r.ErrorMessage;PdfValido=false;Impreso=false;if(r.IsSuccess)Clave=Guid.NewGuid().ToString("N");}catch{Error="No se confirmó el resultado. Reintenta sin cambiar el lote.";}finally{Ocupado=false;}}
+    private async Task ValidarPdf(){if(Ocupado||Lote is null)return;Ocupado=true;try{var r=await Etiquetas.ExportarAsync(Lote.Id,"pdf");PdfValido=r.IsSuccess;Error=r.ErrorMessage;}finally{Ocupado=false;}}
+    private async Task ConfirmarImpresion(){if(Ocupado||Lote is null||!Impreso)return;Ocupado=true;try{var r=await Etiquetas.ConfirmarImpresionAsync(Lote.Id);Error=r.ErrorMessage;if(r.IsSuccess)Lote=(await Etiquetas.ObtenerAsync(Lote.Id)).Value;}finally{Ocupado=false;}}
+}

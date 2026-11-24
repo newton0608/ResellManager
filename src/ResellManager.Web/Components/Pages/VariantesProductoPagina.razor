@@ -1,0 +1,51 @@
+@page "/productos/{Id:int}/variantes"
+@rendermode InteractiveServer
+@inject IProductoOperacionesService Operaciones
+@inject IProductoService Productos
+<PageTitle>Variantes de producto | ResellManager</PageTitle>
+<div class="min-w-0 space-y-5">
+    <h1 class="text-3xl font-bold">Gestionar variantes</h1>
+    @if(Producto is not null)
+    {
+        <p>@Producto.Nombre · @Producto.CodigoInterno</p>
+        <p>Color: @Producto.Color · Talla: @Producto.Talla · Presentación: @Producto.Presentacion. Los datos maestros se editan desde la ficha.</p>
+        <a class="ui-button border-ui-control bg-white" href="/productos/@Id">Volver al producto</a>
+        @if(Error is not null){<p role="alert" class="text-ui-danger">@Error</p>}
+        <section class="ui-card grid gap-4 p-5">
+            <label>Grupo <select class="ui-input" @bind="Grupo" disabled="@Ocupado"><option value="">Crear grupo</option>@foreach(var g in Grupos){<option value="@g.Id">@g.Nombre</option>}</select></label>
+            @if(Grupo is null){<label>Nombre del nuevo grupo <input class="ui-input" maxlength="150" @bind="NombreGrupo" disabled="@Ocupado" /></label>}
+            <label>Atributos adicionales, uno por línea (por ejemplo Aroma=Lavanda) <textarea class="ui-input" rows="4" @bind="Atributos" disabled="@Ocupado"></textarea></label>
+            <button class="ui-button bg-ui-accent text-white" disabled="@Ocupado" @onclick="Vincular">Confirmar vínculo o atributos</button>
+            @if(Actual is not null)
+            {
+                <p>Grupo actual: @Actual.Nombre</p>
+                <ul>@foreach(var v in Actual.Variantes){<li><a href="/productos/@v.ProductoId/variantes">@v.Nombre</a> · @v.Atributos · @(v.Disponible?"Disponible":"Agotado")</li>}</ul>
+                <label><input type="checkbox" @bind="AceptaDesvincular" disabled="@Ocupado" /> Confirmo que quiero retirar solo el vínculo de este producto</label>
+                <button class="ui-button border-ui-control bg-white" disabled="@(Ocupado||!AceptaDesvincular)" @onclick="Desvincular">Desvincular producto</button>
+            }
+        </section>
+    }
+</div>
+@code {
+    [Parameter]public int Id{get;set;}
+    private ProductoDto? Producto;private IReadOnlyList<GrupoVariantesDto> Grupos=[];
+    private GrupoVariantesDto? Actual=>Grupos.FirstOrDefault(x=>x.Variantes.Any(v=>v.ProductoId==Id));
+    private Guid? Grupo;private string NombreGrupo="",Atributos="";private string? Error;private bool Ocupado,AceptaDesvincular;
+    protected override async Task OnParametersSetAsync(){Producto=(await Productos.ObtenerPorIdAsync(Id)).Value;await Cargar();Grupo=Actual?.Id;}
+    private async Task Cargar(){var r=await Operaciones.GruposAsync();Grupos=r.Value??[];Error=r.ErrorMessage;}
+    private async Task Vincular()
+    {
+        if(Ocupado)return;Ocupado=true;Error=null;
+        try
+        {
+            var pares=new Dictionary<string,string>(StringComparer.OrdinalIgnoreCase);
+            foreach(var linea in Atributos.Split('\n',StringSplitOptions.RemoveEmptyEntries))
+            {var partes=linea.Split('=',2);if(partes.Length!=2||!pares.TryAdd(partes[0].Trim(),partes[1].Trim())){Error="Usa un atributo distinto por línea: Nombre=Valor.";return;}}
+            var r=await Operaciones.VincularAsync(Id,Grupo,NombreGrupo,pares);if(!r.IsSuccess){Error=r.ErrorMessage;return;}
+            Grupo=r.Value!.Id;await Cargar();
+        }
+        catch{Error="No se pudo guardar el vínculo. Revisa el grupo antes de reintentar.";}
+        finally{Ocupado=false;}
+    }
+    private async Task Desvincular(){if(Ocupado||!AceptaDesvincular)return;Ocupado=true;try{var r=await Operaciones.DesvincularAsync(Id);if(r.IsSuccess){Grupo=null;AceptaDesvincular=false;await Cargar();}else Error=r.ErrorMessage;}finally{Ocupado=false;}}
+}

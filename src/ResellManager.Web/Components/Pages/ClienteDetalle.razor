@@ -49,7 +49,7 @@
             <article class="ui-card grid min-w-0 gap-3 p-5 sm:p-6">
                 <p class="m-0 text-xs font-semibold tracking-wide text-ui-muted uppercase">Saldo actual</p>
                 <p class="m-0 text-3xl font-bold tracking-tight text-ui-ink tabular-nums [overflow-wrap:anywhere] sm:text-4xl">@ClientePresentacion.Moneda(SaldoActual.Value)</p>
-                <p class="m-0 text-sm leading-6 text-ui-muted">Total pendiente después de ventas y pagos.</p>
+                <p class="m-0 text-sm leading-6 text-ui-muted">Total pendiente después de apertura, ventas, pagos y ajustes.</p>
             </article>
 
             <article class="ui-card grid min-w-0 gap-5 p-5 sm:p-6">
@@ -73,6 +73,8 @@
             </article>
         </section>
 
+        <a class="ui-button border-ui-control bg-white text-ui-ink" href="/movimientos?cliente=@Id">Estado de cuenta y movimientos</a>
+        <ResellManager.Web.Components.Finanzas.MovimientosClienteResumen ClienteId="Id" @key="Id" />
         <PendientesCliente ClienteId="Id" />
         <section class="min-w-0 space-y-4" aria-labelledby="titulo-historial">
             <div class="space-y-2 px-1">

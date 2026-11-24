@@ -27,6 +27,7 @@
     }
     else if (Compra is not null)
     {
+        @if(Compra.Detalles.Any(x=>!x.CostoConocido)){<p role="status">Importes parciales: esta compra contiene artículos con costo no registrado.</p>}
         <section class="grid min-w-0 gap-4 sm:flex sm:items-start sm:justify-between" aria-labelledby="titulo-compra">
             <div class="grid min-w-0 gap-2">
                 <p class="m-0 text-xs font-semibold tracking-wide text-ui-muted uppercase">Detalle de compra</p>
@@ -119,16 +120,16 @@
                         <li class="grid min-w-0 gap-2 border-0 border-t border-solid border-ui-border px-4 py-4 sm:flex sm:items-center sm:justify-between sm:gap-5 sm:px-5">
                             <div class="grid min-w-0 gap-1">
                                 <h3 class="m-0 text-base font-semibold leading-6 text-ui-ink [overflow-wrap:anywhere]">@detalle.Producto</h3>
-                                <p class="m-0 text-sm leading-6 text-ui-muted">@detalle.Cantidad × @CompraPresentacion.MonedaOrigen(Compra.Moneda == MonedaCompra.USD ? detalle.CostoUnitarioMonedaOrigen : detalle.CostoUnitario, Compra.Moneda)</p>
+                                <p class="m-0 text-sm leading-6 text-ui-muted">@detalle.Cantidad × @(detalle.CostoConocido ? CompraPresentacion.MonedaOrigen(Compra.Moneda == MonedaCompra.USD ? detalle.CostoUnitarioMonedaOrigen : detalle.CostoUnitario, Compra.Moneda) : "Costo no registrado")</p>
                                 @if (Compra.Moneda == MonedaCompra.USD)
                                 {
-                                    <p class="m-0 text-xs leading-5 text-ui-muted">Costo unitario GTQ: @CompraPresentacion.Moneda(detalle.CostoUnitario)</p>
+                                    <p class="m-0 text-xs leading-5 text-ui-muted">Costo unitario GTQ: @(detalle.CostoConocido ? CompraPresentacion.Moneda(detalle.CostoUnitario) : "Costo no registrado")</p>
                                 }
                             </div>
                             <div class="flex min-w-0 items-center justify-between gap-2 sm:block sm:shrink-0 sm:text-right">
                                 <span class="text-xs leading-5 text-ui-muted">Subtotal</span>
                                 <div class="grid min-w-0 gap-1 text-right">
-                                    <strong class="block text-base leading-6 text-ui-ink tabular-nums [overflow-wrap:anywhere]">@CompraPresentacion.MonedaOrigen(Compra.Moneda == MonedaCompra.USD ? detalle.SubtotalMonedaOrigen : detalle.Subtotal, Compra.Moneda)</strong>
+                                    <strong class="block text-base leading-6 text-ui-ink tabular-nums [overflow-wrap:anywhere]">@(detalle.CostoConocido ? CompraPresentacion.MonedaOrigen(Compra.Moneda == MonedaCompra.USD ? detalle.SubtotalMonedaOrigen : detalle.Subtotal, Compra.Moneda) : "Costo no registrado")</strong>
                                     @if (Compra.Moneda == MonedaCompra.USD)
                                     {
                                         <span class="text-xs leading-5 text-ui-muted tabular-nums [overflow-wrap:anywhere]">GTQ: @CompraPresentacion.Moneda(detalle.Subtotal)</span>

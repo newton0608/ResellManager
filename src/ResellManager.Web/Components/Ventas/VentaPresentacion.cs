@@ -20,11 +20,12 @@ public static class VentaPresentacion
         _ => "status-badge-neutral",
     };
 
-    public static decimal Utilidad(DetalleVentaDto detalle) =>
-        detalle.PrecioFinal - detalle.CostoUnitario;
+    public static decimal? Utilidad(DetalleVentaDto detalle) =>
+        detalle.CostoConocido ? detalle.PrecioFinal - detalle.CostoUnitario : null;
 
-    public static decimal UtilidadTotal(VentaDto venta) => venta.Detalles.Sum(Utilidad);
+    public static decimal? UtilidadTotal(VentaDto venta) => venta.Detalles.All(x=>x.CostoConocido) ? venta.Detalles.Sum(x=>x.PrecioFinal-x.CostoUnitario) : null;
 
+    public static string Moneda(decimal? monto) => monto.HasValue ? ClientePresentacion.Moneda(monto.Value) : "No calculable";
     public static string Moneda(decimal monto) => ClientePresentacion.Moneda(monto);
     public const string PrefijoPedidoVentaDirecta = "PED-VD-";
     public const string PrefijoVentaDirecta = "VEN-VD-";

@@ -127,7 +127,7 @@
                         <dl class="m-0 grid min-w-0 grid-cols-2 content-start gap-3 rounded-2xl bg-ui-canvas p-3 text-sm leading-6 [&_dt]:text-xs [&_dt]:leading-5 [&_dt]:text-ui-muted [&_dd]:m-0 [&_dd]:text-ui-ink [&_dd]:[overflow-wrap:anywhere]">
                             <div class="grid min-w-0 content-start gap-1"><dt>Ingreso</dt><dd>@(unidad.FechaIngreso?.ToString("dd/MM/yyyy") ?? (unidad.Estado == EstadoUnidadInventario.Perdida ? "Sin ingreso" : "Pendiente"))</dd></div>
                             <div class="grid min-w-0 content-start gap-1"><dt>Origen</dt><dd>@InventarioPresentacion.Origen(unidad.OrigenCompra)</dd></div>
-                            <div class="grid min-w-0 content-start gap-1"><dt>Costo de unidad</dt><dd class="tabular-nums"><span class="inline-block max-w-full [overflow-wrap:anywhere]">@InventarioPresentacion.Moneda(unidad.Costo)</span></dd></div>
+                            <div class="grid min-w-0 content-start gap-1"><a class="ui-button border-ui-control bg-white" href="/costos?unidad=@unidad.Id">Historial y corrección de costo</a><dt>Costo de unidad</dt><dd class="tabular-nums"><span class="inline-block max-w-full [overflow-wrap:anywhere]">@(unidad.CostoConocido ? InventarioPresentacion.Moneda(unidad.Costo) : "Costo no registrado")</span></dd></div>
                             <div class="grid min-w-0 justify-items-start gap-1">
                                 <dt>Reserva</dt>
                                 <dd class="grid min-w-0 justify-items-start gap-1">

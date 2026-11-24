@@ -199,7 +199,8 @@
                                     </div>
                                     <div class="grid min-w-0 gap-2">
                                         <label class="text-sm font-medium" for="costo-compra-@numero">Costo unitario (@(EsUsd ? "US$" : "Q")) <span aria-hidden="true">*</span></label>
-                                        <input class="ui-input" inputmode="decimal" data-select-once="true" id="costo-compra-@numero" type="number" min="0" step="0.01" @bind="detalle.CostoUnitarioMonedaOrigen" @bind:event="oninput" />
+                                        <label><input type="checkbox" @bind="detalle.CostoConocido" /> Costo conocido</label>
+                                        <input disabled="@(!detalle.CostoConocido)" class="ui-input" inputmode="decimal" data-select-once="true" id="costo-compra-@numero" type="number" min="0" step="0.01" @bind="detalle.CostoUnitarioMonedaOrigen" @bind:event="oninput" />
                                         @if (EsUsd)
                                         {
                                             <span class="text-xs leading-5 text-ui-muted tabular-nums">≈ @EquivalenteUnitario(detalle)</span>
@@ -222,7 +223,7 @@
                     <div class="flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-2xl bg-ui-canvas p-4">
                         <span class="text-sm font-medium text-ui-muted">@(EsUsd ? "Total compra" : "Total visual")</span>
                         <div class="grid min-w-0 gap-1 text-right">
-                            <strong class="min-w-0 text-2xl font-semibold tracking-tight text-ui-ink tabular-nums [overflow-wrap:anywhere]">@CompraPresentacion.MonedaOrigen(Modelo.TotalVisualMonedaOrigen, Modelo.Moneda)</strong>
+                            <strong class="min-w-0 text-2xl font-semibold tracking-tight text-ui-ink tabular-nums [overflow-wrap:anywhere]">@(Modelo.Detalles.Any(x=>!x.CostoConocido) ? "Pendiente de completar costos" : CompraPresentacion.MonedaOrigen(Modelo.TotalVisualMonedaOrigen, Modelo.Moneda))</strong>
                             @if (EsUsd)
                             {
                                 <span class="text-sm leading-6 text-ui-muted tabular-nums [overflow-wrap:anywhere]">Equivalente @CompraPresentacion.Equivalente(Modelo.TotalVisualGtq)</span>
@@ -322,7 +323,7 @@
                     {
                         <li class="grid min-w-0 gap-1 rounded-2xl bg-ui-canvas p-3">
                             <strong>@detalle.ProductoSeleccionado?.Nombre</strong>
-                            <span class="min-w-0 text-ui-muted [overflow-wrap:anywhere]">@detalle.Cantidad × @CompraPresentacion.MonedaOrigen(detalle.CostoUnitarioMonedaOrigen, Modelo.Moneda) = @SubtotalOrigen(detalle)</span>
+                            <span class="min-w-0 text-ui-muted [overflow-wrap:anywhere]">@detalle.Cantidad × @(detalle.CostoConocido ? CompraPresentacion.MonedaOrigen(detalle.CostoUnitarioMonedaOrigen, Modelo.Moneda) : "Costo no registrado") = @SubtotalOrigen(detalle)</span>
                             @if (EsUsd)
                             {
                                 <span class="min-w-0 text-ui-muted [overflow-wrap:anywhere]">Equivalente GTQ: @EquivalenteSubtotal(detalle) · Costo unitario GTQ: @EquivalenteUnitario(detalle)</span>
@@ -332,7 +333,7 @@
                 </ul>
                 <p class="m-0 flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-ui-canvas p-4">
                     <span class="text-ui-muted">@(EsUsd ? "Total moneda origen" : "Total")</span>
-                    <strong class="text-xl tracking-tight tabular-nums [overflow-wrap:anywhere]">@CompraPresentacion.MonedaOrigen(Modelo.TotalVisualMonedaOrigen, Modelo.Moneda)</strong>
+                    <strong class="text-xl tracking-tight tabular-nums [overflow-wrap:anywhere]">@(Modelo.Detalles.Any(x=>!x.CostoConocido) ? "Pendiente de completar costos" : CompraPresentacion.MonedaOrigen(Modelo.TotalVisualMonedaOrigen, Modelo.Moneda))</strong>
                 </p>
                 @if (EsUsd)
                 {
@@ -436,6 +437,7 @@
 
     private string SubtotalOrigen(DetalleCompraFormModel detalle)
     {
+        if (!detalle.CostoConocido) return "Costo no registrado";
         try { return CompraPresentacion.MonedaOrigen(detalle.Subtotal, Modelo.Moneda); }
         catch (OverflowException) { return "—"; }
     }
@@ -690,7 +692,7 @@
             return "El costo unitario no puede ser negativo.";
         if (Modelo.Detalles.Any(x => decimal.Round(x.CostoUnitarioMonedaOrigen, 2) != x.CostoUnitarioMonedaOrigen))
             return "El costo unitario debe tener como máximo dos decimales.";
-        if (Modelo.TotalVisualMonedaOrigen is null || Modelo.TotalVisualGtq is null)
+        if (Modelo.Detalles.All(x=>x.CostoConocido) && (Modelo.TotalVisualMonedaOrigen is null || Modelo.TotalVisualGtq is null))
             return "Los importes de la compra exceden el máximo permitido.";
         if (RequiereFechaIngreso && !Modelo.FechaIngreso.HasValue)
             return "La fecha de ingreso es obligatoria para mercancía recibida.";
