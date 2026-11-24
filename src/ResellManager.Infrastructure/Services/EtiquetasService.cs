@@ -48,9 +48,13 @@ public sealed class EtiquetasService(ResellManagerDbContext db,ICuentaOperativa 
             return ServiceResult<ArchivoInformeDto>.Ok(InformeArchivos.Crear("etiquetas",formato,["Nombre","Precio Q","Codigo interno","Atributos","Copias"],rows,l.CreadoUtc,"Una fila por etiqueta. La importación y plantilla NIIMBOT requieren validación con la app real."));
         }
         if(formato!="pdf")return ServiceResult<ArchivoInformeDto>.Failure("Formato inválido.");
+        var altoMinimo=2*l.Perfil.MargenMm+71*25.4m/72;
+        if(l.Perfil.AltoMm<altoMinimo)return ServiceResult<ArchivoInformeDto>.Failure($"El perfil requiere al menos {decimal.Ceiling(altoMinimo)} mm de alto para nombre, precio, barras y texto legible.");
         foreach(var f in l.Filas)
         {
-            var minimo=Codigo128Etiquetas.AnchoMinimo(f.Codigo,l.Perfil);
+            decimal minimo;
+            try { minimo=Codigo128Etiquetas.AnchoMinimo(f.Codigo,l.Perfil); }
+            catch(ArgumentException e) { return ServiceResult<ArchivoInformeDto>.Failure(e.Message); }
             if(l.Perfil.AnchoMm<minimo)return ServiceResult<ArchivoInformeDto>.Failure($"El código completo {f.Codigo} requiere al menos {decimal.Ceiling(minimo)} mm de ancho a {l.Perfil.Dpi} dpi con barras de 2 puntos. Configura un perfil compatible; no se reducirá a barras ilegibles.");
         }
         using var memoria=new MemoryStream();using var pdf=SKDocument.CreatePdf(memoria);using var fuente=new SKFont(SKTypeface.FromFamilyName("DejaVu Sans"),8);using var tinta=new SKPaint{Color=SKColors.Black,IsAntialias=false};

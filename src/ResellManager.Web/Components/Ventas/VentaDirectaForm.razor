@@ -53,8 +53,8 @@ else
             <div class="grid min-w-0 gap-4 sm:grid-cols-2">
                 <fieldset class="grid gap-3">
                     <legend>Comprador</legend>
-                    <label><input type="radio" name="comprador" checked="@EsCF" disabled="@SeleccionBloqueada" @onchange="() => CambiarComprador(true)" /> Consumidor Final (CF)</label>
-                    <label><input type="radio" name="comprador" checked="@(!EsCF)" disabled="@SeleccionBloqueada" @onchange="() => CambiarComprador(false)" /> Seleccionar cliente existente</label>
+                    <label class="flex min-h-11 items-center gap-3"><input class="size-5 shrink-0" type="radio" name="comprador" checked="@EsCF" disabled="@SeleccionBloqueada" @onchange="() => CambiarComprador(true)" /> Consumidor Final (CF)</label>
+                    <label class="flex min-h-11 items-center gap-3"><input class="size-5 shrink-0" type="radio" name="comprador" checked="@(!EsCF)" disabled="@SeleccionBloqueada" @onchange="() => CambiarComprador(false)" /> Seleccionar cliente existente</label>
                     @if (EsCF)
                     {
                         <label>Nombre opcional <input class="ui-input" maxlength="100" @bind="NombreCF" disabled="@SeleccionBloqueada" /></label>

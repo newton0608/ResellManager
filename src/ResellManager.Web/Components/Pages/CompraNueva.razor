@@ -199,7 +199,7 @@
                                     </div>
                                     <div class="grid min-w-0 gap-2">
                                         <label class="text-sm font-medium" for="costo-compra-@numero">Costo unitario (@(EsUsd ? "US$" : "Q")) <span aria-hidden="true">*</span></label>
-                                        <label><input type="checkbox" @bind="detalle.CostoConocido" /> Costo conocido</label>
+                                        <label class="flex min-h-11 items-center gap-3"><input type="checkbox" @bind="detalle.CostoConocido" /> Costo conocido</label>
                                         <input disabled="@(!detalle.CostoConocido)" class="ui-input" inputmode="decimal" data-select-once="true" id="costo-compra-@numero" type="number" min="0" step="0.01" @bind="detalle.CostoUnitarioMonedaOrigen" @bind:event="oninput" />
                                         @if (EsUsd)
                                         {
