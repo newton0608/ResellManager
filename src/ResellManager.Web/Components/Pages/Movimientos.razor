@@ -34,6 +34,11 @@
                 <li class="ui-card min-w-0 space-y-2 p-5" @key="m.Id">
                     <p class="font-semibold">@m.Tipo · @m.Cliente · Q @m.Importe.ToString("N2")</p>
                     <p>@m.Fecha.ToString("dd/MM/yyyy") · @m.Descripcion</p>
+                    <p class="break-all text-sm text-ui-muted">Movimiento: @m.Id</p>
+                    <div class="flex flex-wrap gap-3">
+                        @if(m.ClienteId.HasValue) { <a href="/clientes/@m.ClienteId">Ver cliente</a> }
+                        @if(Documento(m) is {} documento) { <a href="@documento">Ver documento de origen</a> }
+                    </div>
                     <p class="break-words text-sm text-ui-muted">Referencia: @m.Referencia · Registro: @(m.RegistradoUtc?.ToString("u") ?? "Histórico sin hora registrada") · Usuario: @(m.UsuarioId ?? "Histórico sin autor registrado")</p>
                     @if (m.OriginalId is not null) { <p class="break-words text-sm">Movimiento original: @m.OriginalId</p> }
                     @if (Administrador && m.Tipo == "Ajuste")
@@ -103,6 +108,13 @@
     private async Task Anterior() { NumeroPagina--; await Cargar(); }
     private async Task Siguiente() { NumeroPagina++; await Cargar(); }
     private string Descarga(string formato) => $"/informes/{(Aplicado.ClienteId.HasValue ? "cliente" : "movimientos")}/{formato}?cliente={Aplicado.ClienteId}&desde={Aplicado.Desde:yyyy-MM-dd}&hasta={Aplicado.Hasta:yyyy-MM-dd}&tipo={Uri.EscapeDataString(Aplicado.Tipo ?? "")}&referencia={Uri.EscapeDataString(Aplicado.Referencia ?? "")}";
+    private string? Documento(MovimientoDto movimiento)
+    {
+        if(movimiento.Tipo is "Venta" or "Cancelacion" && int.TryParse(movimiento.Id.Split('-').Last(),out var ventaId)) return $"/ventas/{ventaId}";
+        if(movimiento.Tipo=="Apertura" && Administrador) return "/clientes/apertura";
+        if(movimiento.Tipo=="Abono") return $"/pagos?cliente={movimiento.ClienteId}";
+        return null;
+    }
     private void ElegirReversion(MovimientoDto m) { Cancelar(); Reversion = Guid.Parse(m.Id); AjusteCliente = m.ClienteId!.Value; NombreReversion=m.Cliente; Importe = -m.Importe; ReferenciaAjuste = m.Id; }
     private void Cancelar() { Reversion = null; Revision = null; Motivo = ""; ReferenciaAjuste = ""; Importe = 0; Clave = Guid.NewGuid().ToString("N"); }
     private async Task Revisar()
